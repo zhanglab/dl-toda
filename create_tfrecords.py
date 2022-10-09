@@ -28,7 +28,7 @@ def create_meta_tfrecords(args):
                 data = \
                     {
                         'read': wrap_read(kmer_array),
-                        'read_id': wrap_label(count)
+                        'label': wrap_label(count)
                     }
                 feature = tf.train.Features(feature=data)
                 example = tf.train.Example(features=feature)
