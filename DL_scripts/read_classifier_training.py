@@ -186,7 +186,7 @@ def main():
 
     # define model
     if args.resume:
-        # load model in SavedModel format 
+        # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
         model = AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE)
@@ -236,14 +236,14 @@ def main():
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
         if batch % 100 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
                 tf.summary.scalar("train_loss", loss_value, step=batch)
                 tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
@@ -265,7 +265,7 @@ def main():
                     tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
                     tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
                     writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss}\t{val_accuracy}\n')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
             # reset metrics variables
             val_loss.reset_states()
