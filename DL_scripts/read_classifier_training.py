@@ -235,7 +235,7 @@ def main():
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
-        if batch % (nstep_per_epoch//2) == 0 and batch != (epoch*nstep_per_epoch - 1) and hvd.rank() == 0:
+        if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
