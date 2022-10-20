@@ -292,7 +292,7 @@ def main():
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
         print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
         td_writer.close()
         vd_writer.close()
