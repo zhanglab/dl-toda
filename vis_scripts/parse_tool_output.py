@@ -1,6 +1,7 @@
 import os
 import gzip
 import math
+import multiprocessing as mp
 from collections import defaultdict
 from ncbi_tax_utils import get_ncbi_taxonomy
 
