@@ -36,7 +36,7 @@ def create_cm(args):
         for process, process_results in results.items():
             predictions += [i[0] for i in process_results]
             ground_truth += [i[1] for i in process_results]
-            confidence_scores += += [i[2] for i in process_results]
+            confidence_scores += [i[2] for i in process_results]
         # create confusion matrix
         all_cm = {}
         for r_name, r_index in args.ranks.items():
