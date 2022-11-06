@@ -60,7 +60,7 @@ def main():
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--dl_toda_tax', help='path to directory containing json directories with info on taxa present in dl-toda')
-    # parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
     # parser.add_argument('--to_ncbi', action='store_true', help='whether to analyze results with ncbi taxonomy', default=False)
     # parser.add_argument('--compare', action='store_true', help='compare results files obtained with --metrics', default=False)
     # parser.add_argument('--rank', type=str, help='taxonomic rank', choices=['species', 'genus', 'family', 'order', 'class', 'phylum'], required=('--compare' in sys.argv))
@@ -74,9 +74,10 @@ def main():
 
     # load dl-toda ground truth taxonomy
     if args.dl_toda_tax:
+        index = 1 if args.tax_db == "gtdb" else 2
         with open(os.path.join(args.dl_toda_tax, 'dl_toda_taxonomy.tsv'), 'r') as in_f:
             content = in_f.readlines()
-            args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+            args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
 
     if args.confusion_matrix:
         # create confusion matrix
