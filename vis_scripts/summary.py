@@ -61,7 +61,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--dl_toda_tax', help='path to directory containing json directories with info on taxa present in dl-toda')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     # parser.add_argument('--to_ncbi', action='store_true', help='whether to analyze results with ncbi taxonomy', default=False)
     # parser.add_argument('--compare', action='store_true', help='compare results files obtained with --metrics', default=False)
     # parser.add_argument('--rank', type=str, help='taxonomic rank', choices=['species', 'genus', 'family', 'order', 'class', 'phylum'], required=('--compare' in sys.argv))
