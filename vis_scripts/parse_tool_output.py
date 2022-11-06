@@ -42,7 +42,7 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
         read_id = line.rstrip().split('\t')[0]
         pred_sp = line.rstrip().split('\t')[1]
         confidence_score = float(line.rstrip().split('\t')[2])
-        pred_taxonomy = args.dl_toda_tax[pred_species[i]]
+        pred_taxonomy = args.dl_toda_tax[pred_sp]
         if args.dataset == 'cami':
             true_taxonomy = get_ncbi_taxonomy(args.cami_data[read_id], d_nodes, d_names)
         else:
