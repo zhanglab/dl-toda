@@ -14,10 +14,10 @@ def create_cm(args):
     # load cami ground truth if testing set was made by cami
     if args.dataset == 'cami':
         args.cami_data = load_cami_data(args)
-    if args.dataset == 'cami' or args.tool in ['kraken', 'centrifuge']:
-        # get ncbi taxids info
-        d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
-        d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
+    # if args.dataset == 'cami' or args.tool in ['kraken', 'centrifuge']:
+    # get ncbi taxids info
+    d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
+    d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
     # load results of taxonomic classification tool
     data = load_tool_output(args)
     # parse data
