@@ -131,7 +131,7 @@ def load_cami_data(args):
 
 
 def load_tool_output(args):
-    in_f = open(args.input_file, 'r')
+    in_f = open(args.input, 'r')
     content = in_f.readlines()
     if args.tool == "centrifuge":
         # parse output of centrifuge to only take the first hit for each read
