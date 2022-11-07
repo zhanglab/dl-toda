@@ -49,6 +49,8 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
         else:
             true_taxonomy = args.dl_toda_tax[read_id.split('|')[1]]
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+    results[process] = process_results
+    print(process, len(process_results), len(results[process]))
 
 def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
@@ -67,7 +69,7 @@ def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
         else:
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
             number_unclassified += 1
-    print(process, len(process_results), len(results[process]))
+
     results[process] = process_results
 
 # def convert_diamond_output(args, data, process, d_nodes, d_names, results):
