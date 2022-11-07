@@ -209,7 +209,7 @@ def main():
 
         # create directory for storing checkpoints
         ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-        if not os.path.exists(ckpt_dir):
+        if not os.path.isdir(ckpt_dir):
             os.makedirs(ckpt_dir)
 
         # create checkpoint object to save model
