@@ -67,6 +67,7 @@ def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
         else:
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
             number_unclassified += 1
+    print(process, len(process_results), len(results[process]))
     results[process] = process_results
 
 # def convert_diamond_output(args, data, process, d_nodes, d_names, results):
