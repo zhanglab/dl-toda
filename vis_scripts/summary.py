@@ -37,10 +37,6 @@ def create_cm(args):
             predictions += [i[0] for i in process_results]
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
-        print(predictions[:10])
-        print(ground_truth[:10])
-        print(confidence_scores[:10])
-        print(len(predictions), len(ground_truth), len(confidence_scores))
         # create confusion matrix
         all_cm = {}
         for r_name, r_index in args.ranks.items():
