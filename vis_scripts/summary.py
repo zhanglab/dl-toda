@@ -89,18 +89,13 @@ def main():
 
     if args.combine:
         excel_files = glob.glob(os.path.join(args.input_dir, '*.xlsx'))
-        with mp.Manager() as manager:
-            all_cm = manager.dict()
-            # Create new processes
-            processes = [mp.Process(target=combine_cm, args=(args, all_cm, r, excel_files)) for r in args.ranks.keys()]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-
-            with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
-                for r_name, r_cm in all_cm.items():
-                    r_cm.to_excel(writer, sheet_name=f'{r_name}')
+        all_cm = {}
+        for r_name in args.ranks.keys():
+            combine_cm(args, all_cm, r_name, excel_files)
+        
+        with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
+            for r_name, r_cm in all_cm.items():
+                r_cm.to_excel(writer, sheet_name=f'{r_name}')
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
