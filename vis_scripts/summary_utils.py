@@ -34,8 +34,9 @@ def get_metrics(args, cm, r_name):
         problematic_reads = 0
         total_num_reads = 0
         for true_taxon in ground_truth:
+            # get number of reads in testing dataset for given taxon
             num_reads = sum([cm.loc[i, true_taxon] for i in predicted_taxa])
-            if true_taxon not in ['unclassified', 'na']:
+            if true_taxon != 'na':
                 if true_taxon in taxa_in_dl_toda:
                     if true_taxon in predicted_taxa:
                         predicted_taxon = true_taxon
@@ -53,7 +54,8 @@ def get_metrics(args, cm, r_name):
                         if args.zeros:
                             print(f'{true_taxon} has a precision/recall/F1 scores equal to 0')
                             out_f.write(f'{true_taxon}\tna\t{num_reads}\t0\t0\t0\t0\t0\t{num_reads}\n')
-                        unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
+                        unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
+                        # unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
                 else:
                     print(f'{true_taxon} with {num_reads} reads is not in {args.tool} model')
                     problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
