@@ -102,9 +102,9 @@ def main():
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
-        for r_name in args.ranks.keys():
+        for r_name, r_index in args.ranks.items():
             if r_name in cm.keys():
-                get_metrics(args, cm[r_name], r_name)
+                get_metrics(args, cm[r_name], r_name, r_index)
 
     # elif args.compare:
     #     dl_toda_res = pd.read_csv(args.dl_toda_metrics, sep='\t')
