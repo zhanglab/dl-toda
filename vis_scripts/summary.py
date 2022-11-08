@@ -98,9 +98,9 @@ def main():
             for p in processes:
                 p.join()
 
-        with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
-            for r_name, r_cm in all_cm.items():
-                r_cm.to_excel(writer, sheet_name=f'{r_name}')
+            with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
+                for r_name, r_cm in all_cm.items():
+                    r_cm.to_excel(writer, sheet_name=f'{r_name}')
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
