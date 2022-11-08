@@ -16,6 +16,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_in
         if confidence_scores[i] > args.cutoff:
             tool_taxon = predictions[i].split(';')[r_index]
         else:
+            print(confidence_scores[i], predictions[i], ground_truth[i])
             tool_taxon = 'unclassified'
         cm.loc[tool_taxon, true_taxon] += 1
 
