@@ -25,7 +25,12 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_in
 
 def get_metrics(args, cm, r_name, r_index):
     taxa_in_dl_toda = set([v.split(';')[r_index] for v in args.dl_toda_tax.values()])
-    with open(os.path.join(args.output_dir, f'{r_name}-metrics.tsv'), 'w') as out_f:
+    outfilename = os.path.join(args.output_dir, f'{r_name}-metrics')
+    if args.zeros:
+        outfilename += '-wzeros.tsv'
+    else:
+        outfilename += '-wozeros.tsv'
+    with open(outfilename, 'w') as out_f:
         out_f.write('true taxon\tpredicted taxon\t#reads\tprecision\trecall\tF1\tTP\tFP\tFN\n')
         ground_truth = list(cm.columns)
         predicted_taxa = list(cm.index)
