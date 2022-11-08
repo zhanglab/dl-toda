@@ -78,6 +78,7 @@ def get_metrics(args, cm, r_name):
 
 
 def combine_cm(args, all_cm, rank, excel_files):
+    print(rank, len(excel_files))
     df_list = []
     columns = []
     rows = []
