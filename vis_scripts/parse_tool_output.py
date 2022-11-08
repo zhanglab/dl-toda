@@ -41,8 +41,8 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
     process_results = []
     for line in data:
         read_id = line.rstrip().split('\t')[0]
-        pred_sp = line.rstrip().split('\t')[1]
-        confidence_score = float(line.rstrip().split('\t')[2])
+        pred_sp = line.rstrip().split('\t')[2]
+        confidence_score = float(line.rstrip().split('\t')[3])
         pred_taxonomy = args.dl_toda_tax[pred_sp]
         if args.dataset == 'cami':
             true_taxonomy = get_ncbi_taxonomy(args.cami_data[read_id], d_nodes, d_names)
@@ -50,6 +50,7 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
             true_taxonomy = args.dl_toda_tax[read_id.split('|')[1]]
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
+    print(process_results[:10])
     print(process, len(process_results), len(results[process]))
 
 def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
