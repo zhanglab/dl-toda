@@ -104,3 +104,4 @@ def combine_cm(args, all_cm, rank, excel_files):
                 cm = cm.add(df_list[i], fill_value=0)
         cm = cm.fillna(0)
         all_cm[rank] = cm
+        print(f'{rank}\t{cm.to_numpy().sum()}')
