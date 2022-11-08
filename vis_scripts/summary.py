@@ -88,7 +88,7 @@ def main():
         create_cm(args)
 
     if args.combine:
-        excel_files = glob.glob(os.path.join(args.input_dir, '*.xlsx'))
+        excel_files = glob.glob(os.path.join(args.input_dir, '*-confusion-matrix.xlsx'))
         with mp.Manager() as manager:
             all_cm = manager.dict()
             # Create new processes
