@@ -87,11 +87,10 @@ def main():
         create_cm(args)
 
     if args.combine:
-        excel_files = glob.glob(os.path.join(args.input_dir, '*-confusion-matrix.xlsx'))
         with mp.Manager() as manager:
             all_cm = manager.dict()
             # Create new processes
-            processes = [mp.Process(target=combine_cm, args=(args, all_cm, r, excel_files)) for r in args.ranks.keys()]
+            processes = [mp.Process(target=combine_cm, args=(args, all_cm, r)) for r in args.ranks.keys()]
             for p in processes:
                 p.start()
             for p in processes:
