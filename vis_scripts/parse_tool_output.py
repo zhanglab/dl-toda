@@ -50,8 +50,6 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
             true_taxonomy = args.dl_toda_tax[read_id.split('|')[1]]
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
-    print(process_results[:10])
-    print(process, len(process_results), len(results[process]))
 
 def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
