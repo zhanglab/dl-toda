@@ -53,7 +53,7 @@ def get_metrics(args, cm, r_name, r_index):
                         false_positives = sum([cm.loc[predicted_taxon, i] for i in other_true_taxa])
                         # add unclassified to not include unclassified reads in the count of FN
                         # false_negatives = sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in (predicted_taxon, 'unclassified')])
-                        false_negatives = sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in (predicted_taxon)])
+                        false_negatives = sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in (predicted_taxon)]) if args.unclassified else sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in (predicted_taxon, 'unclassified')])
                         precision = float(true_positives)/(true_positives+false_positives) if true_positives+false_positives > 0 else 0
                         recall = float(true_positives)/(true_positives+false_negatives) if true_positives+false_negatives > 0 else 0
                         f1_score = float(2 * (precision * recall)) / (precision + recall) if precision + recall > 0 else 0
