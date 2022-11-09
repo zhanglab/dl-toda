@@ -46,12 +46,12 @@ def get_metrics(args, cm, r_name, r_index):
                 if true_taxon in taxa_in_dl_toda:
                     if true_taxon in predicted_taxa:
                         predicted_taxon = true_taxon
-                        classified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i != 'unclassified'])
+                        classified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
                         other_true_taxa = [i for i in ground_truth if i != true_taxon]
                         true_positives = cm.loc[predicted_taxon, true_taxon]
                         correct_predictions += true_positives
                         false_positives = sum([cm.loc[predicted_taxon, i] for i in other_true_taxa])
-                        # add unclassified to include in the count of FN
+                        # add unclassified to not include unclassified reads in the count of FN
                         false_negatives = sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in (predicted_taxon, 'unclassified')])
                         precision = float(true_positives)/(true_positives+false_positives) if true_positives+false_positives > 0 else 0
                         recall = float(true_positives)/(true_positives+false_negatives) if true_positives+false_negatives > 0 else 0
