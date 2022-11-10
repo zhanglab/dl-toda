@@ -67,19 +67,20 @@ def get_metrics(args, cm, r_name, r_index):
                         unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
                 else:
                     print(f'{true_taxon} with {num_reads} reads is not in {args.tool} model')
-                    problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
+                    problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
             else:
                 print(f'ground truth unknown: {true_taxon}\t{num_reads}')
-                problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
+                problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
 
             total_num_reads += num_reads
 
         if 'unclassified' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth])
+            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na'])
         if 'na' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth])
+            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na'])
 
-        out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t {problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
+        print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}')
+        out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
 
         accuracy_whole = round(correct_predictions/cm.to_numpy().sum(), 5) if cm.to_numpy().sum() > 0 else 0
         accuracy_classified = round(correct_predictions/classified_reads, 5) if classified_reads > 0 else 0
