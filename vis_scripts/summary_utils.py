@@ -24,6 +24,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_in
     return cm
 
 def get_metrics(args, cm, r_name, r_index):
+    print(r_name)
     taxa_in_dl_toda = set([v.split(';')[r_index] for v in args.dl_toda_tax.values()])
     outfilename = os.path.join(args.output_dir, f'{r_name}-metrics')
     if args.zeros:
