@@ -38,15 +38,10 @@ def create_cm(args):
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
         # create confusion matrix
-        # all_cm = {}
         for r_name, r_index in args.ranks.items():
             cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_index)
-            # all_cm[r_name] = cm
-            print(r_name)
-            print(cm.to_numpy().sum())
             # store confusion matrices in excel file
             with pd.ExcelWriter(os.path.join(args.output_dir, f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')) as writer:
-                # for r_name, r_cm in all_cm.items():
                 cm.to_excel(writer, sheet_name=f'{r_name}')
 
 def main():
