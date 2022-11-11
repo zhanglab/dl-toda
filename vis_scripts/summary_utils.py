@@ -40,6 +40,7 @@ def get_metrics(args, cm, r_name, r_index):
         unclassified_reads = 0
         problematic_reads = 0
         total_num_reads = 0
+        missing_true_taxa = []
         for true_taxon in ground_truth:
             # get number of reads in testing dataset for given taxon
             num_reads = sum([cm.loc[i, true_taxon] for i in predicted_taxa])
@@ -64,19 +65,20 @@ def get_metrics(args, cm, r_name, r_index):
                             print(f'{true_taxon} has a precision/recall/F1 scores equal to 0')
                             out_f.write(f'{true_taxon}\tnot in predicted taxa\t{num_reads}\t0\t0\t0\t0\t0\t{num_reads}\n')
                             unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
+                            missing_true_taxa.append(true_taxon)
                 else:
                     print(f'{true_taxon} with {num_reads} reads is not in {args.tool} model')
                     problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
             else:
-                print(f'ground truth unknown: {true_taxon}\t{num_reads}')
+                print(f'ground truth unknown: {true_taxon}\t{num_reads}') # true taxa are names 'na'
                 problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
 
             total_num_reads += num_reads
 
         if 'unclassified' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na'])
+            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na' or i not in missing_true_taxa])
         if 'na' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na'])
+            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' or i not in missing_true_taxa])
 
         print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}')
         out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
