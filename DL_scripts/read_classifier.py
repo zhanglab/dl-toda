@@ -143,7 +143,7 @@ def main():
 
     # load model
     if args.ckpt is not None:
-        model = AlexNet(VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE)
+        model = AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(f'{args.ckpt}-{args.epoch}').expect_partial()
     elif args.model is not None:
