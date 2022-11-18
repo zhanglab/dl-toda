@@ -64,8 +64,8 @@ def get_metrics(args, cm, r_name, r_index):
                         if args.zeros:
                             print(f'{true_taxon} has a precision/recall/F1 scores equal to 0')
                             out_f.write(f'{true_taxon}\tnot in predicted taxa\t{num_reads}\t0\t0\t0\t0\t0\t{num_reads}\n')
-                            unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa if i not in ('unclassified', 'na')])
-                            missing_true_taxa.append(true_taxon)
+                            unclassified_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
+                        missing_true_taxa.append(true_taxon)
                 else:
                     print(f'{true_taxon} with {num_reads} reads is not in {args.tool} model')
                     problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
