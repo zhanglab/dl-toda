@@ -16,7 +16,6 @@ import numpy as np
 import math
 from collections import defaultdict
 import argparse
-import pandas as pd
 
 # disable eager execution
 # tf.compat.v1.disable_eager_execution()
