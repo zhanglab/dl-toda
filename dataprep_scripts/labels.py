@@ -41,7 +41,7 @@ def get_genomes(tax_file):
 
 
 def main():
-    tax_file = sys.argv[1] # tsv file with genome and their assigned gtdb taxonomy
+    tax_file = sys.argv[1] # tsv file with genome and their assigned gtdb or ncbi taxonomy
     rank = sys.argv[2] # rank
 
     ranks = {'species': 1, 'genus': 2, 'family': 3, 'order': 4, 'class': 5, 'phylum': 6}
