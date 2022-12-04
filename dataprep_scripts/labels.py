@@ -19,7 +19,7 @@ def get_genomes(tax_file, rank_index):
     genomes = defaultdict(list) # key = taxon, value = list of genomes
     with open(tax_file, 'r') as inf:
         for line in inf:
-            genomes[";".join(line.rstrip().split('\t')[rank_index+1:])].append(line.rstrip().split('\t')[0])
+            genomes[";".join(line.rstrip().split('\t')[rank_index+1:7])].append(line.rstrip().split('\t')[0])
     # create dictionary mapping labels to taxa
     taxa = list(set(genomes.keys()))
     taxa2labels = dict(zip(taxa,list(range(len(taxa))))) # key = taxon, value = label
