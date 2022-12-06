@@ -12,7 +12,7 @@ def main():
     path_to_art = sys.argv[6]
 
     genome_id = input_data.rstrip().split('\t')[0]
-    fasta_file = glob.glob(os.path.join(input_dir, f'*{genome_id}*.fna'))
+    fasta_file = glob.glob(os.path.join(input_dir, f'*{genome_id}*.fna'))[0]
 
     output_file = os.path.join(output_dir, genome_id)
     label = input_data.rstrip().split('\t')[1]
