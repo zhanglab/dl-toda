@@ -19,12 +19,10 @@ def main():
     prefix_id = f'label|{label}|-'
 
     fold_coverage = coverage #the fold of read coverage to be simulated or number of reads/read pairs generated for each amplicon
-    mean_frag_length = 200 #the mean size of DNA/RNA fragments for paired-end simulations
-    sdev_frag_length = 10 #the standard deviation of DNA/RNA fragment size for paired-end simulations
 
     print(f'fasta file: {fasta_file}\nread length: {read_length}\ncoverage: {coverage}\ngenome id: {genome_id}\noutput file: {output_file}\nfold coverage: {fold_coverage}\tmean fragment length: {mean_frag_length}\tstandard deviation fragment length: {sdev_frag_length}')
 
-    result = subprocess.run([path_to_art, '-ss', 'MSv1', '-i', f'{fasta_file}', '-d', f'{prefix_id}', '-na', '-s', f'{sdev_frag_length}', '-m', f'{mean_frag_length}', '-l', f'{read_length}', '-f', f'{fold_coverage}', '-p', '-o', f'{output_file}'])
+    result = subprocess.run([path_to_art, '-ss', 'MSv1', '-i', f'{fasta_file}', '-d', f'{prefix_id}', '-na', '-l', f'{read_length}', '-f', f'{fold_coverage}', '-p', '-o', f'{output_file}'])
 
 if __name__ == "__main__":
     main()
