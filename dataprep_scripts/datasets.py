@@ -92,7 +92,7 @@ def main():
 
     with open(labels_file, 'r') as f:
         labels2taxa = json.load(f)
-        taxa2labels = {v:k for k, v in labels.items()}
+        taxa2labels = {v:k for k, v in labels2taxa.items()}
 
     with open(file_w_genomes) as f:
         content = f.readlines()
