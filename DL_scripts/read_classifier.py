@@ -160,113 +160,118 @@ def main():
     test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
     read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
-
+    print(len(test_files))
+    print(len(test_idx_files))
+    print(len(num_reads_files))
+    print(len(read_ids_files))
     # split tfrecords between gpus
     test_files_per_gpu = len(test_files)//hvd.size()
-    if hvd.rank() != hvd.size() - 1:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
-    else:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+    print(test_files_per_gpu)
 
-    elapsed_time = []
-    num_reads_classified = 0
-    for i in range(len(gpu_test_files)):
-        start_time = time.time()
-        # get number of reads in test file
-        with open(os.path.join(args.tfrecords, gpu_num_reads_files[i]), 'r') as f:
-            num_reads = int(f.readline())
-        num_reads_classified += num_reads
-        # compute number of steps required to iterate over entire test set
-        test_steps = math.ceil(num_reads/(args.batch_size))
-
-        num_preprocessing_threads = 4
-        test_preprocessor = DALIPreprocessor(gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, num_preprocessing_threads, dali_cpu=True, deterministic=False, training=False)
-
-        test_input = test_preprocessor.get_device_dataset()
-
-        # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
-        # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
-        all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        for batch, (reads, labels) in enumerate(test_input.take(test_steps), 1):
-            if args.data_type == 'meta':
-                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-            elif args.data_type == 'sim':
-                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-
-            if batch == 1:
-                all_labels = [labels]
-                all_pred_sp = [batch_pred_sp]
-                all_prob_sp = [batch_prob_sp]
-                # all_predictions = batch_predictions
-            else:
-                # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
-                all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
-                all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
-                all_labels = tf.concat([all_labels, [labels]], 1)
-
-        # get list of true species, predicted species and predicted probabilities
-        # all_predictions = all_predictions.numpy()
-        all_pred_sp = all_pred_sp[0].numpy()
-        all_prob_sp = all_prob_sp[0].numpy()
-        all_labels = all_labels[0].numpy()
-
-        # adjust the list of predicted species and read ids if necessary
-        if len(all_labels) > num_reads:
-            num_extra_reads = (test_steps*args.batch_size) - num_reads
-            # all_predictions = all_predictions[:-num_extra_reads]
-            all_pred_sp = all_pred_sp[:-num_extra_reads]
-            all_prob_sp = all_prob_sp[:-num_extra_reads]
-            all_labels = all_labels[:-num_extra_reads]
-
-        if args.data_type == 'meta':
-            # get dictionary mapping read ids to labels
-            with open(os.path.join(args.tfrecords, gpu_read_ids_files[i]), 'r') as f:
-                content = f.readlines()
-                dict_read_ids = {content[j].rstrip().split('\t')[1]: '@' + content[j].rstrip().split('\t')[0] for j in range(len(content))}
-            # write results to file
-            with open(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv'), 'w') as out_f:
-                for j in range(num_reads):
-                    out_f.write(f'{dict_read_ids[str(all_labels[j])]}\t\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-
-        elif args.data_type == 'sim':
-            # write results to file
-            out_filename = os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(gpu_test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(gpu_test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
-            with open(out_filename, 'w') as out_f:
-                for j in range(num_reads):
-                    out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-
-        end_time = time.time()
-        elapsed_time = np.append(elapsed_time, end_time - start_time)
-
-    end = datetime.datetime.now()
-    total_time = end - start
-    hours, seconds = divmod(total_time.seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-
-    with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
-        outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(gpu_test_files)}\t{num_reads_classified}\t')
-        if args.data_type == 'sim':
-            outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
-        if args.ckpt:
-            outfile.write(f'{args.epoch}')
-        else:
-            outfile.write(f'model saved at last epoch')
-        outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
-
-        if len(elapsed_time) > 1:
-            outfile.write(f'{(num_reads_classified / elapsed_time.sum())} reads/sec\n')
-        else:
-            outfile.write(f'{(num_reads_classified / elapsed_time[0])} reads/sec\n')
+    # if hvd.rank() != hvd.size() - 1:
+    #     gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+    #     gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+    #     gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+    #     gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
+    # else:
+    #     gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+    #     gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+    #     gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+    #     gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+    #
+    # elapsed_time = []
+    # num_reads_classified = 0
+    # for i in range(len(gpu_test_files)):
+    #     start_time = time.time()
+    #     # get number of reads in test file
+    #     with open(os.path.join(args.tfrecords, gpu_num_reads_files[i]), 'r') as f:
+    #         num_reads = int(f.readline())
+    #     num_reads_classified += num_reads
+    #     # compute number of steps required to iterate over entire test set
+    #     test_steps = math.ceil(num_reads/(args.batch_size))
+    #
+    #     num_preprocessing_threads = 4
+    #     test_preprocessor = DALIPreprocessor(gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, num_preprocessing_threads, dali_cpu=True, deterministic=False, training=False)
+    #
+    #     test_input = test_preprocessor.get_device_dataset()
+    #
+    #     # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
+    #     # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
+    #     all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    #     all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    #     all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    #     for batch, (reads, labels) in enumerate(test_input.take(test_steps), 1):
+    #         if args.data_type == 'meta':
+    #             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
+    #             batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
+    #         elif args.data_type == 'sim':
+    #             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+    #             batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+    #
+    #         if batch == 1:
+    #             all_labels = [labels]
+    #             all_pred_sp = [batch_pred_sp]
+    #             all_prob_sp = [batch_prob_sp]
+    #             # all_predictions = batch_predictions
+    #         else:
+    #             # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
+    #             all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
+    #             all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
+    #             all_labels = tf.concat([all_labels, [labels]], 1)
+    #
+    #     # get list of true species, predicted species and predicted probabilities
+    #     # all_predictions = all_predictions.numpy()
+    #     all_pred_sp = all_pred_sp[0].numpy()
+    #     all_prob_sp = all_prob_sp[0].numpy()
+    #     all_labels = all_labels[0].numpy()
+    #
+    #     # adjust the list of predicted species and read ids if necessary
+    #     if len(all_labels) > num_reads:
+    #         num_extra_reads = (test_steps*args.batch_size) - num_reads
+    #         # all_predictions = all_predictions[:-num_extra_reads]
+    #         all_pred_sp = all_pred_sp[:-num_extra_reads]
+    #         all_prob_sp = all_prob_sp[:-num_extra_reads]
+    #         all_labels = all_labels[:-num_extra_reads]
+    #
+    #     if args.data_type == 'meta':
+    #         # get dictionary mapping read ids to labels
+    #         with open(os.path.join(args.tfrecords, gpu_read_ids_files[i]), 'r') as f:
+    #             content = f.readlines()
+    #             dict_read_ids = {content[j].rstrip().split('\t')[1]: '@' + content[j].rstrip().split('\t')[0] for j in range(len(content))}
+    #         # write results to file
+    #         with open(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv'), 'w') as out_f:
+    #             for j in range(num_reads):
+    #                 out_f.write(f'{dict_read_ids[str(all_labels[j])]}\t\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
+    #
+    #     elif args.data_type == 'sim':
+    #         # write results to file
+    #         out_filename = os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(gpu_test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(gpu_test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
+    #         with open(out_filename, 'w') as out_f:
+    #             for j in range(num_reads):
+    #                 out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
+    #
+    #     end_time = time.time()
+    #     elapsed_time = np.append(elapsed_time, end_time - start_time)
+    #
+    # end = datetime.datetime.now()
+    # total_time = end - start
+    # hours, seconds = divmod(total_time.seconds, 3600)
+    # minutes, seconds = divmod(seconds, 60)
+    #
+    # with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
+    #     outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(gpu_test_files)}\t{num_reads_classified}\t')
+    #     if args.data_type == 'sim':
+    #         outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
+    #     if args.ckpt:
+    #         outfile.write(f'{args.epoch}')
+    #     else:
+    #         outfile.write(f'model saved at last epoch')
+    #     outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
+    #
+    #     if len(elapsed_time) > 1:
+    #         outfile.write(f'{(num_reads_classified / elapsed_time.sum())} reads/sec\n')
+    #     else:
+    #         outfile.write(f'{(num_reads_classified / elapsed_time[0])} reads/sec\n')
 
 
 if __name__ == "__main__":
