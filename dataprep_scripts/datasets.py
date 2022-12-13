@@ -96,7 +96,7 @@ def main():
 
     with open(file_w_genomes) as f:
         content = f.readlines()
-        genomes2labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1]}
+        genomes2labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
     if not os.path.exists(os.path.join(output_dir, 'training')):
         os.makedirs(os.path.join(output_dir, 'training'))
