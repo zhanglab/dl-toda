@@ -34,7 +34,7 @@ def create_sets(reads, set_type, taxa2labels):
                 outfile.write(''.join(list_reads[i:i+num_reads_per_set]))
 
 
-def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_id, set_type, train_reads, val_reads):
+def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_id, train_reads, val_reads):
 
     # create directories to store output fq files
     process_train_reads = 0
