@@ -45,7 +45,7 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
         os.makedirs(os.path.join(output_dir, 'validation', f'reads-{process_id}'))
 
     for fq_file in grouped_files:
-        genome = fq_file.rstrip().split('/')[-1].split('-')[0]
+        genome = fq_file.rstrip().split('/')[-1][:-4]
         label = genomes2labels[genome]
         with open(fq_file, 'r') as f:
             content = f.readlines()
