@@ -12,6 +12,7 @@ def create_sets(reads, set_type, taxa2labels, output_dir):
     num_reads = 0
     for process, process_reads in reads.items():
         num_reads += process_reads
+    print(num_reads)
     num_sets = math.ceil(num_reads/20000000)
 
     genome_out = open(os.path.join(output_dir, f'{set_type}-genome-read-count'), 'w')
