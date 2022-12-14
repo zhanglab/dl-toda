@@ -7,7 +7,7 @@ from collections import defaultdict
 import glob
 import multiprocessing as mp
 
-def create_sets(reads, set_type, taxa2labels):
+def create_sets(reads, set_type, taxa2labels, output_dir):
     # calculate number of sets of reads
     num_reads = 0
     for process, process_reads in reads.items():
@@ -78,8 +78,8 @@ def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
         for p in processes:
             p.join()
 
-        create_sets(train_reads, 'training', taxa2labels)
-        create_sets(val_reads, 'validation', taxa2labels)
+        create_sets(train_reads, 'training', taxa2labels, output_dir)
+        create_sets(val_reads, 'validation', taxa2labels, output_dir)
 
 
 def main():
