@@ -59,6 +59,7 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
                 out_f.write(''.join(reads[num_train_reads:]))
             process_train_reads += num_train_reads
             process_val_reads += len(reads) - num_train_reads
+            print(num_train_reads, len(reads))
 
     reads[process_id] = process_train_reads
     val_reads[process_id] = process_val_reads
