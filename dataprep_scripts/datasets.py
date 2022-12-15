@@ -12,8 +12,8 @@ def create_sets(reads, set_type, taxa2labels, output_dir):
     num_reads = 0
     for process, process_reads in reads.items():
         num_reads += process_reads
-    print(num_reads)
-    num_sets = math.ceil(num_reads/20000000)
+
+    num_sets = math.ceil(num_reads/20000000) if num_reads > 20000000 else 1
 
     genome_out = open(os.path.join(output_dir, f'{set_type}-genome-read-count'), 'w')
     label_out = open(os.path.join(output_dir, f'{set_type}-label-read-count'), 'w')
@@ -59,7 +59,7 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
                 out_f.write(''.join(reads[num_train_reads:]))
             process_train_reads += num_train_reads
             process_val_reads += len(reads) - num_train_reads
-    print(process_train_reads, process_val_reads)
+
     train_reads[process_id] = process_train_reads
     val_reads[process_id] = process_val_reads
 
