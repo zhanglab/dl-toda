@@ -7,6 +7,12 @@ from collections import defaultdict
 import glob
 import multiprocessing as mp
 
+def load_fq_file(fq_file):
+    with open(fq_file, 'r') as f:
+        content = f.readlines()
+        reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
+        return reads
+
 def create_sets(reads, set_type, taxa2labels, output_dir):
     # calculate number of sets of reads
     num_reads = 0
@@ -36,7 +42,7 @@ def create_sets(reads, set_type, taxa2labels, output_dir):
                 outfile.write(''.join(list_reads[i:i+num_reads_per_set]))
 
 
-def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_id, train_reads, val_reads):
+def split_reads(grouped_genomes, input_dir, output_dir, genomes2labels, taxa2labels, process_id, train_reads, val_reads):
 
     # create directories to store output fq files
     process_train_reads = 0
@@ -46,35 +52,35 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
     if not os.path.exists(os.path.join(output_dir, 'val', f'reads-{process_id}')):
         os.makedirs(os.path.join(output_dir, 'val', f'reads-{process_id}'))
 
-    for fq_file in grouped_files:
-        genome = fq_file.rstrip().split('/')[-1][:-4]
+    for genome in grouped_genomes:
         label = genomes2labels[genome]
-        with open(fq_file, 'r') as f:
-            content = f.readlines()
-            reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
-            random.shuffle(reads)
-            num_train_reads = math.ceil(0.7*len(reads))
-            with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{genome}-{label}.fq'), 'w') as out_f:
-                out_f.write(''.join(reads[:num_train_reads]))
-            with open(os.path.join(output_dir, 'val', f'reads-{process_id}', f'val-{genome}-{label}.fq'), 'w') as out_f:
-                out_f.write(''.join(reads[num_train_reads:]))
-            process_train_reads += num_train_reads
-            process_val_reads += len(reads) - num_train_reads
+        reads = []
+        reads += load_fq_file(os.path.join(input_dir, f'{genome}1.fq'))
+        reads += load_fq_file(os.path.join(input_dir, f'{genome}2.fq'))
+        print(f'{genome}\t{label}{len(reads)}')
+        random.shuffle(reads)
+        num_train_reads = math.ceil(0.7*len(reads))
+        with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{genome}-{label}.fq'), 'w') as out_f:
+            out_f.write(''.join(reads[:num_train_reads]))
+        with open(os.path.join(output_dir, 'val', f'reads-{process_id}', f'val-{genome}-{label}.fq'), 'w') as out_f:
+            out_f.write(''.join(reads[num_train_reads:]))
+        process_train_reads += num_train_reads
+        process_val_reads += len(reads) - num_train_reads
 
     train_reads[process_id] = process_train_reads
     val_reads[process_id] = process_val_reads
 
 
 def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
-    # get list of fastq files in input directory
-    fq_files = glob.glob(os.path.join(input_dir, '*.fq'))
-    chunk_size = math.ceil(len(fq_files)/mp.cpu_count())
-    grouped_files = [fq_files[i:i+chunk_size] for i in range(0,len(fq_files),chunk_size)]
-
+    # get list of genomes to analyze by processors
+    genomes = list(genomes2labels.keys())
+    chunk_size = math.ceil(len(genomes)/mp.cpu_count())
+    grouped_genomes = [genomes[i:i+chunk_size] for i in range(0,len(genomes),chunk_size)]
+    print(len(grouped_genomes), chunk_size)
     with mp.Manager() as manager:
         train_reads = manager.dict()
         val_reads = manager.dict()
-        processes = [mp.Process(target=split_reads, args=(grouped_files[i], output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_files))]
+        processes = [mp.Process(target=split_reads, args=(grouped_genomes[i], input_dir, output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_genomes))]
         for p in processes:
             p.start()
         for p in processes:
