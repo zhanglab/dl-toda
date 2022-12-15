@@ -4,6 +4,7 @@ import random
 import math
 import json
 from collections import defaultdict
+import shutil
 import glob
 import multiprocessing as mp
 
@@ -88,6 +89,10 @@ def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
 
         create_sets(train_reads, 'train', taxa2labels, output_dir)
         create_sets(val_reads, 'val', taxa2labels, output_dir)
+
+    # remove temporary directories
+    shutil.rmtree(os.path.join(output_dir, 'train'))
+    shutil.rmtree(os.path.join(output_dir, 'val'))
 
 
 def main():
