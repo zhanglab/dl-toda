@@ -57,7 +57,7 @@ def split_reads(grouped_genomes, input_dir, output_dir, genomes2labels, taxa2lab
         reads = []
         reads += load_fq_file(os.path.join(input_dir, f'{genome}1.fq'))
         reads += load_fq_file(os.path.join(input_dir, f'{genome}2.fq'))
-        print(f'{genome}\t{label}{len(reads)}')
+        print(f'{genome}\t{label}\t{len(reads)}')
         random.shuffle(reads)
         num_train_reads = math.ceil(0.7*len(reads))
         with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{genome}-{label}.fq'), 'w') as out_f:
