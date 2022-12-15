@@ -41,10 +41,10 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
     # create directories to store output fq files
     process_train_reads = 0
     process_val_reads = 0
-    if not os.path.exists(os.path.join(output_dir, 'training', f'reads-{process_id}')):
-        os.makedirs(os.path.join(output_dir, 'training', f'reads-{process_id}'))
-    if not os.path.exists(os.path.join(output_dir, 'validation', f'reads-{process_id}')):
-        os.makedirs(os.path.join(output_dir, 'validation', f'reads-{process_id}'))
+    if not os.path.exists(os.path.join(output_dir, 'train', f'reads-{process_id}')):
+        os.makedirs(os.path.join(output_dir, 'train', f'reads-{process_id}'))
+    if not os.path.exists(os.path.join(output_dir, 'val', f'reads-{process_id}')):
+        os.makedirs(os.path.join(output_dir, 'val', f'reads-{process_id}'))
 
     for fq_file in grouped_files:
         genome = fq_file.rstrip().split('/')[-1][:-4]
@@ -54,9 +54,9 @@ def split_reads(grouped_files, output_dir, genomes2labels, taxa2labels, process_
             reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
             random.shuffle(reads)
             num_train_reads = math.ceil(0.7*len(reads))
-            with open(os.path.join(output_dir, 'training', f'reads-{process_id}', f'train-{genome}-{label}.fq'), 'w') as out_f:
+            with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{genome}-{label}.fq'), 'w') as out_f:
                 out_f.write(''.join(reads[:num_train_reads]))
-            with open(os.path.join(output_dir, 'validation', f'reads-{process_id}', f'val-{genome}-{label}.fq'), 'w') as out_f:
+            with open(os.path.join(output_dir, 'val', f'reads-{process_id}', f'val-{genome}-{label}.fq'), 'w') as out_f:
                 out_f.write(''.join(reads[num_train_reads:]))
             process_train_reads += num_train_reads
             process_val_reads += len(reads) - num_train_reads
@@ -80,8 +80,8 @@ def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
         for p in processes:
             p.join()
 
-        create_sets(train_reads, 'training', taxa2labels, output_dir)
-        create_sets(val_reads, 'validation', taxa2labels, output_dir)
+        create_sets(train_reads, 'train', taxa2labels, output_dir)
+        create_sets(val_reads, 'val', taxa2labels, output_dir)
 
 
 def main():
@@ -100,10 +100,10 @@ def main():
         content = f.readlines()
         genomes2labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-    if not os.path.exists(os.path.join(output_dir, 'training')):
-        os.makedirs(os.path.join(output_dir, 'training'))
-    if not os.path.exists(os.path.join(output_dir, 'validation')):
-        os.makedirs(os.path.join(output_dir, 'validation'))
+    if not os.path.exists(os.path.join(output_dir, 'train')):
+        os.makedirs(os.path.join(output_dir, 'train'))
+    if not os.path.exists(os.path.join(output_dir, 'val')):
+        os.makedirs(os.path.join(output_dir, 'val'))
     create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels)
 
 
