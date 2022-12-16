@@ -75,7 +75,7 @@ def main():
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
 
     args = parser.parse_args()
-    args.output_prefix = args.input_fastq.split('/')[-1].split('.')[0]
+    args.output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
     args.kmer_vector_length = args.read_length - args.k_value + 1
     # get dictionary mapping kmers to indexes
     args.dict_kmers = vocab_dict(args.vocab)
