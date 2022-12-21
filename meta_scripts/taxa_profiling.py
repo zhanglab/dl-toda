@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import math
+import glob
 from collections import defaultdict
 import multiprocessing as mp
 
@@ -22,7 +23,7 @@ def parse_data(data, args, results, process_id):
         if prob_score > args.cutoff:
             process_results[label] += 1
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'{label}-{process_id}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}.fq')
+                fq_filename = os.path.join(args.output_dir, f'{label}-{process_id}-tmp.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}-tmp.fq')
                 with open(fq_filename, 'a') as out_fq:
                     out_fq.write(args.reads[str(line.split('\t')[0])])
 
@@ -63,27 +64,26 @@ if __name__ == "__main__":
         # load reads
         load_reads(args)
 
+    # load dl-toda taxonomy
     args.dl_toda_taxonomy = {}
     with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
         for line in in_f:
             line = line.rstrip().split('\t')
-            args.dl_toda_taxonomy[int(line[0])] = '\t'.join(line[index].split(';'))
+            args.dl_toda_taxonomy[int(line[0])] = line[index].split(';')
 
+    # split data amongst processes
     with open(args.dl_toda_output, 'r') as f:
         content = f.readlines()
     chunk_size = math.ceil(len(content)/args.processes)
     data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
-    print(chunk_size, args.processes, len(data_split), len(data_split[0]))
 
     with mp.Manager() as manager:
-        results = manager.dict() # dictionary with key = read id and value = predicted taxon
+        results = manager.dict()
         processes = [mp.Process(target=parse_data, args=(data_split[i], args, results, i)) for i in range(len(data_split))]
         for p in processes:
             p.start()
         for p in processes:
             p.join()
-
-        print(f'#reads: {len(results)}')
 
         # create file with taxonomic profiles
         with open(args.output_file, 'w') as out_f:
@@ -93,4 +93,14 @@ if __name__ == "__main__":
                     for label, read_count in process_results.items():
                         if label == k:
                             num_reads += read_count
-                out_f.write(f'{v}\t{num_reads}\n')
+                taxonomy = '\t'.join(v)
+                out_f.write(f'{taxonomy}\t{num_reads}\n')
+
+            if args.binning:
+                # combine fastq files
+                prefix = k if args.rank == 'species' else v[args.ranks[args.rank]]
+                fq_files = sorted(glob.glob(os.path.join(args.output_dir, f"{prefix}-*.fq")))
+                with open(os.path.join(args.output_dir, f'{prefix}-bin.fq'), 'w') as out_fq:
+                    for fq in fq_files:
+                        with open(fq, 'r') as in_fq:
+                            out_fq.write(in_fq.read())
