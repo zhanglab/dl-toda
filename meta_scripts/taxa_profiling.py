@@ -98,13 +98,14 @@ if __name__ == "__main__":
                 taxonomy = '\t'.join(v)
                 out_f.write(f'{taxonomy}\t{num_reads}\n')
 
-            if args.binning:
-                # combine fastq files
-                prefix = k if args.rank == 'species' else v[args.ranks[args.rank]]
-                fq_files = sorted(glob.glob(os.path.join(args.output_dir, 'tmp', f'{prefix}-*-tmp.fq')))
-                with open(os.path.join(args.output_dir, f'{prefix}-bin.fq'), 'w') as out_fq:
-                    for fq in fq_files:
-                        with open(fq, 'r') as in_fq:
-                            out_fq.write(in_fq.read())
-                # remove tmp fq files
-                shutil.rmtree(os.path.join(args.output_dir, 'tmp'))
+                if args.binning:
+                    # combine fastq files
+                    prefix = k if args.rank == 'species' else v[args.ranks[args.rank]]
+                    fq_files = sorted(glob.glob(os.path.join(args.output_dir, 'tmp', f'{prefix}-*-tmp.fq')))
+                    with open(os.path.join(args.output_dir, f'{prefix}-bin.fq'), 'w') as out_fq:
+                        for fq in fq_files:
+                            with open(fq, 'r') as in_fq:
+                                out_fq.write(in_fq.read())
+        if args.binning:
+            # remove tmp fq files
+            shutil.rmtree(os.path.join(args.output_dir, 'tmp'))
