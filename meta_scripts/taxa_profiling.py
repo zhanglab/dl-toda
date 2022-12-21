@@ -24,7 +24,7 @@ def parse_data(data, args, results, process_id):
             if args.binning:
                 fq_filename = os.path.join(args.output_dir, f'{label}-{process_id}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}.fq')
                 with open(fq_filename, 'a') as out_fq:
-                    out_fq.write(args.reads[read_id])
+                    out_fq.write(args.reads[str(line.split('\t')[0])])
 
     results[process_id]= process_results
 
