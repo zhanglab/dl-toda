@@ -70,7 +70,7 @@ if __name__ == "__main__":
             p.start()
         for p in processes:
             p.join()
-        print(f'#reads: len(results)}')
+        print(f'#reads: {len(results)}')
 
 
         # if args.binning:
