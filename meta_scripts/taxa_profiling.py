@@ -59,6 +59,10 @@ if __name__ == "__main__":
     # define name of output file with taxonomic profiles
     args.output_file = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-out.tsv')
 
+    if args.binning:
+        # load reads
+        load_reads(args)
+        
     args.dl_toda_taxonomy = {}
     with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
         for line in in_f:
@@ -80,10 +84,6 @@ if __name__ == "__main__":
             p.join()
 
         print(f'#reads: {len(results)}')
-
-        if args.binning:
-            # load reads
-            load_reads(args)
 
         # create file with taxonomic profiles
         with open(args.output_file, 'w') as out_f:
