@@ -19,10 +19,11 @@ def parse_data(data, args, results, process_id):
     for line in data:
         taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])].split('\t')[args.ranks[args.rank]]
         prob_score = float(line.split('\t')[3])
+        label = int(line.split('\t')[2])
         if prob_score > args.cutoff:
-            process_results[int(line.split('\t')[2])] += 1
+            process_results[label] += 1
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'{k}-{process_id}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}.fq')
+                fq_filename = os.path.join(args.output_dir, f'{label}-{process_id}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}.fq')
                 with open(fq_filename, 'a') as out_fq:
                     out_fq.write(args.reads[read_id])
 
