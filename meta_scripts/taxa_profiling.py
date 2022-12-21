@@ -14,13 +14,18 @@ def load_reads(args):
     return reads
 
 def parse_data(data, args, results, process_id):
+    process_results = defaultdict(int)
     for line in data:
         taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])].split('\t')[args.ranks[args.rank]]
         prob_score = float(line.split('\t')[3])
         if prob_score > args.cutoff:
-            if process_id == 0:
-                print(f'{process_id}\tabove cutoff\t{prob_score}')
-            results[line.split('\t')[0]] = taxon
+            process_results[int(line.split('\t')[2])] += 1
+            if args.binning:
+                fq_filename = os.path.join(args.output_dir, f'{k}-{process_id}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}.fq')
+                with open(fq_filename, 'a') as out_fq:
+                    out_fq.write(args.reads[read_id])
+
+    results[process_id]= process_results
 
 
 if __name__ == "__main__":
@@ -64,6 +69,7 @@ if __name__ == "__main__":
     chunk_size = math.ceil(len(content)/args.processes)
     data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
     print(chunk_size, args.processes, len(data_split), len(data_split[0]))
+
     with mp.Manager() as manager:
         results = manager.dict() # dictionary with key = read id and value = predicted taxon
         processes = [mp.Process(target=parse_data, args=(data_split[i], args, results, i)) for i in range(len(data_split))]
@@ -71,24 +77,20 @@ if __name__ == "__main__":
             p.start()
         for p in processes:
             p.join()
+
         print(f'#reads: {len(results)}')
 
+        if args.binning:
+            # load reads
+            args.reads = load_reads(args)
 
-        # if args.binning:
-        #     # create bins of reads
-        #     args.reads = load_reads(args)
-        #
-        # # create file with taxonomic profiles
-        # with open(args.output_file, 'w') as out_f:
-        #     for k, v in args.dl_toda_taxonomy.items():
-        #         taxon = v[args.ranks[args.rank]]
-        #         num_reads = 0
-        #         for read_id, predicted_taxon in results.items():
-        #             if predicted_taxon == taxon:
-        #                 num_reads += 1
-        #             if args.binning:
-        #                 fq_filename = os.path.join(args.output_dir, f'{k}') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}.fq')
-        #                 with open(fq_filename, 'a') as out_fq:
-        #                     out_fq.write(args.reads[read_id])
-        #
-        #         out_f.write(f'{v}\t{num_reads}\n')
+        # create file with taxonomic profiles
+        with open(args.output_file, 'w') as out_f:
+            for k, v in args.dl_toda_taxonomy.items():
+                print(f'{k}\t{v}')
+                num_reads = 0
+                for process_id, process_results in results.items():
+                    for label, read_count in process_results.items():
+                        if label == k:
+                            num_reads += read_count
+                out_f.write(f'{v}\t{num_reads}\n')
