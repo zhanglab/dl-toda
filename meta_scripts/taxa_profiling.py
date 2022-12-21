@@ -54,9 +54,10 @@ if __name__ == "__main__":
         index = 1
 
     # update and create output directory
-    args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}', 'tmp')
+    args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+        os.makedirs(os.path.join(args.output_dir, 'tmp'))
 
     # define name of output file with taxonomic profiles
     args.output_file = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-out.tsv')
