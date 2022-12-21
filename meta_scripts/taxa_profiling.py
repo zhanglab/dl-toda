@@ -1,13 +1,8 @@
 import argparse
 import sys
 import os
-import re
-import json
 import math
 import multiprocessing as mp
-import pandas as pd
-# import gzip
-from collections import defaultdict
 
 def load_reads(args):
     # with gzip.open(args.fastq, 'rt') as handle:
@@ -22,21 +17,23 @@ def parse_data(data, args, results, process_id):
     for line in data:
         taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])].split('\t')[args.ranks[args.rank]]
         if float(line.split('\t')[3]) > args.cutoff:
+            if process_id == 0:
+                print(f'{process_id}\tabove cutoff')
             results[line.split('\t')[0]] = taxon
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dl_toda_output', type=str, help='output file with predicted species obtained from running DL-TODA')
+    parser.add_argument('--dl_toda_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
     parser.add_argument('--fastq', type=str, help='path to sample gzipped fastq file')
     parser.add_argument('--binning', help='bin reads', action='store_true', required=('--fastq' in sys.argv))
-    parser.add_argument('--processes', type=int, help='number of processes')
+    parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--rank', type=str, help='taxonomic rank at which the analysis should be done', default='species')
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], required=True)
     args = parser.parse_args()
 
     args.ranks = {'phylum': 5, 'class': 4, 'order': 3, 'family': 2, 'genus': 1, 'species': 0}
@@ -73,23 +70,24 @@ if __name__ == "__main__":
             p.start()
         for p in processes:
             p.join()
+        print(f'#reads: len(results)}')
 
 
-        if args.binning:
-            # create bins of reads
-            args.reads = load_reads(args)
-
-        # create file with taxonomic profiles
-        with open(args.output_file, 'w') as out_f:
-            for k, v in args.dl_toda_taxonomy.items():
-                taxon = v[args.ranks[args.rank]]
-                num_reads = 0
-                for read_id, predicted_taxon in results.items():
-                    if predicted_taxon == taxon:
-                        num_reads += 1
-                    if args.binning:
-                        fq_filename = os.path.join(args.output_dir, f'{k}') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}.fq')
-                        with open(fq_filename, 'a') as out_fq:
-                            out_fq.write(args.reads[read_id])
-
-                out_f.write(f'{v}\t{num_reads}\n')
+        # if args.binning:
+        #     # create bins of reads
+        #     args.reads = load_reads(args)
+        #
+        # # create file with taxonomic profiles
+        # with open(args.output_file, 'w') as out_f:
+        #     for k, v in args.dl_toda_taxonomy.items():
+        #         taxon = v[args.ranks[args.rank]]
+        #         num_reads = 0
+        #         for read_id, predicted_taxon in results.items():
+        #             if predicted_taxon == taxon:
+        #                 num_reads += 1
+        #             if args.binning:
+        #                 fq_filename = os.path.join(args.output_dir, f'{k}') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}.fq')
+        #                 with open(fq_filename, 'a') as out_fq:
+        #                     out_fq.write(args.reads[read_id])
+        #
+        #         out_f.write(f'{v}\t{num_reads}\n')
