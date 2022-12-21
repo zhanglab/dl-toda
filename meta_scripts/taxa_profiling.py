@@ -3,6 +3,7 @@ import sys
 import os
 import math
 import glob
+import shutil
 from collections import defaultdict
 import multiprocessing as mp
 
@@ -99,8 +100,10 @@ if __name__ == "__main__":
             if args.binning:
                 # combine fastq files
                 prefix = k if args.rank == 'species' else v[args.ranks[args.rank]]
-                fq_files = sorted(glob.glob(os.path.join(args.output_dir, f"{prefix}-*.fq")))
+                fq_files = sorted(glob.glob(os.path.join(args.output_dir, f'{prefix}-*-tmp.fq')))
                 with open(os.path.join(args.output_dir, f'{prefix}-bin.fq'), 'w') as out_fq:
                     for fq in fq_files:
                         with open(fq, 'r') as in_fq:
                             out_fq.write(in_fq.read())
+                # remove tmp fq files
+                shutil.rmtree(os.path.join(args.output_dir, f'{prefix}-*-tmp.fq'))
