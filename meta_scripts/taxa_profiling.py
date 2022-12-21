@@ -10,8 +10,8 @@ def load_reads(args):
     with open(args.fastq, 'r') as handle:
         content = handle.readlines()
         records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-        args.reads = {rec.split('\n')[0]: rec for rec in records}
-        print(len(records), len(args.reads))
+        # args.reads = {rec.split('\n')[0]: rec for rec in records}
+        print(len(records))
 
 def parse_data(data, args, results, process_id):
     process_results = defaultdict(int)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     if args.binning:
         # load reads
         load_reads(args)
-        
+
     args.dl_toda_taxonomy = {}
     with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
         for line in in_f:
