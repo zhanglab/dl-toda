@@ -24,7 +24,7 @@ def parse_data(data, args, results, process_id):
         if prob_score > args.cutoff:
             process_results[label] += 1
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'{label}-{process_id}-tmp.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{taxon}-{process_id}-tmp.fq')
+                fq_filename = os.path.join(args.output_dir, 'tmp', f'{label}-{process_id}-tmp.fq') if args.rank == 'species' else os.path.join(args.output_dir, 'tmp', f'{taxon}-{process_id}-tmp.fq')
                 with open(fq_filename, 'a') as out_fq:
                     out_fq.write(args.reads[str(line.split('\t')[0])])
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         index = 1
 
     # update and create output directory
-    args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+    args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}', 'tmp')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
@@ -100,10 +100,10 @@ if __name__ == "__main__":
             if args.binning:
                 # combine fastq files
                 prefix = k if args.rank == 'species' else v[args.ranks[args.rank]]
-                fq_files = sorted(glob.glob(os.path.join(args.output_dir, f'{prefix}-*-tmp.fq')))
+                fq_files = sorted(glob.glob(os.path.join(args.output_dir, 'tmp', f'{prefix}-*-tmp.fq')))
                 with open(os.path.join(args.output_dir, f'{prefix}-bin.fq'), 'w') as out_fq:
                     for fq in fq_files:
                         with open(fq, 'r') as in_fq:
                             out_fq.write(in_fq.read())
                 # remove tmp fq files
-                shutil.rmtree(os.path.join(args.output_dir, f'{prefix}-*-tmp.fq'))
+                shutil.rmtree(os.path.join(args.output_dir, 'tmp'))
