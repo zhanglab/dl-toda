@@ -10,8 +10,8 @@ def load_reads(args):
     with open(args.fastq, 'r') as handle:
         content = handle.readlines()
         records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-        # args.reads = {rec.split('\n')[0]: rec for rec in records}
-        print(len(records))
+        args.reads = {rec.split('\n')[0]: rec for rec in records}
+        print(len(records), len(args.reads))
 
 def parse_data(data, args, results, process_id):
     process_results = defaultdict(int)
