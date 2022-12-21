@@ -18,7 +18,7 @@ def parse_data(data, args, results, process_id):
         taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])].split('\t')[args.ranks[args.rank]]
         if float(line.split('\t')[3]) > args.cutoff:
             if process_id == 0:
-                print(f'{process_id}\tabove cutoff')
+                print(f'{process_id}\tabove cutoff\t{line.split("\t")[3]}')
             results[line.split('\t')[0]] = taxon
 
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         content = f.readlines()
     chunk_size = math.ceil(len(content)/args.processes)
     data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
-
+    print(chunk_size, args.processes, len(data_split), len(data_split[0]))
     with mp.Manager() as manager:
         results = manager.dict() # dictionary with key = read id and value = predicted taxon
         processes = [mp.Process(target=parse_data, args=(data_split[i], args, results, i)) for i in range(len(data_split))]
