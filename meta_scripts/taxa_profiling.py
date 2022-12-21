@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import math
+from collections import defaultdict
 import multiprocessing as mp
 
 def load_reads(args):
