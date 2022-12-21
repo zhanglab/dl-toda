@@ -88,7 +88,6 @@ if __name__ == "__main__":
         # create file with taxonomic profiles
         with open(args.output_file, 'w') as out_f:
             for k, v in args.dl_toda_taxonomy.items():
-                print(f'{k}\t{v}')
                 num_reads = 0
                 for process_id, process_results in results.items():
                     for label, read_count in process_results.items():
