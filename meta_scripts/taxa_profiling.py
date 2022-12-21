@@ -18,7 +18,7 @@ def load_reads(args):
 def parse_data(data, args, results, process_id):
     process_results = defaultdict(int)
     for line in data:
-        taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])].split('\t')[args.ranks[args.rank]]
+        taxon = args.dl_toda_taxonomy[int(line.split('\t')[2])][args.ranks[args.rank]]
         prob_score = float(line.split('\t')[3])
         label = int(line.split('\t')[2])
         if prob_score > args.cutoff:
