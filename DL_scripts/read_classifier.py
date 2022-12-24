@@ -178,6 +178,7 @@ def main():
     elapsed_time = []
     num_reads_classified = 0
     for i in range(len(gpu_test_files)):
+        print(gpu_test_files[i])
         start_time = time.time()
         # get number of reads in test file
         with open(os.path.join(args.tfrecords, gpu_num_reads_files[i]), 'r') as f:
