@@ -66,5 +66,6 @@ def get_kmer_arr(args, read):
     if len(list_kmers) < args.kmer_vector_length:
         # pad list of kmers with 0s to the right
         list_kmers = list_kmers + [0] * (args.kmer_vector_length - len(list_kmers))
-    print(f'{len(list_kmers)}\t{args.kmer_vector_length}\t{len(read)}')
+    if len(list_kmers) == 240:
+        print(f'{len(list_kmers)}\t{args.kmer_vector_length}\t{len(read)}\t{read}')
     return np.array(list_kmers)
