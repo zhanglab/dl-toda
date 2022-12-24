@@ -25,7 +25,7 @@ def create_meta_tfrecords(args):
                 read_id = rec.description
                 outfile.write(f'{read_id}\t{count}\n')
                 kmer_array = get_kmer_arr(args, read)
-                break
+                
                 data = \
                     {
                         'read': wrap_read(kmer_array),
