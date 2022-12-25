@@ -57,6 +57,11 @@ def cut_read(args, read):
 
 def get_kmer_arr(args, read):
     """ Converts a DNA sequence split into a list of k-mers """
+
+    # adjust read length if above args.read_length
+    if len(read) > args.read_length:
+        read = read[:args.read_length]
+
     list_kmers = []
     for i in range(0, len(read)-args.k_value+1, 1):
         kmer = read[i:i + args.k_value]
