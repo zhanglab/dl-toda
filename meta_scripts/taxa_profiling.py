@@ -3,12 +3,13 @@ import sys
 import os
 import math
 import glob
+import gzip
 import shutil
 from collections import defaultdict
 import multiprocessing as mp
 
 def load_reads(args):
-    if args.dl_toda_output[-2:] == 'gz':
+    if args.fastq[-2:] == 'gz':
         with gzip.open(args.fastq, 'rt') as handle:
             content = handle.readlines()
     else:
