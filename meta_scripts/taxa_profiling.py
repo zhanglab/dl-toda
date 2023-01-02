@@ -8,12 +8,15 @@ from collections import defaultdict
 import multiprocessing as mp
 
 def load_reads(args):
-    # with gzip.open(args.fastq, 'rt') as handle:
-    with open(args.fastq, 'r') as handle:
-        content = handle.readlines()
-        records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-        args.reads = {rec.split('\n')[0]: rec for rec in records}
-        print(len(records), len(args.reads))
+    if args.dl_toda_output[-2:] == 'gz':
+        with gzip.open(args.fastq, 'rt') as handle:
+            content = handle.readlines()
+    else:
+        with open(args.fastq, 'r') as handle:
+            content = handle.readlines()
+    records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
+    args.reads = {rec.split('\n')[0]: rec for rec in records}
+    print(len(records), len(args.reads))
 
 def parse_data(data, args, results, process_id):
     process_results = defaultdict(int)
@@ -35,7 +38,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dl_toda_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
-    parser.add_argument('--fastq', type=str, help='path to sample gzipped fastq file', required=('--binning' in sys.argv))
+    parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
