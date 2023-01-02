@@ -111,7 +111,7 @@ def main():
         data = load_tool_output(args)
         with mp.Manager() as manager:
             results = manager.dict()
-            processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, d_nodes, d_names, results)) for i in range(len(data))]
+            processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, results)) for i in range(len(data))]
             for p in processes:
                 p.start()
             for p in processes:
