@@ -46,8 +46,10 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
         pred_taxonomy = args.dl_toda_tax[pred_sp]
         if args.dataset == 'cami':
             true_taxonomy = get_ncbi_taxonomy(args.cami_data[read_id], d_nodes, d_names)
-        else:
+        elif args.dataset == 'testing':
             true_taxonomy = args.dl_toda_tax[read_id.split('|')[1]]
+        elif args.dataset == 'meta':
+            true_taxonomy = 'na'
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
 
