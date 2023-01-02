@@ -48,11 +48,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
     parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge'])
-    parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing'])
+    parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0, required=('dl-toda' in sys.argv))
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
+    parser.add_argument('--tax', help='get full taxonomy from predicted labels', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
@@ -60,6 +61,7 @@ def main():
     parser.add_argument('--dl_toda_tax', help='path to directory containing json directories with info on taxa present in dl-toda')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
+
     # parser.add_argument('--to_ncbi', action='store_true', help='whether to analyze results with ncbi taxonomy', default=False)
     # parser.add_argument('--compare', action='store_true', help='compare results files obtained with --metrics', default=False)
     # parser.add_argument('--rank', type=str, help='taxonomic rank', choices=['species', 'genus', 'family', 'order', 'class', 'phylum'], required=('--compare' in sys.argv))
@@ -101,6 +103,25 @@ def main():
         for r_name, r_index in args.ranks.items():
             if r_name in cm.keys():
                 get_metrics(args, cm[r_name], r_name, r_index)
+
+    if args.tax:
+        # load dl-toda results
+        data = load_tool_output(args)
+        with mp.Manager() as manager:
+            results = manager.dict()
+            processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, d_nodes, d_names, results)) for i in range(len(data))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
+            # write results to file
+            out_filename = args.input[:-4] + '-tax.tsv'
+            with open(out_filename, 'w') as out_f:
+                for process, process_results in results.items():
+                    for i in range(len(process_results)):
+                        out_f.write(f'{process_results[i][0]}\t{process_results[i][2]}\n')
+
+
 
     # elif args.compare:
     #     dl_toda_res = pd.read_csv(args.dl_toda_metrics, sep='\t')
