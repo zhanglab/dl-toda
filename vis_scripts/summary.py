@@ -49,7 +49,7 @@ def main():
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
     parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge'])
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
-    parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0, required=('dl-toda' in sys.argv))
+    parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
