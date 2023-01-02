@@ -5,7 +5,7 @@ import multiprocessing as mp
 from collections import defaultdict
 from ncbi_tax_utils import get_ncbi_taxonomy
 
-def parse_kraken_output(args, data, process, d_nodes, d_names, results):
+def parse_kraken_output(args, data, process, results):
     process_results = []
     for line in data:
         line = line.rstrip().split('\t')
@@ -18,11 +18,11 @@ def parse_kraken_output(args, data, process, d_nodes, d_names, results):
                 taxid_index = line[2].find('taxid')
                 taxid = line[2][taxid_index+6:-1]
                 # get ncbi taxonomy
-                pred_taxonomy = get_ncbi_taxonomy(taxid, d_nodes, d_names)
+                pred_taxonomy = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
                 process_results.append(f'{read}\t{pred_taxonomy}\n')
         else:
             if args.dataset == 'cami':
-                true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], d_nodes, d_names)
+                true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], args.d_nodes, args.d_names)
             else:
                 true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
             if line[0] == 'U':
@@ -32,12 +32,12 @@ def parse_kraken_output(args, data, process, d_nodes, d_names, results):
                 taxid_index = line[2].find('taxid')
                 taxid = line[2][taxid_index+6:-1]
                 # get ncbi taxonomy
-                pred_taxonomy = get_ncbi_taxonomy(taxid, d_nodes, d_names)
+                pred_taxonomy = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
                 process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
 
     results[process] = process_results
 
-def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
+def parse_dl_toda_output(args, data, process, results):
     process_results = []
     for line in data:
         read_id = line.rstrip().split('\t')[0]
@@ -45,7 +45,7 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
         confidence_score = float(line.rstrip().split('\t')[3])
         pred_taxonomy = args.dl_toda_tax[pred_sp]
         if args.dataset == 'cami':
-            true_taxonomy = get_ncbi_taxonomy(args.cami_data[read_id], d_nodes, d_names)
+            true_taxonomy = get_ncbi_taxonomy(args.cami_data[read_id], args.d_nodes, args.d_names)
         elif args.dataset == 'testing':
             true_taxonomy = args.dl_toda_tax[read_id.split('|')[1]]
         elif args.dataset == 'meta':
@@ -53,7 +53,7 @@ def parse_dl_toda_output(args, data, process, d_nodes, d_names, results):
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
 
-def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
+def parse_centrifuge_output(args, data, process, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
     process_results = []
     number_unclassified = 0
@@ -61,11 +61,11 @@ def parse_centrifuge_output(args, data, process, d_nodes, d_names, results):
         read = line.rstrip().split('\t')[0]
         taxid = line.rstrip().split('\t')[2]
         if args.dataset == 'cami':
-            true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], d_nodes, d_names)
+            true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], args.d_nodes, args.d_names)
         else:
             true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
         if taxid != '0':
-            pred_taxonomy = get_ncbi_taxonomy(taxid, d_nodes, d_names)
+            pred_taxonomy = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
             process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
         else:
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
