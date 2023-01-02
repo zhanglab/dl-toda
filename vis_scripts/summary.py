@@ -15,16 +15,13 @@ def create_cm(args):
     if args.dataset == 'cami':
         args.cami_data = load_cami_data(args)
     # if args.dataset == 'cami' or args.tool in ['kraken', 'centrifuge']:
-    # get ncbi taxids info
-    d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
-    d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
     # load results of taxonomic classification tool
     data = load_tool_output(args)
     # parse data
     functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 'centrifuge': parse_centrifuge_output}
     with mp.Manager() as manager:
         results = manager.dict()
-        processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, d_nodes, d_names, results)) for i in range(len(data))]
+        processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, results)) for i in range(len(data))]
         for p in processes:
             p.start()
         for p in processes:
@@ -79,6 +76,11 @@ def main():
         with open(os.path.join(args.dl_toda_tax, 'dl_toda_taxonomy.tsv'), 'r') as in_f:
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
+
+    # get ncbi taxids info
+    if args.ncbi_db:
+        args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
+        args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
     if args.confusion_matrix:
         # create confusion matrix
