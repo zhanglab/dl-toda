@@ -4,6 +4,7 @@ import sys
 import pandas as pd
 import glob
 import numpy as np
+import statistics
 import multiprocessing as mp
 from collections import defaultdict
 from parse_tool_output import *
@@ -50,7 +51,7 @@ def main():
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
-    parser.add_argument('--tax', help='get full taxonomy from predicted labels', action='store_true')
+    parser.add_argument('--stats', help='get stats summary on probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
@@ -106,7 +107,7 @@ def main():
             if r_name in cm.keys():
                 get_metrics(args, cm[r_name], r_name, r_index)
 
-    if args.tax:
+    if args.stats:
         # load dl-toda results
         data = load_tool_output(args)
         with mp.Manager() as manager:
@@ -117,11 +118,12 @@ def main():
             for p in processes:
                 p.join()
             # write results to file
-            out_filename = args.input[:-4] + '-tax.tsv'
+            out_filename = args.input[:-4] + '-stats.tsv'
             with open(out_filename, 'w') as out_f:
+                scores = []
                 for process, process_results in results.items():
-                    for i in range(len(process_results)):
-                        out_f.write(f'{process_results[i][0]}\t{process_results[i][2]}\n')
+                    scores += [process_results[i][2] for i in range(len(process_results))]
+                out_f.write(f'{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\n')
 
 
 
