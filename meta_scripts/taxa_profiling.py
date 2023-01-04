@@ -88,7 +88,7 @@ if __name__ == "__main__":
     data = {}
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
-            data[line.rstrip().split('\t')[1]] = line.rstrip(.split('\t'))
+            data[line.rstrip().split('\t')[1]] = line.rstrip.split('\t')
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
