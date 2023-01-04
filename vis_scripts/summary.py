@@ -123,7 +123,7 @@ def main():
                 scores = []
                 for process, process_results in results.items():
                     scores += [process_results[i][2] for i in range(len(process_results))]
-                out_f.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\n')
+                out_f.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
 
 
 
