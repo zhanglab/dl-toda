@@ -77,7 +77,7 @@ if __name__ == "__main__":
     for i in range(len(args.dl_toda_taxonomy)):
         if args.dl_toda_taxonomy[i] not in taxa:
             taxa.append(args.dl_toda_taxonomy[i])
-    print(taxa[:5])
+    print(len(taxa))
     # update and create output directory
     args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
     if not os.path.exists(args.output_dir):
