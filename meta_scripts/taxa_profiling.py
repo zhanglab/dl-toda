@@ -25,7 +25,7 @@ def parse_data(taxa, data, args, process_id):
         # get label(s)
         l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
         # get reads
-        t_reads_id = [v[0] for k, v in data.items() if k in l and float(v[2]) > args.cutoff]
+        t_reads_id = [v[0] for k, v in data.items() if k in l and float(v[3]) > args.cutoff]
         # write tax profile to output file
         out_f.write(f'{t}\t{len(t_reads_id)}\n')
         if args.binning:
@@ -62,6 +62,10 @@ if __name__ == "__main__":
         # load reads
         load_reads(args)
 
+    for k, v in args.reads.items():
+        print(k, v)
+        break
+
     # load dl-toda taxonomy
     args.dl_toda_taxonomy = {}
     with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
@@ -88,7 +92,7 @@ if __name__ == "__main__":
     data = {}
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
-            data[line.rstrip().split('\t')[1]] = line.rstrip().split('\t')
+            data[line.rstrip().split('\t')[2]] = line.rstrip().split('\t')
             break
     print(data)
     # chunk_size = math.ceil(len(content)/args.processes)
