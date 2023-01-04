@@ -17,7 +17,6 @@ def load_reads(args):
             content = handle.readlines()
     records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
     args.reads = {rec.split('\n')[0]: rec for rec in records}
-    print(len(records), len(args.reads))
 
 def parse_data(taxa, data, args, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
@@ -88,7 +87,7 @@ if __name__ == "__main__":
     data = {}
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
-            data[line.rstrip().split('\t')[1]] = line.rstrip.split('\t')
+            data[line.rstrip().split('\t')[1]] = line.rstrip().split('\t')
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
