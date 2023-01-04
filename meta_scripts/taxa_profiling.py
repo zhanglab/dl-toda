@@ -63,9 +63,9 @@ if __name__ == "__main__":
     elif args.tax_db =='gtdb':
         index = 1
 
-    if args.binning:
-        # load reads
-        load_reads(args)
+    # if args.binning:
+    #     # load reads
+    #     load_reads(args)
 
     # load dl-toda taxonomy
     args.dl_toda_taxonomy = {}
@@ -98,16 +98,16 @@ if __name__ == "__main__":
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
             data[line.rstrip().split('\t')[2]] = line.rstrip().split('\t')
-
+    print(len(data))
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
-    with mp.Manager() as manager:
-        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+    # with mp.Manager() as manager:
+    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
+    #     for p in processes:
+    #         p.start()
+    #     for p in processes:
+    #         p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
