@@ -25,7 +25,12 @@ def parse_data(taxa, data, args, process_id):
         # get label(s)
         l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
         # get reads
-        t_reads_id = [v[0] for k, v in data.items() if int(k) in l and float(v[3]) > args.cutoff]
+        t_reads_id = []
+        for k, v in data.items():
+            if int(k) in l:
+                for i in range(len(v)):
+                    if float(v[i][3]) > args.cutoff:
+                        t_reads_id.append(v[i][0])
         # write tax profile to output file
         out_f.write(f'{t}\t{len(t_reads_id)}\n')
         if process_id == 0:
@@ -63,9 +68,9 @@ if __name__ == "__main__":
     elif args.tax_db =='gtdb':
         index = 1
 
-    # if args.binning:
-    #     # load reads
-    #     load_reads(args)
+    if args.binning:
+        # load reads
+        load_reads(args)
 
     # load dl-toda taxonomy
     args.dl_toda_taxonomy = {}
@@ -94,20 +99,20 @@ if __name__ == "__main__":
     print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
 
     # load data
-    data = {}
+    data = defaultdict(list)
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
-            data[line.rstrip().split('\t')[2]] = line.rstrip().split('\t')
+            data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
     print(len(data))
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
-    # with mp.Manager() as manager:
-    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
