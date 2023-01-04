@@ -25,7 +25,7 @@ def parse_data(taxa, data, args, process_id):
         # get label(s)
         l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
         # get reads
-        t_reads_id = [v[0] for k, v in data.items() if k in l and float(v[3]) > args.cutoff]
+        t_reads_id = [v[0] for k, v in data.items() if int(k) in l and float(v[3]) > args.cutoff]
         # write tax profile to output file
         out_f.write(f'{t}\t{len(t_reads_id)}\n')
         if args.binning:
@@ -62,10 +62,6 @@ if __name__ == "__main__":
         # load reads
         load_reads(args)
 
-    for k, v in args.reads.items():
-        print(k, v)
-        break
-
     # load dl-toda taxonomy
     args.dl_toda_taxonomy = {}
     with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
@@ -93,17 +89,16 @@ if __name__ == "__main__":
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
             data[line.rstrip().split('\t')[2]] = line.rstrip().split('\t')
-            break
-    print(data)
+
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
-    # with mp.Manager() as manager:
-    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
