@@ -27,7 +27,7 @@ def parse_data(taxa, data, args, process_id):
         # get reads
         t_reads_id = [v[0] for k, v in data.items() if k in l and v[2] > args.cutoff]
         # write tax profile to output file
-        out_f.write(f'{t}\t{len(reads)}\n')
+        out_f.write(f'{t}\t{len(t_reads_id)}\n')
         if args.binning:
             t_reads = [args.reads[r] for r in t_reads_id]
             fq_filename = os.path.join(args.output_dir, f'{process_id}', f'{l[0]}-bin.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'{t.split(";")[0]}-bin.fq')
