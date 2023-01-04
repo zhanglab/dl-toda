@@ -102,12 +102,12 @@ if __name__ == "__main__":
     # chunk_size = math.ceil(len(content)/args.processes)
     # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
-    # with mp.Manager() as manager:
-    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
