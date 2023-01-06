@@ -20,29 +20,25 @@ def load_reads(args):
 
 def parse_data(taxa, data, args, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
-    out_f = open(out_filename, 'w')
-    for t in taxa:
-        # get label(s)
-        l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
-        # get reads
-        t_reads_id = []
-        for k, v in data.items():
-            if int(k) in l:
-                for i in range(len(v)):
-                    if float(v[i][3]) > args.cutoff:
-                        t_reads_id.append(v[i][0])
-        # write tax profile to output file
-        out_f.write(f'{t}\t{len(t_reads_id)}\n')
-        if process_id == 0:
-            print(t)
-            print(l)
-            print(len(t_reads_id))
-            print(t_reads_id[0])
-        if args.binning:
-            t_reads = [args.reads[r] for r in t_reads_id]
-            fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
-            with open(fq_filename, 'a') as out_fq:
-                out_fq.write(''.join(t_reads))
+    with open(out_filename, 'w') as out_f:
+        for t in taxa:
+            # get label(s)
+            l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
+            # get reads
+            t_reads_id = []
+            for k, v in data.items():
+                if int(k) in l:
+                    for i in range(len(v)):
+                        if float(v[i][3]) > args.cutoff:
+                            t_reads_id.append(v[i][0])
+            # write tax profile to output file
+            out_f.write(f'{t}\t{len(t_reads_id)}\n')
+            # if args.binning:
+            #     t_reads = [args.reads[r] for r in t_reads_id]
+            #     fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
+            #     with open(fq_filename, 'a') as out_fq:
+            #         out_fq.write(''.join(t_reads))
+
 
 
 
