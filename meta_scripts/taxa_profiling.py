@@ -33,11 +33,11 @@ def parse_data(taxa, data, args, process_id):
                             t_reads_id.append(v[i][0])
             # write tax profile to output file
             out_f.write(f'{t}\t{len(t_reads_id)}\n')
-            # if args.binning:
-            #     t_reads = [args.reads[r] for r in t_reads_id]
-            #     fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
-            #     with open(fq_filename, 'a') as out_fq:
-            #         out_fq.write(''.join(t_reads))
+            if args.binning:
+                t_reads = [args.reads[r] for r in t_reads_id]
+                fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
+                with open(fq_filename, 'a') as out_fq:
+                    out_fq.write(''.join(t_reads))
 
 
 
@@ -82,12 +82,10 @@ if __name__ == "__main__":
     # update and create output directory
     args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
     if not os.path.exists(args.output_dir):
-        for i in range(args.processes):
-            os.makedirs(os.path.join(args.output_dir, f'{i}'))
-
-    # define name of output file with taxonomic profiles
-    # args.output_file = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-out.tsv')
-
+        os.makedirs(os.path.join(args.output_dir))
+        if args.binning:
+            for i in range(args.processes):
+                os.makedirs(os.path.join(args.output_dir, f'{i}'))
 
     # split taxa amongst processes
     chunk_size = math.ceil(len(taxa)/args.processes)
@@ -100,8 +98,6 @@ if __name__ == "__main__":
         for line in f:
             data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
     print(len(data))
-    # chunk_size = math.ceil(len(content)/args.processes)
-    # data_split = [content[i:i+chunk_size] for i in range(0,len(content),chunk_size)]
 
     with mp.Manager() as manager:
         processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
