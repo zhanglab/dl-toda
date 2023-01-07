@@ -20,24 +20,28 @@ def load_reads(args):
 
 def parse_data(taxa, data, args, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
+    taxa_count = {}
+    for t in taxa:
+        # get label(s)
+        l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
+        # get reads
+        t_reads_id = []
+        for k, v in data.items():
+            if int(k) in l:
+                for i in range(len(v)):
+                    if float(v[i][3]) > args.cutoff:
+                        t_reads_id.append(v[i][0])
+        taxa_count[t] = len(t_reads_id)
+        if args.binning:
+            t_reads = [args.reads[r] for r in t_reads_id]
+            fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
+            with open(fq_filename, 'a') as out_fq:
+                out_fq.write(''.join(t_reads))
+
+    # write tax profile to output file
     with open(out_filename, 'w') as out_f:
-        for t in taxa:
-            # get label(s)
-            l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
-            # get reads
-            t_reads_id = []
-            for k, v in data.items():
-                if int(k) in l:
-                    for i in range(len(v)):
-                        if float(v[i][3]) > args.cutoff:
-                            t_reads_id.append(v[i][0])
-            # write tax profile to output file
-            out_f.write(f'{t}\t{len(t_reads_id)}\n')
-            if args.binning:
-                t_reads = [args.reads[r] for r in t_reads_id]
-                fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
-                with open(fq_filename, 'a') as out_fq:
-                    out_fq.write(''.join(t_reads))
+        for k, v in taxa_count.items():
+            out_f.write(f'{k}\t{v}\n')
 
 
 
