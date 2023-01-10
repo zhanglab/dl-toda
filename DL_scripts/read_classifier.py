@@ -175,6 +175,8 @@ def main():
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
         gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
+    print(gpu_test_files)
+
     elapsed_time = []
     num_reads_classified = 0
     for i in range(len(gpu_test_files)):
