@@ -19,17 +19,17 @@ def create_meta_tfrecords(args):
     output_tfrec = os.path.join(args.output_dir, args.output_prefix + '.tfrec')
     outfile = open('/'.join([args.output_dir, args.output_prefix + f'-read_ids.tsv']), 'w')
     with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
-        if args.fastq[-2:] == 'gz':
+        if args.input_fastq[-2:] == 'gz':
             handle = gzip.open(args.fastq, 'rt')
         else:
-            handle = open(args.fastq, 'r')
+            handle = open(args.input_fastq, 'r')
         # with gzip.open(args.input_fastq, 'rt') as handle:
         for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
             read = str(rec.seq)
             read_id = rec.description
             outfile.write(f'{read_id}\t{count}\n')
             kmer_array = get_kmer_arr(args, read)
-            
+
             data = \
                 {
                     'read': wrap_read(kmer_array),
