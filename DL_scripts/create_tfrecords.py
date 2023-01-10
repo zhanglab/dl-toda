@@ -16,8 +16,9 @@ def wrap_label(value):
 
 def create_meta_tfrecords(args):
     """ Converts metagenomic reads to tfrecords """
-    output_tfrec = os.path.join(args.output_dir, args.output_prefix + '.tfrec')
-    outfile = open('/'.join([args.output_dir, args.output_prefix + f'-read_ids.tsv']), 'w')
+    output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-2]) if args.input_fastq[-2:] == 'gz' else '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
+    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+    outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
     with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         if args.input_fastq[-2:] == 'gz':
             handle = gzip.open(args.fastq, 'rt')
@@ -40,7 +41,7 @@ def create_meta_tfrecords(args):
             serialized = example.SerializeToString()
             writer.write(serialized)
 
-        with open(os.path.join(args.output_dir, args.output_prefix + '-read_count'), 'w') as f:
+        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
 
     outfile.close()
@@ -48,7 +49,8 @@ def create_meta_tfrecords(args):
 
 def create_tfrecords(args):
     """ Converts simulated reads to tfrecord """
-    output_tfrec = os.path.join(args.output_dir, args.output_prefix + '.tfrec')
+    output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
+    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
     with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         with open(args.input_fastq) as handle:
             for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
@@ -66,7 +68,7 @@ def create_tfrecords(args):
                 serialized = example.SerializeToString()
                 writer.write(serialized)
 
-        with open(os.path.join(args.output_dir, args.output_prefix + '-read_count'), 'w') as f:
+        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
 
 def main():
@@ -80,7 +82,6 @@ def main():
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
 
     args = parser.parse_args()
-    args.output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1]) if args.dataset_type == 'sim' else '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-2])
     args.kmer_vector_length = args.read_length - args.k_value + 1
     # get dictionary mapping kmers to indexes
     args.dict_kmers = vocab_dict(args.vocab)
