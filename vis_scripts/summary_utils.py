@@ -41,6 +41,12 @@ def get_metrics(args, cm, r_name, r_index):
         problematic_reads = 0
         total_num_reads = 0
         missing_true_taxa = []
+        list_precision = []
+        list_recall = []
+        list_f1_score = []
+        list_TP = []
+        list_FP = []
+        list_FN = []
         for true_taxon in ground_truth:
             # get number of reads in testing dataset for given taxon
             num_reads = sum([cm.loc[i, true_taxon] for i in predicted_taxa])
@@ -60,6 +66,12 @@ def get_metrics(args, cm, r_name, r_index):
                         recall = float(true_positives)/(true_positives+false_negatives) if true_positives+false_negatives > 0 else 0
                         f1_score = float(2 * (precision * recall)) / (precision + recall) if precision + recall > 0 else 0
                         out_f.write(f'{true_taxon}\t{predicted_taxon}\t{num_reads}\t{precision}\t{recall}\t{f1_score}\t{true_positives}\t{false_positives}\t{false_negatives}\n')
+                        list_recall.append(recall)
+                        list_precision.append(precision)
+                        list_f1_score.append(f1_score)
+                        list_TP.append(true_positives)
+                        list_FP.append(false_positives)
+                        list_FN.append(false_negatives)
                     else:
                         if args.zeros:
                             print(f'{true_taxon} has a precision/recall/F1 scores equal to 0')
@@ -86,6 +98,18 @@ def get_metrics(args, cm, r_name, r_index):
         accuracy_whole = round(correct_predictions/cm.to_numpy().sum(), 5) if cm.to_numpy().sum() > 0 else 0
         accuracy_classified = round(correct_predictions/classified_reads, 5) if classified_reads > 0 else 0
         accuracy_w_misclassified = round(correct_predictions/(classified_reads+unclassified_reads), 5) if (classified_reads+unclassified_reads) > 0 else 0
+        macro_average_precision = sum(list_precision)/len(list_precision)
+        macro_average_recall = sum(list_recall)/len(list_recall)
+        macro_average_f1_score = sum(list_f1_score)/len(list_f1_score)
+        micro_average_precision = sum(list_TP)/(sum(list_TP) + sum(list_FP))
+        micro_average_recall = sum(list_TP)/(sum(list_TP) + sum(list_FN))
+        micro_average_f1_score = sum(list_TP)/(sum(list_TP) + 1/2*(sum(list_FP)+sum(list_FN)))
+        out_f.write(f'micro average Precision: {micro_average_precision}')
+        out_f.write(f'micro average Recall: {micro_average_recall}')
+        out_f.write(f'micro average F1-score: {micro_average_f1_score}')
+        out_f.write(f'macro average Precision: {macro_average_precision}')
+        out_f.write(f'macro average Recall: {macro_average_recall}')
+        out_f.write(f'macro average F1-score: {macro_average_f1_score}')
         out_f.write(f'Accuracy - whole dataset: {accuracy_whole}\n')
         out_f.write(f'Accuracy - classified reads only: {accuracy_classified}\n')
         out_f.write(f'Accuracy - classified and unclassified reads: {accuracy_w_misclassified}')
