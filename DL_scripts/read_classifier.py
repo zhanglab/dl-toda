@@ -90,8 +90,9 @@ def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, tes
         test_loss.update_state(loss_value)
     pred_labels = tf.math.argmax(probs, axis=1)
     pred_probs = tf.reduce_max(probs, axis=1)
-
-    return pred_labels, pred_probs
+    
+    return probs, pred_labels, pred_probs
+    # return pred_labels, pred_probs
 
 
 
@@ -195,7 +196,7 @@ def main():
         test_input = test_preprocessor.get_device_dataset()
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
-        # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
+        all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
@@ -204,22 +205,22 @@ def main():
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
                 batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
             elif args.data_type == 'sim':
-                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+                batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+                # batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
 
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
                 all_prob_sp = [batch_prob_sp]
-                # all_predictions = batch_predictions
+                all_predictions = batch_predictions
             else:
-                # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
+                all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
                 all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
                 all_labels = tf.concat([all_labels, [labels]], 1)
 
         # get list of true species, predicted species and predicted probabilities
-        # all_predictions = all_predictions.numpy()
+        all_predictions = all_predictions.numpy()
         all_pred_sp = all_pred_sp[0].numpy()
         all_prob_sp = all_prob_sp[0].numpy()
         all_labels = all_labels[0].numpy()
@@ -227,7 +228,7 @@ def main():
         # adjust the list of predicted species and read ids if necessary
         if len(all_labels) > num_reads:
             num_extra_reads = (test_steps*args.batch_size) - num_reads
-            # all_predictions = all_predictions[:-num_extra_reads]
+            all_predictions = all_predictions[:-num_extra_reads]
             all_pred_sp = all_pred_sp[:-num_extra_reads]
             all_prob_sp = all_prob_sp[:-num_extra_reads]
             all_labels = all_labels[:-num_extra_reads]
@@ -248,6 +249,10 @@ def main():
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
                     out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
+            if args.save_probs:
+                # save predictions and labels to file
+                np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
+                np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
 
         end_time = time.time()
         elapsed_time = np.append(elapsed_time, end_time - start_time)
