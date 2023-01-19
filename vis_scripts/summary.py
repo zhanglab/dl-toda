@@ -121,44 +121,7 @@ def main():
                     for k, v in args.ranks.items():
                         conf_scores_file.write(f'{process_results[i][0].split(";")[v]}\t{process_results[i][1].split(";")[v]}\t')
                     conf_scores_file.write(f'{process_results[i][2]}\n')
-                    break
             stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
-
-
-
-    # elif args.compare:
-    #     dl_toda_res = pd.read_csv(args.dl_toda_metrics, sep='\t')
-    #     tool_res = pd.read_csv(args.tool_metrics, sep='\t')
-    #     dl_toda_true_taxa = dl_toda_res['true taxon'][:-4].tolist()
-    #
-    #     # check data
-    #     if dl_toda_true_taxa.sort() != tool_res['true taxon'][:-4].tolist().sort():
-    #         sys.exit(f'Not the same taxa between DL-TODA and tool at rank: {args.rank}')
-    #     if len(dl_toda_true_taxa) != len(tool_res['true taxon'][:-4].tolist()):
-    #         sys.exit(f'Not the same number of taxa between DL-TODA and tool at rank: {args.rank}')
-    #     if dl_toda_res['#reads'][:-4].tolist().sort() != tool_res['#reads'][:-4].tolist().sort():
-    #         sys.exit(f'Not the same #reads column between DL-TODA and tool at rank: {args.rank}')
-    #
-    #     # compute percentage difference between true positives for DL-TODA and the other tool
-    #     diff = [((dl_toda_res['TP'][:-4][i]-tool_res['TP'][:-4][i])/dl_toda_res['#reads'][:-4][i])*100 for i in range(len(dl_toda_true_taxa))]
-    #     if len(diff) != len(dl_toda_true_taxa):
-    #         sys.exit(f'Issue with computing percentage difference at rank: {args.rank}')
-    #
-    #     with open(os.path.join(args.output_dir, f'DL-TODA-vs-Kraken2-{args.dataset}-set-{args.rank}.tsv'), 'w') as out_f:
-    #         for i in range(len(dl_toda_true_taxa)):
-    #             out_f.write(f'{dl_toda_true_taxa[i]}\t{dl_toda_res["#reads"][:-4][i]}\t{dl_toda_res["TP"][:-4][i]}\t{tool_res["TP"][:-4][i]}\t{diff[i]}\n')
-    #
-    #     low_out_f = open(os.path.join(args.output_dir, f'{args.rank}-lower-performance.tsv'), 'w')
-    #     high_out_f = open(os.path.join(args.output_dir, f'{args.rank}-higher-performance.tsv'), 'w')
-    #
-    #     for i in range(len(dl_toda_true_taxa)):
-    #         if dl_toda_res['TP'][:-4][i] > tool_res['TP'][:-4][i]:
-    #             high_out_f.write(f'{dl_toda_true_taxa[i]}\t{dl_toda_res["TP"][:-4][i]}\t{tool_res["TP"][:-4][i]}\n')
-    #         else:
-    #             low_out_f.write(f'{dl_toda_true_taxa[i]}\t{dl_toda_res["TP"][:-4][i]}\t{tool_res["TP"][:-4][i]}\n')
-
-
-
 
 
 if __name__ == "__main__":
