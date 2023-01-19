@@ -51,7 +51,7 @@ def main():
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
-    parser.add_argument('--stats', help='get stats summary on probability scores', action='store_true')
+    parser.add_argument('--probs', help='get stats summary on probability scores and output file for analysis of in/correct predictions', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
@@ -59,13 +59,7 @@ def main():
     parser.add_argument('--dl_toda_tax', help='path to directory containing json directories with info on taxa present in dl-toda')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
-
-    # parser.add_argument('--to_ncbi', action='store_true', help='whether to analyze results with ncbi taxonomy', default=False)
-    # parser.add_argument('--compare', action='store_true', help='compare results files obtained with --metrics', default=False)
-    # parser.add_argument('--rank', type=str, help='taxonomic rank', choices=['species', 'genus', 'family', 'order', 'class', 'phylum'], required=('--compare' in sys.argv))
-    # parser.add_argument('--dl_toda_metrics', type=str, help='path to result file obtained from running --metrics', required=('--compare' in sys.argv))
-    # parser.add_argument('--tool_metrics', type=str, help='path to result file obtained from running --metrics with another tool than DL-TODA', required=('--compare' in sys.argv))
-
+    parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
 
@@ -78,52 +72,59 @@ def main():
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
 
+    print(args.dl_toda_tax)
+
     # get ncbi taxids info
-    if args.ncbi_db:
-        args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
-        args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
-
-    if args.confusion_matrix:
-        # create confusion matrix
-        create_cm(args)
-
-    if args.combine:
-        with mp.Manager() as manager:
-            all_cm = manager.dict()
-            # Create new processes
-            processes = [mp.Process(target=combine_cm, args=(args, all_cm, r)) for r in args.ranks.keys()]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-
-            with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
-                for r_name, r_cm in all_cm.items():
-                    r_cm.to_excel(writer, sheet_name=f'{r_name}')
-
-    if args.metrics:
-        cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
-        for r_name, r_index in args.ranks.items():
-            if r_name in cm.keys():
-                get_metrics(args, cm[r_name], r_name, r_index)
-
-    if args.stats:
-        # load dl-toda results
-        data = load_tool_output(args)
-        with mp.Manager() as manager:
-            results = manager.dict()
-            processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, results)) for i in range(len(data))]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-            # write results to file
-            out_filename = args.input[:-4] + '-stats.tsv'
-            with open(out_filename, 'w') as out_f:
-                scores = []
-                for process, process_results in results.items():
-                    scores += [process_results[i][2] for i in range(len(process_results))]
-                out_f.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
+    # if args.ncbi_db:
+    #     args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
+    #     args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
+    #
+    # if args.confusion_matrix:
+    #     # create confusion matrix
+    #     create_cm(args)
+    #
+    # if args.combine:
+    #     with mp.Manager() as manager:
+    #         all_cm = manager.dict()
+    #         # Create new processes
+    #         processes = [mp.Process(target=combine_cm, args=(args, all_cm, r)) for r in args.ranks.keys()]
+    #         for p in processes:
+    #             p.start()
+    #         for p in processes:
+    #             p.join()
+    #
+    #         with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
+    #             for r_name, r_cm in all_cm.items():
+    #                 r_cm.to_excel(writer, sheet_name=f'{r_name}')
+    #
+    # if args.metrics:
+    #     cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
+    #     for r_name, r_index in args.ranks.items():
+    #         if r_name in cm.keys():
+    #             get_metrics(args, cm[r_name], r_name, r_index)
+    #
+    # if args.probs:
+    #     # load dl-toda results
+    #     data = load_tool_output(args)
+    #     with mp.Manager() as manager:
+    #         results = manager.dict()
+    #         processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, results)) for i in range(len(data))]
+    #         for p in processes:
+    #             p.start()
+    #         for p in processes:
+    #             p.join()
+    #         # write results to file
+    #         stats_file = open(args.input[:-4] + '-stats.tsv', 'w')
+    #         conf_scores_file = open(args.input[:-4] + '-cs.tsv', 'w')
+    #         scores = []
+    #         for process, process_results in results.items():
+    #             for i in range(len(process_results)):
+    #                 scores.append(process_results[i][2])
+    #                 print(process_results[i][1], process_results[i][0])
+    #                 for j in range(len(process_results[i]-1))
+    #                     conf_scores_file.write(f'{process_results[j][i]}\t{process_results[i][2]}\n')
+    #                 break
+    #         stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
 
 
 
