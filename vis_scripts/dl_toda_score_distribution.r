@@ -8,7 +8,17 @@ library("EnvStats")
 library("stats")
 library("tidyr")
 
-a <- read.table(file="updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", 
+# args = commandArgs(trailingOnly = TRUE)
+# input_file = args[1]
+
+#a <- read.table(file="updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", 
+#                sep="\t")
+
+# a <- read.table(input_file, 
+                # sep="\t")
+
+
+a <- read.table(test, 
                 sep="\t")
 
 ##### 1. ###########
@@ -94,79 +104,79 @@ lines(gamma_correct$x,gamma_correct$V2,col="red")
 ##### 4. ###########
 ## The section below is used when a summary result (e.g. 'precision_mtx_0.94.tsv')
 ## is not already parsed with a given threshold
-# species<-unique(a$V1)
-# #pmtx<-data.frame(matrix(ncol=2,nrow=0))
-# #pmtx_0.54<-data.frame(matrix(ncol=2,nrow=0))
-# #pmtx_0.64<-data.frame(matrix(ncol=2,nrow=0))
-# #pmtx_0.7<-data.frame(matrix(ncol=2,nrow=0))
-# ##--a cutoff of 0.8 correspond to filtering out 90% of the false positives based on eqgamma
-# #pmtx_0.8<-data.frame(matrix(ncol=2,nrow=0))
-# #pmtx_0.9<-data.frame(matrix(ncol=2,nrow=0))
-# ##--a cutoff of 0.94 correspond to filtering out 95% of the false positives based on eqgamma
-# pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
-# for(s in species){
-#   ## no cutoff
-# #  tp<-nrow(a[a$V1==s & a$V2=='correct',])
-# #  fp<-nrow(a[a$V1==s & a$V2=='incorrect',])
-# #  precision<-tp/(tp+fp)
-# #  pmtx[nrow(pmtx)+1,]<-c(s,precision)
-#   ## cutoff 0.54
-#   # tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.54,])
-#   # fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.54,])
-#   # precision<-tp/(tp+fp)
-#   # pmtx_0.54[nrow(pmtx_0.54)+1,]<-c(s,precision)
-#   ## cutoff 0.64
-#   # tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
-#   # fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
-#   # precision<-tp/(tp+fp)
-#   # pmtx_0.64[nrow(pmtx_0.64)+1,]<-c(s,precision)
-#   ## cutoff 0.7
-#   # tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.7,])
-#   # fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.7,])
-#   # precision<-tp/(tp+fp)
-#   # pmtx_0.7[nrow(pmtx_0.7)+1,]<-c(s,precision)
-#   ## cutoff 0.8
-#   # tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.8,])
-#   # fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.8,])
-#   # precision<-tp/(tp+fp)
-#   # pmtx_0.8[nrow(pmtx_0.8)+1,]<-c(s,precision)
-#   ## cutoff 0.9
-#   # tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.9,])
-#   # fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.9,])
-#   # precision<-tp/(tp+fp)
-#   # pmtx_0.9[nrow(pmtx_0.9)+1,]<-c(s,precision)
-#   ## cutoff 0.94
-#   tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.94,])
-#   fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.94,])
-#   precision<-tp/(tp+fp)
-#   pmtx_0.94[nrow(pmtx_0.94)+1,]<-c(s,precision)
-# }
-# #write.table(pmtx,file="precision_mtx.tsv",sep="\t",quote=FALSE,
-# #            col.names = F, row.names = F)
-# # write.table(pmtx_0.54,file="precision_mtx_0.54.tsv",sep="\t",quote=FALSE,
-# #             col.names = F, row.names = F)
-# #write.table(pmtx_0.64,file="precision_mtx_0.64.tsv",sep="\t",quote=FALSE,
-# #            col.names = F, row.names = F)
-# #write.table(pmtx_0.7,file="precision_mtx_0.7.tsv",sep="\t",quote=FALSE,
-# #            col.names = F, row.names = F)
-# #write.table(pmtx_0.8,file="precision_mtx_0.8.tsv",sep="\t",quote=FALSE,
-# #            col.names = F, row.names = F)
-# # write.table(pmtx_0.9,file="precision_mtx_0.9.tsv",sep="\t",quote=FALSE,
-# #            col.names = F, row.names = F)
-# write.table(pmtx_0.94,file="precision_mtx_0.94.tsv",sep="\t",quote=FALSE,
-#             col.names = F, row.names = F)
+species<-unique(a$V1)
+pmtx<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.54<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.64<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.7<-data.frame(matrix(ncol=2,nrow=0))
+##--a cutoff of 0.8 correspond to filtering out 90% of the false positives based on eqgamma
+pmtx_0.8<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.9<-data.frame(matrix(ncol=2,nrow=0))
+##--a cutoff of 0.94 correspond to filtering out 95% of the false positives based on eqgamma
+ pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
+ for(s in species){
+  ## no cutoff
+  tp<-nrow(a[a$V1==s & a$V2=='correct',])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect',])
+  precision<-tp/(tp+fp)
+  pmtx[nrow(pmtx)+1,]<-c(s,precision)
+  ## cutoff 0.54
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.54,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.54,])
+  precision<-tp/(tp+fp)
+  pmtx_0.54[nrow(pmtx_0.54)+1,]<-c(s,precision)
+  ## cutoff 0.64
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
+  precision<-tp/(tp+fp)
+  pmtx_0.64[nrow(pmtx_0.64)+1,]<-c(s,precision)
+  ## cutoff 0.7
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.7,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.7,])
+  precision<-tp/(tp+fp)
+  pmtx_0.7[nrow(pmtx_0.7)+1,]<-c(s,precision)
+  ## cutoff 0.8
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.8,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.8,])
+  precision<-tp/(tp+fp)
+  pmtx_0.8[nrow(pmtx_0.8)+1,]<-c(s,precision)
+  ## cutoff 0.9
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.9,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.9,])
+  precision<-tp/(tp+fp)
+  pmtx_0.9[nrow(pmtx_0.9)+1,]<-c(s,precision)
+  ## cutoff 0.94
+  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.94,])
+  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.94,])
+  precision<-tp/(tp+fp)
+  pmtx_0.94[nrow(pmtx_0.94)+1,]<-c(s,precision)
+}
+write.table(pmtx,file="precision_mtx.tsv",sep="\t",quote=FALSE,
+           col.names = F, row.names = F)
+write.table(pmtx_0.54,file="precision_mtx_0.54.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
+write.table(pmtx_0.64,file="precision_mtx_0.64.tsv",sep="\t",quote=FALSE,
+           col.names = F, row.names = F)
+write.table(pmtx_0.7,file="precision_mtx_0.7.tsv",sep="\t",quote=FALSE,
+           col.names = F, row.names = F)
+write.table(pmtx_0.8,file="precision_mtx_0.8.tsv",sep="\t",quote=FALSE,
+           col.names = F, row.names = F)
+write.table(pmtx_0.9,file="precision_mtx_0.9.tsv",sep="\t",quote=FALSE,
+           col.names = F, row.names = F)
+write.table(pmtx_0.94,file="precision_mtx_0.94.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
 
 # ## Make a summary of precision by different cutoffs
-# precision_df<-data.frame(matrix(ncol=6,nrow=639))
-# colnames(precision_df)<-c("species_gt",
-#                           "c_0.54","c_0.64","c_0.7","c_0.8","c_0.94")
-# precision_df$species_gt<-pmtx_0.54[,1]
-# precision_df$c_0.54<-as.numeric(pmtx_0.54[,2])
-# precision_df$c_0.64<-as.numeric(pmtx_0.64[,2])
-# precision_df$c_0.7<-as.numeric(pmtx_0.7[,2])
-# precision_df$c_0.8<-as.numeric(pmtx_0.8[,2])
-# #precision_df$c_0.9<-as.numeric(pmtx_0.9[,2])
-# precision_df$c_0.94<-as.numeric(pmtx_0.94[,2])
+precision_df<-data.frame(matrix(ncol=6,nrow=639))
+colnames(precision_df)<-c("species_gt",
+                          "c_0.54","c_0.64","c_0.7","c_0.8","c_0.94")
+precision_df$species_gt<-pmtx_0.54[,1]
+precision_df$c_0.54<-as.numeric(pmtx_0.54[,2])
+precision_df$c_0.64<-as.numeric(pmtx_0.64[,2])
+precision_df$c_0.7<-as.numeric(pmtx_0.7[,2])
+precision_df$c_0.8<-as.numeric(pmtx_0.8[,2])
+precision_df$c_0.9<-as.numeric(pmtx_0.9[,2])
+precision_df$c_0.94<-as.numeric(pmtx_0.94[,2])
 
 ## The section below is used when a summary result (e.g. 'precision_mtx_0.94.tsv')
 ## is already present
@@ -236,165 +246,165 @@ ggplot(data=count_df, aes(x=factor(Threshold), y=Count,
 
   
 ##### 5. ###########
-library("readxl")
-df<-read_excel('confusion-matrix-0.8.xlsx',sheet='species')
-colnames(df)[1]<-'species_pred'
-df_scaled<-df
-for(c in colnames(df[,2:640])){
-  df_scaled[,c]<-scale(df[,c])
-}
-df_long<-pivot_longer(df_scaled,cols=2:640,names_to="species_gt")
-ggplot(df_long,aes(species_gt,species_pred,fill=value)) +
-  geom_tile() +
-  scale_fill_gradient(low="white", high="blue") +
-  theme(axis.text = element_text(size = 1),
-        axis.text.x = element_text(angle=90,hjust=1))
+# library("readxl")
+# df<-read_excel('confusion-matrix-0.8.xlsx',sheet='species')
+# colnames(df)[1]<-'species_pred'
+# df_scaled<-df
+# for(c in colnames(df[,2:640])){
+#   df_scaled[,c]<-scale(df[,c])
+# }
+# df_long<-pivot_longer(df_scaled,cols=2:640,names_to="species_gt")
+# ggplot(df_long,aes(species_gt,species_pred,fill=value)) +
+#   geom_tile() +
+#   scale_fill_gradient(low="white", high="blue") +
+#   theme(axis.text = element_text(size = 1),
+#         axis.text.x = element_text(angle=90,hjust=1))
 
 ##### 6. ###########
 # check the distribution of precision and get a list of outliers
-q<-quantile(as.numeric(pmtx_0.94[,2]), probs=c(0.25,0.75))
-cout<-q[1]-1.5*(q[2]-q[1])
-outliers<-pmtx_0.94[pmtx_0.94[,2]<cout,1]
+# q<-quantile(as.numeric(pmtx_0.94[,2]), probs=c(0.25,0.75))
+# cout<-q[1]-1.5*(q[2]-q[1])
+# outliers<-pmtx_0.94[pmtx_0.94[,2]<cout,1]
 
 
 ##### 7. ###########
-df_files<-data.frame(
-  fs=c(
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv",
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-genus-confidence-scores.tsv",
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-family-confidence-scores.tsv",
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-order-confidence-scores.tsv",
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-class-confidence-scores.tsv",
-    "updated-testing-set-all-out-ncbi-cutoff-0.0-phylum-confidence-scores.tsv"
-  ),
-  taxlevel=c(
-    "Species",
-    "Genus",
-    "Family",
-    "Order",
-    "Class",
-    "Phylum"
-  )
-)
-
-df_scores<-data.frame(matrix(ncol=4,nrow=0))
-for(i in 1:dim(df_files)[1]){
-  f<-df_files[i,]$fs
-  t<-df_files[i,]$taxlevel
-  a <- read.table(file=f, sep="\t")
-  a$V3<-rep(t,dim(a)[1])
-  df_scores<-rbind(df_scores,a)
-  
-  # pdf(paste(t,"_correct.pdf",sep=""),width=4,height=2)
-  # ggplot(data=a[a$V2=='correct',], 
-  #        mapping=aes(x=V4,after_stat(count))) +
-  #   geom_histogram(alpha = 0.6, binwidth = 0.01, fill="black") +
-  #   #  scale_y_log10() +
-  #   #labs(x = "Prediction Score", y = "Count",
-  #   labs(x = "", y = "",
-  #        title = "") +
-  #   theme_bw() +
-  #   facet_wrap( ~ V3, ncol=1)
-  # dev.off()
-  # 
-  # pdf(paste(t,"_incorrect.pdf",sep=""),width=4,height=2)
-  # ggplot(data=a[a$V2=='incorrect',], 
-  #        mapping=aes(x=V4,after_stat(count))) +
-  #   geom_histogram(alpha = 0.6, binwidth = 0.01, fill="black") +
-  #   #  scale_y_log10() +
-  #   #labs(x = "Prediction Score", y = "Count",
-  #   labs(x = "", y = "",
-  #        title = "") +
-  #   theme_bw() +
-  #   facet_wrap( ~ V3, ncol=1)
-  # dev.off()
-}
-
-#--stats of probability distributions
-pstat<-data.frame(matrix(nrow=0,ncol=4))
-colnames(pstat)<-c("Taxonomy_rank","Type","Stat_type","Value")
-for(tr in df_files$taxlevel){
-  for(type in c("correct","incorrect")){
-    x<-quantile(df_scores[df_scores$V2==type & df_scores$V3==tr,]$V4)
-    #-minimum
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"minimum")
-    pstat[nrow(pstat),4]<-x[1]
-    #-maximum
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"maximum")
-    pstat[nrow(pstat),4]<-x[5]
-    #-median
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"median")
-    pstat[nrow(pstat),4]<-x[3]
-    #--25th percentile
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"quatile1")
-    pstat[nrow(pstat),4]<-x[2]
-    #--75th percentile
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"quatile3")
-    pstat[nrow(pstat),4]<-x[4]
-    #--mean
-    pstat[nrow(pstat)+1,1:3]<-c(tr,type,"mean")
-    pstat[nrow(pstat),4]<-
-      mean(df_scores[df_scores$V2==type & df_scores$V3==tr,]$V4)
-  }
-}
-
-write.table(pstat,file="probability_stats.tsv",quote=F,sep="\t",row.names = F)
-
-#--number of correct vs incorrect for each taxonomic rank
-x<-aggregate(df_scores$V4,by=list(df_scores$V2,df_scores$V3),FUN=length)
-colnames(x)<-c("Type","Taxonomy_rank","Count")
-for(tr in df_files$taxlevel){
-  cnt_correct<-x[x$Type=="correct"&x$Taxonomy_rank==tr,]$Count
-  cnt_incorrect<-x[x$Type=="incorrect"&x$Taxonomy_rank==tr,]$Count
-  x[nrow(x)+1,1:2]<-c("Correct_fraction", tr)
-  x[nrow(x),3]<-cnt_correct/(cnt_correct+cnt_incorrect)
-}
-
-write.table(x,file="correct_vs_incorrect_cnt.tsv",quote=F,sep="\t",row.names = F)
-
-#--Fig3
-ggplot(data=df_scores[df_scores$V3=="Species",], mapping=aes(x=V2,y=V4)) +
-  geom_violin() +
-  labs(x="",y="Probability Score") +
-  theme(text=element_text(size=20)) +
-  facet_wrap( ~ V3, ncol=6)
-# ggplot(data=df_scores[df_scores$V2=='correct',], 
-#        mapping=aes(x=V4,after_stat(count))) +
-#   geom_histogram(alpha = 0.5, binwidth = 0.01, fill="grey") +
-# #  scale_y_log10() +
-#   labs(x = "Prediction Score", y = "Count",
-#        title = "") +
-#   theme_bw() +
-#   facet_wrap( ~ V3, ncol=1)
+# df_files<-data.frame(
+#   fs=c(
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv",
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-genus-confidence-scores.tsv",
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-family-confidence-scores.tsv",
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-order-confidence-scores.tsv",
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-class-confidence-scores.tsv",
+#     "updated-testing-set-all-out-ncbi-cutoff-0.0-phylum-confidence-scores.tsv"
+#   ),
+#   taxlevel=c(
+#     "Species",
+#     "Genus",
+#     "Family",
+#     "Order",
+#     "Class",
+#     "Phylum"
+#   )
+# )
 # 
-# ggplot(data=df_scores[df_scores$V2=='incorrect',], 
-#        mapping=aes(x=V4,after_stat(count))) +
-#   geom_histogram(alpha = 0.5, binwidth = 0.01, fill="grey") +
-#   #  scale_y_log10() +
-#   labs(x = "Prediction Score", y = "Count",
-#        title = "") +
-#   theme_bw() +
-#   facet_wrap( ~ V3, ncol=1)
-
-
-##### 7. ###########
-accuracy<-read.table(file="accuracy-summary-subsets-testing-wo-unc.tsv", sep="\t")
-tls<-unique(accuracy$V1)
-tranks<-unique(accuracy$V2)
-df<-data.frame(matrix(ncol=length(tls),nrow=length(tranks)))
-rownames(df)<-tranks
-colnames(df)<-tls
-for(tl in tls){
-  for(tr in tranks){
-    df[tr,tl]<-median(accuracy[accuracy$V1==tl & accuracy$V2==tr,]$V3)
-  }
-}
-
-write.table(df,file="median_accuracy.tsv",quote=F,sep="\t")
-
-ggplot(data=accuracy, mapping=aes(x=V1,y=V3)) +
-  geom_violin() +
-  labs(x="",y="Accuracy") +
-  theme(text=element_text(size=20),
-        axis.text.x = element_text(angle=90,hjust=1)) +
-  facet_wrap( ~ V2, ncol=6)
+# df_scores<-data.frame(matrix(ncol=4,nrow=0))
+# for(i in 1:dim(df_files)[1]){
+#   f<-df_files[i,]$fs
+#   t<-df_files[i,]$taxlevel
+#   a <- read.table(file=f, sep="\t")
+#   a$V3<-rep(t,dim(a)[1])
+#   df_scores<-rbind(df_scores,a)
+#   
+#   # pdf(paste(t,"_correct.pdf",sep=""),width=4,height=2)
+#   # ggplot(data=a[a$V2=='correct',], 
+#   #        mapping=aes(x=V4,after_stat(count))) +
+#   #   geom_histogram(alpha = 0.6, binwidth = 0.01, fill="black") +
+#   #   #  scale_y_log10() +
+#   #   #labs(x = "Prediction Score", y = "Count",
+#   #   labs(x = "", y = "",
+#   #        title = "") +
+#   #   theme_bw() +
+#   #   facet_wrap( ~ V3, ncol=1)
+#   # dev.off()
+#   # 
+#   # pdf(paste(t,"_incorrect.pdf",sep=""),width=4,height=2)
+#   # ggplot(data=a[a$V2=='incorrect',], 
+#   #        mapping=aes(x=V4,after_stat(count))) +
+#   #   geom_histogram(alpha = 0.6, binwidth = 0.01, fill="black") +
+#   #   #  scale_y_log10() +
+#   #   #labs(x = "Prediction Score", y = "Count",
+#   #   labs(x = "", y = "",
+#   #        title = "") +
+#   #   theme_bw() +
+#   #   facet_wrap( ~ V3, ncol=1)
+#   # dev.off()
+# }
+# 
+# #--stats of probability distributions
+# pstat<-data.frame(matrix(nrow=0,ncol=4))
+# colnames(pstat)<-c("Taxonomy_rank","Type","Stat_type","Value")
+# for(tr in df_files$taxlevel){
+#   for(type in c("correct","incorrect")){
+#     x<-quantile(df_scores[df_scores$V2==type & df_scores$V3==tr,]$V4)
+#     #-minimum
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"minimum")
+#     pstat[nrow(pstat),4]<-x[1]
+#     #-maximum
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"maximum")
+#     pstat[nrow(pstat),4]<-x[5]
+#     #-median
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"median")
+#     pstat[nrow(pstat),4]<-x[3]
+#     #--25th percentile
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"quatile1")
+#     pstat[nrow(pstat),4]<-x[2]
+#     #--75th percentile
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"quatile3")
+#     pstat[nrow(pstat),4]<-x[4]
+#     #--mean
+#     pstat[nrow(pstat)+1,1:3]<-c(tr,type,"mean")
+#     pstat[nrow(pstat),4]<-
+#       mean(df_scores[df_scores$V2==type & df_scores$V3==tr,]$V4)
+#   }
+# }
+# 
+# write.table(pstat,file="probability_stats.tsv",quote=F,sep="\t",row.names = F)
+# 
+# #--number of correct vs incorrect for each taxonomic rank
+# x<-aggregate(df_scores$V4,by=list(df_scores$V2,df_scores$V3),FUN=length)
+# colnames(x)<-c("Type","Taxonomy_rank","Count")
+# for(tr in df_files$taxlevel){
+#   cnt_correct<-x[x$Type=="correct"&x$Taxonomy_rank==tr,]$Count
+#   cnt_incorrect<-x[x$Type=="incorrect"&x$Taxonomy_rank==tr,]$Count
+#   x[nrow(x)+1,1:2]<-c("Correct_fraction", tr)
+#   x[nrow(x),3]<-cnt_correct/(cnt_correct+cnt_incorrect)
+# }
+# 
+# write.table(x,file="correct_vs_incorrect_cnt.tsv",quote=F,sep="\t",row.names = F)
+# 
+# #--Fig3
+# ggplot(data=df_scores[df_scores$V3=="Species",], mapping=aes(x=V2,y=V4)) +
+#   geom_violin() +
+#   labs(x="",y="Probability Score") +
+#   theme(text=element_text(size=20)) +
+#   facet_wrap( ~ V3, ncol=6)
+# # ggplot(data=df_scores[df_scores$V2=='correct',], 
+# #        mapping=aes(x=V4,after_stat(count))) +
+# #   geom_histogram(alpha = 0.5, binwidth = 0.01, fill="grey") +
+# # #  scale_y_log10() +
+# #   labs(x = "Prediction Score", y = "Count",
+# #        title = "") +
+# #   theme_bw() +
+# #   facet_wrap( ~ V3, ncol=1)
+# # 
+# # ggplot(data=df_scores[df_scores$V2=='incorrect',], 
+# #        mapping=aes(x=V4,after_stat(count))) +
+# #   geom_histogram(alpha = 0.5, binwidth = 0.01, fill="grey") +
+# #   #  scale_y_log10() +
+# #   labs(x = "Prediction Score", y = "Count",
+# #        title = "") +
+# #   theme_bw() +
+# #   facet_wrap( ~ V3, ncol=1)
+# 
+# 
+# ##### 7. ###########
+# accuracy<-read.table(file="accuracy-summary-subsets-testing-wo-unc.tsv", sep="\t")
+# tls<-unique(accuracy$V1)
+# tranks<-unique(accuracy$V2)
+# df<-data.frame(matrix(ncol=length(tls),nrow=length(tranks)))
+# rownames(df)<-tranks
+# colnames(df)<-tls
+# for(tl in tls){
+#   for(tr in tranks){
+#     df[tr,tl]<-median(accuracy[accuracy$V1==tl & accuracy$V2==tr,]$V3)
+#   }
+# }
+# 
+# write.table(df,file="median_accuracy.tsv",quote=F,sep="\t")
+# 
+# ggplot(data=accuracy, mapping=aes(x=V1,y=V3)) +
+#   geom_violin() +
+#   labs(x="",y="Accuracy") +
+#   theme(text=element_text(size=20),
+#         axis.text.x = element_text(angle=90,hjust=1)) +
+#   facet_wrap( ~ V2, ncol=6)
