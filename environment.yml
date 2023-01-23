@@ -1,0 +1,14 @@
+name: dltoda
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.9.*
+  - mamba
+  - pip
+  - poetry=1.*
+  - openmpi
+  - cudatoolkit=11.2.*
+  - cudnn=8.1.*
+  - cudatoolkit-dev=11.2.*
+
