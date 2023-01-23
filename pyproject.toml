@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "dltoda"
+authors = ["..."]
+version = "0.1.0"
+description = ""
+
+[[tool.poetry.source]]
+name = "nvidia"
+url = "https://developer.download.nvidia.com/compute/redist/"
+default = false
+secondary = true
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.10"
+tensorflow = ">=2.9.0,<2.10"
+tensorrt = "*"
+nvidia-dali-cuda110 = "^1"
+nvidia-dali-tf-plugin-cuda110 = "1.15"
+horovod = "*"
+tensorboard_plugin_profile = "*"
+ipykernel = "*"
+tensorflow_datasets = "*"
+matplotlib = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
