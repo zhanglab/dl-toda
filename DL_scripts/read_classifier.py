@@ -17,6 +17,8 @@ import math
 from collections import defaultdict
 import argparse
 
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath( __file__ )).split('/')[0:-1])
+
 # disable eager execution
 # tf.compat.v1.disable_eager_execution()
 print(f'Is eager execution enabled: {tf.executing_eagerly()}')
@@ -102,9 +104,9 @@ def main():
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--dali_idx', type=str, help='path to dali indexes files', required=True)
     parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', required=True)
-    parser.add_argument('--output_dir', type=str, help='directory to store results', required=True)
-    parser.add_argument('--epoch', type=int, help='epoch of checkpoint')
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
+    parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
+    parser.add_argument('--epoch', type=int, help='epoch of checkpoint', default=14)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
