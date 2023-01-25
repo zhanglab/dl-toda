@@ -18,25 +18,33 @@ def load_reads(args):
     records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
     args.reads = {rec.split('\n')[0]: rec for rec in records}
 
-def parse_data(taxa, data, args, process_id):
+# def parse_data(taxa, data, args, process_id):
+def parse_data(taxa, args, process_id):
+    labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
     out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
-    taxa_count = {}
-    for t in taxa:
-        # get label(s)
-        l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
-        # get reads
-        t_reads_id = []
-        for k, v in data.items():
-            if int(k) in l:
-                for i in range(len(v)):
-                    if float(v[i][3]) > args.cutoff:
-                        t_reads_id.append(v[i][0])
-        taxa_count[t] = len(t_reads_id)
-        if args.binning:
-            t_reads = [args.reads[r] for r in t_reads_id]
-            fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
-            with open(fq_filename, 'a') as out_fq:
-                out_fq.write(''.join(t_reads))
+    taxa_count = defaultdict(int)
+    with open(args.dl_toda_output, 'r') as f:
+        for line in f:
+            data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
+            if int(line.rstrip().split('\t')[2]) in labels:
+                if float(line.rstrip().split('\t')[3]) > args.cutoff:
+                    taxa_count[line.rstrip().split('\t')[2]] += 1
+    # for t in taxa:
+    #     # get label(s)
+    #     l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
+    #     # get reads
+    #     t_reads_id = []
+    #     for k, v in data.items():
+    #         if int(k) in l:
+    #             for i in range(len(v)):
+    #                 if float(v[i][3]) > args.cutoff:
+    #                     t_reads_id.append(v[i][0])
+    #     taxa_count[t] = len(t_reads_id)
+        # if args.binning:
+        #     t_reads = [args.reads[r] for r in t_reads_id]
+        #     fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
+        #     with open(fq_filename, 'a') as out_fq:
+        #         out_fq.write(''.join(t_reads))
 
     # write tax profile to output file
     with open(out_filename, 'w') as out_f:
@@ -97,22 +105,23 @@ if __name__ == "__main__":
     print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
 
     # load data
-    data = defaultdict(list)
-    with open(args.dl_toda_output, 'r') as f:
-        for line in f:
-            data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
-    print(len(data))
+    # data = defaultdict(list)
+    # with open(args.dl_toda_output, 'r') as f:
+    #     for line in f:
+    #         data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
+    # print(len(data))
+    #
+    # data_toshare = [data[i] for i in taxa_groups[0]]
+    # print(len(data_toshare))
+    # print(len(taxa_groups[0]))
 
-    data_toshare = [data[i] for i in taxa_groups[0]]
-    print(len(data_toshare))
-    print(len(taxa_groups[0]))
-
-    # with mp.Manager() as manager:
-    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], args, i)) for i in range(len(taxa_groups))]
+        # processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
