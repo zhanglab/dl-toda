@@ -25,7 +25,6 @@ def parse_data(taxa, args, process_id):
     taxa_count = defaultdict(int)
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
-            data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
             if int(line.rstrip().split('\t')[2]) in labels:
                 if float(line.rstrip().split('\t')[3]) > args.cutoff:
                     taxa_count[line.rstrip().split('\t')[2]] += 1
