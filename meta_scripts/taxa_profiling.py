@@ -22,9 +22,9 @@ def load_reads(args):
 def parse_data(taxa, args, process_id):
     labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
     print(process_id, len(labels))
-    out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
+    out_filename = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
     taxa_count = defaultdict(int)
-    with open(args.dl_toda_output, 'r') as f:
+    with open(args.tool_output, 'r') as f:
         for line in f:
             if int(line.rstrip().split('\t')[2]) in labels:
                 if float(line.rstrip().split('\t')[3]) > args.cutoff:
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             taxa.append(args.dl_toda_taxonomy[i])
     print(len(taxa))
     # update and create output directory
-    args.output_dir = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+    args.output_dir = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
     if not os.path.exists(args.output_dir):
         os.makedirs(os.path.join(args.output_dir))
         if args.binning:
