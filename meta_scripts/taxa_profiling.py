@@ -21,13 +21,16 @@ def load_reads(args):
 # def parse_data(taxa, data, args, process_id):
 def parse_data(taxa, args, process_id):
     labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
+    print(process_id, len(labels))
     out_filename = os.path.join(args.output_dir, '-'.join(args.dl_toda_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
     taxa_count = defaultdict(int)
     with open(args.dl_toda_output, 'r') as f:
         for line in f:
             if int(line.rstrip().split('\t')[2]) in labels:
                 if float(line.rstrip().split('\t')[3]) > args.cutoff:
-                    taxa_count[line.rstrip().split('\t')[2]] += 1
+                    taxa_count[args.dl_toda_taxonomy[line.rstrip().split('\t')[2]]] += 1
+                    if process_id == 0:
+                        print(line)
     # for t in taxa:
     #     # get label(s)
     #     l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
@@ -56,7 +59,8 @@ def parse_data(taxa, args, process_id):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dl_toda_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
+    parser.add_argument('--tool_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
+    parser.add_argument('--ttool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], required=True)
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
