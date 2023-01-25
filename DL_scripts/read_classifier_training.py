@@ -18,6 +18,7 @@ import random
 from models import AlexNet
 import argparse
 
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath( __file__ )).split('/')[0:-1])
 
 # disable eager execution
 #tf.compat.v1.disable_eager_execution()
@@ -122,10 +123,10 @@ def testing_step(reads, labels, loss, val_loss, val_accuracy, model):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tfrecords', type=str, help='path to tfrecords')
-    parser.add_argument('--idx_files', type=str, help='path to dali index files')
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
-    parser.add_argument('--output_dir', type=str, help='path to store model')
+    parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
+    parser.add_argument('--idx_files', type=str, help='path to dali index files', required=True)
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
+    parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('-resume' in sys.argv))
@@ -134,8 +135,8 @@ def main():
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=512)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--num_train_samples', type=int, help='number of reads in training set')
-    parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set')
+    parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
+    parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
     args = parser.parse_args()
