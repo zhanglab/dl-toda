@@ -103,12 +103,16 @@ if __name__ == "__main__":
             data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
     print(len(data))
 
-    with mp.Manager() as manager:
-        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], data, args, i)) for i in range(len(taxa_groups))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+    data_toshare = [data[i] for i in taxa_groups[0]]
+    print(len(data_toshare))
+    print(len(taxa_groups[0]))
+
+    # with mp.Manager() as manager:
+    #     processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
+    #     for p in processes:
+    #         p.start()
+    #     for p in processes:
+    #         p.join()
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
