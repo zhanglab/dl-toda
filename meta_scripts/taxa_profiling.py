@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--tool_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
-    parser.add_argument('--ttool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], required=True)
+    parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], required=True)
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
