@@ -7,10 +7,9 @@ import gzip
 import shutil
 from collections import defaultdict
 import multiprocessing as mp
-print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-2]))
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.parse_tool_output import *
+from vis_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 
 def load_reads(args):
     if args.fastq[-2:] == 'gz':
