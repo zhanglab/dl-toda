@@ -148,7 +148,9 @@ if __name__ == "__main__":
             # combine results from all processes
             taxa_count = defaultdict(int)
             for process, process_results in results.items():
-                taxa_count[1] += 1
+                for i in range(len(process_results)):
+                    print(process_results[i][1])
+                    taxa_count[process_results[i][1]] += 1
             # write results to output file
             out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + '-taxa_profile')
             with open(out_filename, 'w') as out_f:
