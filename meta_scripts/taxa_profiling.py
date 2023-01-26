@@ -143,7 +143,7 @@ if __name__ == "__main__":
             for p in processes:
                 p.join()
 
-    else:
+    elif args.tool in ['kraken2', 'centrifuge']:
         args.dataset = 'meta'
         args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
