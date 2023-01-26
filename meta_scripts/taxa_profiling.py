@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='output file with predicted species obtained from running DL-TODA')
-    parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], default='dl-toda')
+    parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'])
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
     parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
     args = parser.parse_args()
 
@@ -86,6 +86,18 @@ if __name__ == "__main__":
     if args.binning:
         # load reads
         load_reads(args)
+
+    elif args.summarize:
+        input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
+        print(len(input_files))
+        taxa_count = defaultdict(int)
+        for i in range(len(input_files)):
+            with open(input_files[i], 'r') as f:
+                for line in f:
+                    taxa_count[line.rstrip().split('\t')[0].split(';')[args.ranks[args.rank]]] += int(line.rstrip().split('\t')[1])
+        with open(os.path.join(args.output_dir, f'{args.rank}-taxa_profile'), 'w') as outf:
+            for k, v in taxa_count.items():
+                out_f.write(f'{k}\t{v}\n')
 
     if args.tool == 'dl-toda':
         # load dl-toda taxonomy
@@ -157,17 +169,7 @@ if __name__ == "__main__":
                 for k, v in taxa_count.items():
                     out_f.write(f'{k}\t{v}\n')
 
-        if args.summarize:
-            input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
-            print(len(input_files))
-            taxa_count = defaultdict(int)
-            for i in range(len(input_files)):
-                with open(input_files[i], 'r') as f:
-                    for line in f:
-                        taxa_count[line.rstrip().split('\t')[0].split(';')[args.ranks[args.rank]]] += int(line.rstrip().split('\t')[1])
-            with open(os.path.join(args.output_dir, f'{args.rank}-taxa_profile'), 'w') as outf:
-                for k, v in taxa_count.items():
-                    out_f.write(f'{k}\t{v}\n')
+
 
 ##########################################################
         # create file with taxonomic profiles
