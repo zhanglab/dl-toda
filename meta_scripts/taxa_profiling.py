@@ -1,11 +1,13 @@
 import argparse
 import sys
+sys.path.append('..')
 import os
 import math
 import glob
 import gzip
 import shutil
 from collections import defaultdict
+from vis_scripts.parse_tool_output import *
 import multiprocessing as mp
 
 def load_reads(args):
@@ -29,7 +31,7 @@ def parse_data(taxa, args, process_id):
             if int(line.rstrip().split('\t')[2]) in labels:
                 if float(line.rstrip().split('\t')[3]) > args.cutoff:
                     taxa_count[args.dl_toda_taxonomy[int(line.rstrip().split('\t')[2])]] += 1
-                    
+
     # for t in taxa:
     #     # get label(s)
     #     l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
@@ -82,48 +84,73 @@ if __name__ == "__main__":
         # load reads
         load_reads(args)
 
-    # load dl-toda taxonomy
-    args.dl_toda_taxonomy = {}
-    with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
-        for line in in_f:
-            line = line.rstrip().split('\t')
-            args.dl_toda_taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
-    taxa = []
-    for i in range(len(args.dl_toda_taxonomy)):
-        if args.dl_toda_taxonomy[i] not in taxa:
-            taxa.append(args.dl_toda_taxonomy[i])
-    print(len(taxa))
-    # update and create output directory
-    args.output_dir = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
-    if not os.path.exists(args.output_dir):
-        os.makedirs(os.path.join(args.output_dir))
-        if args.binning:
-            for i in range(args.processes):
-                os.makedirs(os.path.join(args.output_dir, f'{i}'))
+    if args.tool == 'dl-toda':
+        # load dl-toda taxonomy
+        args.dl_toda_taxonomy = {}
+        with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
+            for line in in_f:
+                line = line.rstrip().split('\t')
+                args.dl_toda_taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
+        taxa = []
+        for i in range(len(args.dl_toda_taxonomy)):
+            if args.dl_toda_taxonomy[i] not in taxa:
+                taxa.append(args.dl_toda_taxonomy[i])
+        print(len(taxa))
+        # update and create output directory
+        args.output_dir = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+        if not os.path.exists(args.output_dir):
+            os.makedirs(os.path.join(args.output_dir))
+            if args.binning:
+                for i in range(args.processes):
+                    os.makedirs(os.path.join(args.output_dir, f'{i}'))
 
-    # split taxa amongst processes
-    chunk_size = math.ceil(len(taxa)/args.processes)
-    taxa_groups = [taxa[i:i+chunk_size] for i in range(0,len(taxa),chunk_size)]
-    print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
+        # split taxa amongst processes
+        chunk_size = math.ceil(len(taxa)/args.processes)
+        taxa_groups = [taxa[i:i+chunk_size] for i in range(0,len(taxa),chunk_size)]
+        print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
 
-    # load data
-    # data = defaultdict(list)
-    # with open(args.dl_toda_output, 'r') as f:
-    #     for line in f:
-    #         data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
-    # print(len(data))
-    #
-    # data_toshare = [data[i] for i in taxa_groups[0]]
-    # print(len(data_toshare))
-    # print(len(taxa_groups[0]))
+        # load data
+        # data = defaultdict(list)
+        # with open(args.dl_toda_output, 'r') as f:
+        #     for line in f:
+        #         data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
+        # print(len(data))
+        #
+        # data_toshare = [data[i] for i in taxa_groups[0]]
+        # print(len(data_toshare))
+        # print(len(taxa_groups[0]))
 
-    with mp.Manager() as manager:
-        processes = [mp.Process(target=parse_data, args=(taxa_groups[i], args, i)) for i in range(len(taxa_groups))]
-        # processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+        with mp.Manager() as manager:
+            processes = [mp.Process(target=parse_data, args=(taxa_groups[i], args, i)) for i in range(len(taxa_groups))]
+            # processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
+
+    elif args.tool == 'kraken2':
+        args.dataset = 'meta'
+        # load results of taxonomic classification tool
+        data = load_tool_output(args)
+        # parse data
+        functions = {'kraken2': parse_kraken_output, 'centrifuge': parse_centrifuge_output}
+        with mp.Manager() as manager:
+            results = manager.dict()
+            processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, results)) for i in range(len(data))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
+            # combine results from all processes
+            taxa_count = defaultdict(int)
+            for process, process_results in results.items():
+                taxa_count[1] += 1
+            # write results to output file
+            out_filename = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+            with open(out_filename, 'w') as out_f:
+                for k, v in taxa_count.items():
+                    out_f.write(f'{k}\t{v}\n')
+
 ##########################################################
         # create file with taxonomic profiles
         # with open(args.output_file, 'w') as out_f:
