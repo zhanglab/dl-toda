@@ -1,6 +1,8 @@
 import argparse
 import sys
-sys.path.append('..')
+print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-2]))
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 import os
 import math
 import glob
