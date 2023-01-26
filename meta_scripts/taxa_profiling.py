@@ -72,6 +72,7 @@ if __name__ == "__main__":
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], required=True)
+    parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
     args = parser.parse_args()
 
     args.ranks = {'phylum': 5, 'class': 4, 'order': 3, 'family': 2, 'genus': 1, 'species': 0}
@@ -153,6 +154,18 @@ if __name__ == "__main__":
             # write results to output file
             out_filename = os.path.join(args.output_dir, '-'.join([args.input.split('/')[-1], 'taxa_profile']))
             with open(out_filename, 'w') as out_f:
+                for k, v in taxa_count.items():
+                    out_f.write(f'{k}\t{v}\n')
+
+        if args.summarize:
+            input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
+            print(len(input_files))
+            taxa_count = defaultdict(int)
+            for i in range(len(input_files)):
+                with open(input_files[i], 'r') as f:
+                    for line in f:
+                        taxa_count[line.rstrip().split('\t')[0].split(';')[args.ranks[args.rank]]] += int(line.rstrip().split('\t')[1])
+            with open(os.path.join(args.output_dir, f'{args.rank}-taxa_profile'), 'w') as outf:
                 for k, v in taxa_count.items():
                     out_f.write(f'{k}\t{v}\n')
 
