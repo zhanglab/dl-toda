@@ -61,8 +61,8 @@ def parse_data(taxa, args, process_id):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
-    parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], required=True)
+    parser.add_argument('--input', type=str, help='output file with predicted species obtained from running DL-TODA')
+    parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], default='dl-toda')
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], required=True)
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
     args = parser.parse_args()
 
