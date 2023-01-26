@@ -11,9 +11,7 @@ def parse_kraken_output(args, data, process, results):
         line = line.rstrip().split('\t')
         read = line[1]
         if args.dataset == 'meta':
-            if line[0] == 'U':
-                process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\n')
-            else:
+            if line[0] != 'U':
                 # get ncbi taxid of predicted taxon
                 taxid_index = line[2].find('taxid')
                 taxid = line[2][taxid_index+6:-1]
