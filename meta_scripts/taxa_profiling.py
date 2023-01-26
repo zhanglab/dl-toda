@@ -25,9 +25,9 @@ def load_reads(args):
 def parse_data(taxa, args, process_id):
     labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
     print(process_id, len(labels))
-    out_filename = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
+    out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
     taxa_count = defaultdict(int)
-    with open(args.tool_output, 'r') as f:
+    with open(args.input, 'r') as f:
         for line in f:
             if int(line.rstrip().split('\t')[2]) in labels:
                 if float(line.rstrip().split('\t')[3]) > args.cutoff:
@@ -61,7 +61,7 @@ def parse_data(taxa, args, process_id):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tool_output', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
+    parser.add_argument('--input', type=str, help='output file with predicted species obtained from running DL-TODA', required=True)
     parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'], required=True)
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 taxa.append(args.dl_toda_taxonomy[i])
         print(len(taxa))
         # update and create output directory
-        args.output_dir = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+        args.output_dir = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
             if args.binning:
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             for process, process_results in results.items():
                 taxa_count[1] += 1
             # write results to output file
-            out_filename = os.path.join(args.output_dir, '-'.join(args.tool_output.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+            out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
             with open(out_filename, 'w') as out_f:
                 for k, v in taxa_count.items():
                     out_f.write(f'{k}\t{v}\n')
