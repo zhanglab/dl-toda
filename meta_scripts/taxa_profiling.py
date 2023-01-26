@@ -150,7 +150,7 @@ if __name__ == "__main__":
             for process, process_results in results.items():
                 taxa_count[1] += 1
             # write results to output file
-            out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+            out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + '-taxa_profile')
             with open(out_filename, 'w') as out_f:
                 for k, v in taxa_count.items():
                     out_f.write(f'{k}\t{v}\n')
