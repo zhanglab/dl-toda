@@ -149,7 +149,7 @@ if __name__ == "__main__":
             taxa_count = defaultdict(int)
             for process, process_results in results.items():
                 for i in range(len(process_results)):
-                    print(process_results[i].split('\t')[1])
+                    print(process_results[i].rstrip().split('\t')[1])
                     taxa_count[process_results[i].split('\t')[1]] += 1
             # write results to output file
             out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + '-taxa_profile')
