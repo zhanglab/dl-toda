@@ -60,15 +60,15 @@ def parse_centrifuge_output(args, data, process, results):
     for line in data:
         read = line.rstrip().split('\t')[0]
         taxid = line.rstrip().split('\t')[2]
-        if args.dataset == 'cami':
-            true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], args.d_nodes, args.d_names)
-        else:
-            true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
         if taxid != '0':
             _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
             if args.dataset == 'meta':
                 process_results.append(f'{read}\t{";".join(pred_taxonomy[args.ranks[args.rank]+1:])}\n')
             else:
+                if args.dataset == 'cami':
+                    true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], args.d_nodes, args.d_names)
+                else:
+                    true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
                 process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
         elif taxid == '0' and args.dataset != 'meta':
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
