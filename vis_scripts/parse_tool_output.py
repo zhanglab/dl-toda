@@ -1,9 +1,11 @@
 import os
+import sys
 import gzip
 import math
 import multiprocessing as mp
 from collections import defaultdict
-from ncbi_tax_utils import get_ncbi_taxonomy
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
 
 def parse_kraken_output(args, data, process, results):
     process_results = []
