@@ -65,9 +65,12 @@ def parse_centrifuge_output(args, data, process, results):
         else:
             true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
         if taxid != '0':
-            pred_taxonomy = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
-            process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
-        else:
+            _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
+            if args.dataset == 'meta':
+                process_results.append(f'{read}\t{";".join(pred_taxonomy[args.ranks[args.rank]+1:])}\n')
+            else:
+                process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
+        elif taxid == '0' and args.dataset != 'meta':
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
             number_unclassified += 1
 
