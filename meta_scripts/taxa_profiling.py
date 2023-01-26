@@ -95,7 +95,8 @@ if __name__ == "__main__":
         for i in range(len(input_files)):
             with open(input_files[i], 'r') as f:
                 for line in f:
-                    taxa_count[line.rstrip().split('\t')[0].split(';')[args.ranks[args.rank]]] += int(line.rstrip().split('\t')[1])
+                    if int(line.rstrip().split('\t')[1]) != 0:
+                        taxa_count[line.rstrip().split('\t')[0].split(';')[args.ranks[args.rank]]] += int(line.rstrip().split('\t')[1])
         with open(os.path.join(args.output_dir, f'taxa_profile_{args.rank}'), 'w') as out_f:
             for k, v in taxa_count.items():
                 out_f.write(f'{k}\t{v}\n')
