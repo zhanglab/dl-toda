@@ -25,7 +25,7 @@ def load_reads(args):
 def parse_data(taxa, args, process_id):
     labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
     print(process_id, len(labels))
-    out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-out.tsv')
+    out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-taxa_profile')
     taxa_count = defaultdict(int)
     with open(args.input, 'r') as f:
         for line in f:
@@ -88,7 +88,8 @@ if __name__ == "__main__":
         load_reads(args)
 
     elif args.summarize:
-        input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
+        # input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
+        input_files = glob.glob(os.path.join(args.input, f'SRR*/cutoff-{args.cutoff}/*-out.tsv'))
         print(len(input_files))
         taxa_count = defaultdict(int)
         for i in range(len(input_files)):
