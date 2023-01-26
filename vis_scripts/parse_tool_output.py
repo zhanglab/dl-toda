@@ -19,6 +19,7 @@ def parse_kraken_output(args, data, process, results):
                 taxid = line[2][taxid_index+6:-1]
                 # get ncbi taxonomy
                 pred_taxonomy = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
+                print(pred_taxonomy)
                 process_results.append(f'{read}\t{pred_taxonomy}\n')
         else:
             if args.dataset == 'cami':
