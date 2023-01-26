@@ -69,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--rank', type=str, help='taxonomic rank at which the analysis should be done', default='species')
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
+    parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], required=True)
     args = parser.parse_args()
@@ -129,8 +130,10 @@ if __name__ == "__main__":
             for p in processes:
                 p.join()
 
-    elif args.tool == 'kraken2':
+    else:
         args.dataset = 'meta'
+        args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
+        args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
         # load results of taxonomic classification tool
         data = load_tool_output(args)
         # parse data
