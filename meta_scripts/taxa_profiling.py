@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     elif args.summarize:
         # input_files = glob.glob(os.path.join(args.input, '*-taxa_profile'))
-        input_files = glob.glob(os.path.join(args.input, f'SRR*/cutoff-{args.cutoff}/*-out.tsv'))
+        input_files = glob.glob(os.path.join(args.input, f'*-taxa_profile.tsv'))
         print(len(input_files))
         taxa_count = defaultdict(int)
         for i in range(len(input_files)):
