@@ -9,7 +9,7 @@ data <- read.csv(input_file, sep='\t', header=FALSE)
 tiff(file.path(paste(output_dir, 'FigureS2_precision_training_reads.tiff', sep = "/")), units="in", width=8.5, height=6, res=300)
 ggplot(data, aes(x=log(V2), y=V3)) + geom_point(position="jitter") +
   ylab("Precision") + 
-  xlab("Number of training reads (natural log)") +
+  xlab("Coverage of training genomes (natural log)") +
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
         panel.background = element_rect(fill='white'),
