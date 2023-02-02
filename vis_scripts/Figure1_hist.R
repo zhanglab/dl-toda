@@ -12,14 +12,14 @@ train_data <- read.csv(train_input_file, sep='\t', header=FALSE)
 test_data <- read.csv(test_input_file, sep='\t', header=FALSE)
 
 
-cat("training - ", "median: ", median(train_data$V4), " min: ", min(train_data$V4), " max: ", max(train_data$V4), "\n")
-cat("testing - ", "median: ", median(train_data$V4), " min: ", min(train_data$V4), " max: ", max(train_data$V4), "\n")
+cat("training - ", "median: ", median(train_data$V2), " min: ", min(train_data$V2), " max: ", max(train_data$V2), "\n")
+cat("testing - ", "median: ", median(train_data$V2), " min: ", min(train_data$V2), " max: ", max(train_data$V2), "\n")
 
 
 # plot histogram of read count per species for training and testing datasets
-plot1 <- ggplot(train_data, aes(x=log(V4))) + geom_histogram() +
+plot1 <- ggplot(train_data, aes(x=log(V2))) + geom_histogram() +
   ylab("Number of species") +
-  xlab("Coverage of training genomes per species (natural log)") +
+  xlab("Number training reads per species (natural log)") +
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
         panel.background = element_rect(fill='white'),
@@ -29,9 +29,9 @@ plot1 <- ggplot(train_data, aes(x=log(V4))) + geom_histogram() +
   scale_x_continuous(breaks = pretty_breaks())
 
 
-plot2 <- ggplot(test_data, aes(x=log(V4))) + geom_histogram() +
+plot2 <- ggplot(test_data, aes(x=log(V2))) + geom_histogram() +
   ylab("Number of species") +
-  xlab("Coverage of testing genomes per species (natural log)") +
+  xlab("Number of testing reads per species (natural log)") +
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
         panel.background = element_rect(fill='white'),
