@@ -1,5 +1,3 @@
-setwd("~/Downloads/")
-
 library("ggplot2")
 library("ggforce")
 library("PupillometryR") #for making half violin plot
@@ -11,39 +9,39 @@ library("ggpubr")
 
 args = commandArgs(trailingOnly = TRUE)
 input_dir = args[1]
-
-a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", sep="/")),
+#a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", sep="/")),
+#               sep="\t")
+a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out.tsv", sep="/")),
                sep="\t")
-
+print(a)
 ##### 1. ###########
 #plot both correct and incorrect in one plot
-ggplot(data=a, mapping=aes(x=V4,fill=V2)) +
-  geom_histogram(alpha = 0.5, bins = 50) +
-  labs(x = "Prediction Scores", y = "Count",
-       title = "Distribution of DL-TODA prediction scores") +
-  theme_bw()
+#ggplot(data=a, mapping=aes(x=V4,fill=V2)) +
+#  geom_histogram(alpha = 0.5, bins = 50) +
+#  labs(x = "Prediction Scores", y = "Count",
+#       title = "Distribution of DL-TODA prediction scores") +
+#  theme_bw()
 
 #-plot the scores of only incorrect predictions together with the fitted curve
-ggplot(data=a[a$V2=='incorrect',], mapping=aes(x=V4,fill=V2)) +
-  geom_histogram(alpha = 0.5, bins = 50, fill="grey") +
-  labs(x = "Prediction Scores", y = "Count",
-       title = "Distribution of DL-TODA prediction scores - incorrect predictions") +
-  theme_bw()
+#ggplot(data=a[a$V2=='incorrect',], mapping=aes(x=V4,fill=V2)) +
+#  geom_histogram(alpha = 0.5, bins = 50, fill="grey") +
+#  labs(x = "Prediction Scores", y = "Count",
+#       title = "Distribution of DL-TODA prediction scores - incorrect predictions") +
+#  theme_bw()
 
 #plot the scores of only correct predictions
-ggplot(data=a[a$V2=='correct',], mapping=aes(x=V4,fill=V2)) +
-  geom_histogram(alpha = 0.5, bins = 50, fill="black") +
-  labs(x = "Prediction Scores", y = "Count",
-       title = "Distribution of DL-TODA prediction scores - correct predictions") +
-  theme_bw()
+#ggplot(data=a[a$V2=='correct',], mapping=aes(x=V4,fill=V2)) +
+#  geom_histogram(alpha = 0.5, bins = 50, fill="black") +
+#  labs(x = "Prediction Scores", y = "Count",
+#       title = "Distribution of DL-TODA prediction scores - correct predictions") +
+#  theme_bw()
 
 
 ##### 2. ###########
 #Fit gamma distributions to the scores of incorrect predictions
-f<-fitdist(a[a$V2=='incorrect',]$V4,distr="gamma")
-
+f<-fitdist(a[a$V3=='incorrect',]$V4,distr="gamma")
 #Fitted result:
-#> summary(f)
+print(summary(f))
 #Fitting of the distribution ' gamma ' by maximum likelihood 
 #Parameters : 
 #  estimate  Std. Error
@@ -57,8 +55,9 @@ f<-fitdist(a[a$V2=='incorrect',]$V4,distr="gamma")
 
 #-prepare data for plotting the fitted gamma distribution
 x <- seq(0,1,length=21)
+print(x)
 gamma_dist <- data.frame(cbind(x, dgamma(x,f$estimate[1],f$estimate[2])))
-hist(a[a$V2=='incorrect',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
+hist(a[a$V3=='incorrect',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
      main="Distribution of DL-TODA prediction scores - incorrect predictions")
 lines(gamma_dist$x,gamma_dist$V2,col="red")
 
@@ -72,26 +71,28 @@ lines(gamma_dist$x,gamma_dist$V2,col="red")
 #--With a cutoff of 0.8, we expect to filter out 90% of the incorrect reads
 #--With a cutoff of 0.94, we expect to filter out 95% of the incorrect reads
 
-quantile(a[a$V2=='incorrect',]$V4, probs=c(0,0.05,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1))
-e_incorrect<-eqgamma(a[a$V2=='incorrect',]$V4, p=0.90, 
+quantile(a[a$V3=='incorrect',]$V4, probs=c(0,0.05,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1))
+e_incorrect<-eqgamma(a[a$V3=='incorrect',]$V4, p=0.90,
                      ci=TRUE, ci.type="upper")
+
 #-prepare data for plotting the eqgamma fitted distribution of incorrect
 x <- seq(0,1,length=21)
 gamma_incorrect <- data.frame(cbind(x, dgamma(x,shape=e_incorrect$parameters[1],
                                               scale=e_incorrect$parameters[2])))
-hist(a[a$V2=='incorrect',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
+hist(a[a$V3=='incorrect',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
      main="Distribution of DL-TODA prediction scores - incorrect predictions")
 lines(gamma_incorrect$x,gamma_incorrect$V2,col="red")
 
 
-quantile(a[a$V2=='correct',]$V4, probs=c(0,0.01,0.05,0.06,0.07,0.08,0.1,0.5,0.9,0.95,1))
-e_correct<-eqgamma(a[a$V2=='correct',]$V4, p=0.1,
+quantile(a[a$V3=='correct',]$V4, probs=c(0,0.01,0.05,0.06,0.07,0.08,0.1,0.5,0.9,0.95,1))
+e_correct<-eqgamma(a[a$V3=='correct',]$V4, p=0.1,
                    ci=TRUE, ci.type="lower")
+
 #-prepare data for plotting the eqgamma fitted distribution of correct
 x <- seq(0,1,length=21)
 gamma_correct <- data.frame(cbind(x, dgamma(x,shape=e_correct$parameters[1],
                                               scale=e_correct$parameters[2])))
-hist(a[a$V2=='correct',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
+hist(a[a$V3=='correct',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
      main="Distribution of DL-TODA prediction scores - correct predictions")
 lines(gamma_correct$x,gamma_correct$V2,col="red")
 
@@ -110,38 +111,52 @@ pmtx_0.9<-data.frame(matrix(ncol=2,nrow=0))
  pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
  for(s in species){
   ## no cutoff
-  tp<-nrow(a[a$V1==s & a$V2=='correct',])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect',])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct',])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect',])
+  tp<-nrow(a[a$V1==s & a$V2==s,])
+  fp<-nrow(a[a$V1!=s & a$V2==s,])
   precision<-tp/(tp+fp)
   pmtx[nrow(pmtx)+1,]<-c(s,precision)
   ## cutoff 0.54
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.54,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.54,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.54,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.54,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.54,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.54,])
   precision<-tp/(tp+fp)
   pmtx_0.54[nrow(pmtx_0.54)+1,]<-c(s,precision)
   ## cutoff 0.64
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.64,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.64,])
   precision<-tp/(tp+fp)
   pmtx_0.64[nrow(pmtx_0.64)+1,]<-c(s,precision)
   ## cutoff 0.7
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.7,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.7,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.7,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.7,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.7,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.7,])
   precision<-tp/(tp+fp)
   pmtx_0.7[nrow(pmtx_0.7)+1,]<-c(s,precision)
   ## cutoff 0.8
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.8,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.8,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.8,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.8,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.8,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.8,])
   precision<-tp/(tp+fp)
   pmtx_0.8[nrow(pmtx_0.8)+1,]<-c(s,precision)
   ## cutoff 0.9
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.9,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.9,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.9,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.9,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.9,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.9,])
   precision<-tp/(tp+fp)
   pmtx_0.9[nrow(pmtx_0.9)+1,]<-c(s,precision)
   ## cutoff 0.94
-  tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.94,])
-  fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.94,])
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.94,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.94,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.94,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.94,])
   precision<-tp/(tp+fp)
   pmtx_0.94[nrow(pmtx_0.94)+1,]<-c(s,precision)
 }
