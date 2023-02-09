@@ -108,8 +108,8 @@ pmtx_0.7<-data.frame(matrix(ncol=2,nrow=0))
 pmtx_0.8<-data.frame(matrix(ncol=2,nrow=0))
 pmtx_0.9<-data.frame(matrix(ncol=2,nrow=0))
 ##--a cutoff of 0.94 correspond to filtering out 95% of the false positives based on eqgamma
- pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
- for(s in species){
+pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
+for(s in species){
   ## no cutoff
   #tp<-nrow(a[a$V1==s & a$V2=='correct',])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect',])
