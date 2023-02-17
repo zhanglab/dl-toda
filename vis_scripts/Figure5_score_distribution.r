@@ -9,11 +9,10 @@ library("ggpubr")
 
 args = commandArgs(trailingOnly = TRUE)
 input_dir = args[1]
-#a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", sep="/")),
-#               sep="\t")
-a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out.tsv", sep="/")),
-               sep="\t")
-print(a)
+a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores-v2.tsv", sep="/")),
+                sep="\t")
+
+
 ##### 1. ###########
 #plot both correct and incorrect in one plot
 #ggplot(data=a, mapping=aes(x=V4,fill=V2)) +
@@ -63,13 +62,20 @@ lines(gamma_dist$x,gamma_dist$V2,col="red")
 
 ##### 3. ###########
 # the analysis below gives the following estimations:
-#--With a cutoff of 0.54, we expect to filter out ~65% of the incorrect reads 
-#  and retain 95% of the correct reads
-#--With a cutoff of 0.64, we expect to filter out 75% of the incorrect reads 
-#  and retain 92% of the correct reads.
-#--With a cutoff of 0.72, we expect to filter out 85% of the incorrect reads
-#--With a cutoff of 0.8, we expect to filter out 90% of the incorrect reads
-#--With a cutoff of 0.94, we expect to filter out 95% of the incorrect reads
+##--With a cutoff of 0.54, we expect to filter out ~65% of the incorrect reads 
+##  and retain 95% of the correct reads
+##--With a cutoff of 0.64, we expect to filter out 75% of the incorrect reads 
+##  and retain 92% of the correct reads.
+##--With a cutoff of 0.72, we expect to filter out 85% of the incorrect reads
+##--With a cutoff of 0.8, we expect to filter out 90% of the incorrect reads
+##--With a cutoff of 0.94, we expect to filter out 95% of the incorrect reads
+
+#--With a cutoff of 0.44, we expect to filter out ~50% of the incorrect reads 
+#--With a cutoff of 0.50, we expect to filter out 60% of the incorrect reads 
+#--With a cutoff of 0.57, we expect to filter out 70% of the incorrect reads
+#--With a cutoff of 0.66, we expect to filter out 80% of the incorrect reads
+#--With a cutoff of 0.80, we expect to filter out 90% of the incorrect reads
+#--With a cutoff of 0.93, we expect to filter out 95% of the incorrect reads
 
 quantile(a[a$V3=='incorrect',]$V4, probs=c(0,0.05,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1))
 e_incorrect<-eqgamma(a[a$V3=='incorrect',]$V4, p=0.90,
@@ -91,7 +97,7 @@ e_correct<-eqgamma(a[a$V3=='correct',]$V4, p=0.1,
 #-prepare data for plotting the eqgamma fitted distribution of correct
 x <- seq(0,1,length=21)
 gamma_correct <- data.frame(cbind(x, dgamma(x,shape=e_correct$parameters[1],
-                                              scale=e_correct$parameters[2])))
+                                            scale=e_correct$parameters[2])))
 hist(a[a$V3=='correct',4],ylim=c(0,2),freq=FALSE,xlab="Prediction Scores",
      main="Distribution of DL-TODA prediction scores - correct predictions")
 lines(gamma_correct$x,gamma_correct$V2,col="red")
@@ -101,14 +107,14 @@ lines(gamma_correct$x,gamma_correct$V2,col="red")
 ## is not already parsed with a given threshold
 species<-unique(a$V1)
 pmtx<-data.frame(matrix(ncol=2,nrow=0))
-pmtx_0.54<-data.frame(matrix(ncol=2,nrow=0))
-pmtx_0.64<-data.frame(matrix(ncol=2,nrow=0))
-pmtx_0.7<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.44<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.50<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.57<-data.frame(matrix(ncol=2,nrow=0))
+pmtx_0.66<-data.frame(matrix(ncol=2,nrow=0))
 ##--a cutoff of 0.8 correspond to filtering out 90% of the false positives based on eqgamma
 pmtx_0.8<-data.frame(matrix(ncol=2,nrow=0))
-pmtx_0.9<-data.frame(matrix(ncol=2,nrow=0))
-##--a cutoff of 0.94 correspond to filtering out 95% of the false positives based on eqgamma
-pmtx_0.94<-data.frame(matrix(ncol=2,nrow=0))
+##--a cutoff of 0.93 correspond to filtering out 95% of the false positives based on eqgamma
+pmtx_0.93<-data.frame(matrix(ncol=2,nrow=0))
 for(s in species){
   ## no cutoff
   #tp<-nrow(a[a$V1==s & a$V2=='correct',])
@@ -117,27 +123,34 @@ for(s in species){
   fp<-nrow(a[a$V1!=s & a$V2==s,])
   precision<-tp/(tp+fp)
   pmtx[nrow(pmtx)+1,]<-c(s,precision)
-  ## cutoff 0.54
+  ## cutoff 0.44
   #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.54,])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.54,])
-  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.54,])
-  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.54,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.44,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.44,])
   precision<-tp/(tp+fp)
-  pmtx_0.54[nrow(pmtx_0.54)+1,]<-c(s,precision)
-  ## cutoff 0.64
+  pmtx_0.44[nrow(pmtx_0.44)+1,]<-c(s,precision)
+  ## cutoff 0.50
   #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
-  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.64,])
-  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.64,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.50,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.50,])
   precision<-tp/(tp+fp)
-  pmtx_0.64[nrow(pmtx_0.64)+1,]<-c(s,precision)
-  ## cutoff 0.7
+  pmtx_0.50[nrow(pmtx_0.50)+1,]<-c(s,precision)
+  ## cutoff 0.57
+  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.64,])
+  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.64,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.57,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.57,])
+  precision<-tp/(tp+fp)
+  pmtx_0.57[nrow(pmtx_0.57)+1,]<-c(s,precision)
+  ## cutoff 0.66
   #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.7,])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.7,])
-  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.7,])
-  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.7,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.66,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.66,])
   precision<-tp/(tp+fp)
-  pmtx_0.7[nrow(pmtx_0.7)+1,]<-c(s,precision)
+  pmtx_0.66[nrow(pmtx_0.66)+1,]<-c(s,precision)
   ## cutoff 0.8
   #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.8,])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.8,])
@@ -145,56 +158,51 @@ for(s in species){
   fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.8,])
   precision<-tp/(tp+fp)
   pmtx_0.8[nrow(pmtx_0.8)+1,]<-c(s,precision)
-  ## cutoff 0.9
+  ## cutoff 0.93
   #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.9,])
   #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.9,])
-  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.9,])
-  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.9,])
+  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.93,])
+  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.93,])
   precision<-tp/(tp+fp)
-  pmtx_0.9[nrow(pmtx_0.9)+1,]<-c(s,precision)
-  ## cutoff 0.94
-  #tp<-nrow(a[a$V1==s & a$V2=='correct' & a$V4>0.94,])
-  #fp<-nrow(a[a$V1==s & a$V2=='incorrect' & a$V4>0.94,])
-  tp<-nrow(a[a$V1==s & a$V2==s & a$V4>0.94,])
-  fp<-nrow(a[a$V1!=s & a$V2==s & a$V4>0.94,])
-  precision<-tp/(tp+fp)
-  pmtx_0.94[nrow(pmtx_0.94)+1,]<-c(s,precision)
+  pmtx_0.93[nrow(pmtx_0.93)+1,]<-c(s,precision)
 }
 write.table(pmtx,file="precision_mtx.tsv",sep="\t",quote=FALSE,
-           col.names = F, row.names = F)
-write.table(pmtx_0.54,file="precision_mtx_0.54.tsv",sep="\t",quote=FALSE,
             col.names = F, row.names = F)
-write.table(pmtx_0.64,file="precision_mtx_0.64.tsv",sep="\t",quote=FALSE,
-           col.names = F, row.names = F)
-write.table(pmtx_0.7,file="precision_mtx_0.7.tsv",sep="\t",quote=FALSE,
-           col.names = F, row.names = F)
+write.table(pmtx_0.44,file="precision_mtx_0.44.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
+write.table(pmtx_0.50,file="precision_mtx_0.50.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
+write.table(pmtx_0.57,file="precision_mtx_0.57.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
+write.table(pmtx_0.66,file="precision_mtx_0.66.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
 write.table(pmtx_0.8,file="precision_mtx_0.8.tsv",sep="\t",quote=FALSE,
-           col.names = F, row.names = F)
-write.table(pmtx_0.9,file="precision_mtx_0.9.tsv",sep="\t",quote=FALSE,
-           col.names = F, row.names = F)
-write.table(pmtx_0.94,file="precision_mtx_0.94.tsv",sep="\t",quote=FALSE,
             col.names = F, row.names = F)
+write.table(pmtx_0.93,file="precision_mtx_0.93.tsv",sep="\t",quote=FALSE,
+            col.names = F, row.names = F)
+
 
 # ## Make a summary of precision by different cutoffs
 precision_df<-data.frame(matrix(ncol=6,nrow=639))
 colnames(precision_df)<-c("species_gt",
-                          "c_0.54","c_0.64","c_0.7","c_0.8","c_0.94")
-precision_df$species_gt<-pmtx_0.54[,1]
-precision_df$c_0.54<-as.numeric(pmtx_0.54[,2])
-precision_df$c_0.64<-as.numeric(pmtx_0.64[,2])
-precision_df$c_0.7<-as.numeric(pmtx_0.7[,2])
+                          "c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
+precision_df$species_gt<-pmtx_0.44[,1]
+precision_df$c_0.44<-as.numeric(pmtx_0.44[,2])
+precision_df$c_0.50<-as.numeric(pmtx_0.50[,2])
+precision_df$c_0.57<-as.numeric(pmtx_0.57[,2])
+precision_df$c_0.66<-as.numeric(pmtx_0.66[,2])
 precision_df$c_0.8<-as.numeric(pmtx_0.8[,2])
-precision_df$c_0.9<-as.numeric(pmtx_0.9[,2])
-precision_df$c_0.94<-as.numeric(pmtx_0.94[,2])
+precision_df$c_0.93<-as.numeric(pmtx_0.93[,2])
+
 
 ## The section below is used when a summary result (e.g. 'precision_mtx_0.94.tsv')
 ## is already present
-fs<-c('precision_mtx_0.54.tsv','precision_mtx_0.64.tsv',
-      'precision_mtx_0.7.tsv','precision_mtx_0.8.tsv',
-      'precision_mtx_0.94.tsv')
+fs<-c('precision_mtx_0.44.tsv','precision_mtx_0.50.tsv','precision_mtx_0.57.tsv',
+      'precision_mtx_0.66.tsv','precision_mtx_0.8.tsv',
+      'precision_mtx_0.93.tsv')
 precision_df<-data.frame(matrix(ncol=6,nrow=639))
 colnames(precision_df)<-c("species_gt",
-                          "c_0.54","c_0.64","c_0.7","c_0.8","c_0.94")
+                          "c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
 
 
 for(i in 1:length(fs)){
@@ -207,7 +215,7 @@ precision_df$species_gt<-pmtx[,1]
 
 
 precision_df_long<-pivot_longer(precision_df,
-                                cols=c("c_0.54","c_0.64","c_0.7","c_0.8","c_0.94"),
+                                cols=c("c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93"),
                                 names_to = "Pred_Score_cutoff",
                                 values_to = "Precision")
 
@@ -216,8 +224,8 @@ plot_1 <- ggplot(precision_df_long, aes(x=Pred_Score_cutoff, y=Precision)) +
   geom_boxplot(outlier.colour="black", outlier.shape=NA,
                outlier.size=1, outlier.alpha=0.1,notch=FALSE, width=0.5) +
   geom_jitter(width = 0.2, size=0.5, alpha=0.3) +
-  scale_x_discrete(labels=c("c_0.54"="0.54","c_0.64"="0.64","c_0.7"="0.7",
-                            "c_0.8"="0.8","c_0.94"="0.94")) +
+  scale_x_discrete(labels=c("c_0.50"="0.50","c_0.57"="0.57","c_0.66"="0.66",
+                            "c_0.8"="0.8","c_0.93"="0.93")) +
   labs(x="Threshold",y="Precision") +
   #theme(text=element_text(size=20))
   theme(axis.title = element_text(size = 12),
@@ -238,7 +246,7 @@ plot_1 <- ggplot(precision_df_long, aes(x=Pred_Score_cutoff, y=Precision)) +
 ## Make a summary of number of unclassified reads by different cutoffs
 count_df<-data.frame(matrix(ncol=3,nrow=0))
 colnames(count_df)<-c('Threshold','Type','Count')
-for(cutoff in c(0.54,0.64,0.7,0.8,0.94)){
+for(cutoff in c(0.50,0.57,0.66,0.8,0.93)){
   fraction<-dim(a[a$V4<=cutoff,])[1]/dim(a)[1]
   #-record classified fraction
   count_df[nrow(count_df)+1,1:2]<-c(cutoff,'Classified')
@@ -250,11 +258,11 @@ for(cutoff in c(0.54,0.64,0.7,0.8,0.94)){
 
 #--Plot Figure 5B
 plot_2 <- ggplot(data=count_df, aes(x=factor(Threshold), y=Count, 
-                          fill=factor(Type,levels=c("Unclassified","Classified")))) +
+                                    fill=factor(Type,levels=c("Unclassified","Classified")))) +
   geom_bar(stat="identity", color="black", width=0.5) +
   scale_fill_manual(values = c("white","grey")) +
   labs(fill="",x="Threshold",y="Fraction of Reads") +
-#  theme(text=element_text(size=20), legend.position="top")
+  #  theme(text=element_text(size=20), legend.position="top")
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
         legend.text = element_text(size = 12),
@@ -432,3 +440,5 @@ dev.off()
 #   theme(text=element_text(size=20),
 #         axis.text.x = element_text(angle=90,hjust=1)) +
 #   facet_wrap( ~ V2, ncol=6)
+
+
