@@ -7,8 +7,9 @@ import numpy as np
 import statistics
 import multiprocessing as mp
 from collections import defaultdict
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from parse_tool_output import *
-from ncbi_tax_utils import parse_nodes_file, parse_names_file
+from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 from summary_utils import *
 
 def create_cm(args):
