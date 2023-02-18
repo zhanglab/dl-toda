@@ -48,7 +48,7 @@ def parse_dl_toda_output(args, data, process, results):
         elif args.dataset == 'testing':
             pred_sp = line.rstrip().split('\t')[1]
             confidence_score = float(line.rstrip().split('\t')[2])
-            true_taxonomy = line.rstrip().split('\t')[0]
+            true_taxonomy = args.dl_toda_tax[line.rstrip().split('\t')[0]]
         elif args.dataset == 'meta':
             pred_sp = line.rstrip().split('\t')[2]
             confidence_score = float(line.rstrip().split('\t')[3])
