@@ -43,6 +43,7 @@ for gpu in gpus:
 if gpus:
     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
+
 # define the DALI pipeline
 @pipeline_def
 def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, dali_cpu=True, training=True):
@@ -59,6 +60,7 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
     reads = inputs["read"].gpu()
     labels = inputs["label"].gpu()
     return reads, labels
+
 
 class DALIPreprocessor(object):
     def __init__(self, filenames, idx_filenames, batch_size, num_threads, dali_cpu=True,
@@ -83,6 +85,7 @@ class DALIPreprocessor(object):
     def get_device_dataset(self):
         return self.dalidataset
 
+
 @tf.function
 def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None):
     probs = model(reads, training=False)
@@ -97,14 +100,12 @@ def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, tes
     return pred_labels, pred_probs
 
 
-
 def main():
     start = datetime.datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--dali_idx', type=str, help='path to dali indexes files', required=True)
     parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--epoch', type=int, help='epoch of checkpoint', default=14)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
@@ -115,15 +116,16 @@ def main():
     args = parser.parse_args()
 
     # define some training and model parameters
-    VECTOR_SIZE = 250 - 12 + 1
-    VOCAB_SIZE = 8390657
-    EMBEDDING_SIZE = 60
-    DROPOUT_RATE = 0.7
+    vector_size = 250 - 12 + 1
+    vocab_size = 8390657
+    embedding_size = 60
+    dropout_rate = 0.7
 
     # load class_mapping file mapping label IDs to species
-    f = open(args.class_mapping)
+    path_class_mapping = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json'
+    f = open(path_class_mapping)
     class_mapping = json.load(f)
-    NUM_CLASSES = len(class_mapping)
+    num_classes = len(class_mapping)
     # create dtype policy
     policy = tf.keras.mixed_precision.Policy('mixed_float16')
     tf.keras.mixed_precision.set_global_policy(policy)
@@ -145,7 +147,7 @@ def main():
 
     # load model
     if args.ckpt is not None:
-        model = AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE)
+        model = AlexNet(args, vector_size, embedding_size, num_classes, vocab_size, dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(f'{args.ckpt}-{args.epoch}').expect_partial()
     elif args.model is not None:
