@@ -4,7 +4,8 @@ import pandas as pd
 
 
 def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
-    print(list(ground_truth_taxa)[0])
+    print(ground_truth[0])
+    print(predictions[0])
     ground_truth_taxa = set([ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))])
     predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
     predictions_taxa.add('unclassified')
