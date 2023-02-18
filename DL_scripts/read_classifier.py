@@ -17,7 +17,7 @@ import math
 from collections import defaultdict
 import argparse
 
-dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath( __file__ )).split('/')[0:-1])
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
 
 # disable eager execution
 # tf.compat.v1.disable_eager_execution()
@@ -122,7 +122,7 @@ def main():
     dropout_rate = 0.7
 
     # load class_mapping file mapping label IDs to species
-    path_class_mapping = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json'
+    path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
     f = open(path_class_mapping)
     class_mapping = json.load(f)
     num_classes = len(class_mapping)
