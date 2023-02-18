@@ -2,12 +2,14 @@ import os
 import glob
 import pandas as pd
 
-def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_index):
+
+def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
+    print(list(ground_truth_taxa)[0])
     ground_truth_taxa = set([ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))])
     predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
     predictions_taxa.add('unclassified')
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
-    cm = pd.DataFrame(columns = ground_truth_taxa, index = predictions_taxa)
+    cm = pd.DataFrame(columns=ground_truth_taxa, index=predictions_taxa)
     # fill out table with zeros
     for c in ground_truth_taxa:
         cm[c] = 0
@@ -22,6 +24,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_name, r_in
         cm.loc[tool_taxon, true_taxon] += 1
 
     return cm
+
 
 def get_metrics(args, cm, r_name, r_index):
     print(r_name)
