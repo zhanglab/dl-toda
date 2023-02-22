@@ -129,7 +129,8 @@ def main():
                     for k, v in args.ranks.items():
                         conf_scores_file.write(f'{process_results[i][0].split(";")[v]}\t{process_results[i][1].split(";")[v]}\t')
                     conf_scores_file.write(f'{process_results[i][2]}\n')
-            stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
+            stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}'
+                             f'\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
 
 
 if __name__ == "__main__":
