@@ -63,23 +63,33 @@ def parse_dl_toda_output(args, data, process, results):
 def parse_centrifuge_output(args, data, process, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
     process_results = []
-    number_unclassified = 0
     for line in data:
         read = line.rstrip().split('\t')[0]
         taxid = line.rstrip().split('\t')[2]
+        rank = line.rstrip().split('\t')[1]
+
         if taxid != '0':
             _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
+            # update predicted taxonomy based on rank of prediction
+            if rank in ['genus', 'family', 'order', 'class', 'phylum']:
+                pred_taxonomy = ["unclassified"]*(args.ranks[rank]+1) + pred_taxonomy[args.ranks[rank]+1:]
+            elif rank == 'superkingdom':
+                pred_taxonomy = ["unclassified"]*6
+
             if args.dataset == 'meta':
-                process_results.append(f'{read}\t{";".join(pred_taxonomy[args.ranks[args.rank]+1:])}\n')
+                process_results.append(f'{read}\t{";".join(pred_taxonomy)}\n')
             else:
                 if args.dataset == 'cami':
                     true_taxonomy = get_ncbi_taxonomy(args.cami_data[read], args.d_nodes, args.d_names)
                 else:
                     true_taxonomy = get_dl_toda_taxonomy(args, read.split('|')[1])
-                process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
+                    process_results.append(f'{read}\t{pred_taxonomy}\t{true_taxonomy}\n')
+
         elif taxid == '0' and args.dataset != 'meta':
             process_results.append(f'{read}\t{";".join(["unclassified"]*7)}\t{true_taxonomy}\n')
-            number_unclassified += 1
+
+        elif taxid == '0' and args.dataset == 'meta':
+            process_results.append(f'{read}\t{";".join(["unclassified"] * 6)}\n')
 
     results[process] = process_results
 
