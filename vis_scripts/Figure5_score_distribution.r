@@ -9,7 +9,7 @@ library("ggpubr")
 
 args = commandArgs(trailingOnly = TRUE)
 input_dir = args[1]
-a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores-v2.tsv", sep="/")),
+a <- read.table(file=file.path(paste(input_dir, "updated-testing-set-all-out-ncbi-cutoff-0.0-species-confidence-scores.tsv", sep="/")),
                 sep="\t")
 
 
