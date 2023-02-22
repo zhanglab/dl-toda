@@ -12,6 +12,7 @@ from parse_tool_output import *
 from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 from summary_utils import *
 
+
 def create_cm(args):
     # load cami ground truth if testing set was made by cami
     if args.dataset == 'cami':
@@ -53,12 +54,11 @@ def main():
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
-    parser.add_argument('--probs', help='get stats summary on probability scores and output file for analysis of in/correct predictions', action='store_true')
+    parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--dl_toda_tax', help='path to directory containing json directories with info on taxa present in dl-toda')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
@@ -70,7 +70,9 @@ def main():
     # load dl-toda ground truth taxonomy
     if args.dl_toda_tax:
         index = 1 if args.tax_db == "gtdb" else 2
-        with open(os.path.join(args.dl_toda_tax, 'dl_toda_taxonomy.tsv'), 'r') as in_f:
+        path_dl_toda_tax = '/'.join(
+            os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+        with open(path_dl_toda_tax, 'r') as in_f:
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
 
@@ -93,9 +95,13 @@ def main():
             for p in processes:
                 p.join()
 
-            with pd.ExcelWriter(os.path.join(args.output_dir, f'confusion-matrix.xlsx')) as writer:
+            with pd.ExcelWriter(os.path.join(args.output_dir, f'cm.xlsx')) as writer:
                 for r_name, r_cm in all_cm.items():
                     r_cm.to_excel(writer, sheet_name=f'{r_name}')
+
+        files_to_rm = glob.glob(os.path.join(args.input_dir, f'*-confusion-matrix.xlsx'))
+        for f in files_to_rm:
+            os.remove(f)
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
