@@ -67,15 +67,18 @@ def parse_centrifuge_output(args, data, process, results):
         read = line.rstrip().split('\t')[0]
         taxid = line.rstrip().split('\t')[2]
         rank = line.rstrip().split('\t')[1]
-
+        read_count = {"species"}
         if taxid != '0':
             _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
             # update predicted taxonomy based on rank of prediction
-            if rank in ['genus', 'family', 'order', 'class', 'phylum']:
-                pred_taxonomy = ["unclassified"]*(args.ranks[rank]+1) + pred_taxonomy[args.ranks[rank]+1:]
+            if rank in ["genus", "family", "order", "class", "phylum"]:
+                print(rank, pred_taxonomy)
+                pred_taxonomy = ["unclassified"]*(args.ranks[rank]) + pred_taxonomy[args.ranks[rank]+1:]
+                print(rank, pred_taxonomy)
             elif rank == 'superkingdom':
                 pred_taxonomy = ["unclassified"]*6
-
+            else:
+                pred_taxonomy = pred_taxonomy[1:]
             if args.dataset == 'meta':
                 process_results.append(f'{read}\t{";".join(pred_taxonomy)}\n')
             else:
