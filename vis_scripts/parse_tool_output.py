@@ -7,6 +7,7 @@ from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
 
+
 def parse_kraken_output(args, data, process, results):
     process_results = []
     for line in data:
@@ -37,6 +38,7 @@ def parse_kraken_output(args, data, process, results):
 
     results[process] = process_results
 
+
 def parse_dl_toda_output(args, data, process, results):
     process_results = []
     for line in data:
@@ -56,6 +58,7 @@ def parse_dl_toda_output(args, data, process, results):
         pred_taxonomy = args.dl_toda_tax[pred_sp]
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
+
 
 def parse_centrifuge_output(args, data, process, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
@@ -130,7 +133,6 @@ def parse_centrifuge_output(args, data, process, results):
 #         else:
 #             process_results.append(f'{read}\t{";".join(["unclassified"] * 7)}\t{true_taxonomy}\n')
 #     results[process] = process_results
-
 
 
 def load_cami_data(args):
