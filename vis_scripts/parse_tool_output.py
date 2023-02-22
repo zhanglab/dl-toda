@@ -63,18 +63,22 @@ def parse_dl_toda_output(args, data, process, results):
 def parse_centrifuge_output(args, data, process, results):
     # centrifuge output shows multiple possible hits per read, choose hit with best score (first hit)
     process_results = []
+    read_count = {"strain": 0, "species": 0, "genus": 0, "family": 0, "order": 0, "class": 0, "phylum": 0, "superkingdom": 0}
     for line in data:
         read = line.rstrip().split('\t')[0]
         taxid = line.rstrip().split('\t')[2]
         rank = line.rstrip().split('\t')[1]
-        read_count = {"species"}
+
+        if rank not in read_count.keys():
+            read_count['strain'] += 1
+        else:
+            read_count[rank] += 1
+            
         if taxid != '0':
             _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
             # update predicted taxonomy based on rank of prediction
             if rank in ["genus", "family", "order", "class", "phylum"]:
-                print(rank, pred_taxonomy)
                 pred_taxonomy = ["unclassified"]*(args.ranks[rank]) + pred_taxonomy[args.ranks[rank]+1:]
-                print(rank, pred_taxonomy)
             elif rank == 'superkingdom':
                 pred_taxonomy = ["unclassified"]*6
             else:
