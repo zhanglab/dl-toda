@@ -183,11 +183,11 @@ write.table(pmtx_0.93,file="precision_mtx_0.93.tsv",sep="\t",quote=FALSE,
 
 
 # ## Make a summary of precision by different cutoffs
-precision_df<-data.frame(matrix(ncol=7,nrow=639))
+precision_df<-data.frame(matrix(ncol=6,nrow=639))
 colnames(precision_df)<-c("species_gt",
-                          "c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
-precision_df$species_gt<-pmtx_0.44[,1]
-precision_df$c_0.44<-as.numeric(pmtx_0.44[,2])
+                          "c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
+precision_df$species_gt<-pmtx_0.50[,1]
+#precision_df$c_0.44<-as.numeric(pmtx_0.44[,2])
 precision_df$c_0.50<-as.numeric(pmtx_0.50[,2])
 precision_df$c_0.57<-as.numeric(pmtx_0.57[,2])
 precision_df$c_0.66<-as.numeric(pmtx_0.66[,2])
@@ -197,12 +197,12 @@ precision_df$c_0.93<-as.numeric(pmtx_0.93[,2])
 
 ## The section below is used when a summary result (e.g. 'precision_mtx_0.94.tsv')
 ## is already present
-fs<-c('precision_mtx_0.44.tsv','precision_mtx_0.50.tsv','precision_mtx_0.57.tsv',
+fs<-c('precision_mtx_0.50.tsv','precision_mtx_0.57.tsv',
       'precision_mtx_0.66.tsv','precision_mtx_0.8.tsv',
       'precision_mtx_0.93.tsv')
-precision_df<-data.frame(matrix(ncol=7,nrow=639))
+precision_df<-data.frame(matrix(ncol=6,nrow=639))
 colnames(precision_df)<-c("species_gt",
-                          "c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
+                          "c_0.50","c_0.57","c_0.66","c_0.8","c_0.93")
 
 input_dir='/Users/cecilecres/Documents/dl-toda/A-0-GTDB-ART'
 for(i in 1:length(fs)){
@@ -212,10 +212,11 @@ for(i in 1:length(fs)){
   precision_df[,i+1]<-as.numeric(pmtx[,2])
 }
 precision_df$species_gt<-pmtx[,1]
-
+# replace na values with 0
+precision_df[is.na(precision_df)] <- 0
 
 precision_df_long<-pivot_longer(precision_df,
-                                cols=c("c_0.44","c_0.50","c_0.57","c_0.66","c_0.8","c_0.93"),
+                                cols=c("c_0.50","c_0.57","c_0.66","c_0.8","c_0.93"),
                                 names_to = "Pred_Score_cutoff",
                                 values_to = "Precision")
 
@@ -246,7 +247,8 @@ plot_1 <- ggplot(precision_df_long, aes(x=Pred_Score_cutoff, y=Precision)) +
 ## Make a summary of number of unclassified reads by different cutoffs
 count_df<-data.frame(matrix(ncol=3,nrow=0))
 colnames(count_df)<-c('Threshold','Type','Count')
-for(cutoff in c(0.44,0.50,0.57,0.66,0.8,0.93)){
+#for(cutoff in c(0.44,0.50,0.57,0.66,0.8,0.93)){
+for(cutoff in c(0.50,0.57,0.66,0.8,0.93)){
   fraction<-dim(a[a$V4<=cutoff,])[1]/dim(a)[1]
   #-record classified fraction
   count_df[nrow(count_df)+1,1:2]<-c(cutoff,'Classified')
