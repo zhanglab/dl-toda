@@ -73,7 +73,7 @@ def parse_centrifuge_output(args, data, process, results):
             read_count['strain'] += 1
         else:
             read_count[rank] += 1
-            
+
         if taxid != '0':
             _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
             # update predicted taxonomy based on rank of prediction
@@ -97,7 +97,7 @@ def parse_centrifuge_output(args, data, process, results):
 
         elif taxid == '0' and args.dataset == 'meta':
             process_results.append(f'{read}\t{";".join(["unclassified"] * 6)}\n')
-
+    print(read_count)
     results[process] = process_results
 
 # def convert_diamond_output(args, data, process, d_nodes, d_names, results):
