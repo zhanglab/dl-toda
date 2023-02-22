@@ -138,7 +138,7 @@ def combine_cm(args, all_cm, rank):
         predicted_taxa = set(rows)
         true_taxa = list(set(columns)).sort()
         # create combined table
-        cm = pd.DataFrame(columns = true_taxa, index = predicted_taxa)
+        cm = pd.DataFrame(columns=true_taxa, index=predicted_taxa)
         for c in cm:
             cm[c] = 0
         for i in range(len(df_list)):
