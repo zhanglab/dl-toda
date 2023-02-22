@@ -103,7 +103,8 @@ if __name__ == "__main__":
     if args.tool == 'dl-toda':
         # load dl-toda taxonomy
         args.dl_toda_taxonomy = {}
-        with open('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv', 'r') as in_f:
+        path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+        with open(path_dl_toda_tax, 'r') as in_f:
             for line in in_f:
                 line = line.rstrip().split('\t')
                 args.dl_toda_taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
