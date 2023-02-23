@@ -191,7 +191,7 @@ def load_tool_output(args):
         content = parsed_content
 
     # get length of sub-arrays
-    chunk_size = math.ceil(len(content)/mp.cpu_count())
+    chunk_size = math.ceil(len(content)/args.processes)
     data = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
     num_reads = [len(i) for i in data]
 
