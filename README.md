@@ -37,7 +37,7 @@ $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh`
 
 ## Pipeline
 
-![alt text](https://i.![](https://i.imgur.com/eTzeqJW.jpg)
+![alt text](https://i.imgur.com/eTzeqJW.jpg)
 
 
 
