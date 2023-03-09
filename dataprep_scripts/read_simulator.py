@@ -104,19 +104,18 @@ def simulate_reads(args, genomes):
             reverse_read = get_reverse(args, insert_seq[0:reads_lengths[i]], comp=True)
 
             # add mutations to the forward and/or reverse reads
-            while mut_count < n_mut:
-                while df['indexes'][mut_count] == i:
-                    st = df['sites'].pop(mut_count)
-                    pr = df['pairs'].pop(mut_count)
-                    b = df['bases'].pop(mut_count)
-                    df['indexes'].pop(mut_count)
-                    # update site position in case it's above the read length
-                    if st >= reads_lengths[i]:
-                        st = st % reads_lengths[i]
-                    if pr == 'fw':
-                        forward_read = replace_base(forward_read, st, b)
-                    elif pr == 'rev':
-                        reverse_read = replace_base(reverse_read, st, b)
+            while mut_count < n_mut and df['indexes'][mut_count] == i:
+                st = df['sites'].pop(mut_count)
+                pr = df['pairs'].pop(mut_count)
+                b = df['bases'].pop(mut_count)
+                df['indexes'].pop(mut_count)
+                # update site position in case it's above the read length
+                if st >= reads_lengths[i]:
+                    st = st % reads_lengths[i]
+                if pr == 'fw':
+                    forward_read = replace_base(forward_read, st, b)
+                elif pr == 'rev':
+                    reverse_read = replace_base(reverse_read, st, b)
 
                 mut_count += 1
 
