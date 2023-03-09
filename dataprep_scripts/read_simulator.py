@@ -85,7 +85,9 @@ def simulate_reads(args, genomes):
     # create dataframe
     df = pd.DataFrame(list(zip(reads_indexes, sites, pairs, bases)), columns=['indexes', 'sites', 'pairs', 'bases'])
     # sort dataframe by reads index
-    df = df.sort_values(by=['indexes'])
+    df.sort_values(by=['indexes'], inplace=True)
+    # reset rows numbers
+    df.reset_index(drop=True, inplace=True)
     print(df)
     mut_count = 0
     with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'w') as out_f:
@@ -102,7 +104,7 @@ def simulate_reads(args, genomes):
             reverse_read = get_reverse(args, insert_seq[0:reads_lengths[i]], comp=True)
 
             # add mutations to the forward and reverse reads
-            while df['indexes'][0] == i:
+            while df['indexes'][mut_count] == i:
                 st = df['sites'].pop(mut_count)
                 pr = df['pairs'].pop(mut_count)
                 b = df['bases'].pop(mut_count)
