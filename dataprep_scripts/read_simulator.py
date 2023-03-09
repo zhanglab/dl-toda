@@ -20,9 +20,8 @@ def get_genomes_size(args, genomes):
     for d in args.fasta_dir:
         list_fa = glob.glob(f'{d}/*.fna')
         for fa in list_fa:
-            print('_'.join(fa.split('/')[-1].split('_')[2:4]))
             if '_'.join(fa.split('/')[-1].split('_')[2:4]) in genomes:
-                fasta_seq['_'.join(fa.split('_')[2:4])] = compute_size(fa)
+                fasta_seq['_'.join(fa.split('/')[-1].split('_')[2:4])] = compute_size(fa)
     # compute average size of selected genomes
     avg_size = sum([len(fasta_seq[g]) for g in genomes])/len(genomes)
     # get the largest size of all genomes
