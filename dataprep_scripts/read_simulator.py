@@ -86,7 +86,7 @@ def simulate_reads(args, genomes):
     df = pd.DataFrame(list(zip(reads_indexes, sites, pairs, bases)), columns=['indexes', 'sites', 'pairs', 'bases'])
     # sort dataframe by reads index
     df.sort_values(by=['indexes'])
-
+    print(df)
     with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'w') as out_f:
         for i in range(n_reads):
             # concatenate 2 copies of the genome
@@ -105,6 +105,7 @@ def simulate_reads(args, genomes):
                 st = df['sites'].pop(0)
                 pr = df['pairs'].pop(0)
                 b = df['bases'].pop(0)
+                print(st, pr, b, i)
                 # update site position in case it's above the read length
                 if st >= reads_lengths[i]:
                     st = st % reads_lengths[i]
@@ -114,10 +115,12 @@ def simulate_reads(args, genomes):
                     print('after', forward_read, st, b)
                 elif pr == 'rev':
                     reverse_read = replace_base(reverse_read, st, b)
-                fw_read_id = f'@{genome_id[i]}-label|{args.label}|-{i}/1'
-                rv_read_id = f'@{genome_id[i]}-label|{args.label}|-{i}/2'
-                out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
-                out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
+
+            # write pairs of reads to fastq file
+            fw_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/1'
+            rv_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/2'
+            out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
+            out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
 
 
 if __name__ == "__main__":
