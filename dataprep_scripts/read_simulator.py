@@ -51,6 +51,12 @@ def get_reverse(args, sequence, comp=False):
         return rev_seq
 
 
+def replace_base(sequence, site, base):
+    new_sequence = list(sequence)
+    new_sequence[site] = base
+    return "".join(new_sequence)
+
+
 def simulate_reads(args, genomes):
     # compute average and max genome size
     fasta_seq, avg_size, max_size = get_genomes_size(args, genomes)
@@ -104,10 +110,10 @@ def simulate_reads(args, genomes):
                     st = st % reads_lengths[i]
                 if pr == 'fw':
                     print('before', forward_read, st, b)
-                    forward_read[st] = b
+                    forward_read = replace_base(forward_read, st, b)
                     print('after', forward_read, st, b)
                 elif pr == 'rev':
-                    reverse_read[st] = b
+                    reverse_read = replace_base(reverse_read, st, b)
                 fw_read_id = f'@{genome_id[i]}-label|{args.label}|-{i}/1'
                 rv_read_id = f'@{genome_id[i]}-label|{args.label}|-{i}/2'
                 out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
