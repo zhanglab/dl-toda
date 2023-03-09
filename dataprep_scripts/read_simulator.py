@@ -3,6 +3,7 @@ import sys
 import glob
 import argparse
 import math
+import random
 import multiprocessing as mp
 from Bio import SeqIO
 import pandas as pd
@@ -58,7 +59,7 @@ def simulate_reads(args, genomes):
     avg_read_length = sum([100, 150, 250])/3
     # get number of pairs of reads to simulate
     n_reads = math.ceil(coverage * avg_size /(avg_read_length*2))
-    print(n_reads)
+    print(n_reads, coverage, avg_size, max_size, avg_read_length)
 
     # define values for parameters to simulate reads
     genomes_id = [random.choice(genomes) for _ in range(n_reads)]
