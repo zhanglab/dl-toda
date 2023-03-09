@@ -87,6 +87,7 @@ def simulate_reads(args, genomes):
     # sort dataframe by reads index
     df = df.sort_values(by=['indexes'])
     print(df)
+    mut_count = 0
     with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'w') as out_f:
         for i in range(n_reads):
             # concatenate 2 copies of the genome
@@ -102,9 +103,10 @@ def simulate_reads(args, genomes):
 
             # add mutations to the forward and reverse reads
             while df['indexes'][0] == i:
-                st = df['sites'].pop(0)
-                pr = df['pairs'].pop(0)
-                b = df['bases'].pop(0)
+                st = df['sites'].pop(mut_count)
+                pr = df['pairs'].pop(mut_count)
+                b = df['bases'].pop(mut_count)
+                df['indexes'].pop(mut_count)
                 print(st, pr, b, i)
                 # update site position in case it's above the read length
                 if st >= reads_lengths[i]:
@@ -122,7 +124,7 @@ def simulate_reads(args, genomes):
                 out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
                 out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
 
-                print(df)
+                mut_count += 1
 
 
 if __name__ == "__main__":
