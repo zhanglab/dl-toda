@@ -104,29 +104,27 @@ def simulate_reads(args, genomes):
             reverse_read = get_reverse(args, insert_seq[0:reads_lengths[i]], comp=True)
 
             # add mutations to the forward and reverse reads
-            while df['indexes'][mut_count] == i:
-                st = df['sites'].pop(mut_count)
-                pr = df['pairs'].pop(mut_count)
-                b = df['bases'].pop(mut_count)
-                df['indexes'].pop(mut_count)
-                print(st, pr, b, i)
-                # update site position in case it's above the read length
-                if st >= reads_lengths[i]:
-                    st = st % reads_lengths[i]
-                if pr == 'fw':
-                    print('before', forward_read, st, b)
-                    forward_read = replace_base(forward_read, st, b)
-                    print('after', forward_read, st, b)
-                elif pr == 'rev':
-                    reverse_read = replace_base(reverse_read, st, b)
+            if mut_count < n_mut:
+                while df['indexes'][mut_count] == i:
+                    st = df['sites'].pop(mut_count)
+                    pr = df['pairs'].pop(mut_count)
+                    b = df['bases'].pop(mut_count)
+                    df['indexes'].pop(mut_count)
+                    # update site position in case it's above the read length
+                    if st >= reads_lengths[i]:
+                        st = st % reads_lengths[i]
+                    if pr == 'fw':
+                        forward_read = replace_base(forward_read, st, b)
+                    elif pr == 'rev':
+                        reverse_read = replace_base(reverse_read, st, b)
 
-                # write pairs of reads to fastq file
-                fw_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/1'
-                rv_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/2'
-                out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
-                out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
+                    # write pairs of reads to fastq file
+                    fw_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/1'
+                    rv_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/2'
+                    out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
+                    out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
 
-                mut_count += 1
+                    mut_count += 1
 
 
 if __name__ == "__main__":
