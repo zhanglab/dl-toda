@@ -31,6 +31,7 @@ def get_genomes_size(args, genomes):
 def get_genomes(args):
     file_w_genomes = '/'.join(
         os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + f'/data/{args.dataset}_genomes.tsv'
+    genomes = []
     with open(file_w_genomes, 'r') as f:
         for line in f:
             if line.rstrip().split('\t')[1] == str(args.label):
