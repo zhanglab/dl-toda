@@ -66,7 +66,7 @@ def simulate_reads(args, genomes):
     start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
     insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
-    read_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
+    reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
 
     # define values of parameters for adding mutations
     # calculate number of mutations to add
@@ -101,9 +101,11 @@ def simulate_reads(args, genomes):
                 b = df['bases'].pop(0)
                 # update site position in case it's above the read length
                 if st >= reads_lengths[i]:
-                    st = st % read_lengths[i]
+                    st = st % reads_lengths[i]
                 if pr == 'fw':
+                    print('before', forward_read, st, b)
                     forward_read[st] = b
+                    print('after', forward_read, st, b)
                 elif pr == 'rev':
                     reverse_read[st] = b
                 fw_read_id = f'@{genome_id[i]}-label|{args.label}|-{i}/1'
