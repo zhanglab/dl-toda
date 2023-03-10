@@ -42,13 +42,12 @@ def get_genomes(args):
 
 
 def get_reverse(args, sequence, comp=False):
-    rev_seq = ''.join([args.base_pairs[b] if b in args.base_pairs else b for b in sequence])
+    # return reverse sequence (positive/upper strand in the 3' to 5' end direction)
+    rev_seq = sequence[::-1]
     if comp:
-        # return reverse complement sequence (negative/lower/reverse strand in the 5' to 3' end direction)
-        return rev_seq[::-1]
-    else:
-        # return reverse sequence (negative/lower/reverse strand in the 3' to 5' end direction)
-        return rev_seq
+        # return reverse complement sequence (negative/lower strand in the 5' to 3' end direction)
+        rev_seq = ''.join([args.base_pairs[b] if b in args.base_pairs else b for b in rev_seq])
+    return rev_seq
 
 
 def replace_base(sequence, site, base):
@@ -88,7 +87,8 @@ def simulate_reads(args, genomes):
     df.sort_values(by=['indexes'], inplace=True)
     # reset rows numbers
     df.reset_index(drop=True, inplace=True)
-    print(df)
+
+    # count number of mutations added
     mut_count = 0
     with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'w') as out_f:
         for i in range(n_reads):
@@ -124,8 +124,6 @@ def simulate_reads(args, genomes):
             rv_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/2'
             out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
             out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
-
-
 
 
 if __name__ == "__main__":
