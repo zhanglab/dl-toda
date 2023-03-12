@@ -60,7 +60,7 @@ def split_reads(grouped_files, output_dir, process_id, train_reads, val_reads):
     # for genome in grouped_genomes:
     for fq_file in grouped_files:
         # label = genomes2labels[genome]
-        label = fq.split('/')[-1].split('_')[0]
+        label = fq_file.split('/')[-1].split('_')[0]
         read_pairs = load_fq_file(fq_file)
         # reads = []
         # reads += load_fq_file(os.path.join(input_dir, f'{genome}1.fq'))
