@@ -98,7 +98,7 @@ def create_train_val_sets(labels2taxa, input_dir, output_dir):
     with mp.Manager() as manager:
         train_reads = manager.dict()
         val_reads = manager.dict()
-        processes = [mp.Process(target=split_reads, args=(grouped_files[i], input_dir, output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
+        processes = [mp.Process(target=split_reads, args=(grouped_files[i], output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
         # processes = [mp.Process(target=split_reads, args=(grouped_genomes[i], input_dir, output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_genomes))]
         for p in processes:
             p.start()
