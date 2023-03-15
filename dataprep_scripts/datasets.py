@@ -30,7 +30,7 @@ def create_sets(reads, set_type, labels2taxa, output_dir):
     label_out = open(os.path.join(output_dir, f'{set_type}-label-read-count'), 'w')
     # for label in taxa2labels.values():
     for label in labels2taxa.keys():
-        label_fq_files = sorted(glob.glob(os.path.join(output_dir, set_type, 'reads-*', f'{set_type}-*-{label}.fq')))
+        label_fq_files = sorted(glob.glob(os.path.join(output_dir, set_type, 'reads-*', f'{set_type}-{label}.fq')))
         list_reads = []
         for fastq in label_fq_files:
             with open(fastq, 'r') as f:
