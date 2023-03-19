@@ -20,9 +20,10 @@ def parse_bertax_output(args, data, process, results):
         if line[1] == 'Bacteria':
             read = line[0]
             # get ground truth
-            true_taxonomy = args.dl_toda_tax[read.split('|')[1]].split(';')[1]
+            true_taxonomy = args.dl_toda_tax[read.split('|')[1]]
+            pred_taxonomy = f';{line[5]};;;;'
             confidence_score = int(line[6][:-1])/100
-            process_results.append([line[5], true_taxonomy, confidence_score])
+            process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
 
     results[process] = process_results
 
