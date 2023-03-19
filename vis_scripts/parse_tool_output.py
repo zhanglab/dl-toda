@@ -17,7 +17,7 @@ def parse_bertax_output(args, data, process, results):
     process_results = []
     for line in data:
         line = line.rstrip().split('\t')
-        if line[1] == 'Bacteria':
+        if line[1] == 'Bacteria' and line[5] != 'unknown':
             read = line[0]
             # get ground truth
             true_taxonomy = args.dl_toda_tax[read.split('|')[1]]
