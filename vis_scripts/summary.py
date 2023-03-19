@@ -58,7 +58,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
     parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax'])
-    parser.add_argument('--tax_rank', type=str, help='taxonomic rank', choices=['species', 'genus', 'family', 'order', 'class', 'phylum'], action='store_true')
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
@@ -78,7 +77,8 @@ def main():
     args.ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
 
     # update ranks to look into if added to command line
-    if args.tax_rank:
+    if args.tool == 'bertax':
+        # only analyze bertax results at the genus level
         args.ranks = {args.tax_rank: args.ranks[args.tax_rank]}
 
 
