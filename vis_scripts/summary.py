@@ -21,7 +21,7 @@ def create_cm(args):
     # load results of taxonomic classification tool
     data = load_tool_output(args)
     # parse data
-    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 'centrifuge': parse_centrifuge_output}
+    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 'centrifuge': parse_centrifuge_output, 'bertax': parse_bertax_output}
     with mp.Manager() as manager:
         results = manager.dict()
         processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, results)) for i in range(len(data))]
@@ -48,7 +48,7 @@ def create_cm(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
-    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge'])
+    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax'])
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
