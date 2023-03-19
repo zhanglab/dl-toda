@@ -68,7 +68,7 @@ def main():
     args.ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
 
     # load dl-toda ground truth taxonomy
-    if args.dl_toda_tax:
+    if args.dataset == 'testing':
         index = 1 if args.tax_db == "gtdb" else 2
         path_dl_toda_tax = '/'.join(
             os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
