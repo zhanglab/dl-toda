@@ -37,6 +37,7 @@ def create_cm(args):
             predictions += [i[0] for i in process_results]
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
+        print(len(predictions), len(ground_truth), len(confidence_scores))
         # create confusion matrix
         if args.tool == 'dl-toda':
             for r_name, r_index in args.ranks.items():
