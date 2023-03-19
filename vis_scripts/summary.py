@@ -79,7 +79,7 @@ def main():
     # update ranks to look into if added to command line
     if args.tool == 'bertax':
         # only analyze bertax results at the genus level
-        args.ranks = {args.tax_rank: args.ranks[args.tax_rank]}
+        args.ranks = {'genus': 1}
 
 
     # load dl-toda ground truth taxonomy
