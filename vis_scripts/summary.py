@@ -38,11 +38,21 @@ def create_cm(args):
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
         # create confusion matrix
-        for r_name, r_index in args.ranks.items():
-            cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
+        if args.tool == 'dl-toda':
+            for r_name, r_index in args.ranks.items():
+                cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
+                # store confusion matrices in excel file
+                with pd.ExcelWriter(os.path.join(args.output_dir,
+                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')) as writer:
+                    cm.to_excel(writer, sheet_name=f'{r_name}')
+        elif args.tool == 'bertax':
+            cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
             # store confusion matrices in excel file
-            with pd.ExcelWriter(os.path.join(args.output_dir, f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')) as writer:
-                cm.to_excel(writer, sheet_name=f'{r_name}')
+            with pd.ExcelWriter(os.path.join(args.output_dir,
+                                             f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
+                cm.to_excel(writer, sheet_name=f'genus')
+
+
 
 
 def main():
