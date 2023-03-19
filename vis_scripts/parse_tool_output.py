@@ -8,6 +8,25 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
 
 
+def parse_bertax_output(args, data, process, results):
+    """ Bertax output is only provided at the genus level
+        Reads assigned to the Viruses or Eukaryota are considered as unclassified
+        All other reads are considered classified regardless of confidence scores
+    """
+
+    process_results = []
+    for line in data:
+        line = line.rstrip().split('\t')
+        if line[1] == 'Bacteria':
+            read = line[0]
+            # get ground truth
+            true_taxonomy = args.dl_toda_tax[read.split('|')[1]].split(';')[1]
+            confidence_score = int(line[6][:-1])/100
+            process_results.append([line[5], true_taxonomy, confidence_score])
+
+    results[process] = process_results
+
+
 def parse_kraken_output(args, data, process, results):
     process_results = []
     for line in data:
@@ -19,7 +38,7 @@ def parse_kraken_output(args, data, process, results):
                 taxid_index = line[2].find('taxid')
                 taxid = line[2][taxid_index+6:-1]
                 # get ncbi taxonomy
-                _, pred_taxonomy, _= get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
+                _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
                 process_results.append(f'{read}\t{";".join(pred_taxonomy[args.ranks[args.rank]+1:])}\n')
         else:
             if args.dataset == 'cami':
@@ -99,8 +118,8 @@ def parse_centrifuge_output(args, data, process, results):
         elif taxid == '0' and args.dataset == 'meta':
             num_unclassified += 1
             process_results.append(f'{read}\t{";".join(["unclassified"] * 6)}\n')
-    print(read_count)
-    print(num_unclassified)
+    # print(read_count)
+    # print(num_unclassified)
     results[process] = process_results
 
 # def convert_diamond_output(args, data, process, d_nodes, d_names, results):
@@ -167,6 +186,8 @@ def load_cami_data(args):
 def load_tool_output(args):
     in_f = open(args.input, 'r')
     content = in_f.readlines()
+    if args.tool == 'bertax':
+        content = content[1:]
     if args.tool == "centrifuge":
         # parse output of centrifuge to only take the first hit for each read
         content = content[1:]
