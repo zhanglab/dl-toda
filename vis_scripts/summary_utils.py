@@ -90,14 +90,13 @@ def get_metrics(args, cm, r_name, r_index):
                 problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
 
             total_num_reads += num_reads
-        print(unclassified_reads)
+
         if 'unclassified' in predicted_taxa:
             unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na' and i not in missing_true_taxa])
-            print(unclassified_reads)
-        if 'na' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' or i not in missing_true_taxa])
-            print(unclassified_reads)
 
+        if 'na' in predicted_taxa:
+            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' and i not in missing_true_taxa])
+            
         print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\t{len(missing_true_taxa)}')
         out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
 
