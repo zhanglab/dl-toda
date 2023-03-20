@@ -68,13 +68,15 @@ def main():
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
 
     args.ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
+
+    print(args)
 
     # update ranks to look into if added to command line
     if args.tool == 'bertax':
@@ -85,6 +87,7 @@ def main():
     # load dl-toda ground truth taxonomy
     if args.dataset == 'testing':
         index = 1 if args.tax_db == "gtdb" else 2
+        print(index)
         path_dl_toda_tax = '/'.join(
             os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
         with open(path_dl_toda_tax, 'r') as in_f:
