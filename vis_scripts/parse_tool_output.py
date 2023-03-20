@@ -9,7 +9,7 @@ from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
 
 
 def parse_bertax_output(args, data, process, results):
-    """ Bertax output is only provided at the genus level
+    """ Bertax output is provided at the genus, phylum and superkingdom levels
         Reads assigned to the Viruses or Eukaryota are considered as unclassified
         All other reads are considered classified regardless of confidence scores
     """
@@ -17,13 +17,15 @@ def parse_bertax_output(args, data, process, results):
     process_results = []
     for line in data:
         line = line.rstrip().split('\t')
+        read = line[0]
+        # get ground truth
+        true_taxonomy = args.dl_toda_tax[read.split('|')[1]]
+        confidence_score = int(line[6][:-1]) / 100
         if line[1] == 'Bacteria' and line[5] != 'unknown':
-            read = line[0]
-            # get ground truth
-            true_taxonomy = args.dl_toda_tax[read.split('|')[1]]
             pred_taxonomy = f';{line[5]};;;;'
-            confidence_score = int(line[6][:-1])/100
-            process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        else:
+            pred_taxonomy = f';unclassified;;;;'
+        process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
 
     results[process] = process_results
 
@@ -75,7 +77,10 @@ def parse_dl_toda_output(args, data, process, results):
             pred_sp = line.rstrip().split('\t')[2]
             confidence_score = float(line.rstrip().split('\t')[3])
             true_taxonomy = 'na'
-        pred_taxonomy = args.dl_toda_tax[pred_sp]
+        if confidence_score > args.cutoff:
+            pred_taxonomy = args.dl_toda_tax[pred_sp]
+        else:
+            pred_taxonomy = ";".join(["unclassified"]*6)
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
 
