@@ -60,7 +60,7 @@ def simulate_reads(args, genomes):
     # compute average and max genome size
     fasta_seq, avg_size, max_size = get_genomes_size(args, genomes)
     # compute number of reads to simulate
-    coverage = 7 if args.dataset == 'training' else 3
+    coverage = 10 if args.dataset == 'training' else 3
     avg_read_length = sum([100, 150, 250])/3
     # get number of pairs of reads to simulate
     n_reads = math.ceil(coverage * avg_size /(avg_read_length*2))
