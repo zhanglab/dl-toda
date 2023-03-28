@@ -60,10 +60,10 @@ def simulate_reads(args, genomes):
     # compute average and max genome size
     fasta_seq, avg_size, max_size = get_genomes_size(args, genomes)
     # compute number of reads to simulate
-    coverage = 10 if args.dataset == 'training' else 3
+    coverage = args.coverage if args.dataset == 'training' else 3
     avg_read_length = sum([100, 150, 250])/3
     # get number of pairs of reads to simulate
-    n_reads = math.ceil(coverage * avg_size /(avg_read_length*2))
+    n_reads = math.ceil(coverage * avg_size / (avg_read_length*2))
     print(n_reads, coverage, avg_size, max_size, avg_read_length)
 
     # define values for parameters to simulate reads
@@ -130,6 +130,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--label', type=int, help='label of a species')
+    parser.add_argument('--coverage', type=int, help='coverage used to estimate number of reads to simulate')
     parser.add_argument('--dataset', type=str, help='type of dataset', choices=['training', 'testing'])
     parser.add_argument('--fasta_dir', nargs='+', help='path to directories containing fasta files')
     args = parser.parse_args()
