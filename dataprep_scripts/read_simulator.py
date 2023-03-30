@@ -71,14 +71,15 @@ def simulate_reads(args, genomes):
     insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
     reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
-
+    print(f'#reads to simulate:{n_reads}')
     if args.resume:
         # count number of reads in fastq file
         r_count = 0
         for record in SeqIO.parse(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), "fastq"):
             r_count += 1
         # update number of reads
-        n_reads = n_reads - r_count
+        n_reads = n_reads*2 - r_count
+    print(f'#reads done:{r_count}\t#reads to do:{n_reads}')
 
     # define values of parameters for adding mutations
     # calculate number of mutations to add
