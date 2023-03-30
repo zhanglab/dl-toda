@@ -64,13 +64,6 @@ def simulate_reads(args, genomes):
     avg_read_length = sum([100, 150, 250])/3
     # get number of pairs of reads to simulate
     n_reads = math.ceil(coverage * avg_size / (avg_read_length*2))
-
-    # define values for parameters to simulate reads
-    genomes_id = [random.choice(genomes) for _ in range(n_reads)]
-    start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
-    insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
-    strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
-    reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
     print(f'#reads to simulate:{n_reads}')
     if args.resume and os.path.isfile(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq')):
         # count number of reads in fastq file
@@ -80,6 +73,13 @@ def simulate_reads(args, genomes):
         # update number of reads
         n_reads = n_reads*2 - r_count
         print(f'#reads done:{r_count}\t#reads to do:{n_reads}')
+
+    # define values for parameters to simulate reads
+    genomes_id = [random.choice(genomes) for _ in range(n_reads)]
+    start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
+    insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
+    strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
+    reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
 
     # define values of parameters for adding mutations
     # calculate number of mutations to add
