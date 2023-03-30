@@ -64,7 +64,6 @@ def simulate_reads(args, genomes):
     avg_read_length = sum([100, 150, 250])/3
     # get number of pairs of reads to simulate
     n_reads = math.ceil(coverage * avg_size / (avg_read_length*2))
-    print(n_reads, coverage, avg_size, max_size, avg_read_length)
 
     # define values for parameters to simulate reads
     genomes_id = [random.choice(genomes) for _ in range(n_reads)]
@@ -73,10 +72,18 @@ def simulate_reads(args, genomes):
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
     reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
 
+    if args.resume:
+        # count number of reads in fastq file
+        r_count = 0
+        for record in SeqIO.parse(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), "fastq"):
+            r_count += 1
+        # update number of reads
+        n_reads = n_reads - r_count
+
+    print(args.label, n_reads, coverage, avg_size, max_size, avg_read_length, n_mut)
     # define values of parameters for adding mutations
     # calculate number of mutations to add
     n_mut = math.ceil(n_reads * 250 * 0.5/100)
-    print(n_mut)
     reads_indexes = [random.choice(range(0, n_reads-1, 1)) for _ in range(n_mut)]
     sites = [random.choice(range(0, 250, 1)) for _ in range(n_mut)]
     pairs = [random.choice(['fw', 'rev']) for _ in range(n_mut)]
@@ -90,7 +97,7 @@ def simulate_reads(args, genomes):
 
     # count number of mutations added
     mut_count = 0
-    with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'w') as out_f:
+    with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'a') as out_f:
         for i in range(n_reads):
             # concatenate 2 copies of the genome
             new_genome = fasta_seq[genomes_id[i]] + fasta_seq[genomes_id[i]]
@@ -133,6 +140,7 @@ if __name__ == "__main__":
     parser.add_argument('--coverage', type=int, help='coverage used to estimate number of reads to simulate')
     parser.add_argument('--dataset', type=str, help='type of dataset', choices=['training', 'testing'])
     parser.add_argument('--fasta_dir', nargs='+', help='path to directories containing fasta files')
+    parser.add_argument('--resume', action='store_true', default=False)
     args = parser.parse_args()
 
     # define base pairs
