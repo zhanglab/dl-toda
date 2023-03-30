@@ -80,7 +80,6 @@ def simulate_reads(args, genomes):
         # update number of reads
         n_reads = n_reads - r_count
 
-    print(args.label, n_reads, coverage, avg_size, max_size, avg_read_length, n_mut)
     # define values of parameters for adding mutations
     # calculate number of mutations to add
     n_mut = math.ceil(n_reads * 250 * 0.5/100)
@@ -94,6 +93,8 @@ def simulate_reads(args, genomes):
     df.sort_values(by=['indexes'], inplace=True)
     # reset rows numbers
     df.reset_index(drop=True, inplace=True)
+
+    print(args.label, n_reads, coverage, avg_size, max_size, avg_read_length, n_mut)
 
     # count number of mutations added
     mut_count = 0
