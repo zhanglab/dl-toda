@@ -1,11 +1,8 @@
 import os
-import numpy as np
-from Bio import SeqIO
 import tensorflow as tf
+from Bio import SeqIO
 import argparse
 import gzip
-import sys
-import math
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
 def wrap_read(value):
