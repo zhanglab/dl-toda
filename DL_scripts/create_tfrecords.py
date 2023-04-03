@@ -62,7 +62,7 @@ def create_tfrecords(args):
             #     read_id = rec.id
                 # label = int(read_id.split('|')[1])
                 read = rec.split('\n')[1].rstrip()
-                label = rec.split('\n')[0].rstrip().split('|')[1]
+                label = int(rec.split('\n')[0].rstrip().split('|')[1])
                 kmer_array = get_kmer_arr(args, read)
                 data = \
                     {
