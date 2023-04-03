@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from Bio import SeqIO
+# from Bio import SeqIO
 import argparse
 import gzip
 from tfrecords_utils import vocab_dict, get_kmer_arr
@@ -22,12 +22,16 @@ def create_meta_tfrecords(args):
         else:
             handle = open(args.input_fastq, 'r')
         # with gzip.open(args.input_fastq, 'rt') as handle:
-        for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-            read = str(rec.seq)
-            read_id = rec.description
-            outfile.write(f'{read_id}\t{count}\n')
+        content = handle.readlines()
+        reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
+        for count, rec in enumerate(reads, 1):
+        # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
+        #     read = str(rec.seq)
+            read = rec.split('\n')[1].rstrip()
+            # read_id = rec.description
+            read_id = rec.split('\n')[0].rstrip()
+            # outfile.write(f'{read_id}\t{count}\n')
             kmer_array = get_kmer_arr(args, read)
-
             data = \
                 {
                     'read': wrap_read(kmer_array),
@@ -50,10 +54,15 @@ def create_tfrecords(args):
     output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
     with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         with open(args.input_fastq) as handle:
-            for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-                read = str(rec.seq)
-                read_id = rec.id
-                label = int(read_id.split('|')[1])
+            content = handle.readlines()
+            reads = [''.join(content[j:j + 4]) for j in range(0, len(content), 4)]
+            for count, rec in enumerate(reads, 1):
+            # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
+            #     read = str(rec.seq)
+            #     read_id = rec.id
+                # label = int(read_id.split('|')[1])
+                read = rec.split('\n')[1].rstrip()
+                label = rec.split('\n')[0].rstrip().split('|')[1]
                 kmer_array = get_kmer_arr(args, read)
                 data = \
                     {
@@ -67,6 +76,7 @@ def create_tfrecords(args):
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
+
 
 def main():
 
@@ -87,6 +97,7 @@ def main():
         create_tfrecords(args)
     elif args.dataset_type == 'meta':
         create_meta_tfrecords(args)
+
 
 if __name__ == "__main__":
     main()
