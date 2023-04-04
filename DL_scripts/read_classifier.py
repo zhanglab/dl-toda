@@ -126,6 +126,7 @@ def main():
     # load class_mapping file mapping label IDs to species
     path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
     print(f'path_class_mapping: {path_class_mapping}')
+    print(f'1: {datetime.datetime.now()}')
     f = open(path_class_mapping)
     class_mapping = json.load(f)
     num_classes = len(class_mapping)
@@ -135,7 +136,7 @@ def main():
     tf.keras.mixed_precision.set_global_policy(policy)
     print('Compute dtype: %s' % policy.compute_dtype)
     print('Variable dtype: %s' % policy.variable_dtype)
-
+    print(f'2: {datetime.datetime.now()}')
     # define metrics
     if args.data_type == 'sim':
         loss = tf.losses.SparseCategoricalCrossentropy()
@@ -150,7 +151,7 @@ def main():
         # create output directories
         if not os.path.isdir(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
-
+    print(f'3: {datetime.datetime.now()}')
     # load model
     if args.ckpt is not None:
         model = AlexNet(args, vector_size, embedding_size, num_classes, vocab_size, dropout_rate)
@@ -165,7 +166,7 @@ def main():
     #        latest_ckpt = tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts'))
     #        print(f'latest ckpt: {latest_ckpt}')
     #        model.load_weights(os.path.join(input_dir, f'run-{run_num}', f'ckpts/ckpts-{epoch}'))
-
+    print(f'4: {datetime.datetime.now()}')
     # get list of testing tfrecords and number of reads per tfrecords
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     print(f'# test_files: {len(test_files)}')
@@ -176,6 +177,7 @@ def main():
     # split tfrecords between gpus
     test_files_per_gpu = len(test_files)//hvd.size()
     print(f'test_files_per_gpu: {test_files_per_gpu}')
+    print(f'5: {datetime.datetime.now()}')
 
     if hvd.rank() != hvd.size() - 1:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
@@ -189,7 +191,7 @@ def main():
         gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
     print(gpu_test_files)
-
+    print(f'6: {datetime.datetime.now()}')
     elapsed_time = []
     num_reads_classified = 0
     for i in range(len(gpu_test_files)):
