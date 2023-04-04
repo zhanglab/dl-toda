@@ -52,7 +52,7 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
                                  random_shuffle=training,
                                  shard_id=shard_id,
                                  num_shards=num_gpus,
-                                 # initial_fill=10000,
+                                 initial_fill=10000,
                                  features={
                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
@@ -88,6 +88,7 @@ class DALIPreprocessor(object):
 
 @tf.function
 def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None):
+    print('inside testing_step')
     probs = model(reads, training=False)
     if data_type == 'test':
         test_accuracy.update_state(labels, probs)
@@ -95,7 +96,8 @@ def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, tes
         test_loss.update_state(loss_value)
     pred_labels = tf.math.argmax(probs, axis=1)
     pred_probs = tf.reduce_max(probs, axis=1)
-
+    if hvd.rank() == 0:
+        print(pred_labels)
     # return probs, pred_labels, pred_probs
     return pred_labels, pred_probs
 
@@ -114,7 +116,7 @@ def main():
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
 
     args = parser.parse_args()
-
+    print(args)
     # define some training and model parameters
     vector_size = 250 - 12 + 1
     vocab_size = 8390657
@@ -123,12 +125,16 @@ def main():
 
     # load class_mapping file mapping label IDs to species
     path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
+    print(f'path_class_mapping: {path_class_mapping}')
     f = open(path_class_mapping)
     class_mapping = json.load(f)
     num_classes = len(class_mapping)
+    print(f'num_classes: {num_classes}')
     # create dtype policy
     policy = tf.keras.mixed_precision.Policy('mixed_float16')
     tf.keras.mixed_precision.set_global_policy(policy)
+    print('Compute dtype: %s' % policy.compute_dtype)
+    print('Variable dtype: %s' % policy.variable_dtype)
 
     # define metrics
     if args.data_type == 'sim':
@@ -162,12 +168,14 @@ def main():
 
     # get list of testing tfrecords and number of reads per tfrecords
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
+    print(f'# test_files: {len(test_files)}')
     test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
     read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
-
+    print(f'# read_ids_files: {len(read_ids_files)}')
     # split tfrecords between gpus
     test_files_per_gpu = len(test_files)//hvd.size()
+    print(f'test_files_per_gpu: {test_files_per_gpu}')
 
     if hvd.rank() != hvd.size() - 1:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
