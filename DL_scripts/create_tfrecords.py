@@ -1,4 +1,5 @@
 import os
+import sys
 import tensorflow as tf
 # from Bio import SeqIO
 import argparse
