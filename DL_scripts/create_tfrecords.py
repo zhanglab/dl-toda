@@ -55,6 +55,7 @@ def create_tfrecords(args):
     output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
     output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
     bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
+    count = 0
     with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         with open(args.input_fastq) as handle:
             rec = ''
@@ -86,6 +87,7 @@ def create_tfrecords(args):
                     example = tf.train.Example(features=feature)
                     serialized = example.SerializeToString()
                     writer.write(serialized)
+                    count += 1
                     # initialize variables again
                     n_line = 0
                     rec = ''
