@@ -19,7 +19,7 @@ def DNA_net(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
                                           input_length=VECTOR_SIZE, mask_zero=True, trainable=True, name='embedding')(x)
     print(x.shape)
     print(x)
-    x = tf.keras.layers.Reshape((n_rows, EMBEDDING_SIZE, 1))(x)  # output shape: (n_rows, n_cols*EMBEDDING_SIZE, 1)
+    x = tf.keras.layers.Reshape((n_rows, n_cols, EMBEDDING_SIZE, 1))(x)  # output shape: (n_rows, n_cols*EMBEDDING_SIZE, 1)
     print(x.shape)
     x = tf.keras.layers.Conv2D(96, kernel_size=(args.kernel_height, 3*EMBEDDING_SIZE), strides=(1, EMBEDDING_SIZE), padding='same', kernel_initializer=tf.keras.initializers.HeNormal(), name='conv_1')(x)
     x = tf.keras.layers.BatchNormalization(axis=1, momentum=0.99)(x)
