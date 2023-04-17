@@ -15,7 +15,7 @@ import numpy as np
 import math
 import io
 import random
-from models import AlexNet, VGG16, VDCNN
+from models import AlexNet
 from DNA_model import DNA_net
 import argparse
 
