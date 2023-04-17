@@ -10,7 +10,9 @@ def DNA_net(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
     # read_input = tf.keras.layers.Input(shape=(n_rows, n_cols), dtype='int32')
     x = read_input
     print(x.shape)
-    x = tf.reshape(x, [None, n_rows, n_cols])
+    print(x)
+    x = tf.keras.layers.Reshape((n_rows, n_cols))(x)
+    # x = tf.reshape(x, [None, n_rows, n_cols])
     print(x.shape)
     print(x)
     x = tf.keras.layers.Embedding(input_dim=VOCAB_SIZE+1, output_dim=EMBEDDING_SIZE, embeddings_initializer=tf.keras.initializers.HeNormal(),
