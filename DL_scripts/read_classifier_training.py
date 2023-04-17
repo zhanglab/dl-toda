@@ -15,10 +15,11 @@ import numpy as np
 import math
 import io
 import random
-from models import AlexNet
+from models import AlexNet, VGG16, VDCNN
+from DNA_model import DNA_net
 import argparse
 
-dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath( __file__ )).split('/')[0:-1])
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 # disable eager execution
 #tf.compat.v1.disable_eager_execution()
@@ -129,12 +130,20 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
+    parser.add_argument('--DNA_model', action='store_true', default=False)
+    parser.add_argument('--n_rows', type=int, required=('--DNA_model' in sys.argv), default=50)
+    parser.add_argument('--n_cols', type=int, required=('--DNA_model' in sys.argv), default=5)
+    parser.add_argument('--kernel_height', type=int, required=('--DNA_model' in sys.argv), default=1)
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('-resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=512)
+    parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
+    parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
+    parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
+    parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
@@ -142,15 +151,17 @@ def main():
     args = parser.parse_args()
 
     # define some training and model parameters
-    VECTOR_SIZE = 250 - 12 + 1
-    VOCAB_SIZE = 8390657
-    EMBEDDING_SIZE = 60
-    DROPOUT_RATE = 0.7
+    if args.DNA_model:
+        vector_size = 250
+        vocab_size = 5
+    else:
+        vector_size = args.max_read_size - args.kmer_size + 1
+        vocab_size = ((4 ** k_value + 4 ** (k_value / 2)) / 2) + 1 if k_value % 2 == 0 else ((4 ** k_value) / 2) + 1
 
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
     class_mapping = json.load(f)
-    NUM_CLASSES = len(class_mapping)
+    num_classes = len(class_mapping)
 
     # create dtype policy
     policy = keras.mixed_precision.Policy('mixed_float16')
@@ -169,9 +180,9 @@ def main():
     val_steps = args.num_val_samples // (args.batch_size*hvd.size())
 
     num_preprocessing_threads = 4
-    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, VECTOR_SIZE,
+    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, vector_size,
                                           dali_cpu=True, deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, num_preprocessing_threads, VECTOR_SIZE, dali_cpu=True,
+    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, num_preprocessing_threads, vector_size, dali_cpu=True,
                                         deterministic=False, training=False)
 
     train_input = train_preprocessor.get_device_dataset()
@@ -190,12 +201,12 @@ def main():
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE)
+        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
     else:
-        model = AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, args.dropout_rate, args.output_dir)
+        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate, args.output_dir)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -227,8 +238,7 @@ def main():
 
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
-            f.write(f'Round of training\t{args.rnd}\nNumber of classes\t{NUM_CLASSES}\nEpochs\t{args.epochs}\nVector size\t{VECTOR_SIZE}\nVocabulary size\t{VOCAB_SIZE}\nEmbedding size\t{EMBEDDING_SIZE}\nDropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\nGlobal batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\nTraining set size\t{args.num_train_samples}\nValidation set size\t{args.num_val_samples}\nNumber of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\nInitial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}')
-
+            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\nVector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\nDropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\nGlobal batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\nTraining set size\t{args.num_train_samples}\nValidation set size\t{args.num_val_samples}\nNumber of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\nInitial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}')
 
     start = datetime.datetime.now()
 
@@ -297,6 +307,7 @@ def main():
         print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
         td_writer.close()
         vd_writer.close()
+
 
 if __name__ == "__main__":
     main()
