@@ -130,7 +130,6 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
-    parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--n_rows', type=int, required=('--DNA_model' in sys.argv), default=50)
     parser.add_argument('--n_cols', type=int, required=('--DNA_model' in sys.argv), default=5)
     parser.add_argument('--kernel_height', type=int, required=('--DNA_model' in sys.argv), default=1)
