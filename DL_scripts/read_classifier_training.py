@@ -136,6 +136,9 @@ def main():
     parser.add_argument('--kh_conv_2', type=int, required=('--DNA_model' in sys.argv), default=2)
     parser.add_argument('--kw_conv_1', type=int, required=('--DNA_model' in sys.argv), default=3)
     parser.add_argument('--kw_conv_2', type=int, required=('--DNA_model' in sys.argv), default=4)
+    parser.add_argument('--sh_conv_1', type=int, required=('--DNA_model' in sys.argv), default=1)
+    parser.add_argument('--sh_conv_2', type=int, required=('--DNA_model' in sys.argv), default=1)
+    parser.add_argument('--sw_conv_2', type=int, required=('--DNA_model' in sys.argv), default=1)
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('-resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
@@ -249,7 +252,7 @@ def main():
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                     f'Training set size\t{args.num_train_samples}\nValidation set size\t{args.num_val_samples}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}')
+                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
             if args.DNA_model:
                 f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
                         f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}*{args.embedding_size}\n'
