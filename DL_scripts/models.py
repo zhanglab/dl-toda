@@ -54,7 +54,7 @@ def AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
 #    print('Outputs dtype: %s' % output.dtype.name)
 #    for idx in range(len(model.layers)):
 #        print(f'INDEX: {idx} - NAME: {model.get_layer(index = idx).name} - TYPE: {model.get_layer(index = idx).dtype}')
-    
+
     with open(os.path.join(args.output_dir, f'model-alexnet.txt'), 'w+') as f:
         model.summary(print_fn=lambda x: f.write(x + '\n'))
 
