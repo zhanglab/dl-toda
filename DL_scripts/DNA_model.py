@@ -67,8 +67,7 @@ def DNA_net(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
     output = tf.keras.layers.Activation('softmax', dtype='float32',)(x)
     model = tf.keras.models.Model(read_input, output, name='AlexNet')
 
-    if args.output_dir is True:
-        with open(os.path.join(args.output_dir, f'dna-model.txt'), 'w+') as f:
-            model.summary(print_fn=lambda x: f.write(x + '\n'))
+    with open(os.path.join(args.output_dir, f'dna-model.txt'), 'w+') as f:
+        model.summary(print_fn=lambda x: f.write(x + '\n'))
 
     return model
