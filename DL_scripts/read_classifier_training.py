@@ -252,7 +252,7 @@ def main():
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}')
             if args.DNA_model:
                 f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
-                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1*args.embedding_size}\n'
+                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}*{args.embedding_size}\n'
                         f'kw_conv_2\t{args.kw_conv_2}\n')
 
     start = datetime.datetime.now()
