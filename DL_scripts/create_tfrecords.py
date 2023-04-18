@@ -74,7 +74,6 @@ def create_tfrecords(args):
                     read = rec.split('\n')[1].rstrip()
                     label = int(rec.split('\n')[0].rstrip().split('|')[1])
                     if args.DNA_model:
-                        # kmer_array = np.array([bases[x] if x in bases else 1 for x in read]).reshape((args.n_rows, args.n_cols))
                         kmer_array = np.array([bases[x] if x in bases else 1 for x in read])
                     else:
                         kmer_array = get_kmer_arr(args, read)
@@ -103,8 +102,6 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False)
-    parser.add_argument('--n_rows', type=int, required=('--DNA_model' in sys.argv), default=50)
-    parser.add_argument('--n_cols', type=int, required=('--DNA_model' in sys.argv), default=5)
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
