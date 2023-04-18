@@ -26,7 +26,7 @@ def DNA_net(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
     x = tf.keras.layers.BatchNormalization(axis=1, momentum=0.99)(x)
     x = tf.keras.layers.Activation('relu')(x)
 #    x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
-    x = tf.keras.layers.Conv2D(256, kernel_size=(args.kh_conv_1, args.kw_conv_2), strides=(1, 1), padding='same', kernel_initializer=tf.keras.initializers.HeNormal())(x)
+    x = tf.keras.layers.Conv2D(256, kernel_size=(args.kh_conv_2, args.kw_conv_2), strides=(1, 1), padding='same', kernel_initializer=tf.keras.initializers.HeNormal())(x)
     print(x.shape)
     x = tf.keras.layers.BatchNormalization(axis=1, momentum=0.99)(x)
     x = tf.keras.layers.Activation('relu')(x)
