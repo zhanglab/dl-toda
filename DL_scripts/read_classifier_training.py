@@ -155,7 +155,7 @@ def main():
         vocab_size = 5
     else:
         vector_size = args.max_read_size - args.kmer_size + 1
-        vocab_size = ((4 ** k_value + 4 ** (k_value / 2)) / 2) + 1 if k_value % 2 == 0 else ((4 ** k_value) / 2) + 1
+        vocab_size = ((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0 else ((4 ** args.k_value) / 2) + 1
 
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
@@ -205,7 +205,7 @@ def main():
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
     else:
-        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate, args.output_dir)
+        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
