@@ -132,7 +132,10 @@ def main():
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--n_rows', type=int, required=('--DNA_model' in sys.argv), default=50)
     parser.add_argument('--n_cols', type=int, required=('--DNA_model' in sys.argv), default=5)
-    parser.add_argument('--kernel_height', type=int, required=('--DNA_model' in sys.argv), default=1)
+    parser.add_argument('--kh_conv_1', type=int, required=('--DNA_model' in sys.argv), default=2)
+    parser.add_argument('--kh_conv_2', type=int, required=('--DNA_model' in sys.argv), default=2)
+    parser.add_argument('--kw_conv_1', type=int, required=('--DNA_model' in sys.argv), default=3)
+    parser.add_argument('--kw_conv_2', type=int, required=('--DNA_model' in sys.argv), default=4)
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('-resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
@@ -248,7 +251,9 @@ def main():
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}')
             if args.DNA_model:
-                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkernel_height\t{args.kernel_height}\n')
+                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
+                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1*args.embedding_size}\n'
+                        f'kw_conv_2\t{args.kw_conv_2}\n')
 
     start = datetime.datetime.now()
 
