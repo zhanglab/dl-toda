@@ -139,7 +139,7 @@ def main():
     parser.add_argument('--sh_conv_1', type=int, required=('--DNA_model' in sys.argv), default=1)
     parser.add_argument('--sh_conv_2', type=int, required=('--DNA_model' in sys.argv), default=1)
     parser.add_argument('--sw_conv_2', type=int, required=('--DNA_model' in sys.argv), default=1)
-    parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('-resume' in sys.argv))
+    parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
@@ -159,11 +159,11 @@ def main():
     if args.DNA_model:
         vector_size = 250
         vocab_size = 5
-        model = 'DNANet'
+        model_name = 'DNANet'
     else:
         vector_size = args.max_read_size - args.kmer_size + 1
         vocab_size = ((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0 else ((4 ** args.k_value) / 2) + 1
-        model = 'AlexNet'
+        model_name = 'AlexNet'
 
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
@@ -197,7 +197,7 @@ def main():
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
-    args.init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume else args.init_lr
+    args.init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
 
     # define optimizer
     opt = tf.keras.optimizers.Adam(args.init_lr)
@@ -246,7 +246,7 @@ def main():
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
             f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{model}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
+                    f'Model\t{model_name}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
                     f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
