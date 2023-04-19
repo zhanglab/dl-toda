@@ -236,13 +236,13 @@ def main():
         checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
 
         # create directory for storing logs
-        tensorboard_dir = os.path.join(args.output_dir, 'logs')
+        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
         if not os.path.exists(tensorboard_dir):
             os.makedirs(tensorboard_dir)
 
         writer = tf.summary.create_file_writer(tensorboard_dir)
-        td_writer = open(os.path.join(args.output_dir, 'logs', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-        vd_writer = open(os.path.join(args.output_dir, 'logs', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
 
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
