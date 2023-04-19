@@ -162,7 +162,8 @@ def main():
         model_name = 'DNANet'
     else:
         vector_size = args.max_read_size - args.k_value + 1
-        vocab_size = ((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0 else ((4 ** args.k_value) / 2) + 1
+        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
+                         else ((4 ** args.k_value) / 2) + 1)
         model_name = 'AlexNet'
 
     # load class_mapping file mapping label IDs to species
