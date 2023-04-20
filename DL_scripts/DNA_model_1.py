@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os
 
-def DNA_net(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
+def DNA_net_1(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
     # define AlexNet model
     n_rows = args.n_rows
     n_cols = args.n_cols
