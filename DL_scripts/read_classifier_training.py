@@ -142,6 +142,7 @@ def main():
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
+    parser.add_argument('--optimizer', type=str, help='type of optimizer', default='Adam', choices=['Adam', 'SGD'])
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=512)
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
@@ -201,7 +202,10 @@ def main():
     args.init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
 
     # define optimizer
-    opt = tf.keras.optimizers.Adam(args.init_lr)
+    if args.optimizer == 'Adam':
+        opt = tf.keras.optimizers.Adam(args.init_lr)
+    elif args.optimizer == 'SGD':
+        opt = tf.keras.optimizers.experimental.SGD(args.init_lr)
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
