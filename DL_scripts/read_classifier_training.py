@@ -229,8 +229,8 @@ def main():
                                       args.dropout_rate)
         else:
             model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+            checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
     else:
         if args.DNA_model:
