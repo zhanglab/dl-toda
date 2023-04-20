@@ -1,9 +1,9 @@
 import tensorflow as tf
+import tensorflow_addons as tfa
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
-import nvidia.dali.types as types
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
 import os
@@ -11,12 +11,10 @@ import sys
 import json
 import glob
 import datetime
-import numpy as np
-import math
 import io
-import random
 from models import AlexNet
-from DNA_model import DNA_net
+from DNA_model_1 import DNA_net_1
+from DNA_model_2 import DNA_net_2
 import argparse
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -150,6 +148,7 @@ def main():
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--DNA_model', action='store_true', default=False)
+    parser.add_argument('--DNA_model_type', type=int, help='type of DNA model', choices=[1,2])
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
@@ -213,12 +212,26 @@ def main():
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        if args.DNA_model:
+            if args.DNA_model_type == 1:
+                model = DNA_net_1(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+            elif args.DNA_model_type == 2:
+                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size,
+                                      args.dropout_rate)
+        else:
+            model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
     else:
-        model = DNA_net(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate) if args.DNA_model else AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        if args.DNA_model:
+            if args.DNA_model_type == 1:
+                model = DNA_net_1(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+            elif args.DNA_model_type == 2:
+                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size,
+                                      args.dropout_rate)
+        else:
+            model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
