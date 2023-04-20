@@ -213,7 +213,7 @@ def main():
     if args.optimizer == 'Adam':
         opt = tf.keras.optimizers.Adam(init_lr)
     elif args.optimizer == 'SGD':
-        opt = tf.keras.optimizers.experimental.SGD(init_lr)
+        opt = tf.keras.optimizers.SGD(init_lr)
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
@@ -237,8 +237,7 @@ def main():
             if args.DNA_model_type == 1:
                 model = DNA_net_1(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
             elif args.DNA_model_type == 2:
-                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size,
-                                      args.dropout_rate)
+                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         else:
             model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
 
