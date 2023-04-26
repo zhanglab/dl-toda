@@ -73,6 +73,7 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read = rec.split('\n')[1].rstrip()
                     label = int(rec.split('\n')[0].rstrip().split('|')[1])
+                    print(read, label)
                     if args.DNA_model:
                         list_bases = [bases[x] if x in bases else 1 for x in read]
                         # update read length to match the max read length
@@ -82,6 +83,7 @@ def create_tfrecords(args):
                         kmer_array = np.array(list_bases)
                     else:
                         kmer_array = get_kmer_arr(args, read)
+                        print(len(kmer_array))
                     data = \
                         {
                             'read': wrap_read(kmer_array),
