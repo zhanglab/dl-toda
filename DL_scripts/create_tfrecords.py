@@ -73,6 +73,9 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read = rec.split('\n')[1].rstrip()
                     label = int(rec.split('\n')[0].rstrip().split('|')[1])
+                    # update label if necessary
+                    if args.update_labels:
+                        label = args.labels_mapping[label]
                     print(read, label)
                     if args.DNA_model:
                         list_bases = [bases[x] if x in bases else 1 for x in read]
@@ -110,7 +113,9 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
-    parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
+    parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
+    parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
+    parser.add_argument('--read_length', type=str, default=250, type=int, help="The length of simulated reads")
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
 
     args = parser.parse_args()
@@ -118,6 +123,13 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
+
+    if args.update_labels:
+        args.labels_mapping = dict()
+        with open(args.mapping_file, 'r') as f:
+            for line in f:
+                args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+
 
     if args.dataset_type == 'sim':
         create_tfrecords(args)
