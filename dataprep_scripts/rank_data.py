@@ -45,7 +45,6 @@ def main():
                         choices=['species', 'genus', 'family', 'order', 'class', 'phylum'])
     parser.add_argument('--tax_db', type=str, help='taxonomic database',
                         choices=['gtdb', 'ncbi'])
-    parser.add_argument('--dl_toda_tax', help='create dl_toda_taxonomy.tsv file', action='store_true')
     args = parser.parse_args()
 
     ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
