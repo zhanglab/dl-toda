@@ -76,7 +76,7 @@ def create_tfrecords(args):
                     print(f'before {label}')
                     # update label if necessary
                     if args.update_labels:
-                        label = args.labels_mapping[label]
+                        label = int(args.labels_mapping[str(label)])
                     print(f'after {label}')
                     print(read)
                     if args.DNA_model:
