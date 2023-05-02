@@ -131,8 +131,9 @@ def main():
         with open(args.mapping_file, 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+        print(args.labels_mapping)
 
-
+    print(args.input_fastq)
     if args.dataset_type == 'sim':
         create_tfrecords(args)
     elif args.dataset_type == 'meta':
