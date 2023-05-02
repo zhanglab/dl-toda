@@ -117,7 +117,7 @@ def main():
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
-    parser.add_argument('--read_length', type=str, default=250, type=int, help="The length of simulated reads")
+    parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
 
     args = parser.parse_args()
