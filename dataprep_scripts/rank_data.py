@@ -17,9 +17,9 @@ def map_taxa2labels(args, ranks):
     with open(path_dl_toda_tax, 'r') as in_f:
         content = in_f.readlines()
         # get taxa
-        gtdb_taxonomy = {line[index].split(';')[ranks[args.rank]]: ';'.join(line[1].split(';')[ranks[args.rank]:6]) for
+        gtdb_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[1].split(';')[ranks[args.rank]:6]) for
                          line in content}
-        ncbi_taxonomy = {line[index].split(';')[ranks[args.rank]]: ';'.join(line[2].split(';')[ranks[args.rank]:6]) for
+        ncbi_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[2].split(';')[ranks[args.rank]:6]) for
                          line in content}
         print(gtdb_taxonomy)
         print(ncbi_taxonomy)
