@@ -33,7 +33,7 @@ def map_taxa2labels(args, ranks):
                 tax = ';'.join(line[index].split(';')[ranks[args.rank]:6])
                 out_f.write(f'{line[0]}\t{taxa2labels[tax]}\n')
         # create file mapping rank labels to gtdb and ncbi taxonomy
-        with open(f'dl_toda_taxonomy_{args.rank}.tsv') as out_f:
+        with open(f'dl_toda_taxonomy_{args.rank}.tsv', 'w') as out_f:
             for k, v in gtdb_taxonomy.items():
                 out_f.write(f'{taxa2labels[v]}\t{v}\t{ncbi_taxonomy[k]}\n')
 
