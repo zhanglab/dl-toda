@@ -17,25 +17,25 @@ def map_taxa2labels(args, ranks):
     with open(path_dl_toda_tax, 'r') as in_f:
         content = in_f.readlines()
         # get taxa
-        gtdb_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[1].split(';')[ranks[args.rank]:6]) for
+        gtdb_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[1][rank_index:6]) for
                          line in content}
-        ncbi_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[2].split(';')[ranks[args.rank]:6]) for
+        ncbi_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[2][rank_index:6]) for
                          line in content}
         print(len(gtdb_taxonomy), len(ncbi_taxonomy))
-        taxa2labels = dict(zip(gtdb_taxonomy.keys(), list(range(len(gtdb_taxonomy)))))  # key = taxon, value = label
+        taxa2labels = dict(zip(gtdb_taxonomy.values(), list(range(len(gtdb_taxonomy)))))  # key = taxon, value = label
         print(taxa2labels)
         # create dictionary mapping labels to taxa
-        get_labels(ranks[args.rank], args.rank, taxa2labels)
+        get_labels(ranks[args.rank]-1, args.rank, taxa2labels)
         # create file mapping species labels to given rank labels
         with open(f'species_to_{args.rank}', 'w') as out_f:
             for line in content:
                 line = line.rstrip().split('\t')
-                taxon = line[index].split(';')[ranks[args.rank]]
-                out_f.write(f'{line[0]}\t{taxa2labels[taxon]}\n')
+                tax = line[index]
+                out_f.write(f'{line[0]}\t{taxa2labels[tax]}\n')
         # create file mapping rank labels to gtdb and ncbi taxonomy
         with open(f'dl_toda_taxonomy_{args.rank}.tsv') as out_f:
             for k, v in gtdb_taxonomy.items():
-                out_f.write(f'{taxa2labels[k]}\t{v}\t{ncbi_taxonomy[k]}\n')
+                out_f.write(f'{taxa2labels[v]}\t{v}\t{ncbi_taxonomy[k]}\n')
 
 
 def main():
