@@ -41,7 +41,6 @@ def map_taxa2labels(args, ranks):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tax_file', type=str, help='')
     parser.add_argument('--rank', type=str, help='taxonomic rank',
                         choices=['species', 'genus', 'family', 'order', 'class', 'phylum'])
     parser.add_argument('--tax_db', type=str, help='taxonomic database',
