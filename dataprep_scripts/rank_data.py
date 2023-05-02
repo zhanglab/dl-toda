@@ -30,7 +30,7 @@ def map_taxa2labels(args, ranks):
         with open(f'species_to_{args.rank}', 'w') as out_f:
             for line in content:
                 line = line.rstrip().split('\t')
-                tax = line[index]
+                tax = ';'.join(line[index].split(';')[ranks[args.rank]:6])
                 out_f.write(f'{line[0]}\t{taxa2labels[tax]}\n')
         # create file mapping rank labels to gtdb and ncbi taxonomy
         with open(f'dl_toda_taxonomy_{args.rank}.tsv') as out_f:
