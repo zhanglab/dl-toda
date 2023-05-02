@@ -21,9 +21,8 @@ def map_taxa2labels(args, ranks):
                          line in content}
         ncbi_taxonomy = {line.rstrip().split('\t')[index].split(';')[ranks[args.rank]]: ';'.join(line.rstrip().split("\t")[2].split(';')[ranks[args.rank]:6]) for
                          line in content}
-        print(gtdb_taxonomy)
-        print(ncbi_taxonomy)
-        taxa2labels = dict(zip(gtdb_taxonomy.keys(), list(range(len(taxa)))))  # key = taxon, value = label
+        print(len(gtdb_taxonomy), len(ncbi_taxonomy))
+        taxa2labels = dict(zip(gtdb_taxonomy.keys(), list(range(len(gtdb_taxonomy)))))  # key = taxon, value = label
         print(taxa2labels)
         # create dictionary mapping labels to taxa
         get_labels(ranks[args.rank], args.rank, taxa2labels)
