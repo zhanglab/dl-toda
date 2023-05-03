@@ -12,7 +12,9 @@ import json
 import glob
 import datetime
 import io
-from models import AlexNet
+from AlexNet import AlexNet
+from VDCNN import VDCNN
+from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
 import argparse
@@ -149,7 +151,7 @@ def main():
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--DNA_model', action='store_true', default=False)
-    parser.add_argument('--DNA_model_type', type=int, help='type of DNA model', choices=[1,2])
+    parser.add_argument('--model_type', type=int, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
@@ -157,6 +159,8 @@ def main():
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
     args = parser.parse_args()
+
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
 
     # define some training and model parameters
     if args.DNA_model:
@@ -222,25 +226,11 @@ def main():
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        if args.DNA_model:
-            if args.DNA_model_type == 1:
-                model = DNA_net_1(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
-            elif args.DNA_model_type == 2:
-                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size,
-                                      args.dropout_rate)
-        else:
-            model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
-            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-            checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
-
+        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
-        if args.DNA_model:
-            if args.DNA_model_type == 1:
-                model = DNA_net_1(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
-            elif args.DNA_model_type == 2:
-                model = DNA_net_2(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
-        else:
-            model = AlexNet(args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
