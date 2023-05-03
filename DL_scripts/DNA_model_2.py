@@ -11,7 +11,7 @@ def DNA_net_2(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOU
     x = tf.keras.layers.Embedding(input_dim=VOCAB_SIZE+1, output_dim=EMBEDDING_SIZE, embeddings_initializer=tf.keras.initializers.HeNormal(),
                                           input_length=VECTOR_SIZE, mask_zero=True, trainable=True, name='embedding')(x)
     x = tf.keras.layers.Reshape((n_rows, n_cols*EMBEDDING_SIZE, 1))(x)  # output shape: (n_rows, n_cols*EMBEDDING_SIZE, 1)
-    x = tf.keras.layers.Conv2D(96, kernel_size=(args.kh_conv_1, args.kw_conv_1*EMBEDDING_SIZE), strides=(args.sh_conv_1, EMBEDDING_SIZE), padding='same', kernel_initializer=tf.keras.initializers.HeNormal(), name='conv_1')(x)
+    x = tf.keras.layers.Conv2D(96, kernel_size=(args.kh_conv_1, args.kw_conv_1), strides=(args.sh_conv_1, args.sw_conv_1), padding='same', kernel_initializer=tf.keras.initializers.HeNormal(), name='conv_1')(x)
     x = tf.keras.layers.BatchNormalization(axis=1, momentum=0.99)(x)
     x = tf.keras.layers.Activation('relu')(x)
     # x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
