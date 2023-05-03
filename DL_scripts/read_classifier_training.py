@@ -135,6 +135,7 @@ def main():
     parser.add_argument('--kw_conv_1', type=int, default=3)
     parser.add_argument('--kw_conv_2', type=int, default=4)
     parser.add_argument('--sh_conv_1', type=int, default=1)
+    parser.add_argument('--sw_conv_1', type=int, default=1)
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
