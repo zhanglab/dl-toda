@@ -2,7 +2,7 @@ import tensorflow as tf
 import os
 
 
-def VDCNN(output_dir, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE):
+def VDCNN(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
     n_rows = args.n_rows
     n_cols = args.n_cols
     read_input = tf.keras.layers.Input(shape=(VECTOR_SIZE), dtype='int32')
