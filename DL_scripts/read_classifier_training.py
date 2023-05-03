@@ -151,7 +151,7 @@ def main():
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--DNA_model', action='store_true', default=False)
-    parser.add_argument('--model_type', type=int, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
