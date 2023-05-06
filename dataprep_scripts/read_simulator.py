@@ -38,6 +38,9 @@ def get_genomes(args):
         for line in f:
             if line.rstrip().split('\t')[1] == str(args.label):
                 genomes.append(line.rstrip().split('\t')[0])
+    random.shuffle(genomes)
+    genomes = genomes[:args.num_genomes]
+    print(len(genomes), genomes)
     return genomes
 
 
@@ -140,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--label', type=int, help='label of a species')
     parser.add_argument('--coverage', type=int, help='coverage used to estimate number of reads to simulate')
+    parser.add_argument('--num_genomes', type=int, help='number of genomes to use as template')
     parser.add_argument('--dataset', type=str, help='type of dataset', choices=['training', 'testing'])
     parser.add_argument('--fasta_dir', nargs='+', help='path to directories containing fasta files')
     parser.add_argument('--resume', action='store_true', default=False)
