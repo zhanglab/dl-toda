@@ -269,10 +269,11 @@ def main():
                     f'Training set size\t{args.num_train_samples}\nValidation set size\t{args.num_val_samples}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-            if args.DNA_model:
+            if args.model_type in ["DNA_1", "DNA_2"]:
                 f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
-                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}*{args.embedding_size}\n'
-                        f'kw_conv_2\t{args.kw_conv_2}\n')
+                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
+                        f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
+                        f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
     start = datetime.datetime.now()
 
