@@ -162,7 +162,7 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
 
     # define some training and model parameters
-    if args.DNA_model:
+    if args.model_type in ["DNA_1", "DNA_2"]:
         vector_size = 250
         vocab_size = 5
         model_name = 'DNANet'
