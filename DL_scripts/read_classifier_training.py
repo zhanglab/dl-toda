@@ -154,6 +154,7 @@ def main():
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
+    parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
@@ -162,15 +163,13 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
 
     # define some training and model parameters
-    if args.model_type in ["DNA_1", "DNA_2"]:
+    if args.DNA_model:
         vector_size = 250
         vocab_size = 5
-        model_name = 'DNANet'
     else:
         vector_size = args.max_read_size - args.k_value + 1
         vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
                          else ((4 ** args.k_value) / 2) + 1)
-        model_name = 'AlexNet'
 
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
@@ -262,7 +261,7 @@ def main():
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
             f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{model_name}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
                     f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
