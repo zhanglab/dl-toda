@@ -2,15 +2,14 @@ import tensorflow as tf
 import os
 
 def DNA_net_2(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
-    # define AlexNet model
-    n_rows = args.n_rows
-    n_cols = args.n_cols
     read_input = tf.keras.layers.Input(shape=(VECTOR_SIZE), dtype='int32')
     x = read_input
-    x = tf.keras.layers.Reshape((n_rows, n_cols))(x)
+    if args.DNA_model:
+        x = tf.keras.layers.Reshape((args.n_rows, args.n_cols))(x)
     x = tf.keras.layers.Embedding(input_dim=VOCAB_SIZE+1, output_dim=EMBEDDING_SIZE, embeddings_initializer=tf.keras.initializers.HeNormal(),
                                           input_length=VECTOR_SIZE, mask_zero=True, trainable=True, name='embedding')(x)
-    x = tf.keras.layers.Reshape((n_rows, n_cols*EMBEDDING_SIZE, 1))(x)  # output shape: (n_rows, n_cols*EMBEDDING_SIZE, 1)
+    if args.DNA_model:
+        x = tf.keras.layers.Reshape((args.n_rows, args.n_cols*EMBEDDING_SIZE, 1))(x)  # output shape: (n_rows, n_cols*EMBEDDING_SIZE, 1)
     x = tf.keras.layers.Conv2D(96, kernel_size=(args.kh_conv_1, args.kw_conv_1), strides=(args.sh_conv_1, args.sw_conv_1), padding='same', kernel_initializer=tf.keras.initializers.HeNormal(), name='conv_1')(x)
     x = tf.keras.layers.BatchNormalization(axis=1, momentum=0.99)(x)
     x = tf.keras.layers.Activation('relu')(x)
