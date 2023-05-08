@@ -130,6 +130,7 @@ def main():
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
+    parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
 
     args = parser.parse_args()
