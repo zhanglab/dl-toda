@@ -113,6 +113,8 @@ def main():
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--epoch', type=int, help='epoch of checkpoint', default=14)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
+    parser.add_argument('--DNA_model', action='store_true', default=False)
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
@@ -123,10 +125,13 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
 
     # define some training and model parameters
-    vector_size = 250 - 12 + 1
-    vocab_size = 8390657
-    embedding_size = 60
-    dropout_rate = 0.7
+    if args.DNA_model:
+        vector_size = 250
+        vocab_size = 5
+    else:
+        vector_size = args.max_read_size - args.k_value + 1
+        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
+                         else ((4 ** args.k_value) / 2) + 1)
 
     # load class_mapping file mapping label IDs to species
     # path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
