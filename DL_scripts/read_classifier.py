@@ -3,10 +3,13 @@ import tensorflow as tf
 import horovod.tensorflow as hvd
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
-import nvidia.dali.types as types
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
-from models import AlexNet
+from AlexNet import AlexNet
+from VDCNN import VDCNN
+from VGG16 import VGG16
+from DNA_model_1 import DNA_net_1
+from DNA_model_2 import DNA_net_2
 import os
 import sys
 import json
@@ -14,7 +17,6 @@ import glob
 import time
 import numpy as np
 import math
-from collections import defaultdict
 import argparse
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
@@ -117,7 +119,9 @@ def main():
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
 
     args = parser.parse_args()
-    print(args)
+
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
+
     # define some training and model parameters
     vector_size = 250 - 12 + 1
     vocab_size = 8390657
@@ -155,7 +159,7 @@ def main():
     print(f'3: {datetime.datetime.now()}')
     # load model
     if args.ckpt is not None:
-        model = AlexNet(args, vector_size, embedding_size, num_classes, vocab_size, dropout_rate)
+        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
     elif args.model is not None:
