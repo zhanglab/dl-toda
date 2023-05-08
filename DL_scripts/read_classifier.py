@@ -157,7 +157,7 @@ def main():
     if args.ckpt is not None:
         model = AlexNet(args, vector_size, embedding_size, num_classes, vocab_size, dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(f'{args.ckpt}-{args.epoch}').expect_partial()
+        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
     elif args.model is not None:
         model = tf.keras.models.load_model(args.model, 'model')
             # restore the last checkpointed values to the model
