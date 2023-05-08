@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 
 def DNA_net_2(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
+    print(VECTOR_SIZE)
     read_input = tf.keras.layers.Input(shape=(VECTOR_SIZE), dtype='int32')
     x = read_input
     if args.DNA_model:
