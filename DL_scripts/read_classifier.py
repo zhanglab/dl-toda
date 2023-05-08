@@ -64,8 +64,31 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
     return reads, labels
 
 
+# class DALIPreprocessor(object):
+#     def __init__(self, filenames, idx_filenames, batch_size, num_threads, dali_cpu=True,
+#                deterministic=False, training=False):
+#
+#         device_id = hvd.local_rank()
+#         shard_id = hvd.rank()
+#         num_gpus = hvd.size()
+#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
+#                                       dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+#
+#         self.daliop = dali_tf.DALIIterator()
+#
+#         self.batch_size = batch_size
+#         self.device_id = device_id
+#
+#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#             output_shapes=((batch_size, 239), (batch_size)),
+#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+#
+#     def get_device_dataset(self):
+#         return self.dalidataset
+
 class DALIPreprocessor(object):
-    def __init__(self, filenames, idx_filenames, batch_size, num_threads, dali_cpu=True,
+    def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, dali_cpu=True,
                deterministic=False, training=False):
 
         device_id = hvd.local_rank()
@@ -81,12 +104,11 @@ class DALIPreprocessor(object):
         self.device_id = device_id
 
         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-            output_shapes=((batch_size, 239), (batch_size)),
+            output_shapes=((batch_size, vector_size), (batch_size)),
             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
     def get_device_dataset(self):
         return self.dalidataset
-
 
 @tf.function
 def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None):
@@ -124,6 +146,7 @@ def main():
     parser.add_argument('--sw_conv_1', type=int, default=1)
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
+    parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
@@ -228,7 +251,7 @@ def main():
         test_steps = math.ceil(num_reads/(args.batch_size))
 
         num_preprocessing_threads = 4
-        test_preprocessor = DALIPreprocessor(gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, num_preprocessing_threads, dali_cpu=True, deterministic=False, training=False)
+        test_preprocessor = DALIPreprocessor(gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, num_preprocessing_threads, vector_size, dali_cpu=True, deterministic=False, training=False)
 
         test_input = test_preprocessor.get_device_dataset()
 
