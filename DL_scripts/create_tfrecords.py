@@ -73,12 +73,9 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read = rec.split('\n')[1].rstrip()
                     label = int(rec.split('\n')[0].rstrip().split('|')[1])
-                    print(f'before {label}')
                     # update label if necessary
                     if args.update_labels:
                         label = int(args.labels_mapping[str(label)])
-                    print(f'after {label}')
-                    print(read)
                     if args.DNA_model:
                         list_bases = [bases[x] if x in bases else 1 for x in read]
                         # update read length to match the max read length
