@@ -85,11 +85,17 @@ def create_tfrecords(args):
                         kmer_array = np.array(list_bases)
                     else:
                         kmer_array = get_kmer_arr(args, read)
-                    data = \
-                        {
-                            'read': wrap_read(kmer_array),
-                            'label': wrap_label(label),
-                        }
+                    if args.no_label:
+                        data = \
+                            {
+                                'read': wrap_read(kmer_array),
+                            }
+                    else:
+                        data = \
+                            {
+                                'read': wrap_read(kmer_array),
+                                'label': wrap_label(label),
+                            }
                     feature = tf.train.Features(feature=data)
                     example = tf.train.Example(features=feature)
                     serialized = example.SerializeToString()
@@ -110,6 +116,7 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False)
+    parser.add_argument('--no_label', action='store_true', default=False)
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
