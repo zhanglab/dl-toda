@@ -132,8 +132,8 @@ def simulate_reads(args, genomes):
                 mut_count += 1
 
             # write pairs of reads to fastq file
-            fw_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/1'
-            rv_read_id = f'@{genomes_id[i]}-label|{args.label}|-{i}/2'
+            fw_read_id = f'@{genomes_id[i]}-|{args.label}|{start_positions[i]}|{insert_sizes[i]}|{strands[i]}|{reads_lengths[i]}|-{i}/1'
+            rv_read_id = f'@{genomes_id[i]}-|{args.label}|{start_positions[i]}|{insert_sizes[i]}|{strands[i]}|{reads_lengths[i]}|-{i}/2'
             out_f.write(f'{fw_read_id}\n{forward_read}\n+\n{"?"*len(forward_read)}\n')
             out_f.write(f'{rv_read_id}\n{reverse_read}\n+\n{"?"*len(reverse_read)}\n')
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--label', type=int, help='label of a species')
-    parser.add_argument('--coverage', type=int, help='coverage used to estimate number of reads to simulate')
+    parser.add_argument('--coverage', type=float, help='coverage used to estimate number of reads to simulate')
     parser.add_argument('--num_genomes', type=int, help='number of genomes to use as template')
     parser.add_argument('--dataset', type=str, help='type of dataset', choices=['training', 'testing'])
     parser.add_argument('--fasta_dir', nargs='+', help='path to directories containing fasta files')
