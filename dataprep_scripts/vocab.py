@@ -20,12 +20,13 @@ def get_canonical_kmers(kmers):
         # get reverse complement
         rev_seq = get_reverse_seq(kmer)
         # select canonical k-mer (k-mer that appears)
-        if kmer <= rev_seq: # y comes before in alphabetical order
+        if kmer <= rev_seq:  # y comes before in alphabetical order
             can_kmers.append(kmer)
         else:
             can_kmers.append(rev_seq)
         # remove reverse complement from list
-        kmers.remove(rev_seq)
+        if rev_seq in kmers:
+            kmers.remove(rev_seq)
 
     return can_kmers
 
