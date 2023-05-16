@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from DL_scripts.tfrecords_utils.py import get_reverse_seq
+from DL_scripts.tfrecords_utils import get_reverse_seq
 
 
 def get_kmers(k, y=''):
