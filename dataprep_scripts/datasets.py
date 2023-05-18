@@ -7,6 +7,7 @@ from collections import defaultdict
 import shutil
 import glob
 import multiprocessing as mp
+import argparse
 
 
 def load_fq_file(fq_file):
@@ -36,7 +37,7 @@ def create_sets(reads, set_type, labels2taxa, output_dir):
             with open(fastq, 'r') as f:
                 # genome = fastq.rstrip().split('/')[-1].split('-')[1]
                 content = f.readlines()
-                reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
+                reads = [''.join(content[j:j+8]) for j in range(0, len(content), 8)]
                 list_reads += reads
                 # genome_out.write(f'{genome}\t{len(reads)}\n')
         random.shuffle(list_reads)
@@ -86,9 +87,9 @@ def split_reads(grouped_files, output_dir, process_id, train_reads, val_reads):
 
 
 # def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
-def create_train_val_sets(labels2taxa, input_dir, output_dir):
+def create_train_val_sets(args, labels2taxa):
     # get list of fastq files for training
-    fq_files = glob.glob(os.path.join(input_dir, "*.fq"))
+    fq_files = glob.glob(os.path.join(args.input_dir, "*.fq"))
     # get list of genomes to analyze by processors
     # genomes = list(genomes2labels.keys())
     # chunk_size = math.ceil(len(genomes)/mp.cpu_count())
@@ -98,7 +99,7 @@ def create_train_val_sets(labels2taxa, input_dir, output_dir):
     with mp.Manager() as manager:
         train_reads = manager.dict()
         val_reads = manager.dict()
-        processes = [mp.Process(target=split_reads, args=(grouped_files[i], output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
+        processes = [mp.Process(target=split_reads, args=(grouped_files[i], args.output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
         # processes = [mp.Process(target=split_reads, args=(grouped_genomes[i], input_dir, output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_genomes))]
         for p in processes:
             p.start()
@@ -107,17 +108,20 @@ def create_train_val_sets(labels2taxa, input_dir, output_dir):
 
         # create_sets(train_reads, 'train', taxa2labels, output_dir)
         # create_sets(val_reads, 'val', taxa2labels, output_dir)
-        create_sets(train_reads, 'train', labels2taxa, output_dir)
-        create_sets(val_reads, 'val', labels2taxa, output_dir)
+        create_sets(train_reads, 'train', labels2taxa, args.output_dir)
+        create_sets(val_reads, 'val', labels2taxa, args.output_dir)
 
     # remove temporary directories
-    shutil.rmtree(os.path.join(output_dir, 'train'))
-    shutil.rmtree(os.path.join(output_dir, 'val'))
+    shutil.rmtree(os.path.join(args.output_dir, 'train'))
+    shutil.rmtree(os.path.join(args.output_dir, 'val'))
 
 
 def main():
-    input_dir = sys.argv[1] # directory containing fastq files of simulated reads
-    output_dir = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
+    parser.add_argument('--output_dir', help="Path to the output directory")
+    args = parser.parse_args()
+
     # file_w_genomes = sys.argv[3] # tab separated file with genome and their label
     # labels_file = sys.argv[4] # path to json file mapping labels to taxa in dl-toda
 
@@ -141,7 +145,7 @@ def main():
     if not os.path.exists(os.path.join(output_dir, 'val')):
         os.makedirs(os.path.join(output_dir, 'val'))
     # create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels)
-    create_train_val_sets(labels2taxa, input_dir, output_dir)
+    create_train_val_sets(args, labels2taxa)
 
 
 if __name__ == "__main__":
