@@ -140,10 +140,10 @@ def main():
     with open(path_dl_toda_tax, 'r') as f:
         labels2taxa = json.load(f)
 
-    if not os.path.exists(os.path.join(output_dir, 'train')):
-        os.makedirs(os.path.join(output_dir, 'train'))
-    if not os.path.exists(os.path.join(output_dir, 'val')):
-        os.makedirs(os.path.join(output_dir, 'val'))
+    if not os.path.exists(os.path.join(args.output_dir, 'train')):
+        os.makedirs(os.path.join(args.output_dir, 'train'))
+    if not os.path.exists(os.path.join(args.output_dir, 'val')):
+        os.makedirs(os.path.join(args.output_dir, 'val'))
     # create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels)
     create_train_val_sets(args, labels2taxa)
 
