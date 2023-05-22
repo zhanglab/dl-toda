@@ -42,7 +42,9 @@ def create_sets(reads, set_type, labels2taxa, output_dir):
                 list_reads += reads
                 # genome_out.write(f'{genome}\t{len(reads)}\n')
         random.shuffle(list_reads)
+        print(len(list_reads))
         num_reads_per_set = math.ceil(len(list_reads)/num_sets)
+        print(num_reads_per_set)
         label_out.write(f'{label}\t{len(list_reads)}\t{num_reads_per_set}\n')
         for count, i in enumerate(range(0, len(list_reads), num_reads_per_set)):
             with open(os.path.join(output_dir, f'{set_type}-subset-{count}.fq'), 'a') as outfile:
