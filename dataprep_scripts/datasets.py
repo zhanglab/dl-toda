@@ -93,6 +93,7 @@ def split_reads(grouped_files, output_dir, process_id, train_reads, val_reads):
 def create_train_val_sets(args, labels2taxa):
     # get list of fastq files for training
     fq_files = glob.glob(os.path.join(args.input_dir, "*.fq"))
+    print(len(fq_files))
     # get list of genomes to analyze by processors
     # genomes = list(genomes2labels.keys())
     # chunk_size = math.ceil(len(genomes)/mp.cpu_count())
