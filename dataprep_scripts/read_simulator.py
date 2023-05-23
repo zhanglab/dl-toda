@@ -100,6 +100,7 @@ def simulate_reads(args, genomes):
 
     print(args.label, n_reads, coverage, avg_size, max_size, avg_read_length, n_mut)
 
+
     # count number of mutations added
     mut_count = 0
     with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'a') as out_f:
@@ -111,10 +112,19 @@ def simulate_reads(args, genomes):
                 insert_seq = new_genome[start_positions[i]:start_positions[i]+insert_sizes[i]]
             elif strands[i] == 'rev':
                 insert_seq = get_reverse(args, new_genome[start_positions[i]:start_positions[i]+insert_sizes[i]])
+            print(reads_lengths[i], start_positions[i], insert_sizes[i], start_positions[i] + insert_sizes[i])
             # define forward and reverse reads
             forward_read = insert_seq[0:reads_lengths[i]]
-            reverse_read = get_reverse(args, insert_seq, comp=True)[0:reads_lengths[i]]
-
+            print(forward_read)
+            reverse_read = get_reverse(args, insert_seq, comp=True)
+            print(len(reverse_read))
+            reverse_read = reverse_read[0:reads_lengths[i]]
+            print(reverse_read)
+            print(len(reverse_read))
+            reverse_read = get_reverse(args, insert_seq[-reads_lengths[i]:], comp=True)
+            print(reverse_read)
+            print(len(reverse_read))
+            break
             # add mutations to the forward and/or reverse reads
             while mut_count < n_mut and df['indexes'][mut_count] == i:
                 st = df['sites'].pop(mut_count)
