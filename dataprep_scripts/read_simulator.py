@@ -112,7 +112,7 @@ def simulate_reads(args, genomes):
                 insert_seq = new_genome[start_positions[i]:start_positions[i]+insert_sizes[i]]
             elif strands[i] == 'rev':
                 insert_seq = get_reverse(args, new_genome[start_positions[i]:start_positions[i]+insert_sizes[i]])
-            print(reads_lengths[i], start_positions[i], insert_sizes[i], start_positions[i] + insert_sizes[i])
+            print(strands[i], reads_lengths[i], start_positions[i], insert_sizes[i], start_positions[i] + insert_sizes[i])
             # define forward and reverse reads
             forward_read = insert_seq[0:reads_lengths[i]]
             print(forward_read)
@@ -124,7 +124,8 @@ def simulate_reads(args, genomes):
             reverse_read = get_reverse(args, insert_seq[-reads_lengths[i]:], comp=True)
             print(reverse_read)
             print(len(reverse_read))
-            break
+            if strands[i] == 'fw':
+                break
             # add mutations to the forward and/or reverse reads
             while mut_count < n_mut and df['indexes'][mut_count] == i:
                 st = df['sites'].pop(mut_count)
