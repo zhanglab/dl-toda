@@ -113,7 +113,7 @@ def simulate_reads(args, genomes):
                 insert_seq = get_reverse(args, new_genome[start_positions[i]:start_positions[i]+insert_sizes[i]])
             # define forward and reverse reads
             forward_read = insert_seq[0:reads_lengths[i]]
-            reverse_read = get_reverse(args, insert_seq[0:reads_lengths[i]], comp=True)
+            reverse_read = get_reverse(args, insert_seq, comp=True)[0:reads_lengths[i]]
 
             # add mutations to the forward and/or reverse reads
             while mut_count < n_mut and df['indexes'][mut_count] == i:
