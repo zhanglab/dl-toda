@@ -74,6 +74,7 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                 read_id = rec.split('\n')[0].rstrip()
                 read = rec.split('\n')[1].rstrip() + rec.split('\n')[5].rstrip() if args.pair else rec.split('\n')[1].rstrip()
+                print(read)
                 label = int(read_id.split('|')[1])
                 # update label if necessary
                 if args.update_labels:
