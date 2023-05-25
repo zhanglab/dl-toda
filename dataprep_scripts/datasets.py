@@ -10,16 +10,18 @@ import multiprocessing as mp
 import argparse
 
 
-def load_fq_file(fq_file):
+def load_fq_file(args, fq_file):
+    num_lines = 8 if args.pair else 4
     with open(fq_file, 'r') as f:
         content = f.readlines()
         # reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
-        read_pairs = [''.join(content[j:j + 8]) for j in range(0, len(content), 8)]
+        read_pairs = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
         return read_pairs
 
 
 # def create_sets(reads, set_type, taxa2labels, output_dir):
-def create_sets(reads, set_type, labels2taxa, output_dir):
+def create_sets(args, reads, set_type, labels2taxa, output_dir):
+    num_lines = 8 if args.pair else 4
     # calculate number of sets of reads
     num_reads = 0
     for process, process_reads in reads.items():
@@ -38,7 +40,7 @@ def create_sets(reads, set_type, labels2taxa, output_dir):
             with open(fastq, 'r') as f:
                 # genome = fastq.rstrip().split('/')[-1].split('-')[1]
                 content = f.readlines()
-                reads = [''.join(content[j:j+8]) for j in range(0, len(content), 8)]
+                reads = [''.join(content[j:j+num_lines]) for j in range(0, len(content), num_lines)]
                 list_reads += reads
                 # genome_out.write(f'{genome}\t{len(reads)}\n')
         random.shuffle(list_reads)
@@ -52,7 +54,7 @@ def create_sets(reads, set_type, labels2taxa, output_dir):
 
 
 # def split_reads(grouped_genomes, input_dir, output_dir, genomes2labels, taxa2labels, process_id, train_reads, val_reads):
-def split_reads(grouped_files, output_dir, process_id, train_reads, val_reads):
+def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_reads):
     # create directories to store output fq files
     process_train_reads = 0
     process_val_reads = 0
@@ -65,7 +67,7 @@ def split_reads(grouped_files, output_dir, process_id, train_reads, val_reads):
     for fq_file in grouped_files:
         # label = genomes2labels[genome]
         label = fq_file.split('/')[-1].split('_')[0]
-        read_pairs = load_fq_file(fq_file)
+        read_pairs = load_fq_file(args, fq_file)
         # reads = []
         # reads += load_fq_file(os.path.join(input_dir, f'{genome}1.fq'))
         # reads += load_fq_file(os.path.join(input_dir, f'{genome}2.fq'))
@@ -103,7 +105,7 @@ def create_train_val_sets(args, labels2taxa):
     with mp.Manager() as manager:
         train_reads = manager.dict()
         val_reads = manager.dict()
-        processes = [mp.Process(target=split_reads, args=(grouped_files[i], args.output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
+        processes = [mp.Process(target=split_reads, args=(args, grouped_files[i], args.output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
         # processes = [mp.Process(target=split_reads, args=(grouped_genomes[i], input_dir, output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_genomes))]
         for p in processes:
             p.start()
@@ -112,8 +114,8 @@ def create_train_val_sets(args, labels2taxa):
 
         # create_sets(train_reads, 'train', taxa2labels, output_dir)
         # create_sets(val_reads, 'val', taxa2labels, output_dir)
-        create_sets(train_reads, 'train', labels2taxa, args.output_dir)
-        create_sets(val_reads, 'val', labels2taxa, args.output_dir)
+        create_sets(args, train_reads, 'train', labels2taxa, args.output_dir)
+        create_sets(args, val_reads, 'val', labels2taxa, args.output_dir)
 
     # remove temporary directories
     shutil.rmtree(os.path.join(args.output_dir, 'train'))
@@ -124,6 +126,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
+    parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
     args = parser.parse_args()
 
     # file_w_genomes = sys.argv[3] # tab separated file with genome and their label
