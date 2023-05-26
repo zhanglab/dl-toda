@@ -91,7 +91,7 @@ def create_tfrecords(args):
                         rv_dna_array = get_kmer_arr(args, rec.split('\n')[5].rstrip())
                     dna_array = fw_dna_array + rv_dna_array
                     # append insert size for kmers arrays as pairs of reads
-                    dna_array.append(int(read_id.split('|')[3]))
+                    dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
                 else:
                     if args.DNA_model:
                         dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
