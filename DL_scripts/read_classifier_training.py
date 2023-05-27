@@ -155,6 +155,8 @@ def main():
     parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--DNA_model', action='store_true', default=False)
+    parser.add_argument('--paired_reads', action='store_true', default=False)
+    parser.add_argument('--with_insert_size', action='store_true', default=False)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
@@ -166,6 +168,10 @@ def main():
     if args.DNA_model:
         vector_size = 250
         vocab_size = 5
+    elif args.paired_reads:
+        vector_size = 501 if args.with_insert_size else 500
+        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
+                         else ((4 ** args.k_value) / 2) + 1)
     else:
         vector_size = args.max_read_size - args.k_value + 1
         vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
