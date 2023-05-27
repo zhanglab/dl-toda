@@ -74,7 +74,6 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read_id = rec.split('\n')[0].rstrip()
                     label = int(read_id.split('|')[1])
-                    print(read_id, label)
                     # update label if necessary
                     if args.update_labels:
                         label = int(args.labels_mapping[str(label)])
@@ -92,10 +91,8 @@ def create_tfrecords(args):
                             rv_dna_array = get_kmer_arr(args, rec.split('\n')[5].rstrip())
 
                         dna_array = fw_dna_array + rv_dna_array
-                        print(dna_array)
                         # append insert size for kmers arrays as pairs of reads
                         dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
-                        print(dna_array)
                     else:
                         if args.DNA_model:
                             dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
@@ -124,7 +121,6 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
-                    break
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
@@ -150,7 +146,7 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
-        print(args.dict_kmers)
+
     if args.update_labels:
         args.labels_mapping = dict()
         with open(args.mapping_file, 'r') as f:
