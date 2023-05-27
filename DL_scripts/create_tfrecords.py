@@ -92,7 +92,8 @@ def create_tfrecords(args):
 
                         dna_array = fw_dna_array + rv_dna_array
                         # append insert size for kmers arrays as pairs of reads
-                        dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
+                        if args.insert_size:
+                            dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
                     else:
                         if args.DNA_model:
                             dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
@@ -133,7 +134,8 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
-    parser.add_argument('--no_label', action='store_true', default=False, help="do not addd labels to tfrecords")
+    parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
+    parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
