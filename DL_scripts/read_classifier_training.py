@@ -149,6 +149,7 @@ def main():
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
+    parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
     parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
@@ -166,16 +167,17 @@ def main():
 
     # define some training and model parameters
     if args.DNA_model:
-        vector_size = 250
+        vector_size = 500 if args.paired_reads else 250
         vocab_size = 5
-    elif args.paired_reads:
-        vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
-        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
-                         else ((4 ** args.k_value) / 2) + 1)
     else:
-        vector_size = args.max_read_size - args.k_value + 1
-        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
-                         else ((4 ** args.k_value) / 2) + 1)
+        with open(args.vocab, 'r') as f:
+            content = f.readlines()
+            vocab_size = len(content)
+        if args.paired_reads:
+            vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
+        else:
+            vector_size = args.max_read_size - args.k_value + 1
+
 
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
