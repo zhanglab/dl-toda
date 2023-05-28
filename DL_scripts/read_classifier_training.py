@@ -169,7 +169,7 @@ def main():
         vector_size = 250
         vocab_size = 5
     elif args.paired_reads:
-        vector_size = 501 if args.with_insert_size else 500
+        vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
         vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
                          else ((4 ** args.k_value) / 2) + 1)
     else:
