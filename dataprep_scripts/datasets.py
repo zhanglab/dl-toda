@@ -126,6 +126,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
+    parser.add_argument('--path_dl_toda_tax', help="Path to json directory mapping labels to species", default='/'.join(
+        os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json')
     parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
     args = parser.parse_args()
 
@@ -142,9 +144,7 @@ def main():
     #     content = f.readlines()
     #     genomes2labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-    path_dl_toda_tax = '/'.join(
-        os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json'
-    with open(path_dl_toda_tax, 'r') as f:
+    with open(args.path_dl_toda_tax, 'r') as f:
         labels2taxa = json.load(f)
 
     if not os.path.exists(os.path.join(args.output_dir, 'train')):
