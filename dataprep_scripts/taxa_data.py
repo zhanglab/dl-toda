@@ -26,7 +26,7 @@ if __name__ == "__main__":
                 dl_toda_tax[sp] = line.rstrip().split('\t')[0]
 
     # create json dictionary of
-    labels2taxa = dict(zip(len(dl_toda_tax), list(dl_toda_tax.keys())))
+    labels2taxa = dict(zip(list(range(len(dl_toda_tax))), list(dl_toda_tax.keys())))
     with open(os.path.join(args.fq_dir, f'{args.taxon}_species_labels.json'), 'w') as f:
         json.dump(labels2taxa, f)
 
