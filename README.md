@@ -1,5 +1,7 @@
 # DL-TODA: a deep learning tool for omics data analysis
 
+[![DOI](https://zenodo.org/badge/451645983.svg)](https://zenodo.org/badge/latestdoi/451645983)
+
 DL-TODA classifies metagenomic data into 3313 bacterial species with a convolutional neural network. The present GitHub page contains all scripts used for simulating reads, preparing the datasets, training and testing DL-TODA and classify metagenomes.
 
 
