@@ -14,9 +14,8 @@ def load_fq_file(args, fq_file):
     num_lines = 8 if args.pair else 4
     with open(fq_file, 'r') as f:
         content = f.readlines()
-        # reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
-        read_pairs = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-        return read_pairs
+        reads= [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+        return reads
 
 
 # def create_sets(reads, set_type, taxa2labels, output_dir):
@@ -26,26 +25,29 @@ def create_sets(args, reads, set_type, labels2taxa, output_dir):
     num_reads = 0
     for process, process_reads in reads.items():
         num_reads += process_reads
+    if args.pair:
+        num_reads *= 2
     print(num_reads)
-    # num_sets = math.ceil(num_reads/ 20000000) if num_reads > 20000000 else 1
-    num_sets = math.ceil(num_reads * 2 / 20000000) if num_reads * 2 > 20000000 else 1
+    if args.balanced:
+        # update # reads per set for balanced datasets
+        args.reads_per_set = len(args.taxa) * args.reads_per_sp
+    num_sets = math.ceil(num_reads / args.reads_per_set) if num_reads > args.reads_per_set else 1
     print(num_sets)
-    # genome_out = open(os.path.join(output_dir, f'{set_type}-genome-read-count'), 'w')
     label_out = open(os.path.join(output_dir, f'{set_type}-label-read-count'), 'w')
-    # for label in taxa2labels.values():
-    for label in labels2taxa.keys():
+    for label in args.taxa:
         label_fq_files = sorted(glob.glob(os.path.join(output_dir, set_type, 'reads-*', f'{set_type}-{label}.fq')))
         list_reads = []
         for fastq in label_fq_files:
             with open(fastq, 'r') as f:
-                # genome = fastq.rstrip().split('/')[-1].split('-')[1]
                 content = f.readlines()
                 reads = [''.join(content[j:j+num_lines]) for j in range(0, len(content), num_lines)]
                 list_reads += reads
-                # genome_out.write(f'{genome}\t{len(reads)}\n')
         random.shuffle(list_reads)
         print(len(list_reads))
-        num_reads_per_set = math.ceil(len(list_reads)/num_sets)
+        if args.balanced:
+            num_reads_per_set = args.reads_per_sp
+        else:
+            num_reads_per_set = math.ceil(len(list_reads)/num_sets)
         print(num_reads_per_set)
         label_out.write(f'{label}\t{len(list_reads)}\t{num_reads_per_set}\n')
         for count, i in enumerate(range(0, len(list_reads), num_reads_per_set)):
@@ -95,7 +97,8 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 def create_train_val_sets(args, labels2taxa):
     # get list of fastq files for training
     fq_files = glob.glob(os.path.join(args.input_dir, "*.fq"))
-    print(len(fq_files))
+    args.taxa = [i.split('/')[-1].split('_')[0] for i in fq_files]
+    print(len(fq_files), len(args.taxa))
     # get list of genomes to analyze by processors
     # genomes = list(genomes2labels.keys())
     # chunk_size = math.ceil(len(genomes)/mp.cpu_count())
@@ -126,9 +129,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
-    parser.add_argument('--path_dl_toda_tax', help="Path to json directory mapping labels to species", default='/'.join(
-        os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json')
+    # parser.add_argument('--path_dl_toda_tax', help="Path to json directory mapping labels to species", default='/'.join(
+    #     os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json')
     parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
+    parser.add_argument('--reads_per_sp', type=int, help="number of reads per species and per set", default=1000)
+    parser.add_argument('--reads_per_set', type=int, help="number of reads per set", default=20000000)
+    parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets", required=('--num_reads' in sys.argv))
     args = parser.parse_args()
 
     # file_w_genomes = sys.argv[3] # tab separated file with genome and their label
@@ -144,8 +150,8 @@ def main():
     #     content = f.readlines()
     #     genomes2labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-    with open(args.path_dl_toda_tax, 'r') as f:
-        labels2taxa = json.load(f)
+    # with open(args.path_dl_toda_tax, 'r') as f:
+    #     labels2taxa = json.load(f)
 
     if not os.path.exists(os.path.join(args.output_dir, 'train')):
         os.makedirs(os.path.join(args.output_dir, 'train'))
