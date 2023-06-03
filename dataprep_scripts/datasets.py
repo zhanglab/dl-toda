@@ -20,17 +20,26 @@ def load_fq_file(args, fq_file):
 
 def create_sets(args, reads, set_type, output_dir):
     num_lines = 8 if args.pair else 4
-    # calculate number of sets of reads
-    num_reads = 0
+    # get total number of reads
+    list_num_reads = []
     for process, process_reads in reads.items():
-        num_reads += process_reads
+        list_num_reads.append(process_reads)
+    num_reads = sum(list_num_reads)
     if args.pair:
+        # multiply by 2 to consider reads as individual
         num_reads *= 2
     print(num_reads)
     if args.balanced:
-        # update # reads per set for balanced datasets
-        args.reads_per_set = len(args.taxa) * args.reads_per_sp
-    num_sets = math.ceil(num_reads / args.reads_per_set) if num_reads > args.reads_per_set else 1
+        # get minimum number of reads per species in list
+        min_num_reads = min(list_num_reads)
+        print(f'min number of reads: {min_num_reads}')
+        # get desired total number of reads
+        total_num_reads = min_num_reads * len(args.taxa)
+        # compute number of reads per species and per set
+        num_reads_per_set = total_num_reads // 5
+    else:
+        # compute number of sets given that we want 20000000 reads per set
+        num_sets = math.ceil(num_reads / 20000000) if num_reads > 20000000 else 1
     print(num_sets)
     label_out = open(os.path.join(output_dir, f'{set_type}-label-read-count'), 'w')
     for label in args.taxa:
@@ -44,8 +53,9 @@ def create_sets(args, reads, set_type, output_dir):
         random.shuffle(list_reads)
         print(len(list_reads))
         if args.balanced:
-            num_reads_per_set = args.reads_per_sp
+            list_reads = list_reads[:min_num_reads]
         else:
+            # compute number of reads for given species per set
             num_reads_per_set = math.ceil(len(list_reads)/num_sets)
         print(num_reads_per_set)
         label_out.write(f'{label}\t{len(list_reads)}\t{num_reads_per_set}\n')
@@ -131,9 +141,7 @@ def main():
     # parser.add_argument('--path_dl_toda_tax', help="Path to json directory mapping labels to species", default='/'.join(
     #     os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/species_labels.json')
     parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
-    parser.add_argument('--reads_per_sp', type=int, help="number of reads per species and per set", default=1000)
-    parser.add_argument('--reads_per_set', type=int, help="number of reads per set", default=20000000)
-    parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets", required=('--num_reads' in sys.argv))
+    parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets")
     args = parser.parse_args()
 
     # file_w_genomes = sys.argv[3] # tab separated file with genome and their label
