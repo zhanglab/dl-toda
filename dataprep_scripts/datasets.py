@@ -95,7 +95,7 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 # def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
 def create_train_val_sets(args):
     # get list of fastq files for training
-    fq_files = glob.glob(os.path.join(args.input_dir, "*.fq"))
+    fq_files = glob.glob(os.path.join(args.input_dir, "*_training.fq"))
     args.taxa = [i.split('/')[-1].split('_')[0] for i in fq_files]
     print(len(fq_files), len(args.taxa))
     # get list of genomes to analyze by processors
