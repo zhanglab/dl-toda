@@ -14,12 +14,11 @@ def load_fq_file(args, fq_file):
     num_lines = 8 if args.pair else 4
     with open(fq_file, 'r') as f:
         content = f.readlines()
-        reads= [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+        reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
         return reads
 
 
-# def create_sets(reads, set_type, taxa2labels, output_dir):
-def create_sets(args, reads, set_type, labels2taxa, output_dir):
+def create_sets(args, reads, set_type, output_dir):
     num_lines = 8 if args.pair else 4
     # calculate number of sets of reads
     num_reads = 0
@@ -94,7 +93,7 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 
 
 # def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
-def create_train_val_sets(args, labels2taxa):
+def create_train_val_sets(args):
     # get list of fastq files for training
     fq_files = glob.glob(os.path.join(args.input_dir, "*.fq"))
     args.taxa = [i.split('/')[-1].split('_')[0] for i in fq_files]
@@ -117,8 +116,8 @@ def create_train_val_sets(args, labels2taxa):
 
         # create_sets(train_reads, 'train', taxa2labels, output_dir)
         # create_sets(val_reads, 'val', taxa2labels, output_dir)
-        create_sets(args, train_reads, 'train', labels2taxa, args.output_dir)
-        create_sets(args, val_reads, 'val', labels2taxa, args.output_dir)
+        create_sets(args, train_reads, 'train', args.output_dir)
+        create_sets(args, val_reads, 'val', args.output_dir)
 
     # remove temporary directories
     shutil.rmtree(os.path.join(args.output_dir, 'train'))
@@ -158,7 +157,7 @@ def main():
     if not os.path.exists(os.path.join(args.output_dir, 'val')):
         os.makedirs(os.path.join(args.output_dir, 'val'))
     # create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels)
-    create_train_val_sets(args, labels2taxa)
+    create_train_val_sets(args)
 
 
 if __name__ == "__main__":
