@@ -1,9 +1,6 @@
-import sys
 import os
 import random
 import math
-import json
-from collections import defaultdict
 import shutil
 import glob
 import multiprocessing as mp
