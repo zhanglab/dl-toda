@@ -21,9 +21,9 @@ def create_sets(args, reads, set_type, output_dir):
     # get total number of reads
     list_num_reads = []
     for process, process_reads in reads.items():
-        list_num_reads.append(process_reads)
+        list_num_reads += process_reads
     num_reads = sum(list_num_reads)
-    print(num_reads)
+    print(f'# reads in {set_type} set: {num_reads}\t# taxa: {len(list_num_reads)}')
     if args.balanced:
         num_sets = 5
         # get minimum number of reads per species in list
@@ -57,11 +57,10 @@ def create_sets(args, reads, set_type, output_dir):
                 outfile.write(''.join(list_reads[i:i+num_reads_per_set]))
 
 
-# def split_reads(grouped_genomes, input_dir, output_dir, genomes2labels, taxa2labels, process_id, train_reads, val_reads):
 def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_reads):
     # create directories to store output fq files
-    process_train_reads = 0
-    process_val_reads = 0
+    process_train_reads = []
+    process_val_reads = []
     if not os.path.exists(os.path.join(output_dir, 'train', f'reads-{process_id}')):
         os.makedirs(os.path.join(output_dir, 'train', f'reads-{process_id}'))
     if not os.path.exists(os.path.join(output_dir, 'val', f'reads-{process_id}')):
@@ -76,14 +75,13 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
             out_f.write(''.join(reads[:num_train_reads]))
         with open(os.path.join(output_dir, 'val', f'reads-{process_id}', f'val-{label}.fq'), 'w') as out_f:
             out_f.write(''.join(reads[num_train_reads:]))
-        process_train_reads += num_train_reads
-        process_val_reads += len(reads) - num_train_reads
+        process_train_reads.append(num_train_reads)
+        process_val_reads.append(len(reads) - num_train_reads)
 
     train_reads[process_id] = process_train_reads
     val_reads[process_id] = process_val_reads
 
 
-# def create_train_val_sets(input_dir, output_dir, genomes2labels, taxa2labels):
 def create_train_val_sets(args):
     # get list of fastq files for training
     fq_files = glob.glob(os.path.join(args.input_dir, "*_training.fq"))
@@ -95,7 +93,6 @@ def create_train_val_sets(args):
         train_reads = manager.dict()
         val_reads = manager.dict()
         processes = [mp.Process(target=split_reads, args=(args, grouped_files[i], args.output_dir, i, train_reads, val_reads)) for i in range(len(grouped_files))]
-        # processes = [mp.Process(target=split_reads, args=(grouped_genomes[i], input_dir, output_dir, genomes2labels, taxa2labels, i, train_reads, val_reads)) for i in range(len(grouped_genomes))]
         for p in processes:
             p.start()
         for p in processes:
