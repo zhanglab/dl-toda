@@ -30,13 +30,14 @@ def create_sets(args, reads, set_type, output_dir):
         num_reads *= 2
     print(num_reads)
     if args.balanced:
+        num_sets = 5
         # get minimum number of reads per species in list
         min_num_reads = min(list_num_reads)
         print(f'min number of reads: {min_num_reads}')
         # get desired total number of reads
         total_num_reads = min_num_reads * len(args.taxa)
         # compute number of reads per species and per set
-        num_reads_per_set = total_num_reads // 5
+        num_reads_per_set = total_num_reads // num_sets
     else:
         # compute number of sets given that we want 20000000 reads per set
         num_sets = math.ceil(num_reads / 20000000) if num_reads > 20000000 else 1
