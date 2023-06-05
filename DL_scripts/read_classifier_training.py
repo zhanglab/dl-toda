@@ -285,9 +285,6 @@ def main():
     start = datetime.datetime.now()
 
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-        print(reads)
-        print(labels)
-        break
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
