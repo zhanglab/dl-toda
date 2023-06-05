@@ -44,13 +44,13 @@ if gpus:
 
 # define the DALI pipeline
 @pipeline_def
-def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, dali_cpu=True, training=True):
+def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
                                  shard_id=shard_id,
                                  num_shards=num_gpus,
-                                 initial_fill=10000000,
+                                 initial_fill=initial_fill,
                                  features={
                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
@@ -60,15 +60,15 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
     return (reads, labels)
 
 class DALIPreprocessor(object):
-    def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, dali_cpu=True,
+    def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, initial_fill,
                deterministic=False, training=False):
 
         device_id = hvd.local_rank()
         shard_id = hvd.rank()
         num_gpus = hvd.size()
         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
-                                      dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+                                      num_threads=num_threads, device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
         self.daliop = dali_tf.DALIIterator()
 
@@ -146,6 +146,7 @@ def main():
     parser.add_argument('--optimizer', type=str, help='type of optimizer', default='Adam', choices=['Adam', 'SGD'])
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=512)
+    parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
@@ -201,9 +202,9 @@ def main():
     val_steps = args.num_val_samples // (args.batch_size*hvd.size())
 
     num_preprocessing_threads = 4
-    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, vector_size,
-                                          dali_cpu=True, deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, num_preprocessing_threads, vector_size, dali_cpu=True,
+    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, vector_size, args.initial_fill,
+                                           deterministic=False, training=True)
+    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, num_preprocessing_threads, vector_size, args.initial_fill,
                                         deterministic=False, training=False)
 
     train_input = train_preprocessor.get_device_dataset()
