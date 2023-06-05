@@ -285,10 +285,18 @@ def main():
 
     start = datetime.datetime.now()
 
+    # create empty list to store the reads
+    all_reads = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # print(hvd.rank(), reads, labels)
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
+
+        # store reads
+        if batch == 1:
+            all_reads = [reads]
+        else:
+            all_reads = tf.concat([all_reads, [reads]], 1)
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -302,8 +310,14 @@ def main():
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
-            for _, (reads, labels) in enumerate(val_input.take(val_steps)):
-                testing_step(reads, labels, loss, val_loss, val_accuracy, model)
+            # check training reads that have passed through during the 1st epoch
+            all_reads = all_reads[0].numpy()
+            print(all_reads[0])
+            # get number of unique reads
+            num_unique_reads = len(np.unique(all_reads, axis=0))
+            print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
+            # for _, (reads, labels) in enumerate(val_input.take(val_steps)):
+            #     testing_step(reads, labels, loss, val_loss, val_accuracy, model)
 
             # adjust learning rate
             if epoch % args.lr_decay == 0:
