@@ -50,7 +50,7 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
                                  random_shuffle=training,
                                  shard_id=shard_id,
                                  num_shards=num_gpus,
-                                 initial_fill=10,
+                                 initial_fill=10000000,
                                  features={
                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
