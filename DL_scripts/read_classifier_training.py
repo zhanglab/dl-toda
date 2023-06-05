@@ -294,7 +294,7 @@ def main():
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
         # store reads
-        if batch == 1 or batch % nstep_per_epoch == 0:
+        if batch == 1:
             all_reads = [reads]
         else:
             all_reads = tf.concat([all_reads, [reads]], 1)
@@ -318,7 +318,7 @@ def main():
             num_unique_reads = len(np.unique(all_reads, axis=0))
             print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
             np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-reads.npy'), all_reads)
-            all_reads = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+            all_reads = [reads]
             # for _, (reads, labels) in enumerate(val_input.take(val_steps)):
             #     testing_step(reads, labels, loss, val_loss, val_accuracy, model)
 
