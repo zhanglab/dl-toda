@@ -12,6 +12,7 @@ import json
 import glob
 import datetime
 import io
+import numpy as np
 from AlexNet import AlexNet
 from VDCNN import VDCNN
 from VGG16 import VGG16
