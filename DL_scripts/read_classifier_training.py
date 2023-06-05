@@ -311,13 +311,6 @@ def main():
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
-            # check training reads that have passed through during the 1st epoch
-            all_reads = all_reads[0].numpy()
-            print(all_reads[0])
-            # get number of unique reads
-            num_unique_reads = len(np.unique(all_reads, axis=0))
-            print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
-            np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-reads.npy'), all_reads)
             # for _, (reads, labels) in enumerate(val_input.take(val_steps)):
             #     testing_step(reads, labels, loss, val_loss, val_accuracy, model)
 
@@ -345,6 +338,14 @@ def main():
 
             # define end of current epoch
             epoch += 1
+
+        # check training reads that have passed through during the 1st epoch
+        all_reads = all_reads[0].numpy()
+        print(all_reads[0])
+        # get number of unique reads
+        num_unique_reads = len(np.unique(all_reads, axis=0))
+        print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
+        np.save(os.path.join(args.output_dir, f'{hvd.rank()}-reads.npy'), all_reads)
 
 
     if hvd.rank() == 0:
