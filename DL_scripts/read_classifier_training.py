@@ -47,7 +47,7 @@ if gpus:
 @pipeline_def
 def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
     # prefetch_queue_depth = 100
-    read_ahead = True
+    # read_ahead = True
     stick_to_shard = True
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
@@ -56,8 +56,8 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fi
                                  num_shards=num_gpus,
                                  initial_fill=initial_fill,
                                  # prefetch_queue_depth=prefetch_queue_depth,
-                                 read_ahead=read_ahead,
-                                 # stick_to_shard=stick_to_shard,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
                                  features={
                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
