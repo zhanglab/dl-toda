@@ -46,12 +46,18 @@ if gpus:
 # define the DALI pipeline
 @pipeline_def
 def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    prefetch_queue_depth = 100
+    read_ahead = True
+    stick_to_shard = True
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
                                  shard_id=shard_id,
                                  num_shards=num_gpus,
                                  initial_fill=initial_fill,
+                                 prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 # stick_to_shard=stick_to_shard,
                                  features={
                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
@@ -61,14 +67,14 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fi
     return (reads, labels)
 
 class DALIPreprocessor(object):
-    def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, initial_fill,
+    def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
                deterministic=False, training=False):
 
         device_id = hvd.local_rank()
         shard_id = hvd.rank()
         num_gpus = hvd.size()
         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      num_threads=num_threads, device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
         self.daliop = dali_tf.DALIIterator()
@@ -202,10 +208,9 @@ def main():
     # compute number of steps/batches to iterate over entire validation set
     val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
 
-    num_preprocessing_threads = 4
-    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, vector_size, args.initial_fill,
+    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
                                            deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, num_preprocessing_threads, vector_size, args.initial_fill,
+    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
                                         deterministic=False, training=False)
 
     train_input = train_preprocessor.get_device_dataset()
