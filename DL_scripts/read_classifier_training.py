@@ -275,7 +275,7 @@ def main():
                     f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                    f'Training set size\t{args.num_train_samples}\nValidation set size\t{args.num_val_samples}\n'
+                    f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
             if args.model_type in ["DNA_1", "DNA_2"]:
