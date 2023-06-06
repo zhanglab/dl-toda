@@ -198,9 +198,9 @@ def main():
     val_files = sorted(glob.glob(os.path.join(args.tfrecords, 'val*.tfrec')))
     val_idx_files = sorted(glob.glob(os.path.join(args.idx_files, 'val*.idx')))
     # compute number of steps/batches per epoch
-    nstep_per_epoch = args.num_train_samples // (args.batch_size*hvd.size())
+    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = args.num_val_samples // (args.batch_size*hvd.size())
+    val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
 
     num_preprocessing_threads = 4
     train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, num_preprocessing_threads, vector_size, args.initial_fill,
