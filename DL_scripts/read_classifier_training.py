@@ -154,8 +154,8 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
-    parser.add_argument('--num_train_samples', type=int, help='number of reads in training set', required=True)
-    parser.add_argument('--num_val_samples', type=int, help='number of reads in validation set', required=True)
+    parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
+    parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--paired_reads', action='store_true', default=False)
@@ -287,17 +287,18 @@ def main():
     start = datetime.datetime.now()
 
     # create empty list to store the reads
-    all_reads = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    # all_reads = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-        # print(hvd.rank(), reads, labels)
+        print(hvd.rank(), reads, labels)
+        break
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
         # store reads
-        if batch == 1:
-            all_reads = [reads]
-        else:
-            all_reads = tf.concat([all_reads, [reads]], 1)
+        # if batch == 1:
+        #     all_reads = [reads]
+        # else:
+        #     all_reads = tf.concat([all_reads, [reads]], 1)
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -312,15 +313,15 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # check training reads that have passed through during the 1st epoch
-            all_reads = all_reads[0].numpy()
-            print(all_reads[0])
-            # get number of unique reads
-            num_unique_reads = len(np.unique(all_reads, axis=0))
-            print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
-            np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-reads.npy'), all_reads)
-            all_reads = [reads]
-            # for _, (reads, labels) in enumerate(val_input.take(val_steps)):
-            #     testing_step(reads, labels, loss, val_loss, val_accuracy, model)
+            # all_reads = all_reads[0].numpy()
+            # print(all_reads[0])
+            # # get number of unique reads
+            # num_unique_reads = len(np.unique(all_reads, axis=0))
+            # print(f'# reads after {epoch} epoch: {len(all_reads)}\t# unique reads: {num_unique_reads}')
+            # np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-reads.npy'), all_reads)
+            # all_reads = [reads]
+            for _, (reads, labels) in enumerate(val_input.take(val_steps)):
+                testing_step(reads, labels, loss, val_loss, val_accuracy, model)
 
             # adjust learning rate
             if epoch % args.lr_decay == 0:
