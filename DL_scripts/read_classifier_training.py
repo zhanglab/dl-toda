@@ -289,8 +289,6 @@ def main():
     # create empty list to store the reads
     # all_reads = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-        print(hvd.rank(), reads, labels)
-        break
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
 
