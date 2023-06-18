@@ -306,7 +306,8 @@ def main():
         if batch == 1:
             all_labels = [labels]
     #     #     all_reads = [reads]
-        elif batch == 5:
+        elif batch == 7:
+            all_labels = tf.concat([all_labels, [labels]], 1)
             np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-{batch}-labels.npy'), all_labels[0].numpy())
             break
         else:
