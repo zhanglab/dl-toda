@@ -298,18 +298,16 @@ def main():
     # create empty list to store the reads
     all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-        print(hvd.rank(), batch, labels, all_labels[0].numpy(), len(set(all_labels[0].numpy().tolist())))
-
+        # print(hvd.rank(), batch, labels, all_labels[0].numpy(), len(set(all_labels[0].numpy().tolist())))
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
-
         # store reads
         if batch == 1:
             all_labels = [labels]
         elif batch % 5000 == 0:
             all_labels = all_labels[0].numpy()
             # create dictionary mapping the species to the number of reads
-            labels_count = Counter(all_labels)
+            labels_count = {str(k): v for k, v in Counter(all_labels).items()}
             with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-{batch}-labels.npy'), 'w') as labels_outfile:
                 json.dump(labels_count, labels_outfile)
             # np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-{batch}-labels.npy'), all_labels[0].numpy())
