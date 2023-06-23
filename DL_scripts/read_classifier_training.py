@@ -304,7 +304,7 @@ def main():
         # store reads
         if batch == 1:
             all_labels = [labels]
-        elif batch % 5000 == 0:
+        elif batch % 2500 == 0:
             all_labels = all_labels[0].numpy()
             # create dictionary mapping the species to the number of reads
             labels_count = {str(k): v for k, v in Counter(all_labels).items()}
