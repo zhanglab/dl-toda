@@ -308,7 +308,9 @@ def main():
         # elif batch % 1000 == 0:
         #     all_labels = all_labels[0].numpy()
         # create dictionary mapping the species to the number of reads
-        labels_count = Counter(labels[0].numpy())
+        print(labels)
+        print(labels.numpy())
+        labels_count = Counter(labels.numpy())
         for k, v in labels_count.items():
             labels_dict[str(k)] += v
         print(labels_dict)
