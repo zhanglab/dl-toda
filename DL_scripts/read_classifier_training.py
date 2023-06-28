@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
-from collections import Counter
+from collections import Counter, defaultdict
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
@@ -296,24 +296,29 @@ def main():
     start = datetime.datetime.now()
 
     # create empty list to store the reads
-    all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    labels_dict = defaultdict(int)
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # print(hvd.rank(), batch, labels, all_labels[0].numpy(), len(set(all_labels[0].numpy().tolist())))
         # get training loss
         loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
         # store reads
-        if batch == 1:
-            all_labels = [labels]
-        elif batch % 1000 == 0:
-            all_labels = all_labels[0].numpy()
-            # create dictionary mapping the species to the number of reads
-            labels_count = {str(k): v for k, v in Counter(all_labels).items()}
-            with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-{batch}-labels.npy'), 'w') as labels_outfile:
-                json.dump(labels_count, labels_outfile)
+        # if batch == 1:
+        #     all_labels = [labels]
+        # elif batch % 1000 == 0:
+        #     all_labels = all_labels[0].numpy()
+        # create dictionary mapping the species to the number of reads
+        labels_count = Counter(labels[0].numpy())
+        for k, v in labels_count.items():
+            labels_dict[str(k)] += v
+        print(labels_dict)
+        break
+
+            # labels_count = {str(k): v for k, v in Counter(all_labels).items()}
             # np.save(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-{batch}-labels.npy'), all_labels[0].numpy())
-            all_labels = [labels]
-        else:
-            all_labels = tf.concat([all_labels, [labels]], 1)
+            # all_labels = [labels]
+        # else:
+        #     all_labels = tf.concat([all_labels, [labels]], 1)
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -362,6 +367,10 @@ def main():
 
             # define end of current epoch
             epoch += 1
+
+    # save dictionary of labels count
+    with open(os.path.join(args.output_dir, f'{hvd.rank()}-labels.npy'), 'w') as labels_outfile:
+        json.dump(labels_dict, labels_outfile)
 
 
     if hvd.rank() == 0:
