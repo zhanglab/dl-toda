@@ -297,7 +297,7 @@ def main():
 
     # create empty list to store the reads
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-    labels_dict = defaultdict(int)
+    # labels_dict = defaultdict(int)
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # print(hvd.rank(), batch, labels, all_labels[0].numpy(), len(set(all_labels[0].numpy().tolist())))
         # get training loss
@@ -308,12 +308,12 @@ def main():
         # elif batch % 1000 == 0:
         #     all_labels = all_labels[0].numpy()
         # create dictionary mapping the species to the number of reads
-        print(labels)
-        print(labels.numpy())
-        labels_count = Counter(labels.numpy())
-        for k, v in labels_count.items():
-            labels_dict[str(k)] += v
-        print(labels_dict)
+        # print(labels)
+        # print(labels.numpy())
+        # labels_count = Counter(labels.numpy())
+        # for k, v in labels_count.items():
+        #     labels_dict[str(k)] += v
+        # print(labels_dict)
         break
 
             # labels_count = {str(k): v for k, v in Counter(all_labels).items()}
@@ -371,8 +371,8 @@ def main():
             epoch += 1
 
     # save dictionary of labels count
-    with open(os.path.join(args.output_dir, f'{hvd.rank()}-labels.npy'), 'w') as labels_outfile:
-        json.dump(labels_dict, labels_outfile)
+    # with open(os.path.join(args.output_dir, f'{hvd.rank()}-labels.npy'), 'w') as labels_outfile:
+    #     json.dump(labels_dict, labels_outfile)
 
 
     if hvd.rank() == 0:
