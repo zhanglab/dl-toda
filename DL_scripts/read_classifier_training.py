@@ -303,11 +303,9 @@ def main():
 
         # create dictionary mapping the species to their occurrence in batches
         labels_count = Counter(labels.numpy())
-        print(hvd.rank(), labels_count)
         for k, v in labels_count.items():
             labels_dict[str(k)] += v
-        print(hvd.rank(), labels_dict)
-        break
+
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
