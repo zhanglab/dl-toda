@@ -32,24 +32,25 @@ if __name__ == "__main__":
     bins = 20
 
     fig1, ax1 = plt.subplots(nrows=1, ncols=1)
-    fig2, ax2 = plt.subplots(nrows=1, ncols=1)
 
     for i in range(1, num_epochs+1, 1):
+        fig, ax = plt.subplots(nrows=1, ncols=1)
         epoch_sp_count = {}
         for j in range(num_gpus):
             gpu_sp_count = get_values(f'{j}-{i}-labels.json')
             print(f'epoch: {i} - gpu: {j} - {statistics.mean(gpu_sp_count.values())}')
             epoch_sp_count = update_dict(epoch_sp_count, gpu_sp_count)
-            ax2.hist(gpu_sp_count.values(), bins, alpha=0.5, label=f'epoch {i} - gpu {j}')
+            ax.hist(gpu_sp_count.values(), bins, alpha=0.5, label=f'gpu {j}')
+        ax.set_xlabel('Number of reads per species')
+        ax.set_ylabel('Count')
+        ax.legend(loc='upper right')
+        fig.savefig(f'species-hist-epoch-{i}.png')
         ax1.hist(epoch_sp_count.values(), bins, alpha=0.5, label=f'epoch {i}')
     ax1.set_xlabel('Number of reads per species')
     ax1.set_ylabel('Count')
     ax1.legend(loc='upper right')
-    ax2.set_xlabel('Number of reads per species')
-    ax2.set_ylabel('Count')
-    ax2.legend(loc='upper right')
     fig1.savefig('species-hist-all-gpus.png')
-    fig2.savefig('species-hist-diff-gpus.png')
+
 
 
 
