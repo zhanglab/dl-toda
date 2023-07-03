@@ -28,7 +28,7 @@ if __name__ == "__main__":
     num_gpus = len(set([i.split('-')[0] for i in json_files]))
     print(num_epochs, num_gpus)
 
-    bins = numpy.linspace(-10, 10, 100)
+    bins = 20
 
     for i in range(1, num_epochs, 1):
         epoch_sp_count = {}
