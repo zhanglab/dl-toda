@@ -31,7 +31,8 @@ if __name__ == "__main__":
 
     bins = 20
 
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    fig2, ax2 = plt.subplots(nrows=1, ncols=1)
 
     for i in range(1, num_epochs+1, 1):
         epoch_sp_count = {}
@@ -47,7 +48,8 @@ if __name__ == "__main__":
     ax2.set_xlabel('Number of reads per species')
     ax2.set_ylabel('Count')
     ax2.legend(loc='upper right')
-    fig.savefig('species-hist.png')
+    fig1.savefig('species-hist-all-gpus.png')
+    fig2.savefig('species-hist-diff-gpus.png')
 
 
 
