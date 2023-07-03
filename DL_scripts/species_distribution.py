@@ -23,8 +23,8 @@ if __name__ == "__main__":
     print(json_files)
 
 
-    num_epochs = list(set([i.split('-')[1] for i in json_files]))
-    num_gpus = list(set([i.split('-')[0] for i in json_files]))
+    num_epochs = len(set([i.split('-')[1] for i in json_files]))
+    num_gpus = len(set([i.split('-')[0] for i in json_files]))
     print(num_epochs, num_gpus)
 
 
