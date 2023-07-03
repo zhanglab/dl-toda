@@ -38,7 +38,7 @@ if __name__ == "__main__":
         epoch_sp_count = {}
         for j in range(num_gpus):
             gpu_sp_count = get_values(f'{j}-{i}-labels.json')
-            print(f'epoch: {i} - gpu: {j} - {statistics.mean(gpu_sp_count.values())} - {sum(gpu_sp_count.values())}')
+            print(f'epoch: {i} - gpu: {j} - {statistics.mean(gpu_sp_count.values())} - {statistics.median(gpu_sp_count.values())} - {sum(gpu_sp_count.values())} - {min(gpu_sp_count.values())} - {max(gpu_sp_count.values())}')
             epoch_sp_count = update_dict(epoch_sp_count, gpu_sp_count)
             ax.hist(gpu_sp_count.values(), bins, alpha=0.5, label=f'gpu {j}')
         ax.set_xlabel('Number of reads per species')
