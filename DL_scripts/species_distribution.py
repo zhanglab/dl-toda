@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
 
     num_epochs = len(set([i.split('-')[1] for i in json_files]))
+    print(num_epochs)
     num_gpus = len(set([i.split('-')[0] for i in json_files]))
     print(num_epochs, num_gpus)
 
@@ -32,7 +33,7 @@ if __name__ == "__main__":
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 
-    for i in range(1, num_epochs, 1):
+    for i in range(1, num_epochs+1, 1):
         epoch_sp_count = {}
         for j in range(num_gpus):
             gpu_sp_count = get_values(f'{j}-{i}-labels.json')
