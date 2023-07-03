@@ -1,6 +1,7 @@
 import glob
 import json
 import matplotlib.pyplot as plt
+import numpy
 
 
 def get_values(json_filename):
@@ -27,12 +28,16 @@ if __name__ == "__main__":
     num_gpus = len(set([i.split('-')[0] for i in json_files]))
     print(num_epochs, num_gpus)
 
+    bins = numpy.linspace(-10, 10, 100)
+
     for i in range(1, num_epochs, 1):
         epoch_sp_count = {}
         for j in range(num_gpus):
             gpu_sp_count = get_values(f'{j}-{i}-labels.json')
             epoch_sp_count = update_dict(epoch_sp_count, gpu_sp_count)
-        plt.hist(epoch_sp_count.values(), label=f'epoch {i}')
+        plt.hist(epoch_sp_count.values(), bins, alpha=0.5, label=f'epoch {i}')
+    plt.xlabel('Number of reads per species')
+    plt.ylabel('Count')
     plt.legend(loc='upper right')
     plt.savefig('species-hist.png')
 
