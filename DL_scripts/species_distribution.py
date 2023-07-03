@@ -1,7 +1,7 @@
 import glob
 import json
 import matplotlib.pyplot as plt
-import numpy
+import statistics
 
 
 def get_values(json_filename):
@@ -30,15 +30,24 @@ if __name__ == "__main__":
 
     bins = 20
 
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+
     for i in range(1, num_epochs, 1):
         epoch_sp_count = {}
         for j in range(num_gpus):
             gpu_sp_count = get_values(f'{j}-{i}-labels.json')
+            print(f'epoch: {i} - gpu: {j} - {statistics.mean(gpu_sp_count.values())}')
             epoch_sp_count = update_dict(epoch_sp_count, gpu_sp_count)
-        plt.hist(epoch_sp_count.values(), bins, alpha=0.5, label=f'epoch {i}')
-    plt.xlabel('Number of reads per species')
-    plt.ylabel('Count')
-    plt.legend(loc='upper right')
-    plt.savefig('species-hist.png')
+            ax2.hist(gpu_sp_count.values(), bins, alpha=0.5, label=f'epoch {i} - gpu {j}')
+        ax1.hist(epoch_sp_count.values(), bins, alpha=0.5, label=f'epoch {i}')
+    ax1.set_xlabel('Number of reads per species')
+    ax1.set_ylabel('Count')
+    ax1.legend(loc='upper right')
+    ax2.set_xlabel('Number of reads per species')
+    ax2.set_ylabel('Count')
+    ax2.legend(loc='upper right')
+    fig.savefig('species-hist.png')
+
+
 
 
