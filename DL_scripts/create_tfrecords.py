@@ -57,7 +57,8 @@ def create_tfrecords(args):
     bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
     num_lines = 8 if args.pair else 4
     count = 0
-    with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
+    with tf.io.TFRecordWriter(output_tfrec) as file_writer:
+    # with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         with open(args.input_fastq) as handle:
             rec = ''
             n_line = 0
@@ -110,16 +111,24 @@ def create_tfrecords(args):
                                 'read': wrap_read(np.array(dna_array)),
                             }
                     else:
-                        data = \
-                            {
-                                'read': wrap_read(np.array(dna_array)),
-                                'label': wrap_label(label),
-                            }
-                    feature = tf.train.Features(feature=data)
-                    example = tf.train.Example(features=feature)
-                    serialized = example.SerializeToString()
-                    writer.write(serialized)
+                        record_bytes = tf.train.Example(features=tf.train.Features(feature={
+                            "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
+                            "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
+                        })).SerializeToString()
+                        file_writer.write(record_bytes)
+
+                    #     data = \
+                    #         {
+                    #             'read': wrap_read(np.array(dna_array)),
+                    #             'label': wrap_label(label),
+                    #         }
+                    # feature = tf.train.Features(feature=data)
+                    # example = tf.train.Example(features=feature)
+                    # serialized = example.SerializeToString()
+                    # writer.write(serialized)
                     count += 1
+                    if count == 10:
+                        break
                     # initialize variables again
                     n_line = 0
                     rec = ''
