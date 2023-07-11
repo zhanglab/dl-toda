@@ -57,7 +57,7 @@ def create_tfrecords(args):
     bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
     num_lines = 8 if args.pair else 4
     count = 0
-    with tf.io.TFRecordWriter(output_tfrec) as file_writer:
+    with tf.io.TFRecordWriter(output_tfrec) as writer:
     # with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
         with open(args.input_fastq) as handle:
             rec = ''
@@ -105,30 +105,29 @@ def create_tfrecords(args):
                                 dna_array = dna_array + [0] * (args.read_length - len(dna_array))
                         else:
                             dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+
                     if args.no_label:
                         data = \
                             {
                                 'read': wrap_read(np.array(dna_array)),
                             }
                     else:
-                        record_bytes = tf.train.Example(features=tf.train.Features(feature={
-                            "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
-                            "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
-                        })).SerializeToString()
-                        file_writer.write(record_bytes)
+                        # record_bytes = tf.train.Example(features=tf.train.Features(feature={
+                        #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
+                        #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
+                        # })).SerializeToString()
+                        # writer.write(record_bytes)
 
-                    #     data = \
-                    #         {
-                    #             'read': wrap_read(np.array(dna_array)),
-                    #             'label': wrap_label(label),
-                    #         }
-                    # feature = tf.train.Features(feature=data)
-                    # example = tf.train.Example(features=feature)
-                    # serialized = example.SerializeToString()
-                    # writer.write(serialized)
+                        data = \
+                            {
+                                'read': wrap_read(np.array(dna_array)),
+                                'label': wrap_label(label),
+                            }
+                    feature = tf.train.Features(feature=data)
+                    example = tf.train.Example(features=feature)
+                    serialized = example.SerializeToString()
+                    writer.write(serialized)
                     count += 1
-                    if count == 10:
-                        break
                     # initialize variables again
                     n_line = 0
                     rec = ''
@@ -143,6 +142,7 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
+    parser.add_argument('--transformer', action='store_true', default=False, help="represent reads for transformer")
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
