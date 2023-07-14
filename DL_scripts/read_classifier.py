@@ -111,7 +111,7 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 @tf.function
-def testing_step(target_label, data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     print('inside testing_step')
     probs = model(reads, training=False)
     if data_type == 'test':
