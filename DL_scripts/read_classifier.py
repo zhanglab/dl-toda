@@ -288,7 +288,7 @@ def main():
         all_pred_sp = all_pred_sp[0].numpy()
         all_prob_sp = all_prob_sp[0].numpy()
         all_labels = all_labels[0].numpy()
-        all_prob_labels = all_prob_labels[0].numpy
+        all_prob_labels = all_prob_labels[0].numpy()
 
         # adjust the list of predicted species and read ids if necessary
         if len(all_labels) > num_reads:
