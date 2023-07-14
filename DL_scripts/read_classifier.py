@@ -111,7 +111,7 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 @tf.function
-def testing_step(args, data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None):
+def testing_step(target_label, data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None):
     print('inside testing_step')
     probs = model(reads, training=False)
     if data_type == 'test':
@@ -120,8 +120,8 @@ def testing_step(args, data_type, reads, labels, model, loss=None, test_loss=Non
         test_loss.update_state(loss_value)
     pred_labels = tf.math.argmax(probs, axis=1)
     pred_probs = tf.reduce_max(probs, axis=1)
-    if args.target_label:
-        label_prob = tf.gather(probs, args.target_label)
+    if target_label:
+        label_prob = tf.gather(probs, target_label)
     if hvd.rank() == 0:
         print(pred_labels)
         print(label_prob)
@@ -267,10 +267,10 @@ def main():
         for batch, (reads, labels) in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-                batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args, args.data_type, reads, labels, model)
+                batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.target_label, args.data_type, reads, labels, model)
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-                batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args, args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+                batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.target_label, args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
 
             if batch == 1:
                 all_labels = [labels]
