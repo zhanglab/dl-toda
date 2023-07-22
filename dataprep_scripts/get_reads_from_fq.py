@@ -13,6 +13,7 @@ def get_reads(args, input_fq, target):
             n_line += 1
             if n_line == 4:
                 read_id = rec.split('\n')[0].rstrip()
+                print(read_id.split('-')[0][1:])
                 if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
                     if read_id[-1] == '2':
                         rv_out_reads[read_id[:-2]] = rec
