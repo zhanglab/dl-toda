@@ -20,8 +20,6 @@ def get_reads(args, input_fq, target):
                         fw_out_reads[read_id[:-2]] = rec
                 n_line = 0
                 rec = ''
-    print(len(fw_out_reads))
-    print(len(rv_out_reads))
     return fw_out_reads, rv_out_reads
 
 
@@ -34,9 +32,7 @@ def split_reads(fw_reads, rv_reads):
 
 
 def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
-    print(f'{type_reads}\t{len(reads_id)}')
     if len(reads_id) != 0:
-        print(reads_id[0])
         if type_reads == 'paired':
             rv_output_file = f'{output_file}-paired-rv.fq'
             fw_output_file = f'{output_file}-paired-fw.fq'
@@ -67,7 +63,7 @@ if __name__ == "__main__":
 
     for i in range(len(args.input)):
         # define output fastq file
-        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-6]}-{args.input[i]}')
+        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
         # load fw and rv reads
         fw_reads, rv_reads = get_reads(args, args.input_fq, args.input[i])
         # split reads between paired and unpaired
