@@ -13,16 +13,15 @@ def get_reads(args, input_fq, target):
             n_line += 1
             if n_line == 4:
                 read_id = rec.split('\n')[0].rstrip()
-                if (args.datatype == 'label' and read_id.split('|')[1]) == target or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
+                if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
                     if read_id[-1] == '2':
                         rv_out_reads[read_id[:-2]] = rec
                     elif read_id[-1] == '1':
                         fw_out_reads[read_id[:-2]] = rec
                 n_line = 0
                 rec = ''
-    for k, v in rv_out_reads.items():
-        print(k)
-        break
+    print(len(fw_out_reads))
+    print(len(rv_out_reads))
     return fw_out_reads, rv_out_reads
 
 
