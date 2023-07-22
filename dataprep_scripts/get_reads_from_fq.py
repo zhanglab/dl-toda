@@ -27,8 +27,8 @@ def get_reads(args, input_fq, target):
 
 
 def split_reads(fw_reads, rv_reads):
-    fw_reads_id = [k[:-2] for k in fw_reads.keys()]
-    rv_reads_id = [k[:-2] for k in rv_reads.keys()]
+    fw_reads_id = [k for k in fw_reads.keys()]
+    rv_reads_id = [k for k in rv_reads.keys()]
     unpaired_reads_id = list(set(fw_reads_id).difference(set(rv_reads_id))) + list(set(rv_reads_id).difference(set(fw_reads_id)))
     paired_reads_id = set(fw_reads_id).intersection(set(rv_reads_id))
     return unpaired_reads_id, list(paired_reads_id)
