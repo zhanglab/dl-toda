@@ -1,5 +1,4 @@
 import os
-import sys
 import argparse
 
 
@@ -55,10 +54,12 @@ def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
     parser.add_argument('--input_fq', help="input fastq file", required=True)
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
-
+    args = parser.parse_args()
+    
     for i in range(len(args.input)):
         # define output fastq file
         output_fq_file = os.path.join(output_dir, f'{args.input_fq.split("/")[-1][:-6]}-{args.input[i]}')
