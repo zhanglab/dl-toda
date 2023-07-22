@@ -21,7 +21,7 @@ def get_reads(args, input_fq, target):
                 n_line = 0
                 rec = ''
     for k, v in rv_out_reads.items():
-        print(k, v)
+        print(k)
         break
     return fw_out_reads, rv_out_reads
 
@@ -35,8 +35,9 @@ def split_reads(fw_reads, rv_reads):
 
 
 def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
-    print(reads_id[0])
+    print(f'{type_reads}\t{len(reads_id)}')
     if len(reads_id) != 0:
+        print(reads_id[0])
         if type_reads == 'paired':
             rv_output_file = f'{output_file}-paired-rv.fq'
             fw_output_file = f'{output_file}-paired-fw.fq'
