@@ -40,8 +40,8 @@ def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
         if type_reads == 'paired':
             rv_output_file = f'{output_file}-paired-rv.fq'
             fw_output_file = f'{output_file}-paired-fw.fq'
-            paired_rv_reads = [rv_reads[f'{i}/2'] for i in reads_id]
-            paired_fw_reads = [fw_reads[f'{i}/1'] for i in reads_id]
+            paired_rv_reads = [rv_reads[i] for i in reads_id]
+            paired_fw_reads = [fw_reads[i] for i in reads_id]
             with open(rv_output_file, 'w') as f:
                 f.write(''.join(paired_rv_reads))
             with open(fw_output_file, 'w') as f:
@@ -49,10 +49,10 @@ def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
         elif type_reads == 'unpaired':
             unpaired_reads = []
             for i in range(len(reads_id)):
-                if f'{reads_id[i]}/2' in rv_reads:
-                    unpaired_reads.append(rv_reads[f'{reads_id[i]}/2'])
-                elif f'{reads_id[i]}/1' in fw_reads:
-                    unpaired_reads.append(fw_reads[f'{reads_id[i]}/1'])
+                if reads_id[i] in rv_reads:
+                    unpaired_reads.append(rv_reads[reads_id[i]])
+                elif reads_id[i] in fw_reads:
+                    unpaired_reads.append(fw_reads[reads_id[i]])
             with open(f'{output_file}-unpaired.fq', 'w') as f:
                 f.write(''.join(unpaired_reads))
 
