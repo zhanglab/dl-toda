@@ -59,11 +59,14 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
     args = parser.parse_args()
-    
+
     for i in range(len(args.input)):
         # define output fastq file
-        output_fq_file = os.path.join(output_dir, f'{args.input_fq.split("/")[-1][:-6]}-{args.input[i]}')
+        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-6]}-{args.input[i]}')
+        # load fw and rv reads
         fw_reads, rv_reads = get_reads(args.input_fq, args.input[i])
+        # split reads between paired and unpaired
         unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
+        # create output fq files
         create_fq_files(unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
         create_fq_files(paired_reads_id, fw_reads, rv_reads, "paired", output_file)
