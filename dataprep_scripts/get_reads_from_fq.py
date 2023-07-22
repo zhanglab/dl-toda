@@ -2,7 +2,7 @@ import os
 import argparse
 
 
-def get_reads(input_fq, target):
+def get_reads(args, input_fq, target):
     fw_out_reads = {}
     rv_out_reads = {}
     with open(input_fq, 'r') as f:
@@ -13,7 +13,7 @@ def get_reads(input_fq, target):
             n_line += 1
             if n_line == 4:
                 read_id = rec.split('\n')[0].rstrip()
-                if target in read_id:
+                if (args.datatype == 'label' and read_id.split('|')[1]) == target or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
                     if read_id[-1] == '2':
                         rv_out_reads[read_id[:-2]] = rec
                     elif read_id[-1] == '1':
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_fq', help="input fastq file", required=True)
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
+    parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['label', 'sequence_id'], default='label')
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
     args = parser.parse_args()
 
@@ -64,7 +65,7 @@ if __name__ == "__main__":
         # define output fastq file
         output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-6]}-{args.input[i]}')
         # load fw and rv reads
-        fw_reads, rv_reads = get_reads(args.input_fq, args.input[i])
+        fw_reads, rv_reads = get_reads(args, args.input_fq, args.input[i])
         # split reads between paired and unpaired
         unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
         # create output fq files
