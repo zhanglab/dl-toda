@@ -61,6 +61,10 @@ if __name__ == "__main__":
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
     args = parser.parse_args()
 
+    # create output directory
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     for i in range(len(args.input)):
         # define output fastq file
         output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
