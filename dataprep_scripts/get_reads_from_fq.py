@@ -34,8 +34,8 @@ def split_reads(fw_reads, rv_reads):
 def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
     if len(reads_id) != 0:
         if type_reads == 'paired':
-            rv_output_file = f'{output_file}-paired-rv.fq'
-            fw_output_file = f'{output_file}-paired-fw.fq'
+            rv_output_file = f'{output_file}-rv-paired.fq'
+            fw_output_file = f'{output_file}-fw-paired.fq'
             paired_rv_reads = [rv_reads[i] for i in reads_id]
             paired_fw_reads = [fw_reads[i] for i in reads_id]
             with open(rv_output_file, 'w') as f:
