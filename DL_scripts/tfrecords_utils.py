@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 
 def get_reverse_seq(read):
     """ Converts a k-mer to its reverse complement """
