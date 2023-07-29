@@ -1,7 +1,7 @@
 import os
 import sys
 import tensorflow as tf
-import numpy as np
+# import numpy as np
 # from Bio import SeqIO
 import argparse
 import gzip
@@ -109,7 +109,8 @@ def create_tfrecords(args):
                     if args.no_label:
                         data = \
                             {
-                                'read': wrap_read(np.array(dna_array)),
+                                # 'read': wrap_read(np.array(dna_array)),
+                                'read': wrap_read(dna_array),
                             }
                     else:
                         # record_bytes = tf.train.Example(features=tf.train.Features(feature={
@@ -120,7 +121,8 @@ def create_tfrecords(args):
 
                         data = \
                             {
-                                'read': wrap_read(np.array(dna_array)),
+                                # 'read': wrap_read(np.array(dna_array)),
+                                'read': wrap_read(dna_array),
                                 'label': wrap_label(label),
                             }
                     feature = tf.train.Features(feature=data)
