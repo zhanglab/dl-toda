@@ -15,7 +15,7 @@ import sys
 import json
 import glob
 import time
-import numpy as np
+# import numpy as np
 import math
 import argparse
 
@@ -321,7 +321,8 @@ def main():
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
 
         end_time = time.time()
-        elapsed_time = np.append(elapsed_time, end_time - start_time)
+        # elapsed_time = np.append(elapsed_time, end_time - start_time)
+        elapsed_time.append(elapsed_time, end_time - start_time)
 
     end = datetime.datetime.now()
     total_time = end - start
