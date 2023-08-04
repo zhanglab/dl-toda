@@ -22,8 +22,8 @@ def get_masked_kmers(args, kmer_array):
     kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
     print(kmer_array_masked)
     # prepare sample_weights parameter to loss function
-    sample_weights = np.ones(kmer_array.shape)
-    sample_weights[kmers_masked == False] = 0
+    sample_weights = np.zeros(kmer_array.shape)
+    sample_weights[kmers_masked] = 1
     print(sample_weights)
     return kmer_array_masked, sample_weights
 
