@@ -129,7 +129,6 @@ def create_tfrecords(args):
                                 dna_array = dna_array + [0] * (args.read_length - len(dna_array))
                         else:
                             dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
-                            print(dna_array)
 
                     if args.no_label:
                         data = \
@@ -139,7 +138,7 @@ def create_tfrecords(args):
                             }
                     if args.transformer:
                         # mask 15% of k-mers in reads
-                        kmer_array_masked, sample_weights = get_masked_kmers(args, dna_array)
+                        kmer_array_masked, sample_weights = get_masked_kmers(args, np.array(dna_array))
                         data = \
                             {
                                 # 'read': wrap_read(np.array(dna_array)),
