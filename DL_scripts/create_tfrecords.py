@@ -14,17 +14,14 @@ def get_masked_kmers(args, kmer_array):
     n_mask = int(0.15 * args.kmer_vector_length)
     # choose index of first k-mer to mask
     start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
-    print(start_mask_idx)
     # select k-mers to mask
     kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     # change labels for masked k-mers
     kmer_array_masked = np.copy(kmer_array)
     kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
-    print(kmer_array_masked)
     # prepare sample_weights parameter to loss function
     sample_weights = np.zeros(kmer_array.shape)
     sample_weights[kmers_masked] = 1
-    print(sample_weights)
     return kmer_array_masked, sample_weights
 
 
@@ -167,7 +164,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
-                    break
+
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
