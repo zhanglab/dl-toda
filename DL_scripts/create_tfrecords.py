@@ -19,7 +19,7 @@ def get_masked_kmers(args, kmer_array):
     kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     # change labels for masked k-mers
     kmer_array_masked = np.copy(kmer_array)
-    kmer_array_masked[kmers_masked] = args.dict_kmers['MASK']
+    kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
     print(kmer_array_masked)
     # prepare sample_weights parameter to loss function
     sample_weights = np.ones(kmer_array.shape)
