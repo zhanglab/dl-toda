@@ -1,11 +1,31 @@
 import os
 import sys
 import tensorflow as tf
-# import numpy as np
+import numpy as np
+import random
 # from Bio import SeqIO
 import argparse
 import gzip
 from tfrecords_utils import vocab_dict, get_kmer_arr
+
+
+def get_masked_kmers(args, kmer_array):
+    # number of k-mers to mask in the vector of k-mers
+    n_mask = int(0.15 * args.kmer_vector_length)
+    # choose index of first k-mer to mask
+    start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
+    print(start_mask_idx)
+    # select k-mers to mask
+    kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
+    # change labels for masked k-mers
+    kmer_array_masked = np.copy(kmer_array)
+    kmer_array_masked[kmers_masked] = args.dict_kmers['MASK']
+    print(kmer_array_masked)
+    # prepare sample_weights parameter to loss function
+    sample_weights = np.ones(kmer_array.shape)
+    sample_weights[kmers_masked == False] = 0
+    print(sample_weights)
+    return kmer_array_masked, sample_weights
 
 def wrap_read(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
@@ -112,6 +132,16 @@ def create_tfrecords(args):
                                 # 'read': wrap_read(np.array(dna_array)),
                                 'read': wrap_read(dna_array),
                             }
+                    if args.transformer:
+                        # mask 15% of k-mers in reads
+                        kmer_array_masked, sample_weights = get_masked_kmers(args, dna_array)
+                        data = \
+                            {
+                                # 'read': wrap_read(np.array(dna_array)),
+                                'read': wrap_read(dna_array),
+                                'read_masked': wrap_read(kmer_array_masked),
+                                'sample_weights': wrap_read(sample_weights),
+                            }
                     else:
                         # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                         #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
@@ -133,6 +163,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
+                break
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
@@ -165,9 +196,7 @@ def main():
         with open(args.mapping_file, 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
-        print(args.labels_mapping)
 
-    print(args.input_fastq)
     if args.dataset_type == 'sim':
         create_tfrecords(args)
     elif args.dataset_type == 'meta':
