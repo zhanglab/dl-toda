@@ -27,11 +27,14 @@ def get_masked_kmers(args, kmer_array):
     print(sample_weights)
     return kmer_array_masked, sample_weights
 
+
 def wrap_read(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
+
 def wrap_label(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
 
 def create_meta_tfrecords(args):
     """ Converts metagenomic reads to tfrecords """
@@ -125,6 +128,7 @@ def create_tfrecords(args):
                                 dna_array = dna_array + [0] * (args.read_length - len(dna_array))
                         else:
                             dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                            print(dna_array)
 
                     if args.no_label:
                         data = \
