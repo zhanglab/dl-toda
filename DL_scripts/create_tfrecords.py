@@ -99,6 +99,7 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read_id = rec.split('\n')[0].rstrip()
                     label = int(read_id.split('|')[1])
+                    print(read_id)
                     # update label if necessary
                     if args.update_labels:
                         label = int(args.labels_mapping[str(label)])
@@ -167,7 +168,6 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
-                break
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
@@ -194,6 +194,7 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
+    print(args.dict_kmers)
 
     if args.update_labels:
         args.labels_mapping = dict()
