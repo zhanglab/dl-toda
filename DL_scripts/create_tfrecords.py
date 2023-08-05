@@ -33,6 +33,12 @@ def wrap_label(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
+def wrap_weights(value):
+    return tf.train.Feature(int64_list=tf.train.FloatList(value=value))
+
+
+
+
 def create_meta_tfrecords(args):
     """ Converts metagenomic reads to tfrecords """
     output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-2]) if args.input_fastq[-2:] == 'gz' else '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
@@ -142,7 +148,7 @@ def create_tfrecords(args):
                                 # 'read': wrap_read(np.array(dna_array)),
                                 'read': wrap_read(dna_array),
                                 'read_masked': wrap_read(kmer_array_masked),
-                                'weights': wrap_read(weights),
+                                'weights': wrap_weights(weights),
                             }
                     else:
                         # record_bytes = tf.train.Example(features=tf.train.Features(feature={
