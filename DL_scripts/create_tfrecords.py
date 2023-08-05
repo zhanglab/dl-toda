@@ -171,7 +171,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
-                    break
+                    
 
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
