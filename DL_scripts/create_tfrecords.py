@@ -34,7 +34,7 @@ def wrap_label(value):
 
 
 def wrap_weights(value):
-    return tf.train.Feature(int64_list=tf.train.FloatList(value=value))
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
 
