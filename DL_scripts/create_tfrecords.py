@@ -96,7 +96,6 @@ def create_tfrecords(args):
                 # label = int(read_id.split('|')[1])
                     read_id = rec.split('\n')[0].rstrip()
                     label = int(read_id.split('|')[1])
-                    print(read_id)
                     # update label if necessary
                     if args.update_labels:
                         label = int(args.labels_mapping[str(label)])
@@ -135,13 +134,15 @@ def create_tfrecords(args):
                             }
                     if args.transformer:
                         # mask 15% of k-mers in reads
-                        kmer_array_masked, sample_weights = get_masked_kmers(args, np.array(dna_array))
+                        kmer_array_masked, weights = get_masked_kmers(args, np.array(dna_array))
+                        print(kmer_array_masked)
+                        print(weights)
                         data = \
                             {
                                 # 'read': wrap_read(np.array(dna_array)),
                                 'read': wrap_read(dna_array),
                                 'read_masked': wrap_read(kmer_array_masked),
-                                'sample_weights': wrap_read(sample_weights),
+                                'weights': wrap_read(weights),
                             }
                     else:
                         # record_bytes = tf.train.Example(features=tf.train.Features(feature={
@@ -164,6 +165,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
+                    break
 
 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
