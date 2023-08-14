@@ -149,6 +149,7 @@ def create_tfrecords(args):
                                 'read': wrap_read(dna_array),
                                 'read_masked': wrap_read(kmer_array_masked),
                                 'weights': wrap_weights(weights),
+                                'label': wrap_label(label),
                             }
                     else:
                         # record_bytes = tf.train.Example(features=tf.train.Features(feature={
