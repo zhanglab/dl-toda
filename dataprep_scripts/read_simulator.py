@@ -1,10 +1,8 @@
 import os
-import sys
 import glob
 import argparse
 import math
 import random
-import multiprocessing as mp
 from Bio import SeqIO
 import pandas as pd
 
@@ -64,7 +62,8 @@ def simulate_reads(args, genomes):
     fasta_seq, avg_size, max_size = get_genomes_size(args, genomes)
     # compute number of reads to simulate
     coverage = args.coverage if args.dataset == 'training' else 3
-    avg_read_length = sum([100, 150, 250])/3
+    # avg_read_length = sum([100, 150, 250])/3
+    avg_read_length = 1000
     # get number of pairs of reads to simulate
     n_reads = math.ceil(coverage * avg_size / (avg_read_length*2))
     print(f'#reads to simulate:{n_reads}')
@@ -82,13 +81,16 @@ def simulate_reads(args, genomes):
     start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
     insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
-    reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
+    # reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
+    reads_lengths = [1000 for _ in range(n_reads)]
 
     # define values of parameters for adding mutations
     # calculate number of mutations to add
-    n_mut = math.ceil(n_reads * 250 * 0.5/100)
+    # n_mut = math.ceil(n_reads * 250 * 0.5/100)
+    n_mut = math.ceil(n_reads * 1000 * 0.5/100)
     reads_indexes = [random.choice(range(0, n_reads-1, 1)) for _ in range(n_mut)]
-    sites = [random.choice(range(0, 250, 1)) for _ in range(n_mut)]
+    # sites = [random.choice(range(0, 250, 1)) for _ in range(n_mut)]
+    sites = [random.choice(range(0, 1000, 1)) for _ in range(n_mut)]
     pairs = [random.choice(['fw', 'rev']) for _ in range(n_mut)]
     bases = [random.choice(['A', 'C', 'T', 'G']) for _ in range(n_mut)]
     # create dataframe
