@@ -79,7 +79,8 @@ def simulate_reads(args, genomes):
     # define values for parameters to simulate reads
     genomes_id = [random.choice(genomes) for _ in range(n_reads)]
     start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
-    insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
+    # insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
+    insert_sizes = [random.choice([2000, 4000, 8000]) for _ in range(n_reads)]
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
     # reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
     reads_lengths = [1000 for _ in range(n_reads)]
