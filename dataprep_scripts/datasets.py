@@ -61,7 +61,7 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 
     for fq_file in grouped_files:
         label = fq_file.split('/')[-1].split('_')[0]
-        reads = load_fq_file(fastq, args.num_lines)
+        reads = load_fq_file(fq_file, args.num_lines)
         random.shuffle(reads)
         num_train_reads = math.ceil(0.7*(len(reads)))
         with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{label}.fq'), 'w') as out_f:
