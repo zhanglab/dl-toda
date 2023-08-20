@@ -27,7 +27,7 @@ def create_sets(args, reads, set_type, output_dir):
         print(f'# reads per species and per set: {num_reads_per_set}\ntotal # reads: {min_num_reads * len(args.taxa)}')
     else:
         # compute number of sets given that we want 20000000 reads per set
-        num_sets = math.ceil(num_reads / 20000000) if num_reads > 20000000 else 1
+        num_sets = math.ceil(num_reads / args.num_reads_per_set) if num_reads > args.num_reads_per_set else 1
     print(num_sets)
     label_out = open(os.path.join(output_dir, f'{set_type}-label-read-count'), 'w')
     for label in args.taxa:
@@ -104,6 +104,7 @@ def main():
     parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--num_reads', type=int, help="number of reads per species")
+    parser.add_argument('--num_reads_per_set', type=int, help="number of reads per set", default=20000000)
     parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
     parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets")
     args = parser.parse_args()
