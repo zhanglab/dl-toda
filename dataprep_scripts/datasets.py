@@ -1,17 +1,12 @@
 import os
+import sys
 import random
 import math
 import shutil
 import glob
 import multiprocessing as mp
 import argparse
-
-
-def load_fq_file(args, fq_file):
-    with open(fq_file, 'r') as f:
-        content = f.readlines()
-        reads = [''.join(content[j:j + args.num_lines]) for j in range(0, len(content), args.num_lines)]
-        return reads
+from utils import load_fq_file
 
 
 def create_sets(args, reads, set_type, output_dir):
@@ -23,9 +18,10 @@ def create_sets(args, reads, set_type, output_dir):
     print(f'# reads in {set_type} set: {num_reads}\t# taxa: {len(list_num_reads)}')
     if args.balanced:
         num_sets = 5
-        # get minimum number of reads per species in list
-        min_num_reads = min(list_num_reads)
-        print(f'min number of reads: {min_num_reads}')
+        if not args.num_reads:
+            # get minimum number of reads per species in list
+            args.num_reads = min(list_num_reads)
+        print(f'# reads per species: {args.num_reads}')
         # compute number of reads per species and per set
         num_reads_per_set = min_num_reads // num_sets
         print(f'# reads per species and per set: {num_reads_per_set}\ntotal # reads: {min_num_reads * len(args.taxa)}')
@@ -38,7 +34,7 @@ def create_sets(args, reads, set_type, output_dir):
         label_fq_files = sorted(glob.glob(os.path.join(output_dir, set_type, 'reads-*', f'{set_type}-{label}.fq')))
         list_reads = []
         for fastq in label_fq_files:
-            list_reads = load_fq_file(args, fastq)
+            list_reads = load_fq_file(fastq, args.num_lines)
         random.shuffle(list_reads)
         print(f'label: {label}\t# reads: {len(list_reads)}')
         if args.balanced:
@@ -65,7 +61,7 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 
     for fq_file in grouped_files:
         label = fq_file.split('/')[-1].split('_')[0]
-        reads = load_fq_file(args, fq_file)
+        reads = load_fq_file(fastq, args.num_lines)
         random.shuffle(reads)
         num_train_reads = math.ceil(0.7*(len(reads)))
         with open(os.path.join(output_dir, 'train', f'reads-{process_id}', f'train-{label}.fq'), 'w') as out_f:
@@ -107,6 +103,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
+    parser.add_argument('--num_reads', type=int, help="number of reads per species")
     parser.add_argument('--pair', action='store_true', default=False, help="process reads as pairs")
     parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets")
     args = parser.parse_args()
