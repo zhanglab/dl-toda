@@ -141,8 +141,8 @@ def create_tfrecords(args):
                     if args.transformer:
                         # mask 15% of k-mers in reads
                         kmer_array_masked, weights = get_masked_kmers(args, np.array(dna_array))
-                        print(kmer_array_masked)
-                        print(weights)
+                        # print(kmer_array_masked)
+                        # print(weights)
                         data = \
                             {
                                 # 'read': wrap_read(np.array(dna_array)),
