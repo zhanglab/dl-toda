@@ -63,7 +63,7 @@ def get_kmer_arr(args, read):
         read = read[:args.read_length]
 
     list_kmers = []
-    for i in range(0, len(read)-args.k_value+1, 1):
+    for i in range(0, len(read)-args.k_value+1, args.step):
         kmer = read[i:i + args.k_value]
         idx = get_kmer_index(kmer, args.dict_kmers)
         list_kmers.append(idx)
