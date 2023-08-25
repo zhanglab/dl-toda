@@ -190,6 +190,7 @@ def main():
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
+    parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
