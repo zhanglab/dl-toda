@@ -198,7 +198,7 @@ def main():
 
     args = parser.parse_args()
     if not args.DNA_model:
-        args.kmer_vector_length = args.read_length - args.k_value + 1
+        args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
     print(args.dict_kmers)
