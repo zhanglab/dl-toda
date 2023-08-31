@@ -201,7 +201,7 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
-    print(args.dict_kmers)
+        print(args.kmer_vector_length)
 
     if args.update_labels:
         args.labels_mapping = dict()
