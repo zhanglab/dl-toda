@@ -63,9 +63,9 @@ def simulate_reads(args, genomes):
     # compute number of reads to simulate
     coverage = args.coverage if args.dataset == 'training' else 3
     # avg_read_length = sum([100, 150, 250])/3
-    avg_read_length = 1000
+    # avg_read_length = 1000
     # get number of pairs of reads to simulate
-    n_reads = math.ceil(coverage * avg_size / (avg_read_length*2))
+    n_reads = math.ceil(coverage * avg_size / (args.avg_read_length*2))
     print(f'#reads to simulate:{n_reads}')
     if args.resume and os.path.isfile(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq')):
         # count number of reads in fastq file
@@ -79,19 +79,23 @@ def simulate_reads(args, genomes):
     # define values for parameters to simulate reads
     genomes_id = [random.choice(genomes) for _ in range(n_reads)]
     start_positions = [random.choice(range(0, max_size, 1)) for _ in range(n_reads)]
-    # insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)]
-    insert_sizes = [random.choice([2000, 4000, 8000]) for _ in range(n_reads)]
+    # insert_sizes = [random.choice([400, 600, 1000]) for _ in range(n_reads)] 
+    # insert_sizes = [random.choice([2000, 4000, 8000]) for _ in range(n_reads)]
+    insert_sizes = [random.choice([2*args.avg_read_length, 4*args.avg_read_length, 8*args.avg_read_length]) for _ in range(n_reads)]
     strands = [random.choice(['fw', 'rev']) for _ in range(n_reads)]
     # reads_lengths = [random.choice([100, 150, 250]) for _ in range(n_reads)]
-    reads_lengths = [1000 for _ in range(n_reads)]
+    # reads_lengths = [1000 for _ in range(n_reads)]
+    reads_lengths = [args.avg_read_length for _ in range(n_reads)]
 
     # define values of parameters for adding mutations
     # calculate number of mutations to add
     # n_mut = math.ceil(n_reads * 250 * 0.5/100)
-    n_mut = math.ceil(n_reads * 1000 * 0.5/100)
+    # n_mut = math.ceil(n_reads * 1000 * 0.5/100)
+    n_mut = math.ceil(n_reads * args.avg_read_length * 0.5/100)
     reads_indexes = [random.choice(range(0, n_reads-1, 1)) for _ in range(n_mut)]
     # sites = [random.choice(range(0, 250, 1)) for _ in range(n_mut)]
-    sites = [random.choice(range(0, 1000, 1)) for _ in range(n_mut)]
+    # sites = [random.choice(range(0, 1000, 1)) for _ in range(n_mut)]
+    sites = [random.choice(range(0, args.avg_read_length, 1)) for _ in range(n_mut)]
     pairs = [random.choice(['fw', 'rev']) for _ in range(n_mut)]
     bases = [random.choice(['A', 'C', 'T', 'G']) for _ in range(n_mut)]
     # create dataframe
@@ -101,7 +105,7 @@ def simulate_reads(args, genomes):
     # reset rows numbers
     df.reset_index(drop=True, inplace=True)
 
-    print(args.label, n_reads, coverage, avg_size, max_size, avg_read_length, n_mut)
+    print(args.label, n_reads, coverage, avg_size, max_size, args.avg_read_length, n_mut)
 
 
     # count number of mutations added
@@ -146,6 +150,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--label', type=int, help='label of a species')
+    parser.add_argument('--avg_read_length', type=int, help='average read length')
     parser.add_argument('--coverage', type=float, help='coverage used to estimate number of reads to simulate')
     parser.add_argument('--num_genomes', type=int, help='number of genomes to use as template')
     parser.add_argument('--dataset', type=str, help='type of dataset', choices=['training', 'testing'])
