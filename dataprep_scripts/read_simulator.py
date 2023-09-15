@@ -110,7 +110,7 @@ def simulate_reads(args, genomes):
 
     # count number of mutations added
     mut_count = 0
-    with open(os.path.join(args.output_dir, f'{args.label}_{args.dataset}.fq'), 'a') as out_f:
+    with open(os.path.join(args.output_dir, f'{args.label}_{args.coverage}_{args.dataset}.fq'), 'a') as out_f:
         for i in range(n_reads):
             # concatenate 2 copies of the genome
             new_genome = fasta_seq[genomes_id[i]] + fasta_seq[genomes_id[i]]
