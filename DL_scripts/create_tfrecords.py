@@ -18,14 +18,12 @@ def get_kmers_masked(args, mask_indexes, kmer_array_masked):
         if i in mask_indexes:
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
-            print(r_type)
             if r_type == 'masked':
                 kmer_array_masked[i] = args.dict_kmers['mask']
             elif r_type == 'random':
                 kmer_array_masked[i] = random.choices([k for k in args.dict_kmers.keys() if k not in ["unknown", "mask"]])
             else:
                 continue
-            print(kmer_array_masked[i])
     return kmer_array_masked
 
 
@@ -202,7 +200,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
-                    break
+                    # break
                     
 
 
