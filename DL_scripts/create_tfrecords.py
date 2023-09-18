@@ -9,31 +9,49 @@ import json
 import gzip
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
+def get_kmers_masked(args, mask_indexes, kmer_array_masked):
+    # replace each chosen k-mers by the MASK token number 80% of the time, a random k-mer 10% of the time
+    # or the unchanged k-mer 10% of the time
+    replacements = ["masked", "random", "same"]
+    weights = [0.8, 0.1, 0.1]
+    for i in range(len(kmer_array_masked)):
+        if i in mask_indexes:
+            # randomly choose one type of replacement
+            r_type = random.choices(replacements, weights=weights)
+            print(r_type)
+            if r_type == 'masked':
+                kmer_array_masked[i] = args.dict_kmers['mask']
+            elif r_type == 'random':
+                kmer_array_masked[i] = random.choices([k for k in args.dict_kmers.keys() if k not in ["unknown", "mask"]])
+            else:
+                continue
+            print(kmer_array_masked[i])
+    return kmer_array_masked
+
+
 
 def get_masked_kmers(args, kmer_array):
     # number of k-mers to mask in the vector of k-mers
     n_mask = int(0.15 * args.kmer_vector_length)
-    print(n_mask)
     if args.contiguous:
         # choose index of first k-mer to mask
         start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
+        mask_indexes = list(range(start_mask_idx,start_mask_idx+n_mask))
         # select k-mers to mask
         kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     else:
         mask_indexes = random.sample(list(range(args.kmer_vector_length)), n_mask)
-        print(mask_indexes)
+        # select k-mers to mask
         kmers_masked = [False if i not in mask_indexes else True for i in range(args.kmer_vector_length)]
-        print(kmers_masked)
+    
     # change labels for masked k-mers
-    # replace each chosen k-mers by the MASK token number 80% of the time, a random k-mer 10% of the time
-    # or the unchanged k-mer 10% of the time
     kmer_array_masked = np.copy(kmer_array)
-    kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
+    # kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
+    kmers_array_masked = get_kmers_masked(args, mask_indexes, kmers_array_masked)
     # prepare sample_weights parameter to loss function
     sample_weights = np.zeros(kmer_array.shape) 
     sample_weights[kmers_masked] = 1 # only compute loss for masked k-mers
-    print(kmer_array_masked)
-    print(sample_weights)
+    
     return kmer_array_masked, sample_weights
 
 
