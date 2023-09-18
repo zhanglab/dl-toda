@@ -30,7 +30,7 @@ def get_kmers_masked(args, mask_indexes, kmer_array_masked):
 
 
 
-def get_masked_kmers(args, kmer_array):
+def get_masked_kmers(args, kmers_array):
     # number of k-mers to mask in the vector of k-mers
     n_mask = int(0.15 * args.kmer_vector_length)
     if args.contiguous:
@@ -45,14 +45,14 @@ def get_masked_kmers(args, kmer_array):
         kmers_masked = [False if i not in mask_indexes else True for i in range(args.kmer_vector_length)]
     
     # change labels for masked k-mers
-    kmer_array_masked = np.copy(kmer_array)
+    kmers_array_masked = np.copy(kmers_array)
     # kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
     kmers_array_masked = get_kmers_masked(args, mask_indexes, kmers_array_masked)
     # prepare sample_weights parameter to loss function
-    sample_weights = np.zeros(kmer_array.shape) 
+    sample_weights = np.zeros(kmers_array.shape) 
     sample_weights[kmers_masked] = 1 # only compute loss for masked k-mers
-    
-    return kmer_array_masked, sample_weights
+
+    return kmers_array_masked, sample_weights
 
 
 def wrap_read(value):
