@@ -44,7 +44,7 @@ def get_masked_kmers(args, kmers_array):
     # change labels for masked k-mers
     kmers_array_masked = np.copy(kmers_array)
     # kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
-    # kmers_array_masked = get_kmers_masked(args, mask_indexes, kmers_array_masked)
+    kmers_array_masked = get_kmers_masked(args, mask_indexes, kmers_array_masked)
     # prepare sample_weights parameter to loss function
     sample_weights = np.zeros(kmers_array.shape) 
     sample_weights[kmers_masked] = 1 # only compute loss for masked k-mers
