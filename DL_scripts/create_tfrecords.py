@@ -5,6 +5,7 @@ import numpy as np
 import random
 # from Bio import SeqIO
 import argparse
+import json
 import gzip
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
@@ -12,16 +13,27 @@ from tfrecords_utils import vocab_dict, get_kmer_arr
 def get_masked_kmers(args, kmer_array):
     # number of k-mers to mask in the vector of k-mers
     n_mask = int(0.15 * args.kmer_vector_length)
-    # choose index of first k-mer to mask
-    start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
-    # select k-mers to mask
-    kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
+    print(n_mask)
+    if args.contiguous:
+        # choose index of first k-mer to mask
+        start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
+        # select k-mers to mask
+        kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
+    else:
+        mask_indexes = random.sample(list(range(args.kmer_vector_length)), n_mask)
+        print(mask_indexes)
+        kmers_masked = [False if i not in mask_indexes else True for i in range(args.kmer_vector_length)]
+        print(kmers_masked)
     # change labels for masked k-mers
+    # replace each chosen k-mers by the MASK token number 80% of the time, a random k-mer 10% of the time
+    # or the unchanged k-mer 10% of the time
     kmer_array_masked = np.copy(kmer_array)
     kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
     # prepare sample_weights parameter to loss function
-    sample_weights = np.zeros(kmer_array.shape)
-    sample_weights[kmers_masked] = 1
+    sample_weights = np.zeros(kmer_array.shape) 
+    sample_weights[kmers_masked] = 1 # only compute loss for masked k-mers
+    print(kmer_array_masked)
+    print(sample_weights)
     return kmer_array_masked, sample_weights
 
 
@@ -192,6 +204,7 @@ def main():
     parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
+    parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
@@ -201,6 +214,10 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
+        with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json')) as f:
+            json.dump(args.dict_kmers, f)
+
+
         print(args.kmer_vector_length)
 
     if args.update_labels:
