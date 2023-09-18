@@ -215,7 +215,7 @@ def main():
         args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
-        with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json')) as f:
+        with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
 
 
