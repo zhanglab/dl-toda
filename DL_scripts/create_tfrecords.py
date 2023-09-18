@@ -184,6 +184,7 @@ def create_tfrecords(args):
                     # initialize variables again
                     n_line = 0
                     rec = ''
+                    break
                     
 
 
