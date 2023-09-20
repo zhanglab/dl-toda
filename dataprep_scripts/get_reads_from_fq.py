@@ -31,7 +31,7 @@ def split_reads(fw_reads, rv_reads):
     return unpaired_reads_id, list(paired_reads_id)
 
 
-def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
+def create_fq_files(args, reads_id, fw_reads, rv_reads, type_reads, output_file):
     if len(reads_id) != 0:
         if type_reads == 'paired':
             rv_output_file = f'{output_file}-rv-paired.fq'
@@ -42,6 +42,8 @@ def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
                 f.write(''.join(paired_rv_reads))
             with open(fw_output_file, 'w') as f:
                 f.write(''.join(paired_fw_reads))
+            with open(os.path.join(args.output_dir, 'paired-done.txt'), 'w') as f:
+                pass
         elif type_reads == 'unpaired':
             unpaired_reads = []
             for i in range(len(reads_id)):
@@ -51,6 +53,8 @@ def create_fq_files(reads_id, fw_reads, rv_reads, type_reads, output_file):
                     unpaired_reads.append(fw_reads[reads_id[i]])
             with open(f'{output_file}-unpaired.fq', 'w') as f:
                 f.write(''.join(unpaired_reads))
+            with open(os.path.join(args.output_dir, 'unpaired-done.txt'), 'w') as f:
+                pass
 
 
 if __name__ == "__main__":
@@ -73,5 +77,5 @@ if __name__ == "__main__":
         # split reads between paired and unpaired
         unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
         # create output fq files
-        create_fq_files(unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
-        create_fq_files(paired_reads_id, fw_reads, rv_reads, "paired", output_file)
+        create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
+        create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
