@@ -76,8 +76,19 @@ def split_reads(args, grouped_files, output_dir, process_id, train_reads, val_re
 
 
 def create_train_val_sets(args):
-    # get list of fastq files for training
-    fq_files = glob.glob(os.path.join(args.input_dir, "*_training.fq"))
+    if os.path.isdir(args.input):
+        # get list of fastq files for training if input is directory
+        fq_files = glob.glob(os.path.join(args.input_dir, "*_training.fq"))
+    else:
+        fq_files = [args.input]
+        # update output directory
+        args.output_dir = os.path.join(args.output_dir, args.input[:-3])
+
+    if not os.path.exists(os.path.join(args.output_dir, 'train')):
+        os.makedirs(os.path.join(args.output_dir, 'train'))
+    if not os.path.exists(os.path.join(args.output_dir, 'val')):
+        os.makedirs(os.path.join(args.output_dir, 'val'))
+
     args.taxa = [i.split('/')[-1].split('_')[0] for i in fq_files]
     print(len(fq_files), len(args.taxa))
     chunk_size = math.ceil(len(fq_files)/mp.cpu_count())
@@ -101,7 +112,7 @@ def create_train_val_sets(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', help="Path to directory with fastq files of simulated reads")
+    parser.add_argument('--input', help="Path to directory with fastq files or fastq file of simulated reads")
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--num_reads', type=int, help="number of reads per species")
     parser.add_argument('--num_reads_per_set', type=int, help="number of reads per set", default=20000000)
@@ -109,12 +120,8 @@ def main():
     parser.add_argument('--balanced', action='store_true', default=False, help="have each species evenly represented per subsets")
     args = parser.parse_args()
 
-    args.num_lines = 8 if args.pair else 4
+    args.num_lines = 8 if args.pair else 4        
 
-    if not os.path.exists(os.path.join(args.output_dir, 'train')):
-        os.makedirs(os.path.join(args.output_dir, 'train'))
-    if not os.path.exists(os.path.join(args.output_dir, 'val')):
-        os.makedirs(os.path.join(args.output_dir, 'val'))
     create_train_val_sets(args)
 
 
