@@ -7,6 +7,7 @@ import random
 import argparse
 import json
 import glob
+import math
 import gzip
 import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
