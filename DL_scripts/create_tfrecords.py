@@ -7,6 +7,7 @@ import random
 import argparse
 import json
 import gzip
+import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
 def get_kmers_masked(args, mask_indexes, kmer_array_masked):
@@ -64,152 +65,152 @@ def wrap_weights(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-
-
-def create_meta_tfrecords(args):
-    """ Converts metagenomic reads to tfrecords """
-    output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-2]) if args.input_fastq[-2:] == 'gz' else '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
-    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
-    outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
-    with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
-        if args.input_fastq[-2:] == 'gz':
-            handle = gzip.open(args.fastq, 'rt')
-        else:
-            handle = open(args.input_fastq, 'r')
-        # with gzip.open(args.input_fastq, 'rt') as handle:
-        content = handle.readlines()
-        reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
-        for count, rec in enumerate(reads, 1):
-        # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-        #     read = str(rec.seq)
-            read = rec.split('\n')[1].rstrip()
-            # read_id = rec.description
-            read_id = rec.split('\n')[0].rstrip()
-            # outfile.write(f'{read_id}\t{count}\n')
-            kmer_array = get_kmer_arr(args, read)
-            data = \
-                {
-                    'read': wrap_read(kmer_array),
-                    'label': wrap_label(count)
-                }
-            feature = tf.train.Features(feature=data)
-            example = tf.train.Example(features=feature)
-            serialized = example.SerializeToString()
-            writer.write(serialized)
-
-        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-            f.write(f'{count}')
-
-    outfile.close()
-
-
-def create_tfrecords(args):
-    """ Converts simulated reads to tfrecord """
-    output_prefix = '.'.join(args.input_fastq.split('/')[-1].split('.')[0:-1])
-    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
-    bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
-    num_lines = 8 if args.pair else 4
-    count = 0
-    with tf.io.TFRecordWriter(output_tfrec) as writer:
-    # with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
-        with open(args.input_fastq) as handle:
-            rec = ''
-            n_line = 0
-            for line in handle:
-                rec += line
-                n_line += 1
-                if n_line == num_lines:
-            # content = handle.readlines()
-            # reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-            # print(f'{args.input_fastq}\t# reads: {len(reads)}')
-            # for count, rec in enumerate(reads, 1):
+def create_meta_tfrecords(args, grouped_files):
+    for fq_file in grouped_files:
+        """ Converts metagenomic reads to tfrecords """
+        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-2]) if fq_file[-2:] == 'gz' else '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+        output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+        outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
+        with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
+            if fq_file[-2:] == 'gz':
+                handle = gzip.open(fq_file, 'rt')
+            else:
+                handle = open(fq_file, 'r')
+            # with gzip.open(args.input_fastq, 'rt') as handle:
+            content = handle.readlines()
+            reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
+            for count, rec in enumerate(reads, 1):
             # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
             #     read = str(rec.seq)
-            #     read_id = rec.id
-                # label = int(read_id.split('|')[1])
-                    read_id = rec.split('\n')[0].rstrip()
-                    label = int(read_id.split('|')[1])
-                    # update label if necessary
-                    if args.update_labels:
-                        label = int(args.labels_mapping[str(label)])
-                    if args.pair:
-                        if args.DNA_model:
-                            fw_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
-                            rv_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[5].rstrip()]
-                            # update read length to match the max read length
-                            if len(fw_dna_array) < args.read_length:
-                                # pad list of bases with 0s to the right
-                                fw_dna_array = fw_dna_array + [0] * (args.read_length - len(fw_dna_array))
-                                rv_dna_array = rv_dna_array + [0] * (args.read_length - len(rv_dna_array))
+                read = rec.split('\n')[1].rstrip()
+                # read_id = rec.description
+                read_id = rec.split('\n')[0].rstrip()
+                # outfile.write(f'{read_id}\t{count}\n')
+                kmer_array = get_kmer_arr(args, read)
+                data = \
+                    {
+                        'read': wrap_read(kmer_array),
+                        'label': wrap_label(count)
+                    }
+                feature = tf.train.Features(feature=data)
+                example = tf.train.Example(features=feature)
+                serialized = example.SerializeToString()
+                writer.write(serialized)
+
+            with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+                f.write(f'{count}')
+
+        outfile.close()
+
+
+def create_tfrecords(args, grouped_files):
+    for fq_file in grouped_files:
+        """ Converts simulated reads to tfrecord """
+        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+        output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+        bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
+        num_lines = 8 if args.pair else 4
+        count = 0
+        with tf.io.TFRecordWriter(output_tfrec) as writer:
+        # with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
+            with open(fq_file) as handle:
+                rec = ''
+                n_line = 0
+                for line in handle:
+                    rec += line
+                    n_line += 1
+                    if n_line == num_lines:
+                # content = handle.readlines()
+                # reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+                # print(f'{args.input_fastq}\t# reads: {len(reads)}')
+                # for count, rec in enumerate(reads, 1):
+                # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
+                #     read = str(rec.seq)
+                #     read_id = rec.id
+                    # label = int(read_id.split('|')[1])
+                        read_id = rec.split('\n')[0].rstrip()
+                        label = int(read_id.split('|')[1])
+                        # update label if necessary
+                        if args.update_labels:
+                            label = int(args.labels_mapping[str(label)])
+                        if args.pair:
+                            if args.DNA_model:
+                                fw_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
+                                rv_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[5].rstrip()]
+                                # update read length to match the max read length
+                                if len(fw_dna_array) < args.read_length:
+                                    # pad list of bases with 0s to the right
+                                    fw_dna_array = fw_dna_array + [0] * (args.read_length - len(fw_dna_array))
+                                    rv_dna_array = rv_dna_array + [0] * (args.read_length - len(rv_dna_array))
+                            else:
+                                fw_dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                                rv_dna_array = get_kmer_arr(args, rec.split('\n')[5].rstrip())
+
+                            dna_array = fw_dna_array + rv_dna_array
+                            # append insert size for kmers arrays as pairs of reads
+                            if args.insert_size:
+                                dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
                         else:
-                            fw_dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
-                            rv_dna_array = get_kmer_arr(args, rec.split('\n')[5].rstrip())
+                            if args.DNA_model:
+                                dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
+                                # update read length to match the max read length
+                                if len(dna_array) < args.read_length:
+                                    # pad list of bases with 0s to the right
+                                    dna_array = dna_array + [0] * (args.read_length - len(dna_array))
+                            else:
+                                dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
 
-                        dna_array = fw_dna_array + rv_dna_array
-                        # append insert size for kmers arrays as pairs of reads
-                        if args.insert_size:
-                            dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
-                    else:
-                        if args.DNA_model:
-                            dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
-                            # update read length to match the max read length
-                            if len(dna_array) < args.read_length:
-                                # pad list of bases with 0s to the right
-                                dna_array = dna_array + [0] * (args.read_length - len(dna_array))
+                        if args.no_label:
+                            data = \
+                                {
+                                    # 'read': wrap_read(np.array(dna_array)),
+                                    'read': wrap_read(dna_array),
+                                }
+                        if args.transformer:
+                            # mask 15% of k-mers in reads
+                            kmer_array_masked, weights = get_masked_kmers(args, np.array(dna_array))
+                            # print(kmer_array_masked)
+                            # print(weights)
+                            data = \
+                                {
+                                    # 'read': wrap_read(np.array(dna_array)),
+                                    'read': wrap_read(dna_array),
+                                    'read_masked': wrap_read(kmer_array_masked),
+                                    'weights': wrap_weights(weights),
+                                    'label': wrap_label(label),
+                                }
                         else:
-                            dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                            # record_bytes = tf.train.Example(features=tf.train.Features(feature={
+                            #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
+                            #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
+                            # })).SerializeToString()
+                            # writer.write(record_bytes)
 
-                    if args.no_label:
-                        data = \
-                            {
-                                # 'read': wrap_read(np.array(dna_array)),
-                                'read': wrap_read(dna_array),
-                            }
-                    if args.transformer:
-                        # mask 15% of k-mers in reads
-                        kmer_array_masked, weights = get_masked_kmers(args, np.array(dna_array))
-                        # print(kmer_array_masked)
-                        # print(weights)
-                        data = \
-                            {
-                                # 'read': wrap_read(np.array(dna_array)),
-                                'read': wrap_read(dna_array),
-                                'read_masked': wrap_read(kmer_array_masked),
-                                'weights': wrap_weights(weights),
-                                'label': wrap_label(label),
-                            }
-                    else:
-                        # record_bytes = tf.train.Example(features=tf.train.Features(feature={
-                        #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
-                        #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
-                        # })).SerializeToString()
-                        # writer.write(record_bytes)
-
-                        data = \
-                            {
-                                # 'read': wrap_read(np.array(dna_array)),
-                                'read': wrap_read(dna_array),
-                                'label': wrap_label(label),
-                            }
-                    feature = tf.train.Features(feature=data)
-                    example = tf.train.Example(features=feature)
-                    serialized = example.SerializeToString()
-                    writer.write(serialized)
-                    count += 1
-                    # initialize variables again
-                    n_line = 0
-                    rec = ''
-                    # break
-                    
+                            data = \
+                                {
+                                    # 'read': wrap_read(np.array(dna_array)),
+                                    'read': wrap_read(dna_array),
+                                    'label': wrap_label(label),
+                                }
+                        feature = tf.train.Features(feature=data)
+                        example = tf.train.Example(features=feature)
+                        serialized = example.SerializeToString()
+                        writer.write(serialized)
+                        count += 1
+                        # initialize variables again
+                        n_line = 0
+                        rec = ''
+                        # break
+                        
 
 
-        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-            f.write(f'{count}')
+            with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+                f.write(f'{count}')
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_fastq', help="Path to the input fastq file")
+    parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
     parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
@@ -242,10 +243,32 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-    if args.dataset_type == 'sim':
-        create_tfrecords(args)
-    elif args.dataset_type == 'meta':
-        create_meta_tfrecords(args)
+
+    # create output directory
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    if os.path.isdir(args.input):
+        # get list of fastq files
+        fq_files = glob.glob(os.path.join(args.input, "*.fq"))
+    else:
+        fq_files = [args.input]
+
+    chunk_size = math.ceil(len(fq_files)/mp.cpu_count())
+    grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
+    with mp.Manager() as manager:
+        train_reads = manager.dict()
+        val_reads = manager.dict()
+        if args.dataset_type == 'sim':
+            processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+        elif args.dataset_type == 'meta':
+            processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+
+    
 
 
 if __name__ == "__main__":
