@@ -6,6 +6,7 @@ import random
 # from Bio import SeqIO
 import argparse
 import json
+import glob
 import gzip
 import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
