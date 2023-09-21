@@ -211,7 +211,7 @@ def create_tfrecords(args, grouped_files):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
-    parser.add_argument('--output_dir', help="Path to the output directory")
+    # parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--transformer', action='store_true', default=False, help="represent reads for transformer")
@@ -244,15 +244,18 @@ def main():
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
 
-    # create output directory
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-
     if os.path.isdir(args.input):
         # get list of fastq files
         fq_files = glob.glob(os.path.join(args.input, "*.fq"))
+        # update output directory
+        args.output_dir = os.path.join(args.input, f'tfrecords-{args.k_value}-{args.step}')
     else:
         fq_files = [args.input]
+        args.output_dir = os.path.join(os.getcwd(), f'tfrecords-{args.k_value}-{args.step}')
+
+    # create output directory
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     chunk_size = math.ceil(len(fq_files)/mp.cpu_count())
     grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
