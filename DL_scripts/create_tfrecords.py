@@ -211,7 +211,6 @@ def create_tfrecords(args, grouped_files):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
-    # parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--transformer', action='store_true', default=False, help="represent reads for transformer")
@@ -227,15 +226,6 @@ def main():
     parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
 
     args = parser.parse_args()
-    if not args.DNA_model:
-        args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
-        # get dictionary mapping kmers to indexes
-        args.dict_kmers = vocab_dict(args.vocab)
-        with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
-            json.dump(args.dict_kmers, f)
-
-
-        print(args.kmer_vector_length)
 
     if args.update_labels:
         args.labels_mapping = dict()
@@ -249,15 +239,25 @@ def main():
         fq_files = glob.glob(os.path.join(args.input, "*.fq"))
         # update output directory
         args.output_dir = os.path.join(args.input, f'tfrecords-{args.k_value}-{args.step}')
+        num_proc = mp.cpu_count()
     else:
         fq_files = [args.input]
         args.output_dir = os.path.join(os.getcwd(), f'tfrecords-{args.k_value}-{args.step}')
+        num_proc = 1
 
     # create output directory
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    chunk_size = math.ceil(len(fq_files)/mp.cpu_count())
+    if not args.DNA_model:
+        args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
+        # get dictionary mapping kmers to indexes
+        args.dict_kmers = vocab_dict(args.vocab)
+        with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
+            json.dump(args.dict_kmers, f)
+        print(args.kmer_vector_length)
+
+    chunk_size = math.ceil(len(fq_files)/num_proc)
     grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
     with mp.Manager() as manager:
         train_reads = manager.dict()
