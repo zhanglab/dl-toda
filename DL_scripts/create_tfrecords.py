@@ -213,6 +213,7 @@ def create_tfrecords(args, grouped_files):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
+    parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--transformer', action='store_true', default=False, help="represent reads for transformer")
@@ -235,21 +236,13 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-
     if os.path.isdir(args.input):
         # get list of fastq files
         fq_files = glob.glob(os.path.join(args.input, "*.fq"))
-        # update output directory
-        args.output_dir = os.path.join(args.input, f'tfrecords-{args.k_value}-{args.step}')
         num_proc = mp.cpu_count()
     else:
         fq_files = [args.input]
-        args.output_dir = os.path.join(os.getcwd(), f'tfrecords-{args.k_value}-{args.step}')
         num_proc = 1
-
-    # create output directory
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
 
     if not args.DNA_model:
         args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
