@@ -1,7 +1,6 @@
 import os
 import sys
 import random
-from Bio import SeqIO
 
 
 if __name__ == "__main__":
@@ -10,9 +9,10 @@ if __name__ == "__main__":
 
     output_file = os.path.join(output_dir, input_fq.split('/')[-1][:-3] + '-shuffled.fq')
     with open(output_file, 'w') as output_handle:
-        reads = list(SeqIO.parse(input_fq, "fastq"))
-        random.shuffle(reads)
-        SeqIO.write(reads, output_handle, "fastq")
-
+        with open(input_fq) as input_handle:
+            content = input_handle.readlines()
+            reads = [''.join(content[j:j + 4]) for j in range(0, len(content), 4)]
+            random.shuffle(reads)
+        output_handle.write(''.join(reads))
 
 
