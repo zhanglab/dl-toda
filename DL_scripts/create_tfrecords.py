@@ -13,12 +13,12 @@ import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
 
-def get_nsp_input(bases_list, pad_list):
+def get_nsp_input(args, bases_list, pad_list):
     # create 2 segments from list
     segment_1 = bases_list[:len(bases_list)//2]
     segment_2 = bases_list[len(bases_list)//2:]
     # concatenate segments
-    concatenate_segments = ['CLS'] + segment_1 + ['SEP'] + segment_2 + ['SEP']
+    concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
     # update list of pad/non-pad values
     up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
     # create list of segment ids
@@ -36,11 +36,12 @@ def get_masked_array(args, mask_indexes, input_array):
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             if r_type == 'masked':
-                input_array[i] = args.dict_kmers['mask']
+                input_array[i] = args.dict_kmers["MASK"]
             elif r_type == 'random':
-                input_array[i] = random.choices([k for k in args.dict_kmers.keys() if k not in ["unknown", "mask"]])
+                input_array[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])
             else:
                 continue
+                
     return input_array
 
 def get_mlm_input(args, input_array):
@@ -56,7 +57,7 @@ def get_mlm_input(args, input_array):
     #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     # else:
     # get indexes of SEP and CLS tokens
-    sep_indices = [i for i in range(len(input_array)) if input_array[i] in ['SEP','CLS']]
+    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS']]]
     # get list of indices of tokens to mask
     mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
     # select bases to mask
