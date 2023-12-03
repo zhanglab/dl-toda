@@ -64,10 +64,11 @@ def get_mlm_input(args, input_array):
     # mask bases
     masked_bases_array = get_masked_array(args, mask_indexes, np.copy(input_array))
     # prepare sample_weights parameter to loss function
-    sample_weights = np.zeros(input_array.shape) 
-    sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
+    # sample_weights = np.zeros(input_array.shape) 
+    # sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
+    weights = [1]*n_mask + [0]*(len(input_array)-n_mask)
 
-    return masked_bases_array, sample_weights, mask_indexes + [0]*(len(input_array)-n_mask), \
+    return masked_bases_array, weights, mask_indexes + [0]*(len(input_array)-n_mask), \
     [input_array[i] for i in mask_indexes] + [0]*(len(input_array)-n_mask)
     
 
@@ -79,8 +80,8 @@ def wrap_label(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
-def wrap_weights(value):
-    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+# def wrap_weights(value):
+#     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
 def create_meta_tfrecords(args, grouped_files):
@@ -207,7 +208,7 @@ def create_tfrecords(args, grouped_files):
                                     'read_id': wrap_read(nsp_dna_array),
                                     'read_pad': wrap_read(nsp_pad_array),
                                     'masked_array': wrap_read(masked_array),
-                                    'masked_weights': wrap_weights(masked_weights),
+                                    'masked_weights': wrap_read(masked_weights),
                                     'masked_positions': wrap_read(masked_positions),
                                     'masked_ids': wrap_read(weights),
                                     'label': wrap_label(label)
@@ -252,7 +253,7 @@ def main():
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
-    parser.add_argument('--k_value', default=12, type=int, help="Size of k-mers")
+    parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--contiguous', action='store_true', default=False)
