@@ -58,7 +58,7 @@ def get_mlm_input(args, input_array):
     # get indexes of SEP and CLS tokens
     sep_indices = [i for i in range(len(input_array)) if input_array[i] in ['SEP','CLS']]
     # get list of indices of tokens to mask
-    mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices))-, n_mask)
+    mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
     # select bases to mask
     bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
     # mask bases
@@ -186,7 +186,7 @@ def create_tfrecords(args, grouped_files):
                                     # 'read': wrap_read(np.array(dna_array)),
                                     'read': wrap_read(dna_array),
                                 }
-                        if args.bert_mlm:
+                        if args.bert:
                             # prepare input for next sentence prediction task
                             nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(dna_array, pad_array)
                             # mask 15% of k-mers in reads
@@ -248,7 +248,7 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
-    parser.add_argument('--bert_mlm', action='store_true', default=False, help="represent reads for transformer")
+    parser.add_argument('--bert', action='store_true', default=False, help="represent reads for transformer")
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
