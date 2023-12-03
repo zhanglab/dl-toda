@@ -12,48 +12,64 @@ import gzip
 import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
-def get_kmers_masked(args, mask_indexes, kmer_array_masked):
-    # replace each chosen k-mers by the MASK token number 80% of the time, a random k-mer 10% of the time
-    # or the unchanged k-mer 10% of the time
+
+def get_nsp_input(bases_list, pad_list):
+    # create 2 segments from list
+    segment_1 = bases_list[:len(bases_list)//2]
+    segment_2 = bases_list[len(bases_list)//2:]
+    # concatenate segments
+    concatenate_segments = ['CLS'] + segment_1 + ['SEP'] + segment_2 + ['SEP']
+    # update list of pad/non-pad values
+    up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
+    # create list of segment ids
+    segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
+    
+    return concatenate_segments, up_pad_list, segment_ids
+
+def get_masked_array(args, mask_indexes, input_array):
+    # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
+    # or the unchanged base 10% of the time
     replacements = ["masked", "random", "same"]
     weights = [0.8, 0.1, 0.1]
-    for i in range(len(kmer_array_masked)):
+    for i in range(len(input_array)):
         if i in mask_indexes:
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             if r_type == 'masked':
-                kmer_array_masked[i] = args.dict_kmers['mask']
+                input_array[i] = args.dict_kmers['mask']
             elif r_type == 'random':
-                kmer_array_masked[i] = random.choices([k for k in args.dict_kmers.keys() if k not in ["unknown", "mask"]])
+                input_array[i] = random.choices([k for k in args.dict_kmers.keys() if k not in ["unknown", "mask"]])
             else:
                 continue
-    return kmer_array_masked
+    return input_array
 
-
-def get_masked_kmers(args, kmers_array):
-    # number of k-mers to mask in the vector of k-mers
-    n_mask = int(0.15 * args.kmer_vector_length)
-    if args.contiguous:
-        # choose index of first k-mer to mask
-        start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
-        mask_indexes = list(range(start_mask_idx,start_mask_idx+n_mask))
-        # select k-mers to mask
-        kmers_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
-    else:
-        mask_indexes = random.sample(list(range(args.kmer_vector_length)), n_mask)
-        # select k-mers to mask
-        kmers_masked = [False if i not in mask_indexes else True for i in range(args.kmer_vector_length)]
+def get_mlm_input(args, input_array):
+    # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
+    n_mask = int(0.15 * (len(input_array)-3))
     
-    # change labels for masked k-mers
-    kmers_array_masked = np.copy(kmers_array)
-    # kmer_array_masked[kmers_masked] = args.dict_kmers['mask']
-    kmers_array_masked = get_kmers_masked(args, mask_indexes, kmers_array_masked)
+    # if args.contiguous:
+    #     # mask contiguous bases
+    #     # choose index of first base to mask
+    #     start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
+    #     mask_indexes = list(range(start_mask_idx,start_mask_idx+n_mask))
+    #     # select bases to mask
+    #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
+    # else:
+    # get indexes of SEP and CLS tokens
+    sep_indices = [i for i in range(len(input_array)) if input_array[i] in ['SEP','CLS']]
+    # get list of indices of tokens to mask
+    mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices))-, n_mask)
+    # select bases to mask
+    bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
+    # mask bases
+    masked_bases_array = get_masked_array(args, mask_indexes, np.copy(input_array))
     # prepare sample_weights parameter to loss function
-    sample_weights = np.zeros(kmers_array.shape) 
-    sample_weights[kmers_masked] = 1 # only compute loss for masked k-mers
+    sample_weights = np.zeros(input_array.shape) 
+    sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
 
-    return kmers_array_masked, sample_weights
-
+    return masked_bases_array, sample_weights, mask_indexes + [0]*(len(input_array)-n_mask), \
+    [input_array[i] for i in masked_indexes] + [0]*(len(input_array)-n_mask)
+    
 
 def wrap_read(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
@@ -136,6 +152,7 @@ def create_tfrecords(args, grouped_files):
                         if args.update_labels:
                             label = int(args.labels_mapping[str(label)])
                         if args.pair:
+                            # concatenate forward and reverse reads into one vector
                             if args.DNA_model:
                                 fw_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
                                 rv_dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[5].rstrip()]
@@ -145,8 +162,8 @@ def create_tfrecords(args, grouped_files):
                                     fw_dna_array = fw_dna_array + [0] * (args.read_length - len(fw_dna_array))
                                     rv_dna_array = rv_dna_array + [0] * (args.read_length - len(rv_dna_array))
                             else:
-                                fw_dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
-                                rv_dna_array = get_kmer_arr(args, rec.split('\n')[5].rstrip())
+                                fw_dna_array, _ = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                                rv_dna_array, _ = get_kmer_arr(args, rec.split('\n')[5].rstrip())
 
                             dna_array = fw_dna_array + rv_dna_array
                             # append insert size for kmers arrays as pairs of reads
@@ -160,27 +177,42 @@ def create_tfrecords(args, grouped_files):
                                     # pad list of bases with 0s to the right
                                     dna_array = dna_array + [0] * (args.read_length - len(dna_array))
                             else:
-                                dna_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
-
+                                dna_array, pad_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                        
+                        # create TFrecords
                         if args.no_label:
                             data = \
                                 {
                                     # 'read': wrap_read(np.array(dna_array)),
                                     'read': wrap_read(dna_array),
                                 }
-                        if args.transformer:
+                        if args.bert_mlm:
+                            # prepare input for next sentence prediction task
+                            nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(dna_array, pad_array)
                             # mask 15% of k-mers in reads
-                            kmer_array_masked, weights = get_masked_kmers(args, np.array(dna_array))
-                            # print(kmer_array_masked)
-                            # print(weights)
+                            masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
+                            print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
+                            """
+                            nsp_dna_array: vector of bases
+                            masked_array:
+                            masked_weights: 
+                            masked_positions: 
+                            masked_ids:
+                            segment_ids:
+                            label: 
+                            """
                             data = \
                                 {
                                     # 'read': wrap_read(np.array(dna_array)),
-                                    'read': wrap_read(dna_array),
-                                    'read_masked': wrap_read(kmer_array_masked),
-                                    'weights': wrap_weights(weights),
-                                    'label': wrap_label(label),
+                                    'read_id': wrap_read(nsp_dna_array),
+                                    'read_pad': wrap_read(nsp_pad_array),
+                                    'masked_array': wrap_read(masked_array),
+                                    'masked_weights': wrap_weights(masked_weights),
+                                    'masked_positions': wrap_read(masked_positions),
+                                    'masked_ids': wrap_read(weights),
+                                    'label': wrap_label(label)
                                 }
+                            break
                         else:
                             # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                             #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
@@ -216,7 +248,7 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
-    parser.add_argument('--transformer', action='store_true', default=False, help="represent reads for transformer")
+    parser.add_argument('--bert_mlm', action='store_true', default=False, help="represent reads for transformer")
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
@@ -226,8 +258,7 @@ def main():
     parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
-    parser.add_argument('--dataset_type', type=str, help="Type of dataset", choices=['sim', 'meta'])
-
+    parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
     if args.update_labels:
