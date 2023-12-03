@@ -41,7 +41,7 @@ def get_masked_array(args, mask_indexes, input_array):
                 input_array[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])
             else:
                 continue
-                
+
     return input_array
 
 def get_mlm_input(args, input_array):
@@ -190,7 +190,7 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(dna_array, pad_array)
+                            nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(args, dna_array, pad_array)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
                             print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
