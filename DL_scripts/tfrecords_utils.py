@@ -1,4 +1,14 @@
-# import numpy as np
+import random
+
+
+def shuffle_reads(fastq_file, num_lines):
+    with open(fq_file) as handle:
+        content = handle.readlines()
+        reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+        random.shuffle(reads)
+
+    return reads
+
 
 def get_reverse_seq(read):
     """ Converts a k-mer to its reverse complement """
@@ -68,8 +78,10 @@ def get_kmer_arr(args, read):
         idx = get_kmer_index(kmer, args.dict_kmers)
         list_kmers.append(idx)
 
+    list_padded = [1]*len(list_kmers) # list indicating which item is a pad value or not --> necessary for bert mlm task
     if len(list_kmers) < args.kmer_vector_length:
         # pad list of kmers with 0s to the right
         list_kmers = list_kmers + [0] * (args.kmer_vector_length - len(list_kmers))
+        list_padded = list_padded + [0] * (args.kmer_vector_length - len(list_kmers))
 
-    return list_kmers
+    return list_kmers, list_padded
