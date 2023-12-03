@@ -68,7 +68,7 @@ def get_mlm_input(args, input_array):
     sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
 
     return masked_bases_array, sample_weights, mask_indexes + [0]*(len(input_array)-n_mask), \
-    [input_array[i] for i in masked_indexes] + [0]*(len(input_array)-n_mask)
+    [input_array[i] for i in mask_indexes] + [0]*(len(input_array)-n_mask)
     
 
 def wrap_read(value):
