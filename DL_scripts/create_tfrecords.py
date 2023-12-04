@@ -24,7 +24,7 @@ def get_nsp_input(args, bases_list, pad_list):
         nsp_label = 0 # 'IsNext'
     else:
         nsp_label = 1 # 'NotNext'
-        segment_2 = ''.join(random.choices(['A','T','C','G'], k=len(segment_2)))
+        segment_2 = [args.dict_kmers[x] for x in ''.join(random.choices(['A','T','C','G'], k=len(segment_2)))]
     # concatenate segments
     concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
     # update list of pad/non-pad values
