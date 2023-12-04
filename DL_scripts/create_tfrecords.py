@@ -206,7 +206,7 @@ def create_tfrecords(args, grouped_files):
                             data = \
                                 {
                                     'read_id': wrap_read(nsp_dna_array),
-                                    'read_pad': wrap_read(nsp_pad_array),
+                                    'segment_ids': wrap_read(segment_ids),
                                     'masked_array': wrap_read(masked_array),
                                     'masked_weights': wrap_weights(masked_weights),
                                     'masked_positions': wrap_read(masked_positions),
