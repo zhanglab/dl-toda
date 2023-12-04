@@ -81,8 +81,8 @@ def wrap_label(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
-# def wrap_weights(value):
-#     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+def wrap_weights(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
 def create_meta_tfrecords(args, grouped_files):
@@ -208,7 +208,7 @@ def create_tfrecords(args, grouped_files):
                                     'read_id': wrap_read(nsp_dna_array),
                                     'read_pad': wrap_read(nsp_pad_array),
                                     'masked_array': wrap_read(masked_array),
-                                    'masked_weights': wrap_read(masked_weights),
+                                    'masked_weights': wrap_weights(masked_weights),
                                     'masked_positions': wrap_read(masked_positions),
                                     'masked_ids': wrap_read(masked_ids),
                                     'label': wrap_label(label)
