@@ -193,7 +193,7 @@ def create_tfrecords(args, grouped_files):
                             nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(args, dna_array, pad_array)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
-                            print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
+                            # print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
@@ -213,7 +213,8 @@ def create_tfrecords(args, grouped_files):
                                     'masked_ids': wrap_read(masked_ids),
                                     'label': wrap_label(label)
                                 }
-                            
+                            if count == 100:
+                                break
                         else:
                             # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                             #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
