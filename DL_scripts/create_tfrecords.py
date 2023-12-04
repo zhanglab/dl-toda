@@ -17,6 +17,14 @@ def get_nsp_input(args, bases_list, pad_list):
     # create 2 segments from list
     segment_1 = bases_list[:len(bases_list)//2]
     segment_2 = bases_list[len(bases_list)//2:]
+    # randomly choose whether to have segment 2 after segment 1 or not 
+    nsp_choice = random.choice([True, False])
+    # generate random segment 2 in case nsp_choice is False
+    if nsp_choice:
+        nsp_label = 0 # 'IsNext'
+    else:
+        nsp_label = 1 # 'NotNext'
+        segment_2 = ''.join(random.choices(['A','T','C','G'], k=len(segment_2)))
     # concatenate segments
     concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
     # update list of pad/non-pad values
@@ -24,7 +32,7 @@ def get_nsp_input(args, bases_list, pad_list):
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
-    return concatenate_segments, up_pad_list, segment_ids
+    return concatenate_segments, up_pad_list, segment_ids, nsp_label
 
 def get_masked_array(args, mask_indexes, input_array):
     # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
@@ -65,12 +73,11 @@ def get_mlm_input(args, input_array):
     # mask bases
     masked_bases_array = get_masked_array(args, mask_indexes, np.copy(input_array))
     # prepare sample_weights parameter to loss function
+    weights = np.ones(n_mask)
     # sample_weights = np.zeros(input_array.shape) 
     # sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
-    weights = [1]*n_mask + [0]*(len(input_array)-n_mask)
 
-    return masked_bases_array, weights, mask_indexes + [0]*(len(input_array)-n_mask), \
-    [input_array[i] for i in mask_indexes] + [0]*(len(input_array)-n_mask)
+    return masked_bases_array, weights, mask_indexes, [input_array[i] for i in mask_indexes]
     
 
 def wrap_read(value):
@@ -190,10 +197,10 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, nsp_pad_array, segment_ids = get_nsp_input(args, dna_array, pad_array)
+                            nsp_dna_array, nsp_pad_array, segment_ids, nsp_label = get_nsp_input(args, dna_array, pad_array)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
-                            # print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
+                            print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
@@ -205,12 +212,13 @@ def create_tfrecords(args, grouped_files):
                             """
                             data = \
                                 {
-                                    'read_id': wrap_read(nsp_dna_array),
-                                    'segment_ids': wrap_read(segment_ids),
-                                    'masked_array': wrap_read(masked_array),
+                                    'base_id_data': wrap_read(nsp_dna_array),
+                                    'type_id_data': wrap_read(segment_ids),
+                                    'masked_data': wrap_read(masked_array),
                                     'masked_weights': wrap_weights(masked_weights),
                                     'masked_positions': wrap_read(masked_positions),
                                     'masked_ids': wrap_read(masked_ids),
+                                    'nsp_label': wrap_label(nsp_label),
                                     'label': wrap_label(label)
                                 }
                             if count == 100:
