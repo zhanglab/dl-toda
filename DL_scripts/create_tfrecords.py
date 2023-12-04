@@ -213,7 +213,7 @@ def create_tfrecords(args, grouped_files):
                                     'masked_ids': wrap_read(masked_ids),
                                     'label': wrap_label(label)
                                 }
-                            break
+                            
                         else:
                             # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                             #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
