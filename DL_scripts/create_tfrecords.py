@@ -13,7 +13,7 @@ import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
 
-def get_nsp_input(args, bases_list, pad_list):
+def get_nsp_input(args, bases_list):
     # create 2 segments from list
     segment_1 = bases_list[:len(bases_list)//2]
     segment_2 = bases_list[len(bases_list)//2:]
@@ -28,11 +28,11 @@ def get_nsp_input(args, bases_list, pad_list):
     # concatenate segments
     concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
     # update list of pad/non-pad values
-    up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
+    # up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
-    return concatenate_segments, up_pad_list, segment_ids, nsp_label
+    return concatenate_segments, segment_ids, nsp_label
 
 def get_masked_array(args, mask_indexes, input_array):
     # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
@@ -66,12 +66,16 @@ def get_mlm_input(args, input_array):
     # else:
     # get indexes of SEP and CLS tokens
     sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS']]]
+    print(f'sep_indices: {sep_indices}')
     # get list of indices of tokens to mask
     mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
+    print(f'mask_indexes: {mask_indexes}')
     # select bases to mask
     bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
+    print(f'bases_masked: {bases_masked}')
     # mask bases
     masked_bases_array = get_masked_array(args, mask_indexes, np.copy(input_array))
+    print(f'masked_bases_array: {masked_bases_array}')
     # prepare sample_weights parameter to loss function
     weights = np.ones(n_mask)
     # sample_weights = np.zeros(input_array.shape) 
@@ -197,7 +201,8 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, nsp_pad_array, segment_ids, nsp_label = get_nsp_input(args, dna_array, pad_array)
+                            nsp_dna_array, segment_ids, nsp_label = get_nsp_input(args, dna_array)
+                            print(nsp_dna_array, segment_ids, nsp_label)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
                             print(f'nsp_dna_array: {nsp_dna_array}\nnsp_pad_array: {nsp_pad_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
