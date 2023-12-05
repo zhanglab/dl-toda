@@ -35,22 +35,26 @@ def get_nsp_input(args, bases_list, pad_list):
     return concatenate_segments, segment_ids, nsp_label, up_pad_list
 
 def get_masked_array(args, mask_indexes, input_array):
+    output = input_array.copy()
     # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
     # or the unchanged base 10% of the time
     replacements = ["masked", "random", "same"]
     weights = [0.8, 0.1, 0.1]
-    for i in range(len(input_array)):
+    for i in range(len(output)):
         if i in mask_indexes:
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             if r_type == 'masked':
-                input_array[i] = args.dict_kmers["MASK"]
+                print(f'before: {output[i]}')
+                output[i] = args.dict_kmers["MASK"]
+                print(f'new: {output[i]}')
             elif r_type == 'random':
-                input_array[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])
+                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])
             else:
                 continue
 
-    return input_array
+
+    return output
 
 def get_mlm_input(args, input_array):
     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
@@ -74,7 +78,7 @@ def get_mlm_input(args, input_array):
     bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
     print(f'bases_masked: {bases_masked}')
     # mask bases
-    masked_bases_array = get_masked_array(args, mask_indexes, input_array.copy())
+    masked_bases_array = get_masked_array(args, mask_indexes, input_array)
     print(f'masked_bases_array: {masked_bases_array}')
     # prepare sample_weights parameter to loss function
     weights = np.ones(n_mask)
