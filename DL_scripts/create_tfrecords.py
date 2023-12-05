@@ -74,7 +74,7 @@ def get_mlm_input(args, input_array):
     bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
     print(f'bases_masked: {bases_masked}')
     # mask bases
-    masked_bases_array = get_masked_array(args, mask_indexes, np.copy(input_array))
+    masked_bases_array = get_masked_array(args, mask_indexes, input_array.copy())
     print(f'masked_bases_array: {masked_bases_array}')
     # prepare sample_weights parameter to loss function
     weights = np.ones(n_mask)
