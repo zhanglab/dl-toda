@@ -13,7 +13,7 @@ import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr
 
 
-def get_nsp_input(args, bases_list):
+def get_nsp_input(args, bases_list, pad_list):
     # create 2 segments from list
     segment_1 = bases_list[:len(bases_list)//2]
     segment_2 = bases_list[len(bases_list)//2:]
@@ -201,7 +201,7 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_array)
+                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_array, pad_array)
                             print(nsp_dna_array, segment_ids, nsp_label, up_pad_list)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
