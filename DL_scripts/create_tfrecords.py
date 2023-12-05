@@ -28,11 +28,11 @@ def get_nsp_input(args, bases_list):
     # concatenate segments
     concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
     # update list of pad/non-pad values
-    # up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
+    up_pad_list = [1] + pad_list[0:len(segment_1)] + [1] + pad_list[len(segment_1):len(pad_list)] +[1]
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
-    return concatenate_segments, segment_ids, nsp_label
+    return concatenate_segments, segment_ids, nsp_label, up_pad_list
 
 def get_masked_array(args, mask_indexes, input_array):
     # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
@@ -54,7 +54,7 @@ def get_masked_array(args, mask_indexes, input_array):
 
 def get_mlm_input(args, input_array):
     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
-    n_mask = int(0.15 * (len(input_array)-3))
+    n_mask = int(0.15 * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
     
     # if args.contiguous:
     #     # mask contiguous bases
@@ -64,8 +64,8 @@ def get_mlm_input(args, input_array):
     #     # select bases to mask
     #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     # else:
-    # get indexes of SEP and CLS tokens
-    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS']]]
+    # get indexes of SEP, CLS and UNK tokens
+    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS'],args.dict_kmers['UNK']]]
     print(f'sep_indices: {sep_indices}')
     # get list of indices of tokens to mask
     mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
@@ -201,8 +201,8 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, segment_ids, nsp_label = get_nsp_input(args, dna_array)
-                            print(nsp_dna_array, segment_ids, nsp_label)
+                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_array)
+                            print(nsp_dna_array, segment_ids, nsp_label, up_pad_list)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
                             print(f'nsp_dna_array: {nsp_dna_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
@@ -217,9 +217,9 @@ def create_tfrecords(args, grouped_files):
                             """
                             data = \
                                 {
-                                    'base_id_data': wrap_read(nsp_dna_array),
+                                    'base_id_data': wrap_read(masked_array),
                                     'type_id_data': wrap_read(segment_ids),
-                                    'masked_data': wrap_read(masked_array),
+                                    'pad_data': wrap_read(up_pad_list),
                                     'masked_weights': wrap_weights(masked_weights),
                                     'masked_positions': wrap_read(masked_positions),
                                     'masked_ids': wrap_read(masked_ids),
