@@ -44,18 +44,12 @@ def get_masked_array(args, mask_indexes, input_array):
         if i in mask_indexes:
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
-            print(f'index: {i}\t{r_type}')
             if r_type[0] == 'masked':
-                print(f'before: {output[i]}')
                 output[i] = args.dict_kmers["MASK"]
-                print(f'new: {output[i]}')
             elif r_type[0] == 'random':
-                print(f'before: {output[i]}')
-                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])
-                print(f'new: {output[i]}')
+                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])[0]
             elif r_type[0] == 'same':
                 continue
-
 
     return output
 
