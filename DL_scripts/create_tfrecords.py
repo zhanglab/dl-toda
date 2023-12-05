@@ -190,7 +190,7 @@ def create_tfrecords(args, grouped_files):
                                     # pad list of bases with 0s to the right
                                     dna_array = dna_array + [0] * (args.read_length - len(dna_array))
                             else:
-                                dna_array, pad_array = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+                                dna_list, pad_list = get_kmer_arr(args, rec.split('\n')[1].rstrip())
                         
                         # create TFrecords
                         if args.no_label:
@@ -201,10 +201,10 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_array, pad_array)
+                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_list, pad_list)
                             print(nsp_dna_array, segment_ids, nsp_label, up_pad_list)
                             # mask 15% of k-mers in reads
-                            masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
+                            masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, nsp_dna_array)
                             print(f'nsp_dna_array: {nsp_dna_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
                             if masked_array == nsp_dna_array:
                                 print('THE LISTS ARE THE SAME')
