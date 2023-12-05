@@ -206,6 +206,10 @@ def create_tfrecords(args, grouped_files):
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, np.array(nsp_dna_array))
                             print(f'nsp_dna_array: {nsp_dna_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
+                            if masked_array == nsp_dna_array:
+                                print('THE LISTS ARE THE SAME')
+                            else:
+                                print('NO')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
