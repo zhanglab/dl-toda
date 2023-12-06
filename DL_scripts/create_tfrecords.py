@@ -67,16 +67,12 @@ def get_mlm_input(args, input_array):
     # else:
     # get indexes of SEP, CLS and UNK tokens
     sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS'],args.dict_kmers['UNK']]]
-    print(f'sep_indices: {sep_indices}')
     # get list of indices of tokens to mask
     mask_indexes = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
-    print(f'mask_indexes: {mask_indexes}')
     # select bases to mask
     bases_masked = [False if i not in mask_indexes else True for i in range(len(input_array))]
-    print(f'bases_masked: {bases_masked}')
     # mask bases
     masked_bases_array = get_masked_array(args, mask_indexes, input_array)
-    print(f'masked_bases_array: {masked_bases_array}')
     # prepare sample_weights parameter to loss function
     weights = np.ones(n_mask)
     # sample_weights = np.zeros(input_array.shape) 
@@ -203,14 +199,8 @@ def create_tfrecords(args, grouped_files):
                         if args.bert:
                             # prepare input for next sentence prediction task
                             nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_list, pad_list)
-                            print(nsp_dna_array, segment_ids, nsp_label, up_pad_list)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, nsp_dna_array)
-                            print(f'nsp_dna_array: {nsp_dna_array}\nmasked_array: {masked_array}\nmasked_weights: {masked_weights}\nmasked_positions: {masked_positions}\nmasked_ids: {masked_ids}')
-                            if masked_array == nsp_dna_array:
-                                print('THE LISTS ARE THE SAME')
-                            else:
-                                print('NO')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
@@ -231,8 +221,6 @@ def create_tfrecords(args, grouped_files):
                                     'nsp_label': wrap_label(nsp_label),
                                     'label': wrap_label(label)
                                 }
-                            if count == 100:
-                                break
                         else:
                             # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                             #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
