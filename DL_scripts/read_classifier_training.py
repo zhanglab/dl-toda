@@ -79,7 +79,7 @@ class DALIPreprocessor(object):
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
-        self.daliop = dali_tf.DALIIterator()
+        # self.daliop = dali_tf.DALIIterator()
 
         self.batch_size = batch_size
         self.device_id = device_id
