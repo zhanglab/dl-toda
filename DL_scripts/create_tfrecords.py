@@ -32,7 +32,7 @@ def get_nsp_input(args, bases_list, pad_list):
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
-    return np.array(concatenate_segments), segment_ids, nsp_label, up_pad_list
+    return np.array(concatenate_segments), np.array(segment_ids), nsp_label, up_pad_list
 
 def get_masked_array(args, mask_indexes, input_array):
     output = input_array.copy()
@@ -205,7 +205,7 @@ def create_tfrecords(args, grouped_files):
                                 segment_ids - array with segment ids: {segment_ids} - {segment_ids.shape}\n \
                                 masked_weights - array with weights: {masked_weights} - {masked_weights.shape}\n \
                                 updated_dna_array - original array: {updated_dna_array} - {updated_dna_array.shape}\n \
-                                nsp_label: {nsp_label} - {nsp_label.shape}')
+                                nsp_label: {nsp_label}')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
