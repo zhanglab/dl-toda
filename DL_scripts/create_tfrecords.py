@@ -74,9 +74,9 @@ def get_mlm_input(args, input_array):
     # mask bases
     masked_bases_array = get_masked_array(args, mask_indexes, input_array)
     # prepare sample_weights parameter to loss function
-    weights = np.ones(n_mask)
-    # sample_weights = np.zeros(input_array.shape) 
-    # sample_weights[bases_masked] = 1 # only compute loss for masked k-mers
+    # weights = np.ones(n_mask)
+    weights = np.zeros(input_array.shape) 
+    weights[bases_masked] = 1 # only compute loss for masked k-mers
 
     return masked_bases_array, weights, mask_indexes, [input_array[i] for i in mask_indexes]
     
@@ -198,9 +198,14 @@ def create_tfrecords(args, grouped_files):
                                 }
                         if args.bert:
                             # prepare input for next sentence prediction task
-                            nsp_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_list, pad_list)
+                            updated_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_list, pad_list)
                             # mask 15% of k-mers in reads
-                            masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, nsp_dna_array)
+                            masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, updated_dna_array)
+                            print(f'masked_array - array with masked tokens: {masked_array} - {masked_array.shape}\n \
+                                segment_ids - array with segment ids: {segment_ids} - {segment_ids.shape}\n \
+                                masked_weights - array with weights: {masked_weights} - {masked_weights.shape}\n \
+                                updated_dna_array - original array: {updated_dna_array} - {updated_dna_array.shape}\n \
+                                nsp_label: {nsp_label} - {nsp_label.shape}')
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
@@ -210,14 +215,23 @@ def create_tfrecords(args, grouped_files):
                             segment_ids:
                             label: 
                             """
+                            # data = \
+                            #     {
+                            #         'base_id_data': wrap_read(masked_array),
+                            #         'type_id_data': wrap_read(segment_ids),
+                            #         'pad_data': wrap_read(up_pad_list),
+                            #         'masked_weights': wrap_weights(masked_weights),
+                            #         'masked_positions': wrap_read(masked_positions),
+                            #         'masked_ids': wrap_read(masked_ids),
+                            #         'nsp_label': wrap_label(nsp_label),
+                            #         'label': wrap_label(label)
+                            #     }
                             data = \
                                 {
                                     'base_id_data': wrap_read(masked_array),
                                     'type_id_data': wrap_read(segment_ids),
-                                    'pad_data': wrap_read(up_pad_list),
                                     'masked_weights': wrap_weights(masked_weights),
-                                    'masked_positions': wrap_read(masked_positions),
-                                    'masked_ids': wrap_read(masked_ids),
+                                    'masked_ids': wrap_read(updated_dna_array),
                                     'nsp_label': wrap_label(nsp_label),
                                     'label': wrap_label(label)
                                 }
@@ -242,7 +256,7 @@ def create_tfrecords(args, grouped_files):
                         # initialize variables again
                         n_line = 0
                         rec = ''
-                        # break
+                        break
                         
 
 
