@@ -201,11 +201,7 @@ def create_tfrecords(args, grouped_files):
                             updated_dna_array, segment_ids, nsp_label, up_pad_list = get_nsp_input(args, dna_list, pad_list)
                             # mask 15% of k-mers in reads
                             masked_array, masked_weights, masked_positions, masked_ids = get_mlm_input(args, updated_dna_array)
-                            print(f'masked_array - array with masked tokens: {masked_array} - {masked_array.shape}\n \
-                                segment_ids - array with segment ids: {segment_ids} - {segment_ids.shape}\n \
-                                masked_weights - array with weights: {masked_weights} - {masked_weights.shape}\n \
-                                updated_dna_array - original array: {updated_dna_array} - {updated_dna_array.shape}\n \
-                                nsp_label: {nsp_label}')
+                            
                             """
                             nsp_dna_array: vector of bases
                             masked_array:
@@ -256,10 +252,6 @@ def create_tfrecords(args, grouped_files):
                         # initialize variables again
                         n_line = 0
                         rec = ''
-                        if count == 1000:
-                            break
-                        
-
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
