@@ -32,7 +32,7 @@ def get_nsp_input(args, bases_list, pad_list):
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
-    return concatenate_segments, segment_ids, nsp_label, up_pad_list
+    return np.array(concatenate_segments), segment_ids, nsp_label, up_pad_list
 
 def get_masked_array(args, mask_indexes, input_array):
     output = input_array.copy()
