@@ -256,7 +256,8 @@ def create_tfrecords(args, grouped_files):
                         # initialize variables again
                         n_line = 0
                         rec = ''
-                        break
+                        if count == 1000:
+                            break
                         
 
 
