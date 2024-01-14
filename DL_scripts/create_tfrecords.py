@@ -18,7 +18,8 @@ def get_nsp_input(args, bases_list, pad_list):
     segment_1 = bases_list[:len(bases_list)//2]
     segment_2 = bases_list[len(bases_list)//2:]
     # randomly choose whether to have segment 2 after segment 1 or not 
-    nsp_choice = random.choice([True, False])
+    # nsp_choice = random.choice([True, False])
+    nsp_choice = True
     # generate random segment 2 in case nsp_choice is False
     if nsp_choice:
         nsp_label = 0 # 'IsNext'
