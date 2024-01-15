@@ -27,7 +27,7 @@ def get_nsp_input(args, bases_list):
     else:
         nsp_label = 1 # 'IsNext'
     # concatenate segments and add CLS and SEP tokens
-    concatenate_segments = [args.dict_kmers['CLS']] + segment_1 + [args.dict_kmers['SEP']] + segment_2 + [args.dict_kmers['SEP']]
+    concatenate_segments = [args.dict_kmers['[CLS]']] + segment_1 + [args.dict_kmers['[SEP]']] + segment_2 + [args.dict_kmers['[SEP]']]
     # create list of segment ids
     segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
     
@@ -44,9 +44,9 @@ def get_masked_array(args, mask_lm_positions, input_array):
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             if r_type[0] == 'masked':
-                output[i] = args.dict_kmers["MASK"]
+                output[i] = args.dict_kmers["[MASK]"]
             elif r_type[0] == 'random':
-                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["UNK", "MASK", "CLS", "SEP"]])[0]
+                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["[UNK]", "[MASK]", "[CLS]", "[SEP]"]])[0]
             elif r_type[0] == 'same':
                 continue
 
@@ -65,7 +65,7 @@ def get_mlm_input(args, input_array):
     #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
     # else:
     # get indexes of SEP, CLS and UNK tokens
-    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['SEP'],args.dict_kmers['CLS'],args.dict_kmers['UNK']]]
+    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[SEP]'],args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]']]]
     # get list of indices of tokens to mask
     mask_lm_positions = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
     # mask bases
