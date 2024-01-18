@@ -55,6 +55,7 @@ def get_masked_array(args, mask_lm_positions, input_array):
 def get_mlm_input(args, input_array):
     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
     n_mask = int(0.15 * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
+    print(n_mask)
     # if args.contiguous:
     #     # mask contiguous bases
     #     # choose index of first base to mask
@@ -197,7 +198,8 @@ def create_tfrecords(args, grouped_files):
                             updated_dna_array, segment_ids, nsp_label = get_nsp_input(args, dna_list)
                             # mask 15% of k-mers in reads
                             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, updated_dna_array)
-                            
+                            print(input_ids, input_mask, masked_lm_weights, mask_lm_positions, masked_lm_ids, segment_ids, nsp_label)
+                            break
                             """
                             input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
                             input_mask: [1]*len(input_ids)
@@ -294,6 +296,7 @@ def main():
         if args.bert:
             # add [PAD] to dictionary
             args.dict_kmers['[PAD]'] = 0
+            print(args.dict_kmers)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
         print(args.kmer_vector_length)
