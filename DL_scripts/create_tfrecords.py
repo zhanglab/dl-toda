@@ -55,8 +55,8 @@ def get_masked_array(args, mask_lm_positions, input_array):
 
 def get_mlm_input(args, input_array):
     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
-    n_mask = int(0.15 * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
-    print(n_mask)
+    n_mask = int(args.masked_lm_prop * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
+    
     # if args.contiguous:
     #     # mask contiguous bases
     #     # choose index of first base to mask
@@ -199,8 +199,7 @@ def create_tfrecords(args, grouped_files):
                             updated_dna_array, segment_ids, nsp_label = get_nsp_input(args, dna_list)
                             # mask 15% of k-mers in reads
                             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, updated_dna_array)
-                            print(input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids, segment_ids, nsp_label)
-                            break
+                            
                             """
                             input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
                             input_mask: [1]*len(input_ids)
@@ -268,6 +267,7 @@ def main():
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
+    parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--contiguous', action='store_true', default=False)
