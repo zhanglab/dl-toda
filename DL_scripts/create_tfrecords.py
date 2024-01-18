@@ -199,7 +199,7 @@ def create_tfrecords(args, grouped_files):
                             updated_dna_array, segment_ids, nsp_label = get_nsp_input(args, dna_list)
                             # mask 15% of k-mers in reads
                             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, updated_dna_array)
-                            print(input_ids, input_mask, masked_lm_weights, mask_lm_positions, masked_lm_ids, segment_ids, nsp_label)
+                            print(input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids, segment_ids, nsp_label)
                             break
                             """
                             input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
