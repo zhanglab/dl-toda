@@ -40,7 +40,7 @@ def get_kmer_index(kmer, dict_kmers):
     elif get_reverse_seq(kmer) in dict_kmers:
         idx = dict_kmers[get_reverse_seq(kmer)]
     else:
-        idx = dict_kmers['UNK']
+        idx = dict_kmers['[UNK]']
 
     return idx
 
