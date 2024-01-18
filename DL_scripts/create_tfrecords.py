@@ -24,7 +24,7 @@ def get_nsp_input(args, bases_list):
     if nsp_choice:
         nsp_label = 0 # 'NotNext'
         kmers = [args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["[UNK]", "[MASK]", "[CLS]", "[SEP]", "[PAD]"]]
-        segment_2 = [args.dict_kmers[x] for x in ''.join(random.choices(kmers, k=len(segment_2)))]
+        segment_2 = [args.dict_kmers[x] for x in random.choices(kmers, k=len(segment_2))]
     else:
         nsp_label = 1 # 'IsNext'
     # concatenate segments and add CLS and SEP tokens
