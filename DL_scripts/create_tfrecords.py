@@ -23,7 +23,8 @@ def get_nsp_input(args, bases_list):
     # generate random segment 2 in case nsp_choice is False
     if nsp_choice:
         nsp_label = 0 # 'NotNext'
-        segment_2 = [args.dict_kmers[x] for x in ''.join(random.choices(['A','T','C','G'], k=len(segment_2)))]
+        kmers = [args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["[UNK]", "[MASK]", "[CLS]", "[SEP]", "[PAD]"]]
+        segment_2 = [args.dict_kmers[x] for x in ''.join(random.choices(kmers, k=len(segment_2)))]
     else:
         nsp_label = 1 # 'IsNext'
     # concatenate segments and add CLS and SEP tokens
@@ -46,7 +47,7 @@ def get_masked_array(args, mask_lm_positions, input_array):
             if r_type[0] == 'masked':
                 output[i] = args.dict_kmers["[MASK]"]
             elif r_type[0] == 'random':
-                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["[UNK]", "[MASK]", "[CLS]", "[SEP]"]])[0]
+                output[i] = random.choices([args.dict_kmers[k] for k in args.dict_kmers.keys() if k not in ["[UNK]", "[MASK]", "[CLS]", "[SEP]", "[PAD]"]])[0]
             elif r_type[0] == 'same':
                 continue
 
