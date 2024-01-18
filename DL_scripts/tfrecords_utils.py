@@ -75,9 +75,7 @@ def get_kmer_arr(args, read):
     list_kmers = []
     for i in range(0, len(read)-args.k_value+1, args.step):
         kmer = read[i:i + args.k_value]
-        print(kmer)
         idx = get_kmer_index(kmer, args.dict_kmers)
-        print(idx)
         list_kmers.append(idx)
 
     if len(list_kmers) < args.kmer_vector_length:
