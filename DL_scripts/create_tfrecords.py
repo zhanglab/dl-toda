@@ -210,26 +210,36 @@ def create_tfrecords(args, grouped_files):
                             next_sentence_labels: 0 for "is not next" and 1 for "is next"
                             label: species label
                             """
-                            data = \
-                                {
-                                    'input_ids': wrap_read(input_ids),
-                                    'input_mask': wrap_read(input_mask),
-                                    'segment_ids': wrap_read(segment_ids),
-                                    'masked_lm_positions': wrap_read(masked_lm_positions),
-                                    'masked_lm_weights': wrap_weights(masked_lm_weights),
-                                    'masked_lm_ids': wrap_read(masked_lm_ids),
-                                    'next_sentence_labels': wrap_label(nsp_label),
-                                    'label': wrap_label(label)
-                                }
-                            # data = \
-                            #     {
-                            #         'base_id_data': wrap_read(masked_array),
-                            #         'type_id_data': wrap_read(segment_ids),
-                            #         'masked_weights': wrap_weights(masked_weights),
-                            #         'masked_ids': wrap_read(updated_dna_array),
-                            #         'nsp_label': wrap_label(nsp_label),
-                            #         'label': wrap_label(label)
-                            #     }
+                            if args.bert_step == 'pretraining':
+                                data = \
+                                    {
+                                        'input_ids': wrap_read(input_ids),
+                                        'input_mask': wrap_read(input_mask),
+                                        'segment_ids': wrap_read(segment_ids),
+                                        'masked_lm_positions': wrap_read(masked_lm_positions),
+                                        'masked_lm_weights': wrap_weights(masked_lm_weights),
+                                        'masked_lm_ids': wrap_read(masked_lm_ids),
+                                        'next_sentence_labels': wrap_label(nsp_label),
+                                        'label_ids': wrap_label(label)
+                                    }
+                                # data = \
+                                #     {
+                                #         'base_id_data': wrap_read(masked_array),
+                                #         'type_id_data': wrap_read(segment_ids),
+                                #         'masked_weights': wrap_weights(masked_weights),
+                                #         'masked_ids': wrap_read(updated_dna_array),
+                                #         'nsp_label': wrap_label(nsp_label),
+                                #         'label': wrap_label(label)
+                                #     }
+                            elif args.bert_step == 'finetuning':
+                                data = \
+                                    {
+                                        'input_ids': wrap_read(input_ids),
+                                        'input_mask': wrap_read(input_mask),
+                                        'segment_ids': wrap_read(segment_ids),
+                                        'label_ids': wrap_label(label),
+                                        'is_real_example': wrap_label(1)
+                                    }
                         else:
                             # record_bytes = tf.train.Example(features=tf.train.Features(feature={
                             #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
@@ -263,6 +273,7 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--bert', action='store_true', default=False, help="represent reads for transformer")
+    parser.add_argument('--bert_step', type=str, help="create data for pretraining of finetuning tasks", choices=['pretraining', 'finetuning'], required=('--bert' in sys.argv))
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
