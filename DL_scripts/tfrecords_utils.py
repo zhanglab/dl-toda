@@ -33,14 +33,14 @@ def vocab_dict(filename):
             kmer_to_id[kmer] = count
     return kmer_to_id
 
-def get_kmer_index(kmer, dict_kmers):
+def get_kmer_index(args, kmer, dict_kmers):
     """Convert kmers into their corresponding index"""
     if kmer in dict_kmers:
         idx = dict_kmers[kmer]
     elif get_reverse_seq(kmer) in dict_kmers:
         idx = dict_kmers[get_reverse_seq(kmer)]
     else:
-        idx = dict_kmers['[UNK]']
+        idx = dict_kmers['[UNK]'] if args.bert else dict_kmers['unknown']
 
     return idx
 
@@ -75,7 +75,7 @@ def get_kmer_arr(args, read):
     list_kmers = []
     for i in range(0, len(read)-args.k_value+1, args.step):
         kmer = read[i:i + args.k_value]
-        idx = get_kmer_index(kmer, args.dict_kmers)
+        idx = get_kmer_index(args, kmer, args.dict_kmers)
         list_kmers.append(idx)
 
     if len(list_kmers) < args.kmer_vector_length:
