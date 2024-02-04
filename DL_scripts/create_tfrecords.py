@@ -173,17 +173,17 @@ def create_tfrecords(args, grouped_files):
                                 fw_dna_array, _ = get_kmer_arr(args, rec.split('\n')[1].rstrip())
                                 rv_dna_array, _ = get_kmer_arr(args, rec.split('\n')[5].rstrip())
 
-                            dna_array = fw_dna_array + rv_dna_array
+                            dna_list = fw_dna_array + rv_dna_array
                             # append insert size for kmers arrays as pairs of reads
                             if args.insert_size:
-                                dna_array.append(int(args.dict_kmers[read_id.split('|')[3]]))
+                                dna_list.append(int(args.dict_kmers[read_id.split('|')[3]]))
                         else:
                             if args.DNA_model:
-                                dna_array = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
+                                dna_list = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
                                 # update read length to match the max read length
-                                if len(dna_array) < args.read_length:
+                                if len(dna_list) < args.read_length:
                                     # pad list of bases with 0s to the right
-                                    dna_array = dna_array + [0] * (args.read_length - len(dna_array))
+                                    dna_list = dna_list + [0] * (args.read_length - len(dna_list))
                             else:
                                 dna_list = get_kmer_arr(args, rec.split('\n')[1].rstrip())
                         
@@ -250,7 +250,7 @@ def create_tfrecords(args, grouped_files):
                             data = \
                                 {
                                     # 'read': wrap_read(np.array(dna_array)),
-                                    'read': wrap_read(dna_array),
+                                    'read': wrap_read(dna_list),
                                     'label': wrap_label(label),
                                 }
                         feature = tf.train.Features(feature=data)
