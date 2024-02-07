@@ -323,7 +323,7 @@ def main():
 
         end_time = time.time()
         # elapsed_time = np.append(elapsed_time, end_time - start_time)
-        elapsed_time.append(elapsed_time, end_time - start_time)
+        elapsed_time.append(end_time - start_time)
 
     end = datetime.datetime.now()
     total_time = end - start
