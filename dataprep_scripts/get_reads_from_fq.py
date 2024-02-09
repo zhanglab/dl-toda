@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
     parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['label', 'sequence_id'], default='label')
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
-    parser.add_argument('--paired', action='differentiate reads based on pairs', default=False)
+    parser.add_argument('--paired', action='store_true', help='differentiate reads based on pairs', default=False)
     args = parser.parse_args()
 
     # create output directory
