@@ -17,6 +17,7 @@ def get_reads(args, input_fq, target):
                     reads[read_id] = rec
                 else:
                     others.append(rec)
+                n_line = 0
                 rec = ''
     return reads, others
 
