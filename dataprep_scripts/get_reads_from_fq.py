@@ -1,9 +1,10 @@
 import os
 import argparse
+import random
 
 def get_reads(args, input_fq, target):
     reads = {}
-    others = {}
+    others = []
     with open(input_fq, 'r') as f:
         rec = ''
         n_line = 0
@@ -15,8 +16,7 @@ def get_reads(args, input_fq, target):
                 if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
                     reads[read_id] = rec
                 else:
-                    others[read_id] = rec
-                n_line = 0
+                    others.append(rec)
                 rec = ''
     return reads, others
 
@@ -98,4 +98,4 @@ if __name__ == "__main__":
             if args.others:
                 others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
                 with open(others_output_file, 'w') as f:
-                    f.write(''.join(list(others.values())))
+                    f.write(''.join(others.values()))
