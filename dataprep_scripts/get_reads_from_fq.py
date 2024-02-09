@@ -3,6 +3,7 @@ import argparse
 
 def get_reads(args, input_fq, target):
     reads = {}
+    others = {}
     with open(input_fq, 'r') as f:
         rec = ''
         n_line = 0
@@ -13,9 +14,11 @@ def get_reads(args, input_fq, target):
                 read_id = rec.split('\n')[0].rstrip()
                 if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
                     reads[read_id] = rec
+                else:
+                    others[read_id] = rec
                 n_line = 0
                 rec = ''
-    return reads
+    return reads, others
 
 
 def get_fw_rv_reads(args, reads):
@@ -70,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['label', 'sequence_id'], default='label')
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
     parser.add_argument('--paired', action='store_true', help='differentiate reads based on pairs', default=False)
+    parser.add_argument('--others', action='store_true', help='group remaining reads into a fq file', default=False)
     args = parser.parse_args()
 
     # create output directory
@@ -78,8 +82,8 @@ if __name__ == "__main__":
 
     for i in range(len(args.input)):
         # define output fastq file
-        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
-        reads = get_reads(args, args.input_fq, args.input[i])
+        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}.fq')
+        reads, others = get_reads(args, args.input_fq, args.input[i])
         if args.paired:
             # get fw and rv reads
             fw_reads, rv_reads = get_fw_rv_reads(args, reads)
@@ -91,3 +95,7 @@ if __name__ == "__main__":
         else:
             with open(output_file, 'w') as f:
                 f.write(''.join(list(reads.values())))
+            if args.others:
+                others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
+                with open(others_output_file, 'w') as f:
+                    f.write(''.join(list(others.values())))
