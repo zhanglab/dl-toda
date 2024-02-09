@@ -1,10 +1,8 @@
 import os
 import argparse
 
-
 def get_reads(args, input_fq, target):
-    fw_out_reads = {}
-    rv_out_reads = {}
+    reads = {}
     with open(input_fq, 'r') as f:
         rec = ''
         n_line = 0
@@ -14,12 +12,20 @@ def get_reads(args, input_fq, target):
             if n_line == 4:
                 read_id = rec.split('\n')[0].rstrip()
                 if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
-                    if read_id[-1] == '2':
-                        rv_out_reads[read_id[:-2]] = rec
-                    elif read_id[-1] == '1':
-                        fw_out_reads[read_id[:-2]] = rec
+                    reads[read_id] = rec
                 n_line = 0
                 rec = ''
+    return reads
+
+
+def get_fw_rv_reads(args, reads):
+    fw_out_reads = {}
+    rv_out_reads = {}
+    for read_id, rec in reads.items():
+        if read_id[-1] == '2':
+            rv_out_reads[read_id[:-2]] = rec
+        elif read_id[-1] == '1':
+            fw_out_reads[read_id[:-2]] = rec
     return fw_out_reads, rv_out_reads
 
 
@@ -73,15 +79,15 @@ if __name__ == "__main__":
     for i in range(len(args.input)):
         # define output fastq file
         output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
-        # load fw and rv reads
-        fw_reads, rv_reads = get_reads(args, args.input_fq, args.input[i])
+        reads = get_reads(args, args.input_fq, args.input[i])
         if args.paired:
+            # get fw and rv reads
+            fw_reads, rv_reads = get_fw_rv_reads(args, reads)
             # split reads between paired and unpaired
             unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
             # create output fq files
             create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
             create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
         else:
-            reads = list(fw_reads.values()) + list(fw_reads.values())
             with open(output_file, 'w') as f:
-                f.write(''.join(reads))
+                f.write(''.join(list(reads.values())))
