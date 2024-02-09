@@ -74,7 +74,7 @@ if __name__ == "__main__":
         # define output fastq file
         output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
         # load fw and rv reads
-        fw_reads, rv_reads = get_reads_as_pairs(args, args.input_fq, args.input[i])
+        fw_reads, rv_reads = get_reads(args, args.input_fq, args.input[i])
         if args.paired:
             # split reads between paired and unpaired
             unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
