@@ -99,4 +99,4 @@ if __name__ == "__main__":
             if args.others:
                 others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
                 with open(others_output_file, 'w') as f:
-                    f.write(''.join(others.values()))
+                    f.write(''.join(others))
