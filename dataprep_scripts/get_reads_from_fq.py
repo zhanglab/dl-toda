@@ -63,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
     parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['label', 'sequence_id'], default='label')
     parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
+    parser.add_argument('--paired', action='differentiate reads based on pairs', default=False)
     args = parser.parse_args()
 
     # create output directory
@@ -73,9 +74,14 @@ if __name__ == "__main__":
         # define output fastq file
         output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}')
         # load fw and rv reads
-        fw_reads, rv_reads = get_reads(args, args.input_fq, args.input[i])
-        # split reads between paired and unpaired
-        unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
-        # create output fq files
-        create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
-        create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
+        fw_reads, rv_reads = get_reads_as_pairs(args, args.input_fq, args.input[i])
+        if args.paired:
+            # split reads between paired and unpaired
+            unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
+            # create output fq files
+            create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
+            create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
+        else:
+            reads = list(fw_reads.values()) + list(fw_reads.values())
+            with open(output_file, 'w') as f:
+                f.write(''.join(reads))
