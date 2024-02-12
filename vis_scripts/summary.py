@@ -70,6 +70,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
+    parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
@@ -88,8 +89,11 @@ def main():
     if args.dataset == 'testing':
         index = 1 if args.tax_db == "gtdb" else 2
         print(index)
-        path_dl_toda_tax = '/'.join(
-            os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+        if not args.tax_file:
+            path_dl_toda_tax = '/'.join(
+                os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+        else:
+            path_dl_toda_tax = args.tax_file
         with open(path_dl_toda_tax, 'r') as in_f:
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
