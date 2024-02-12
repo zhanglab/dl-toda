@@ -10,7 +10,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
     predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
     predictions_taxa.add('unclassified')
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
-    cm = pd.DataFrame(columns=ground_truth_taxa, index=list(predictions_taxa))
+    cm = pd.DataFrame(columns=list(ground_truth_taxa), index=list(predictions_taxa))
     # fill out table with zeros
     for c in ground_truth_taxa:
         cm[c] = 0
