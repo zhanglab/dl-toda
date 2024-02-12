@@ -10,7 +10,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
     predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
     predictions_taxa.add('unclassified')
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
-    cm = pd.DataFrame(columns=ground_truth_taxa, index=predictions_taxa)
+    cm = pd.DataFrame(columns=ground_truth_taxa, index=list(predictions_taxa))
     # fill out table with zeros
     for c in ground_truth_taxa:
         cm[c] = 0
@@ -96,7 +96,7 @@ def get_metrics(args, cm, r_name, r_index):
 
         if 'na' in predicted_taxa:
             unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' and i not in missing_true_taxa])
-            
+
         print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\t{len(missing_true_taxa)}')
         out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
 
