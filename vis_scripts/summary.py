@@ -21,7 +21,8 @@ def create_cm(args):
     # load results of taxonomic classification tool
     data = load_tool_output(args)
     # parse data
-    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 'centrifuge': parse_centrifuge_output, 'bertax': parse_bertax_output}
+    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 
+        'centrifuge': parse_centrifuge_output, 'bertax': parse_bertax_output, 'bert': parse_bert_output}
     with mp.Manager() as manager:
         results = manager.dict()
         processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, results)) for i in range(len(data))]
@@ -39,7 +40,7 @@ def create_cm(args):
             confidence_scores += [i[2] for i in process_results]
         print(len(predictions), len(ground_truth), len(confidence_scores))
         # create confusion matrix
-        if args.tool == 'dl-toda':
+        if args.tool == 'dl-toda' or args.tool == 'bert':
             for r_name, r_index in args.ranks.items():
                 cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
                 # store confusion matrices in excel file
@@ -57,7 +58,7 @@ def create_cm(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
-    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax'])
+    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax', 'bert'])
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
@@ -71,6 +72,7 @@ def main():
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
+    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('--fq_file' in sys.argv))
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
@@ -83,7 +85,6 @@ def main():
     if args.tool == 'bertax':
         # only analyze bertax results at the genus level
         args.ranks = {'genus': 1}
-
 
     # load dl-toda ground truth taxonomy
     if args.dataset == 'testing':
