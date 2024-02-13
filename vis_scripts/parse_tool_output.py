@@ -248,5 +248,6 @@ def load_tool_output(args):
     data = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
     num_reads = [len(i) for i in data]
     print(chunk_size, len(data), num_reads)
+    print(args.dl_toda_tax)
 
     return data
