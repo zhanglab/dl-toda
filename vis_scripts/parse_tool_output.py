@@ -7,7 +7,7 @@ import multiprocessing as mp
 from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
-from dataprep_scrips.utils import load_fq_file
+from dataprep_scripts.utils import load_fq_file
 
 
 def parse_bert_output(args, data, process, results):
