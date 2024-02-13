@@ -25,7 +25,10 @@ def parse_bert_output(args, data, process, results):
         true_taxonomy = args.dl_toda_tax[labels[i]]
         # get highest probability
         confidence_score = np.amax(probs)
+        print(f'confidence_score: {confidence_score}')
+        print(f'np.argmax(probs): {np.argmax(probs)}')
         pred_taxonomy = args.dl_toda_tax[np.argmax(probs)]
+        print(f'pred_taxonomy: {pred_taxonomy}')
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
 
     results[process] = process_results
@@ -244,5 +247,6 @@ def load_tool_output(args):
     chunk_size = math.ceil(len(content)/mp.cpu_count())
     data = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
     num_reads = [len(i) for i in data]
+    print(chunk_size, len(data), num_reads)
 
     return data
