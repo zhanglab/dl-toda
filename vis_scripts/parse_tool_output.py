@@ -21,14 +21,11 @@ def parse_bert_output(args, data, process, results):
     process_results = []
     for i, line in enumerate(data, 0):
         probs = [float(v) for v in line.rstrip().split('\t')]
-        print(probs)
         true_taxonomy = args.dl_toda_tax[labels[i]]
         # get highest probability
         confidence_score = np.amax(probs)
-        print(f'confidence_score: {confidence_score}')
-        print(f'np.argmax(probs): {np.argmax(probs)}')
         pred_taxonomy = args.dl_toda_tax[str(np.argmax(probs))]
-        print(f'pred_taxonomy: {pred_taxonomy}')
+        print(f'probs: {probs}\ntrue_label: {labels[i]}\ntrue_taxonomy: {true_taxonomy}\nconfidence_score: {confidence_score}\npred_label: {str(np.argmax(probs))}\npred_taxonomy: {pred_taxonomy}')
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
 
     results[process] = process_results
@@ -244,10 +241,9 @@ def load_tool_output(args):
         content = parsed_content
 
     # get length of sub-arrays
-    chunk_size = math.ceil(len(content)/mp.cpu_count())
+    # chunk_size = math.ceil(len(content)/mp.cpu_count())
+    chunk_size = math.ceil(len(content)/1)
     data = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
     num_reads = [len(i) for i in data]
-    print(chunk_size, len(data), num_reads)
-    print(args.dl_toda_tax)
 
     return data
