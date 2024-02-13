@@ -2,10 +2,32 @@ import os
 import sys
 import gzip
 import math
+import numpy as np
 import multiprocessing as mp
 from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
+from dataprep_scrips.utils import load_fq_file
+
+
+def parse_bert_output(args, data, process, results):
+    """ Bert output contains the probability distributions for each example (one example per line)
+    """
+    # get labels from fastq file
+    reads = load_fq_file(args.fq_file, 4)
+    labels = [i.split('\n')[0].split('|')[1] for i in reads]
+    print(labels[:10])
+
+    process_results = []
+    for i, line in enumerate(data, 0):
+        probs = [float(v) for v in line.rstrip().split('\t')]
+        true_taxonomy = args.dl_toda_tax[labels[i]]
+        # get highest probability
+        confidence_score = np.amax(probs)
+        pred_taxonomy = args.dl_toda_tax[np.argmax(probs)]
+        process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+
+    results[process] = process_results
 
 
 def parse_bertax_output(args, data, process, results):
