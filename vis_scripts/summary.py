@@ -72,7 +72,8 @@ def main():
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
-    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('--fq_file' in sys.argv))
+    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
+    parser.add_argument('--mapping_file', type=str, help='path to file to update labels', required=('--fq_file' in sys.argv))
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
@@ -98,6 +99,12 @@ def main():
         with open(path_dl_toda_tax, 'r') as in_f:
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
+
+        # parse file to update labels
+        labels_mapping = dict()
+        with open(args.mapping_file, 'r') as f:
+            for line in f:
+                args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
     # get ncbi taxids info
     if args.ncbi_db:
