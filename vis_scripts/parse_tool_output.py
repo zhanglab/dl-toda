@@ -18,15 +18,35 @@ def parse_bert_output(args, data, process, results):
     labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
     print(labels[:10])
 
+    d_correct = defaultdict(int)
+    d_incorrect = defaultdict(int)
+
     process_results = []
     for i, line in enumerate(data, 0):
         probs = [float(v) for v in line.rstrip().split('\t')]
         true_taxonomy = args.dl_toda_tax[labels[i]]
         # get highest probability
         confidence_score = np.amax(probs)
+        pred_label = str(np.argmax(probs))
         pred_taxonomy = args.dl_toda_tax[str(np.argmax(probs))]
         print(f'probs: {probs}\ntrue_label: {labels[i]}\ntrue_taxonomy: {true_taxonomy}\nconfidence_score: {confidence_score}\npred_label: {str(np.argmax(probs))}\npred_taxonomy: {pred_taxonomy}')
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        if pred_label == labels[i]:
+            d_correct[labels[i]] += 1
+        else:
+            d_incorrect[pred_label] += 1
+
+    print(d_correct)
+    print(d_incorrect)
+    n_c_reads = 0
+    n_i_reads = 0
+    for k, v in d_correct.items():
+        n_c_reads += v
+    for k, v in d_incorrect.items():
+        n_i_reads += v
+    print(n_c_reads + n_i_reads)
+    print(n_c_reads/(n_c_reads + n_i_reads))
+
 
     results[process] = process_results
 
