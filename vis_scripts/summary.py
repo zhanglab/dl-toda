@@ -101,7 +101,7 @@ def main():
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
 
         # parse file to update labels
-        labels_mapping = dict()
+        args.labels_mapping = dict()
         with open(args.mapping_file, 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
