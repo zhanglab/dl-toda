@@ -27,7 +27,7 @@ def parse_bert_output(args, data, process, results):
         confidence_score = np.amax(probs)
         print(f'confidence_score: {confidence_score}')
         print(f'np.argmax(probs): {np.argmax(probs)}')
-        pred_taxonomy = args.dl_toda_tax[np.argmax(probs)]
+        pred_taxonomy = args.dl_toda_tax[str(np.argmax(probs))]
         print(f'pred_taxonomy: {pred_taxonomy}')
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
 
