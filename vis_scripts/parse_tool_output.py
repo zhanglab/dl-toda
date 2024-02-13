@@ -21,6 +21,7 @@ def parse_bert_output(args, data, process, results):
     process_results = []
     for i, line in enumerate(data, 0):
         probs = [float(v) for v in line.rstrip().split('\t')]
+        print(probs)
         true_taxonomy = args.dl_toda_tax[labels[i]]
         # get highest probability
         confidence_score = np.amax(probs)
