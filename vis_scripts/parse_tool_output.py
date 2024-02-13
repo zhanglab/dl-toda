@@ -15,7 +15,7 @@ def parse_bert_output(args, data, process, results):
     """
     # get labels from fastq file
     reads = load_fq_file(args.fq_file, 4)
-    labels = [i.split('\n')[0].split('|')[1] for i in reads]
+    labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
     print(labels[:10])
 
     process_results = []
