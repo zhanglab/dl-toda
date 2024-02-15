@@ -5,9 +5,10 @@ import random
 def split_read(reads, read, r_index):
     # randomly choose whether to have segment 2 after segment 1 or not
     nsp_choice = random.choice([True, False])
+    segment_1 = read[:len(read)//2]
     if nsp_choice:
         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
-        new_seq = read
+        segment_2 = read[len(read)//2:]
     else:
         nsp_label = 0 # 'NotNext' --> verified with bert code on sample text
         # randomly select another sequence in the pool of sequences
@@ -15,11 +16,9 @@ def split_read(reads, read, r_index):
         # split selected sequence in two segments of equal length
         o_seq = reads[o_index].rstrip().split('\n')[1]
         # randomly select one segment
-        segment = random.choice([o_seq[:len(o_seq)//2], o_seq[len(o_seq)//2:]])
-        # combine first half of read with randomly selected second half
-        new_seq = read[:len(read)//2] + segment
+        segment_2 = random.choice([o_seq[:len(o_seq)//2], o_seq[len(o_seq)//2:]])
     
-    return new_seq, nsp_label
+    return segment_1, segment_2, nsp_label
 
 def get_nsp_input(args, segment_1, segment_2):
 # def get_nsp_input(args, bases_list):
