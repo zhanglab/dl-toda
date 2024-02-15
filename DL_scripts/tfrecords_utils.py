@@ -17,8 +17,8 @@ def prepare_input_data(args, rec, label, read_id):
                 fw_dna = fw_dna + [0] * (args.read_length - len(fw_dna))
                 rv_dna = rv_dna + [0] * (args.read_length - len(rv_dna))
         else:
-            fw_dna, _ = get_kmer_arr(args, rec.split('\n')[1].rstrip())
-            rv_dna, _ = get_kmer_arr(args, rec.split('\n')[5].rstrip())
+            fw_dna, _ = get_kmer_arr(args, rec.split('\n')[1].rstrip(), args.read_length, args.kmer_vector_length)
+            rv_dna, _ = get_kmer_arr(args, rec.split('\n')[5].rstrip(), args.read_length, args.kmer_vector_length)
         # combine fw nad rv data into one list
         dna_list = fw_dna + rv_dna
         # append insert size for dna lists as pairs of reads
@@ -32,7 +32,7 @@ def prepare_input_data(args, rec, label, read_id):
                 # pad list of bases with 0s to the right
                 dna_list = dna_list + [0] * (args.read_length - len(dna_list))
         else:
-            dna_list = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+            dna_list = get_kmer_arr(args, rec.split('\n')[1].rstrip(), args.read_length, args.kmer_vector_length)
 
     return dna_list
 
@@ -101,12 +101,12 @@ def cut_read(args, read):
     return list_reads
 
 
-def get_kmer_arr(args, read):
+def get_kmer_arr(args, read, max_length, vector_length):
     """ Converts a DNA sequence split into a list of k-mers """
 
     # adjust read length if above args.read_length
-    if len(read) > args.read_length:
-        read = read[:args.read_length]
+    if len(read) > max_length:
+        read = read[:max_length]
 
     list_kmers = []
     for i in range(0, len(read)-args.k_value+1, args.step):
@@ -114,8 +114,8 @@ def get_kmer_arr(args, read):
         idx = get_kmer_index(args, kmer, args.dict_kmers)
         list_kmers.append(idx)
 
-    if len(list_kmers) < args.kmer_vector_length:
+    if len(list_kmers) < vector_length:
         # pad list of kmers with 0s to the right
-        list_kmers = list_kmers + [0] * (args.kmer_vector_length - len(list_kmers))
+        list_kmers = list_kmers + [0] * (vector_length - len(list_kmers))
 
     return list_kmers
