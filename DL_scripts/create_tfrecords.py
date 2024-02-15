@@ -79,7 +79,7 @@ def create_testing_tfrecords(args, grouped_files):
                 print(f'{fq_file}\t# reads: {len(reads)}')
 
             for i, r in enumerate(reads, 0):
-                label = r.rstrip().split('\n')[0].split('|')[1]
+                label = int(r.rstrip().split('\n')[0].split('|')[1])
                 # update sequence
                 segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
                 # parse dna sequences
@@ -184,7 +184,7 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--bert', action='store_true', default=False, help="represent reads for transformer")
-    parser.add_argument('--bert_step', type=str, help="create data for pretraining of finetuning tasks", choices=['pretraining', 'finetuning'], required=('--bert' in sys.argv))
+    # parser.add_argument('--bert_step', type=str, help="create data for pretraining of finetuning tasks", choices=['pretraining', 'finetuning'], required=('--bert' in sys.argv))
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
