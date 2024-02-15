@@ -70,6 +70,7 @@ def create_testing_tfrecords(args, grouped_files):
         output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         num_lines = 8 if args.pair else 4
+        count = 0
         
         if args.bert:
             with open(fq_file) as handle:
@@ -78,52 +79,57 @@ def create_testing_tfrecords(args, grouped_files):
                 random.shuffle(reads)
                 print(f'{fq_file}\t# reads: {len(reads)}')
 
-            for i, r in enumerate(reads, 0):
-                label = int(r.rstrip().split('\n')[0].split('|')[1])
-                # update sequence
-                segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
-                # parse dna sequences
-                segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
-                segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
-                # prepare input for next sentence prediction task
-                dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
-                # mask 15% of k-mers in reads
-                input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+            with tf.io.TFRecordWriter(output_tfrec) as writer:
+                for i, r in enumerate(reads, 0):
+                    label = int(r.rstrip().split('\n')[0].split('|')[1])
+                    # update sequence
+                    segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
+                    # parse dna sequences
+                    segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
+                    segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+                    # prepare input for next sentence prediction task
+                    dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+                    # mask 15% of k-mers in reads
+                    input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
 
-                """
-                input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
-                input_mask: [1]*len(input_ids)
-                segment_ids: vector indicating the first (0) from the second (1) part of the sequence
-                masked_lm_positions: positions of masked tokens (0 for padded values)
-                masked_lm_ids: original ids of masked tokens (0 for padded values)
-                masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values)
-                next_sentence_labels: 0 for "is not next" and 1 for "is next"
-                label: species label
-                """
-                # if args.bert_step == 'pretraining':
-                data = \
-                    {
-                        'input_ids': wrap_read(input_ids),
-                        'input_mask': wrap_read(input_mask),
-                        'segment_ids': wrap_read(segment_ids),
-                        'masked_lm_positions': wrap_read(masked_lm_positions),
-                        'masked_lm_weights': wrap_weights(masked_lm_weights),
-                        'masked_lm_ids': wrap_read(masked_lm_ids),
-                        'next_sentence_labels': wrap_label(nsp_label),
-                        'label_ids': wrap_label(label),
-                        'is_real_example': wrap_label(1)
-                    }
-                # elif args.bert_step == 'finetuning':
-                #     data = \
-                #         {
-                #             'input_ids': wrap_read(input_ids),
-                #             'input_mask': wrap_read(input_mask),
-                #             'segment_ids': wrap_read(segment_ids),
-                #             'label_ids': wrap_label(label),
-                #             'is_real_example': wrap_label(1)
-                #         }
+                    """
+                    input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
+                    input_mask: [1]*len(input_ids)
+                    segment_ids: vector indicating the first (0) from the second (1) part of the sequence
+                    masked_lm_positions: positions of masked tokens (0 for padded values)
+                    masked_lm_ids: original ids of masked tokens (0 for padded values)
+                    masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values)
+                    next_sentence_labels: 0 for "is not next" and 1 for "is next"
+                    label: species label
+                    """
+                    # if args.bert_step == 'pretraining':
+                    data = \
+                        {
+                            'input_ids': wrap_read(input_ids),
+                            'input_mask': wrap_read(input_mask),
+                            'segment_ids': wrap_read(segment_ids),
+                            'masked_lm_positions': wrap_read(masked_lm_positions),
+                            'masked_lm_weights': wrap_weights(masked_lm_weights),
+                            'masked_lm_ids': wrap_read(masked_lm_ids),
+                            'next_sentence_labels': wrap_label(nsp_label),
+                            'label_ids': wrap_label(label),
+                            'is_real_example': wrap_label(1)
+                        }
+                    # elif args.bert_step == 'finetuning':
+                    #     data = \
+                    #         {
+                    #             'input_ids': wrap_read(input_ids),
+                    #             'input_mask': wrap_read(input_mask),
+                    #             'segment_ids': wrap_read(segment_ids),
+                    #             'label_ids': wrap_label(label),
+                    #             'is_real_example': wrap_label(1)
+                    #         }
+                    feature = tf.train.Features(feature=data)
+                    example = tf.train.Example(features=feature)
+                    serialized = example.SerializeToString()
+                    writer.write(serialized)
+                    count += 1
         else:
-            count = 0
             with tf.io.TFRecordWriter(output_tfrec) as writer:
                 with open(fq_file) as handle:
                     rec = ''
