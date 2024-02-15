@@ -71,7 +71,7 @@ def create_testing_tfrecords(args, grouped_files):
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         num_lines = 8 if args.pair else 4
         count = 0
-        
+
         if args.bert:
             with open(fq_file) as handle:
                 content = handle.readlines()
@@ -129,6 +129,9 @@ def create_testing_tfrecords(args, grouped_files):
                     serialized = example.SerializeToString()
                     writer.write(serialized)
                     count += 1
+                    
+                with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+                    f.write(f'{count}')
         else:
             with tf.io.TFRecordWriter(output_tfrec) as writer:
                 with open(fq_file) as handle:
