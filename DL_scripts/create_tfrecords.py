@@ -108,27 +108,28 @@ def create_testing_tfrecords(args, grouped_files):
                 next_sentence_labels: 0 for "is not next" and 1 for "is next"
                 label: species label
                 """
-                if args.bert_step == 'pretraining':
-                    data = \
-                        {
-                            'input_ids': wrap_read(input_ids),
-                            'input_mask': wrap_read(input_mask),
-                            'segment_ids': wrap_read(segment_ids),
-                            'masked_lm_positions': wrap_read(masked_lm_positions),
-                            'masked_lm_weights': wrap_weights(masked_lm_weights),
-                            'masked_lm_ids': wrap_read(masked_lm_ids),
-                            'next_sentence_labels': wrap_label(nsp_label),
-                            'label_ids': wrap_label(label)
-                        }
-                elif args.bert_step == 'finetuning':
-                    data = \
-                        {
-                            'input_ids': wrap_read(input_ids),
-                            'input_mask': wrap_read(input_mask),
-                            'segment_ids': wrap_read(segment_ids),
-                            'label_ids': wrap_label(label),
-                            'is_real_example': wrap_label(1)
-                        }
+                # if args.bert_step == 'pretraining':
+                data = \
+                    {
+                        'input_ids': wrap_read(input_ids),
+                        'input_mask': wrap_read(input_mask),
+                        'segment_ids': wrap_read(segment_ids),
+                        'masked_lm_positions': wrap_read(masked_lm_positions),
+                        'masked_lm_weights': wrap_weights(masked_lm_weights),
+                        'masked_lm_ids': wrap_read(masked_lm_ids),
+                        'next_sentence_labels': wrap_label(nsp_label),
+                        'label_ids': wrap_label(label),
+                        'is_real_example': wrap_label(1)
+                    }
+                # elif args.bert_step == 'finetuning':
+                #     data = \
+                #         {
+                #             'input_ids': wrap_read(input_ids),
+                #             'input_mask': wrap_read(input_mask),
+                #             'segment_ids': wrap_read(segment_ids),
+                #             'label_ids': wrap_label(label),
+                #             'is_real_example': wrap_label(1)
+                #         }
         else:
             count = 0
             with tf.io.TFRecordWriter(output_tfrec) as writer:
