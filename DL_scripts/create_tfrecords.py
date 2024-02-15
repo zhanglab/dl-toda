@@ -83,8 +83,8 @@ def create_testing_tfrecords(args, grouped_files):
                 # update sequence
                 segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
                 # parse dna sequences
-                segment_1_list = get_kmer_arr(args, segment_1)
-                segment_2_list = get_kmer_arr(args, segment_2)
+                segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
+                segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
                 # prepare input for next sentence prediction task
                 dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
                 # mask 15% of k-mers in reads
@@ -221,7 +221,10 @@ def main():
         num_proc = 1
 
     if not args.DNA_model:
-        args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
+        if args.bert:
+            args.kmer_vector_length = args.read_length//2 - args.k_value + 1 if args.step == 1
+        else:
+            args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
         if args.bert:
