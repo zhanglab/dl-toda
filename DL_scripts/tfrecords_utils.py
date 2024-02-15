@@ -1,6 +1,42 @@
 import random
 
 
+def prepare_input_data(args, rec, label, read_id):
+    bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
+    # update label if necessary
+    if args.update_labels:
+        label = int(args.labels_mapping[str(label)])
+    if args.pair:
+        # concatenate forward and reverse reads into one vector
+        if args.DNA_model:
+            fw_dna = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
+            rv_dna = [bases[x] if x in bases else 1 for x in rec.split('\n')[5].rstrip()]
+            # update read length to match the max read length
+            if len(fw_dna) < args.read_length:
+                # pad list of bases with 0s to the right
+                fw_dna = fw_dna + [0] * (args.read_length - len(fw_dna))
+                rv_dna = rv_dna + [0] * (args.read_length - len(rv_dna))
+        else:
+            fw_dna, _ = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+            rv_dna, _ = get_kmer_arr(args, rec.split('\n')[5].rstrip())
+        # combine fw nad rv data into one list
+        dna_list = fw_dna + rv_dna
+        # append insert size for dna lists as pairs of reads
+        if args.insert_size:
+            dna_list.append(int(args.dict_kmers[read_id.split('|')[3]]))
+    else:
+        if args.DNA_model:
+            dna_list = [bases[x] if x in bases else 1 for x in rec.split('\n')[1].rstrip()]
+            # update read length to match the max read length
+            if len(dna_list) < args.read_length:
+                # pad list of bases with 0s to the right
+                dna_list = dna_list + [0] * (args.read_length - len(dna_list))
+        else:
+            dna_list = get_kmer_arr(args, rec.split('\n')[1].rstrip())
+
+    return dna_list
+
+
 def shuffle_reads(fastq_file, num_lines):
     with open(fq_file) as handle:
         content = handle.readlines()
