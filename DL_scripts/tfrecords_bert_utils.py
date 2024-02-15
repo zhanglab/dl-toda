@@ -11,7 +11,7 @@ def split_read(reads, read, r_index):
     else:
         nsp_label = 0 # 'NotNext' --> verified with bert code on sample text
         # randomly select another sequence in the pool of sequences
-        o_index = random.choice([i for i in len(reads) if i!= r_index])
+        o_index = random.choice([i for i in range(len(reads)) if i!= r_index])
         # split selected sequence in two segments of equal length
         o_seq = reads[o_index].rstrip().split('\n')[1]
         # randomly select one segment
