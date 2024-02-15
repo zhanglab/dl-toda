@@ -18,11 +18,6 @@ def split_read(reads, read, r_index):
         o_seq = reads[o_index].rstrip().split('\n')[1]
         # randomly select one segment
         segment_2 = random.choice([o_seq[:len(o_seq)//2], o_seq[len(o_seq)//2:]])
-        print('inside split_read')
-        print(o_index)
-        print(reads[o_index])
-        print(o_seq)
-        print(segment_2)
     
     return segment_1, segment_2, nsp_label
 
