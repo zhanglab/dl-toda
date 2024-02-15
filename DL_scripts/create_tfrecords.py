@@ -222,7 +222,7 @@ def main():
 
     if not args.DNA_model:
         if args.bert:
-            args.kmer_vector_length = args.read_length//2 - args.k_value + 1 if args.step == 1
+            args.kmer_vector_length = args.read_length//2 - args.k_value + 1
         else:
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
