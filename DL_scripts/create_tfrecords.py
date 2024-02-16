@@ -10,7 +10,7 @@ import glob
 import math
 import gzip
 import multiprocessing as mp
-from tfrecords_utils import vocab_dict, get_kmer_arr
+from tfrecords_utils import vocab_dict, get_kmer_arr, prepare_input_data
 from tfrecords_bert_utils import *
 
 
