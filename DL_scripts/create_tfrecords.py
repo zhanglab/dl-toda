@@ -150,9 +150,7 @@ def create_testing_tfrecords(args, grouped_files):
                     #     read_id = rec.id
                         # label = int(read_id.split('|')[1])
                             read_id = rec.split('\n')[0].rstrip()
-                            label = int(read_id.split('|')[1])
-                            dna_list = prepare_input_data(args, rec, label, read_id)
-                            
+                            dna_list, label  = prepare_input_data(args, rec, read_id)              
                             # create TFrecords
                             if args.no_label:
                                 data = \
