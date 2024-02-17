@@ -137,7 +137,7 @@ def create_testing_tfrecords(args, grouped_files):
                     serialized = example.SerializeToString()
                     writer.write(serialized)
                     count += 1
-                    break
+                    # break
                     
                 with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                     f.write(f'{count}')
