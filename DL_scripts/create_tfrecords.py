@@ -84,14 +84,17 @@ def create_testing_tfrecords(args, grouped_files):
                     label = int(r.rstrip().split('\n')[0].split('|')[1])
                     # update sequence
                     segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
+                    print(segment_1, segment_2, nsp_label)
                     # parse dna sequences
                     segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
                     segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+                    print(segment_1_list, segment_2_list)
                     # prepare input for next sentence prediction task
                     dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+                    print(dna_list, segment_ids)
                     # mask 15% of k-mers in reads
                     input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-
+                    print(input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids)
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
                     input_mask: [1]*len(input_ids)
@@ -129,6 +132,7 @@ def create_testing_tfrecords(args, grouped_files):
                     serialized = example.SerializeToString()
                     writer.write(serialized)
                     count += 1
+                    break
                     
                 with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                     f.write(f'{count}')
