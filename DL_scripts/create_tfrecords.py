@@ -3,6 +3,7 @@ import sys
 import tensorflow as tf
 import numpy as np
 import random
+import datetime
 # from Bio import SeqIO
 import argparse
 import json
@@ -71,29 +72,33 @@ def create_testing_tfrecords(args, grouped_files):
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         num_lines = 8 if args.pair else 4
         count = 0
-
+        print(datetime.datetime.now())
         if args.bert:
             with open(fq_file) as handle:
                 content = handle.readlines()
                 reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
                 random.shuffle(reads)
                 print(f'{fq_file}\t# reads: {len(reads)}')
-
+            print(datetime.datetime.now())
             with tf.io.TFRecordWriter(output_tfrec) as writer:
                 for i, r in enumerate(reads, 0):
                     label = int(r.rstrip().split('\n')[0].split('|')[1])
                     # update sequence
                     segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
+                    print(datetime.datetime.now())
                     print(segment_1, segment_2, nsp_label)
                     # parse dna sequences
                     segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
                     segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+                    print(datetime.datetime.now())
                     print(segment_1_list, segment_2_list)
                     # prepare input for next sentence prediction task
                     dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+                    print(datetime.datetime.now())
                     print(dna_list, segment_ids)
                     # mask 15% of k-mers in reads
                     input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+                    print(datetime.datetime.now())
                     print(input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids)
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
