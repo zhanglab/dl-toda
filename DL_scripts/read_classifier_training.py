@@ -122,7 +122,7 @@ def training_step(reads, labels, train_accuracy, loss, opt, model, first_batch):
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, grads
+    return loss_value, grads, reads, labels, probs
 
 @tf.function
 def testing_step(reads, labels, loss, val_loss, val_accuracy, model):
@@ -299,8 +299,8 @@ def main():
     labels_dict = defaultdict(int)
     for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value, gradients = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
-
+        loss_value, gradients, reads, labels, probs = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
+        print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         labels_count = Counter(labels.numpy())
         for k, v in labels_count.items():
