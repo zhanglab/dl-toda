@@ -1,7 +1,8 @@
 import random
 
 
-def prepare_input_data(args, rec, label, read_id):
+def prepare_input_data(args, rec, read_id):
+    label = int(read_id.split('|')[1])
     bases = {'A': 2, 'T': 3, 'C': 4, 'G': 5}
     # update label if necessary
     if args.update_labels:
@@ -34,7 +35,7 @@ def prepare_input_data(args, rec, label, read_id):
         else:
             dna_list = get_kmer_arr(args, rec.split('\n')[1].rstrip(), args.read_length, args.kmer_vector_length)
 
-    return dna_list
+    return dna_list, label
 
 
 def shuffle_reads(fastq_file, num_lines):
