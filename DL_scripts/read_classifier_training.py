@@ -22,6 +22,18 @@ from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
 import argparse
 
+# set seed
+seed = 42
+os.environ['PYTHONHASHSEED'] = str(seed)
+tf.random.set_seed(seed)
+tf.experimental.numpy.random.seed(seed)
+# activate tensorflow deterministic behavior
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+    
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(1)
+
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 # disable eager execution
