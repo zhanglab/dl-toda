@@ -79,7 +79,6 @@ def get_data_for_bert(args, data, list_reads, grouped_reads, grouped_reads_index
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
     data[process] = process_data
-    print(f'process: {process}\tdata: {len(process_data)}\n{process_data[0]}')
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
@@ -98,7 +97,6 @@ def create_testing_tfrecords(args, grouped_files):
             grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
             indices = list(range(len(reads)))
             grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
-            print(args.num_proc, chunk_size, len(grouped_reads), len(grouped_reads_index))
             with mp.Manager() as manager:
                 data = manager.dict()
                 if args.dataset_type == 'sim':
@@ -214,12 +212,12 @@ def main():
     parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
-    parser.add_argument('--bert', action='store_true', default=False, help="represent reads for transformer")
-    # parser.add_argument('--bert_step', type=str, help="create data for pretraining of finetuning tasks", choices=['pretraining', 'finetuning'], required=('--bert' in sys.argv))
+    parser.add_argument('--bert', action='store_true', default=False, help="process reads for transformer")
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
+    parser.add_argument('--num_proc', default=1, type=int, help="number of processes")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
@@ -235,17 +233,12 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-    if args.bert:
-        # input with bert argument should be a fastq file
-        args.num_proc = mp.cpu_count()
+    if os.path.isdir(args.input):
+        # get list of fastq files
+        fq_files = glob.glob(os.path.join(args.input, "*.fq"))
     else:
-        if os.path.isdir(args.input):
-            # get list of fastq files
-            fq_files = glob.glob(os.path.join(args.input, "*.fq"))
-            args.num_proc = mp.cpu_count()
-        else:
-            fq_files = [args.input]
-            args.num_proc = 1
+        fq_files = [args.input]
+        args.num_proc = 1
 
     if not args.DNA_model:
         if args.bert:
