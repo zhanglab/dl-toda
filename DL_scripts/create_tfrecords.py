@@ -79,6 +79,7 @@ def get_data_for_bert(args, data, list_reads, grouped_reads, grouped_reads_index
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
     data[process] = process_data
+    print(f'process: {process}\tdata: {len(process_data)}\n{process_data[0]}')
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
@@ -111,6 +112,7 @@ def create_testing_tfrecords(args, grouped_files):
                 count = 0
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
+                        print(i, len(data_process))
                         for i, r in enumerate(data_process, 0):
                             """
                             input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
