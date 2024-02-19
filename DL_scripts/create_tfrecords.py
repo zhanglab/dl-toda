@@ -98,10 +98,11 @@ def create_testing_tfrecords(args, grouped_files):
             grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
             indices = list(range(len(reads)))
             grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
+            print(args.num_proc, chunk_size, len(grouped_reads), len(grouped_reads_index))
             with mp.Manager() as manager:
                 data = manager.dict()
                 if args.dataset_type == 'sim':
-                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_files))]
+                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
                 for p in processes:
                     p.start()
                 for p in processes:
@@ -112,7 +113,7 @@ def create_testing_tfrecords(args, grouped_files):
                 count = 0
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
-                        print(i, len(data_process))
+                        print(process, len(data_process))
                         for i, r in enumerate(data_process, 0):
                             """
                             input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
