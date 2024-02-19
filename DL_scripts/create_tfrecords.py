@@ -67,9 +67,9 @@ def create_meta_tfrecords(args, grouped_files):
 def get_data_for_bert(args, data, list_reads, grouped_reads, process):
     process_data = []
     for r in grouped_reads:
-        label = int(read.rstrip().split('\n')[0].split('|')[1])
+        label = int(r.rstrip().split('\n')[0].split('|')[1])
         # update sequence
-        segment_1, segment_2, nsp_label = split_read(list_reads, read.rstrip().split('\n')[1], i)
+        segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], i)
         # parse dna sequences
         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
