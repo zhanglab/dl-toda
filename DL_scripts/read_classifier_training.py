@@ -16,6 +16,7 @@ import io
 import json
 # import numpy as np
 from AlexNet import AlexNet
+from lstm import LSTM
 from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
@@ -175,7 +176,7 @@ def main():
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN'])
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM'])
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
@@ -187,7 +188,7 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
     args = parser.parse_args()
 
-    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN}
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # define some training and model parameters
     if args.DNA_model:
