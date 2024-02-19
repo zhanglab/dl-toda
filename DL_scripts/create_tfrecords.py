@@ -64,80 +64,90 @@ def create_meta_tfrecords(args, grouped_files):
 
         outfile.close()
 
+def get_data_for_bert(args, data, list_reads, read, process):
+    process_data = []
+    for r in grouped_reads:
+        label = int(read.rstrip().split('\n')[0].split('|')[1])
+        # update sequence
+        segment_1, segment_2, nsp_label = split_read(list_reads, read.rstrip().split('\n')[1], i)
+        # parse dna sequences
+        segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
+        segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+        # prepare input for next sentence prediction task
+        dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+        # mask 15% of k-mers in reads
+        input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+        process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+    data[process] = process_data
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
         """ Converts simulated reads to tfrecord """
-        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
-        output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         num_lines = 8 if args.pair else 4
-        count = 0
-        print(datetime.datetime.now())
+        
         if args.bert:
             with open(fq_file) as handle:
                 content = handle.readlines()
                 reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
                 random.shuffle(reads)
                 print(f'{fq_file}\t# reads: {len(reads)}')
-            print(datetime.datetime.now())
-            with tf.io.TFRecordWriter(output_tfrec) as writer:
-                for i, r in enumerate(reads, 0):
-                    label = int(r.rstrip().split('\n')[0].split('|')[1])
-                    # update sequence
-                    segment_1, segment_2, nsp_label = split_read(reads, r.rstrip().split('\n')[1], i)
-                    print(datetime.datetime.now())
-                    print(segment_1, segment_2, nsp_label)
-                    # parse dna sequences
-                    segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
-                    segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
-                    print(datetime.datetime.now())
-                    print(segment_1_list, segment_2_list)
-                    # prepare input for next sentence prediction task
-                    dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
-                    print(datetime.datetime.now())
-                    print(dna_list, segment_ids)
-                    # mask 15% of k-mers in reads
-                    input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-                    print(datetime.datetime.now())
-                    print(input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids)
-                    """
-                    input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random)
-                    input_mask: [1]*len(input_ids)
-                    segment_ids: vector indicating the first (0) from the second (1) part of the sequence
-                    masked_lm_positions: positions of masked tokens (0 for padded values)
-                    masked_lm_ids: original ids of masked tokens (0 for padded values)
-                    masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values)
-                    next_sentence_labels: 0 for "is not next" and 1 for "is next"
-                    label: species label
-                    """
-                    # if args.bert_step == 'pretraining':
-                    data = \
-                        {
-                            'input_ids': wrap_read(input_ids),
-                            'input_mask': wrap_read(input_mask),
-                            'segment_ids': wrap_read(segment_ids),
-                            'masked_lm_positions': wrap_read(masked_lm_positions),
-                            'masked_lm_weights': wrap_weights(masked_lm_weights),
-                            'masked_lm_ids': wrap_read(masked_lm_ids),
-                            'next_sentence_labels': wrap_label(nsp_label),
-                            'label_ids': wrap_label(label),
-                            'is_real_example': wrap_label(1)
-                        }
-                    # elif args.bert_step == 'finetuning':
-                    #     data = \
-                    #         {
-                    #             'input_ids': wrap_read(input_ids),
-                    #             'input_mask': wrap_read(input_mask),
-                    #             'segment_ids': wrap_read(segment_ids),
-                    #             'label_ids': wrap_label(label),
-                    #             'is_real_example': wrap_label(1)
-                    #         }
-                    feature = tf.train.Features(feature=data)
-                    example = tf.train.Example(features=feature)
-                    serialized = example.SerializeToString()
-                    writer.write(serialized)
-                    count += 1
-                    # break
+
+            # create processes
+            chunk_size = math.ceil(len(reads)/args.num_proc)
+            grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
+            with mp.Manager() as manager:
+                data = manager.dict()
+                if args.dataset_type == 'sim':
+                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], i)) for i in range(len(grouped_files))]
+                for p in processes:
+                    p.start()
+                for p in processes:
+                    p.join()
+
+                output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+                output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+                count = 0
+                with tf.io.TFRecordWriter(output_tfrec) as writer:
+                    for process, data_process in data.items():
+                        for i, r in enumerate(data_process, 0):
+                            """
+                            input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
+                            input_mask: [1]*len(input_ids) - input_mask
+                            segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
+                            masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
+                            masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
+                            masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
+                            next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
+                            label: species label - label
+                            """
+                            # if args.bert_step == 'pretraining':
+                            data = \
+                                {
+                                    'input_ids': wrap_read(r[0]),
+                                    'input_mask': wrap_read(r[1]),
+                                    'segment_ids': wrap_read(r[2]),
+                                    'masked_lm_positions': wrap_read(r[3]),
+                                    'masked_lm_weights': wrap_weights(r[4]),
+                                    'masked_lm_ids': wrap_read(r[5]),
+                                    'next_sentence_labels': wrap_label(r[6]),
+                                    'label_ids': wrap_label(r[7]),
+                                    'is_real_example': wrap_label(1)
+                                }
+                            # elif args.bert_step == 'finetuning':
+                            #     data = \
+                            #         {
+                            #             'input_ids': wrap_read(input_ids),
+                            #             'input_mask': wrap_read(input_mask),
+                            #             'segment_ids': wrap_read(segment_ids),
+                            #             'label_ids': wrap_label(label),
+                            #             'is_real_example': wrap_label(1)
+                            #         }
+                            feature = tf.train.Features(feature=data)
+                            example = tf.train.Example(features=feature)
+                            serialized = example.SerializeToString()
+                            writer.write(serialized)
+                            count += 1
+                            # break
                     
                 with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                     f.write(f'{count}')
@@ -220,13 +230,17 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-    if os.path.isdir(args.input):
-        # get list of fastq files
-        fq_files = glob.glob(os.path.join(args.input, "*.fq"))
-        num_proc = mp.cpu_count()
+    if args.bert:
+        # input with bert argument should be a fastq file
+        args.num_proc = mp.cpu_count()
     else:
-        fq_files = [args.input]
-        num_proc = 1
+        if os.path.isdir(args.input):
+            # get list of fastq files
+            fq_files = glob.glob(os.path.join(args.input, "*.fq"))
+            args.num_proc = mp.cpu_count()
+        else:
+            fq_files = [args.input]
+            args.num_proc = 1
 
     if not args.DNA_model:
         if args.bert:
@@ -243,19 +257,22 @@ def main():
             json.dump(args.dict_kmers, f)
         print(args.kmer_vector_length)
 
-    chunk_size = math.ceil(len(fq_files)/num_proc)
-    grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
-    with mp.Manager() as manager:
-        train_reads = manager.dict()
-        val_reads = manager.dict()
-        if args.dataset_type == 'sim':
-            processes = [mp.Process(target=create_testing_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-        elif args.dataset_type == 'meta':
-            processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+    if args.bert:
+        create_testing_tfrecords(args, [args.input])
+    else:
+        chunk_size = math.ceil(len(fq_files)/args.num_proc)
+        grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
+        with mp.Manager() as manager:
+            train_reads = manager.dict()
+            val_reads = manager.dict()
+            if args.dataset_type == 'sim':
+                processes = [mp.Process(target=create_testing_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+            elif args.dataset_type == 'meta':
+                processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
 
     
 
