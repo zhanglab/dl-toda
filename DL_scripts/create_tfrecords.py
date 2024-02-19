@@ -64,7 +64,7 @@ def create_meta_tfrecords(args, grouped_files):
 
         outfile.close()
 
-def get_data_for_bert(args, data, list_reads, read, process):
+def get_data_for_bert(args, data, list_reads, groupes_reads, process):
     process_data = []
     for r in grouped_reads:
         label = int(read.rstrip().split('\n')[0].split('|')[1])
