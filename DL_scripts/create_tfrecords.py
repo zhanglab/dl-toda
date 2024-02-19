@@ -64,12 +64,12 @@ def create_meta_tfrecords(args, grouped_files):
 
         outfile.close()
 
-def get_data_for_bert(args, data, list_reads, grouped_reads, process):
+def get_data_for_bert(args, data, list_reads, grouped_reads, grouped_reads_index, process):
     process_data = []
-    for r in grouped_reads:
+    for i, r in enumerate(grouped_reads):
         label = int(r.rstrip().split('\n')[0].split('|')[1])
         # update sequence
-        segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], i)
+        segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i])
         # parse dna sequences
         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
@@ -95,10 +95,12 @@ def create_testing_tfrecords(args, grouped_files):
             # create processes
             chunk_size = math.ceil(len(reads)/args.num_proc)
             grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
+            indices = list(range(len(reads)))
+            grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
             with mp.Manager() as manager:
                 data = manager.dict()
                 if args.dataset_type == 'sim':
-                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], i)) for i in range(len(grouped_files))]
+                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_files))]
                 for p in processes:
                     p.start()
                 for p in processes:
