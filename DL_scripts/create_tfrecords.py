@@ -84,7 +84,8 @@ def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
         """ Converts simulated reads to tfrecord """
         num_lines = 8 if args.pair else 4
-        
+        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+        output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         if args.bert:
             with open(fq_file) as handle:
                 content = handle.readlines()
@@ -106,8 +107,6 @@ def create_testing_tfrecords(args, grouped_files):
                 for p in processes:
                     p.join()
 
-                output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
-                output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
                 count = 0
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
