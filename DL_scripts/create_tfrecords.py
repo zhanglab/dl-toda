@@ -123,28 +123,27 @@ def create_testing_tfrecords(args, grouped_files):
                             next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
                             label: species label - label
                             """
-                            # if args.bert_step == 'pretraining':
-                            data = \
-                                {
-                                    'input_ids': wrap_read(r[0]),
-                                    'input_mask': wrap_read(r[1]),
-                                    'segment_ids': wrap_read(r[2]),
-                                    'masked_lm_positions': wrap_read(r[3]),
-                                    'masked_lm_weights': wrap_weights(r[4]),
-                                    'masked_lm_ids': wrap_read(r[5]),
-                                    'next_sentence_labels': wrap_label(r[6]),
-                                    'label_ids': wrap_label(r[7]),
-                                    'is_real_example': wrap_label(1)
-                                }
-                            # elif args.bert_step == 'finetuning':
-                            #     data = \
-                            #         {
-                            #             'input_ids': wrap_read(input_ids),
-                            #             'input_mask': wrap_read(input_mask),
-                            #             'segment_ids': wrap_read(segment_ids),
-                            #             'label_ids': wrap_label(label),
-                            #             'is_real_example': wrap_label(1)
-                            #         }
+                            if args.bert_step == 'pretraining':
+                                data = \
+                                    {
+                                        'input_ids': wrap_read(r[0]),
+                                        'input_mask': wrap_read(r[1]),
+                                        'segment_ids': wrap_read(r[2]),
+                                        'masked_lm_positions': wrap_read(r[3]),
+                                        'masked_lm_weights': wrap_weights(r[4]),
+                                        'masked_lm_ids': wrap_read(r[5]),
+                                        'next_sentence_labels': wrap_label(r[6]),
+                                        'label_ids': wrap_label(r[7]),
+                                    }
+                            elif args.bert_step == 'finetuning':
+                                data = \
+                                    {
+                                        'input_ids': wrap_read(r[0]),
+                                        'input_mask': wrap_read(r[1]),
+                                        'segment_ids': wrap_read(r[2]),
+                                        'label_ids': wrap_label(r[7]),
+                                        'is_real_example': wrap_label(1)
+                                    }
                             feature = tf.train.Features(feature=data)
                             example = tf.train.Example(features=feature)
                             serialized = example.SerializeToString()
@@ -213,6 +212,7 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--bert', action='store_true', default=False, help="process reads for transformer")
+    parser.add_argument('--bert_step', help="choose between pre-training or fine-tuning task", choices=['pretraining','finetuning'])
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
