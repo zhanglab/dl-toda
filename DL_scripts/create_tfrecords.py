@@ -232,12 +232,13 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-    if os.path.isdir(args.input):
-        # get list of fastq files
-        fq_files = glob.glob(os.path.join(args.input, "*.fq"))
-    else:
-        fq_files = [args.input]
-        args.num_proc = 1
+    if not args.bert:
+        if os.path.isdir(args.input):
+            # get list of fastq files
+            fq_files = glob.glob(os.path.join(args.input, "*.fq"))
+        else:
+            fq_files = [args.input]
+            args.num_proc = 1
 
     if not args.DNA_model:
         if args.bert:
