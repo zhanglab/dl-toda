@@ -100,7 +100,7 @@ def main():
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
 
-        if args.bert:
+        if args.tool == 'bert':
             # parse file to update labels
             args.labels_mapping = dict()
             with open(args.mapping_file, 'r') as f:
