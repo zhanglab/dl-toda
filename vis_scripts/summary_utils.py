@@ -103,9 +103,9 @@ def get_metrics(args, cm, r_name, r_index):
         accuracy_whole = round(correct_predictions/cm.to_numpy().sum(), 5) if cm.to_numpy().sum() > 0 else 0
         accuracy_classified = round(correct_predictions/classified_reads, 5) if classified_reads > 0 else 0
         accuracy_w_misclassified = round(correct_predictions/(classified_reads+unclassified_reads), 5) if (classified_reads+unclassified_reads) > 0 else 0
-        macro_average_precision = sum(list_precision)/len(list_precision)
-        macro_average_recall = sum(list_recall)/len(list_recall)
-        macro_average_f1_score = sum(list_f1_score)/len(list_f1_score)
+        macro_average_precision = sum(list_precision)/len(list_precision) if len(list_precision) > 0
+        macro_average_recall = sum(list_recall)/len(list_recall) if len(list_recall) > 0
+        macro_average_f1_score = sum(list_f1_score)/len(list_f1_score) if len(list_f1_score) > 0
         micro_average_precision = sum(list_TP)/(sum(list_TP) + sum(list_FP))
         micro_average_recall = sum(list_TP)/(sum(list_TP) + sum(list_FN))
         micro_average_f1_score = sum(list_TP)/(sum(list_TP) + 1/2*(sum(list_FP)+sum(list_FN)))
