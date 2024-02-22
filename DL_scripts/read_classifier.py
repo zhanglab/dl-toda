@@ -342,7 +342,7 @@ def main():
         outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
 
         if len(elapsed_time) > 1:
-            outfile.write(f'{(num_reads_classified / elapsed_time.sum())} reads/sec\n')
+            outfile.write(f'{(num_reads_classified / sum(elapsed_time))} reads/sec\n')
         else:
             outfile.write(f'{(num_reads_classified / elapsed_time[0])} reads/sec\n')
 
