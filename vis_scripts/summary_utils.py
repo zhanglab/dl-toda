@@ -52,6 +52,7 @@ def get_metrics(args, cm, r_name, r_index):
         list_FP = []
         list_FN = []
         for true_taxon in ground_truth:
+            print(true_taxon)
             # get number of reads in testing dataset for given taxon
             num_reads = sum([cm.loc[i, true_taxon] for i in predicted_taxa])
             if true_taxon != 'na':
