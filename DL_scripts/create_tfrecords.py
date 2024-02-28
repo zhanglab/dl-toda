@@ -96,6 +96,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
 
         if label not in process_nsp_data:
             process_nsp_data[label] = defaultdict(int)
+            process_nsp_data[label][str(nsp_label)] += 1
         else:
             process_nsp_data[label][str(nsp_label)] += 1
 
