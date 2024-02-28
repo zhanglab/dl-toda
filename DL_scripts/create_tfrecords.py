@@ -74,7 +74,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
         # update sequence
-        segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i])
+        segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i], process)
         # parse dna sequences
         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
