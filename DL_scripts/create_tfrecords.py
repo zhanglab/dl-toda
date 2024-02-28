@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import datetime
+from collections import defaultdict
 # from Bio import SeqIO
 import argparse
 import json
