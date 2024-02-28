@@ -122,10 +122,10 @@ def create_testing_tfrecords(args, grouped_files):
                 print(f'end data preparation: {datetime.datetime.now()}')
                 total_reads = 0
                 for process, nsp_data_process in nsp_data.items():
-                    for label, nsp_count in nsp_data_process.items():
-                        print(process, label, nsp_count)
-                        total_reads += nsp_count
-                print(f'total reads: {total_reads}')
+                    # for label, nsp_count in nsp_data_process.items():
+                    print(process, nsp_data_process)
+                        # total_reads += nsp_count
+                # print(f'total reads: {total_reads}')
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
                         print(process, len(data_process))
