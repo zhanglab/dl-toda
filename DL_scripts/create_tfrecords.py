@@ -64,8 +64,10 @@ def create_meta_tfrecords(args, grouped_files):
 
         outfile.close()
 
-def get_data_for_bert(args, data, list_reads, grouped_reads, grouped_reads_index, process):
+def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
     process_data = []
+    process_nsp_data = defaultdict(int)
+    print(process, len(grouped_reads))
     for i, r in enumerate(grouped_reads):
         label = int(r.rstrip().split('\n')[0].split('|')[1])
         # update sequence
@@ -78,7 +80,9 @@ def get_data_for_bert(args, data, list_reads, grouped_reads, grouped_reads_index
         # mask 15% of k-mers in reads
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+        process_nsp_data[label][nsp_label] += 1
     data[process] = process_data
+    nsp_data[process] = process_nsp_data
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
@@ -99,15 +103,19 @@ def create_testing_tfrecords(args, grouped_files):
             grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
             indices = list(range(len(reads)))
             grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
+            print(f'start data preparation: {datetime.datetime.now()}')
             with mp.Manager() as manager:
                 data = manager.dict()
+                nsp_data = manager.dict()
                 if args.dataset_type == 'sim':
-                    processes = [mp.Process(target=get_data_for_bert, args=(args, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
+                    processes = [mp.Process(target=get_data_for_bert, args=(args, nsp_data, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
                 for p in processes:
                     p.start()
                 for p in processes:
                     p.join()
-
+                print(f'end data preparation: {datetime.datetime.now()}')
+                for process, nsp_data_process in nsp_data.items():
+                    print(process, nsp_data_process)
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
                         print(process, len(data_process))
