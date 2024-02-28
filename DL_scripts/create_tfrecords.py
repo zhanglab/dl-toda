@@ -124,16 +124,15 @@ def create_testing_tfrecords(args, grouped_files):
                     p.join()
                 print(f'end data preparation: {datetime.datetime.now()}')
                 total_reads = 0
-                for process, nsp_data_process in nsp_data.items():
-                    print(process, nsp_data_process)
-                    for label, nsp_count in nsp_data_process.items():
-                        label_count = nsp_count['1'] + nsp_count['0']
-                        total_reads += label_count
-                        print(f'{label}\t{label_count}')
+                with open(os.path.join(args.output_dir, 'nsp_data_info.json'), 'w') as nsp_f:
+                    labels = defaultdict(int)
+                    for process, nsp_data_process in nsp_data.items():
+                        for label, nsp_count in nsp_data_process.items():
+                            label_count = nsp_count['1'] + nsp_count['0']
+                            labels[label] += nsp_count['1'] + nsp_count['0']
+                            total_reads += label_count
+                    json.dump(labels, nsp_f)
                 print(f'total reads: {total_reads}')
-                
-                nsp_f = open(os.path.join(args.output_dir, 'nsp_data_indo.json'), 'w')
-                json.dump(nsp_data, nsp_f)
 
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
