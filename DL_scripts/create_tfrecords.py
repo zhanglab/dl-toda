@@ -67,7 +67,7 @@ def create_meta_tfrecords(args, grouped_files):
 
 def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
     process_data = []
-    process_nsp_data = defaultdict(int)
+    process_nsp_data = {}
     print(process, len(grouped_reads))
     for i, r in enumerate(grouped_reads):
         label = int(r.rstrip().split('\n')[0].split('|')[1])
@@ -83,7 +83,10 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         # mask 15% of k-mers in reads
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
-        process_nsp_data[label][nsp_label] += 1
+        if label not in process_nsp_data:
+            process_nsp_data[label] = defaultdict(int)
+        else:
+            process_nsp_data[label][nsp_label] += 1
     data[process] = process_data
     nsp_data[process] = process_nsp_data
 
