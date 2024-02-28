@@ -69,7 +69,11 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
     process_data = []
     process_nsp_data = {}
     print(process, len(grouped_reads))
+    n_reads = 0
     for i, r in enumerate(grouped_reads):
+        if process == 0:
+            print(i, r)
+            n_reads += 1
         label = int(r.rstrip().split('\n')[0].split('|')[1])
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
@@ -89,6 +93,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
             process_nsp_data[label][str(nsp_label)] += 1
     data[process] = process_data
     nsp_data[process] = process_nsp_data
+    print(f'{process} - # reads processed: {n_reads}')
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
@@ -126,7 +131,7 @@ def create_testing_tfrecords(args, grouped_files):
                     for label, nsp_count in nsp_data_process.items():
                         label_count = nsp_count['1'] + nsp_count['0']
                         total_reads += label_count
-                        print(f'{process}\t{label_count}')
+                        print(f'{label}\t{label_count}')
                 print(f'total reads: {total_reads}')
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
