@@ -84,7 +84,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
         if label not in process_nsp_data:
-            process_nsp_data[label] = {}
+            process_nsp_data[label] = {'1': 0, '0': 0}
         else:
             process_nsp_data[label][nsp_label] += 1
     data[process] = process_data
@@ -122,8 +122,9 @@ def create_testing_tfrecords(args, grouped_files):
                 print(f'end data preparation: {datetime.datetime.now()}')
                 total_reads = 0
                 for process, nsp_data_process in nsp_data.items():
-                    print(process, nsp_data_process)
-                    total_reads += nsp_data_process[1] + nsp_data_process[0]
+                    for label, nsp_count in nsp_data_process.items():
+                        print(process, label, nsp_count)
+                        total_reads += nsp_count
                 print(f'total reads: {total_reads}')
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
