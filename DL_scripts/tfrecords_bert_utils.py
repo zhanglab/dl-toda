@@ -10,7 +10,7 @@ def split_read(reads, read, r_index, process):
     # nsp_choice = True
     # define first segment
     segment_1 = read[:len(read)//2]
-    if nsp_choice == 'False':
+    if nsp_choice == False:
         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
         segment_2 = read[len(read)//2:]
     else:
