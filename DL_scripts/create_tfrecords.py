@@ -70,6 +70,8 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
     print(process, len(grouped_reads))
     for i, r in enumerate(grouped_reads):
         label = int(r.rstrip().split('\n')[0].split('|')[1])
+        if args.update_labels:
+            label = int(args.labels_mapping[str(label)])
         # update sequence
         segment_1, segment_2, nsp_label = split_read(list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i])
         # parse dna sequences
