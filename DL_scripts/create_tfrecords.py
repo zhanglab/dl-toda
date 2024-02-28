@@ -95,19 +95,24 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
             process_nsp_0_data[label] += 1
 
         if label not in process_nsp_data:
-            process_nsp_data[label] = {'1': 0, '0': 0}
+            process_nsp_data[label] = defaultdict(int)
         else:
             process_nsp_data[label][str(nsp_label)] += 1
 
-        with open(os.path.join(args.output_dir, f'{process}_nsp_count'), 'a') as f:
-            f.write(f'{label}\t{nsp_label}')
+        # with open(os.path.join(args.output_dir, f'{process}_nsp_count'), 'a') as f:
+        #     f.write(f'{label}\t{nsp_label}')
 
     data[process] = process_data
     nsp_data[process] = process_nsp_data
-    print(f'{process} - # reads processed: {n_reads}')
+    
     if process == 0:
-        print(process_nsp_1_data)
-        print(process_nsp_0_data)
+        print(f'{process} - # reads processed: {n_reads}')
+        n_reads = 0
+        for k, v in process_nsp_1_data.items():
+            n_reads += v
+        for k, v in process_nsp_0_data.items():
+            n_reads += v
+        print(f'{process} - # reads processed: {n_reads}')
 
 
 
