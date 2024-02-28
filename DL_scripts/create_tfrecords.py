@@ -131,8 +131,9 @@ def create_testing_tfrecords(args, grouped_files):
                         total_reads += label_count
                         print(f'{label}\t{label_count}')
                 print(f'total reads: {total_reads}')
-                with open(os.path.join(args.output_dir, 'nsp_data_indo.json'), 'w') as nsp_f:
-                    json.dump(nsp_data, nsp_f)
+                
+                nsp_f = open(os.path.join(args.output_dir, 'nsp_data_indo.json'), 'w')
+                json.dump(nsp_data, nsp_f)
 
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
