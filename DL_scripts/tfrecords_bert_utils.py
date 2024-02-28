@@ -2,10 +2,13 @@ import numpy as np
 import random
 
 
-def split_read(reads, read, r_index):
+def split_read(reads, read, r_index, process):
     # randomly choose whether to have segment 2 after segment 1 or not
-    # nsp_choice = random.choice([True, False])
-    nsp_choice = True
+    nsp_choice = random.choice([True, False])
+    if process == 0:
+        print(nsp_choice)
+    # nsp_choice = True
+    # define first segment
     segment_1 = read[:len(read)//2]
     if nsp_choice:
         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
