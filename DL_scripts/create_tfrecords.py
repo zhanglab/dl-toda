@@ -86,7 +86,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         if label not in process_nsp_data:
             process_nsp_data[label] = {'1': 0, '0': 0}
         else:
-            process_nsp_data[label][nsp_label] += 1
+            process_nsp_data[label][str(nsp_label)] += 1
     data[process] = process_data
     nsp_data[process] = process_nsp_data
 
