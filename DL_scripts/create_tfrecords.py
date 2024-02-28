@@ -68,6 +68,8 @@ def create_meta_tfrecords(args, grouped_files):
 def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
     process_data = []
     process_nsp_data = {}
+    process_nsp_1_data = defaultdict(int)
+    process_nsp_0_data = defaultdict(int)
     print(process, len(grouped_reads))
     n_reads = 0
     for i, r in enumerate(grouped_reads):
@@ -87,13 +89,27 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         # mask 15% of k-mers in reads
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+        if nsp_label == 1:
+            process_nsp_1_data[label] += 1
+        else:
+            process_nsp_0_data[label] += 1
+
         if label not in process_nsp_data:
             process_nsp_data[label] = {'1': 0, '0': 0}
         else:
             process_nsp_data[label][str(nsp_label)] += 1
+
+        with open(os.path.join(args.output_dir, f'{process}_nsp_count'), 'a') as f:
+            f.write(f'{label}\t{nsp_label}')
+
     data[process] = process_data
     nsp_data[process] = process_nsp_data
     print(f'{process} - # reads processed: {n_reads}')
+    if process == 0:
+        print(process_nsp_1_data)
+        print(process_nsp_0_data)
+
+
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
