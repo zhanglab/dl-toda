@@ -124,14 +124,17 @@ def create_testing_tfrecords(args, grouped_files):
                     p.join()
                 print(f'end data preparation: {datetime.datetime.now()}')
                 total_reads = 0
-                with open(os.path.join(args.output_dir, 'nsp_data_info.json'), 'w') as nsp_f:
-                    labels = defaultdict(int)
-                    for process, nsp_data_process in nsp_data.items():
-                        for label, nsp_count in nsp_data_process.items():
-                            labels[label]['1'] += nsp_count['1']
-                            labels[label]['0'] += nsp_count['0']
-                            total_reads += nsp_count['1'] + nsp_count['0']
-                    json.dump(labels, nsp_f)
+                nsp_1_labels = defaultdict(int)
+                nsp_0_labels = defaultdict(int)
+                for process, nsp_data_process in nsp_data.items():
+                    for label, nsp_count in nsp_data_process.items():
+                        nsp_1_labels[label]+= nsp_count['1']
+                        nsp_0_labels[label]+= nsp_count['0']
+                        total_reads += nsp_count['1'] + nsp_count['0']
+                with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
+                    json.dump(nsp_0_labels, nsp_f)
+                with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
+                    json.dump(nsp_1_labels, nsp_f)
                 print(f'total reads: {total_reads}')
 
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
