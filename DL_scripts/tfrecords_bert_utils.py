@@ -3,14 +3,14 @@ import random
 
 
 def split_read(reads, read, r_index, process):
-    # randomly choose whether to have segment 2 after segment 1 or not
+    # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
     nsp_choice = random.choice([True, False])
     if process == 0:
         print(nsp_choice)
     # nsp_choice = True
     # define first segment
     segment_1 = read[:len(read)//2]
-    if nsp_choice:
+    if nsp_choice == 'False':
         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
         segment_2 = read[len(read)//2:]
     else:
