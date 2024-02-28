@@ -128,9 +128,9 @@ def create_testing_tfrecords(args, grouped_files):
                     labels = defaultdict(int)
                     for process, nsp_data_process in nsp_data.items():
                         for label, nsp_count in nsp_data_process.items():
-                            label_count = nsp_count['1'] + nsp_count['0']
-                            labels[label] += nsp_count['1'] + nsp_count['0']
-                            total_reads += label_count
+                            labels[label]['1'] += nsp_count['1']
+                            labels[label]['0'] += nsp_count['0']
+                            total_reads += nsp_count['1'] + nsp_count['0']
                     json.dump(labels, nsp_f)
                 print(f'total reads: {total_reads}')
 
