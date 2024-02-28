@@ -68,14 +68,7 @@ def create_meta_tfrecords(args, grouped_files):
 def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
     process_data = []
     process_nsp_data = {}
-    process_nsp_1_data = defaultdict(int)
-    process_nsp_0_data = defaultdict(int)
-    print(process, len(grouped_reads))
-    n_reads = 0
     for i, r in enumerate(grouped_reads):
-        if process == 0:
-            print(i, r)
-            n_reads += 1
         label = int(r.rstrip().split('\n')[0].split('|')[1])
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
@@ -89,10 +82,6 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         # mask 15% of k-mers in reads
         input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
         process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
-        if nsp_label == 1:
-            process_nsp_1_data[label] += 1
-        else:
-            process_nsp_0_data[label] += 1
 
         if label not in process_nsp_data:
             process_nsp_data[label] = defaultdict(int)
@@ -100,22 +89,9 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         else:
             process_nsp_data[label][str(nsp_label)] += 1
 
-        # with open(os.path.join(args.output_dir, f'{process}_nsp_count'), 'a') as f:
-        #     f.write(f'{label}\t{nsp_label}')
-
     data[process] = process_data
     nsp_data[process] = process_nsp_data
     
-    if process == 0:
-        print(f'{process} - # reads processed: {n_reads}')
-        n_reads = 0
-        for k, v in process_nsp_1_data.items():
-            n_reads += v
-        for k, v in process_nsp_0_data.items():
-            n_reads += v
-        print(f'{process} - # reads processed: {n_reads}')
-
-
 
 def create_testing_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
@@ -155,6 +131,9 @@ def create_testing_tfrecords(args, grouped_files):
                         total_reads += label_count
                         print(f'{label}\t{label_count}')
                 print(f'total reads: {total_reads}')
+                with open(os.path.join(args.output_dir, 'nsp_data_indo.json'), 'w') as nsp_f:
+                    json.dump(nsp_f, nsp_data)
+                    
                 with tf.io.TFRecordWriter(output_tfrec) as writer:
                     for process, data_process in data.items():
                         print(process, len(data_process))
