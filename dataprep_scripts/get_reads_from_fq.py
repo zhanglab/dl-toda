@@ -82,6 +82,8 @@ if __name__ == "__main__":
 
     # create output directory
     if not os.path.exists(args.output_dir):
+        # replace spaces by underscores
+        args.output_dir = args.output_dir.replace(" ", "_") 
         os.makedirs(args.output_dir)
 
     if args.datatype == 'species':
