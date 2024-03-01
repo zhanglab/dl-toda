@@ -2,6 +2,8 @@ import os
 import argparse
 import random
 
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
+
 def get_reads(args, input_fq, target):
     reads = {}
     others = []
@@ -71,8 +73,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_fq', help="input fastq file", required=True)
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
-    parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['label', 'sequence_id'], default='label')
-    parser.add_argument('--input', help="list of input labels or sequences id", nargs="+", required=True)
+    parser.add_argument('--datatype', help="extract reads based on ncbi species or sequence id", choices=['sequence_id', 'species'], default='label')
+    # parser.add_argument('--input', help="list of sequences id or species", nargs="+", required=True)
+    parser.add_argument('--input', help="sequences id or ncbi species", required=True)
     parser.add_argument('--paired', action='store_true', help='differentiate reads based on pairs', default=False)
     parser.add_argument('--others', action='store_true', help='group remaining reads into a fq file', default=False)
     args = parser.parse_args()
@@ -81,10 +84,22 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    for i in range(len(args.input)):
+    if args.datatype == 'species':
+        # get labels associated with labels
+        inputs = []
+        with open(os.path.join(args.output_dir, 'list_labels'), 'w') as out_f:
+            with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
+                for line in in_f:
+                    sp = line.rstrip().split('\t')[2].split(';')[0]
+                    l = line.rstrip().split('\t')[0]
+                    if sp == args.input:
+                        out_f.write(f'{l}\n')
+                        inputs.append(l)
+
+    for i in range(len(inputs)):
         # define output fastq file
-        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{args.input[i]}.fq')
-        reads, others = get_reads(args, args.input_fq, args.input[i])
+        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq')
+        reads, others = get_reads(args, args.input_fq, inputs[i])
         if args.paired:
             # get fw and rv reads
             fw_reads, rv_reads = get_fw_rv_reads(args, reads)
