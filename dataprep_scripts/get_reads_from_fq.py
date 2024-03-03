@@ -84,33 +84,33 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
 
-    # if args.datatype == 'label':
-    #     # lookup for ncbi species associated with given label and get all labels of identical ncbi species
-    #     with open(os.path.join(args.output_dir, 'list_labels'), 'w') as out_f:
-    #         with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
-    #             content = in_f.readlines()
-    #             taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in content}
-    #         ncbi_sp = taxa[args.input]
-    #         inputs = [k for k, v in taxa.items() if v == ncbi_sp]
-    #         for l in inputs:
-    #             out_f.write(f'{l}\n')
+    if args.datatype == 'label':
+        # lookup for ncbi species associated with given label and get all labels of identical ncbi species
+        with open(os.path.join(args.output_dir, 'list_labels'), 'w') as out_f:
+            with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
+                content = in_f.readlines()
+                taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in content}
+            ncbi_sp = taxa[args.input]
+            inputs = [k for k, v in taxa.items() if v == ncbi_sp]
+            for l in inputs:
+                out_f.write(f'{l}\n')
                 
-    # for i in range(len(inputs)):
-    #     # define output fastq file
-    #     output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq')
-    #     reads, others = get_reads(args, args.input_fq, inputs[i])
-    #     if args.paired:
-    #         # get fw and rv reads
-    #         fw_reads, rv_reads = get_fw_rv_reads(args, reads)
-    #         # split reads between paired and unpaired
-    #         unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
-    #         # create output fq files
-    #         create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
-    #         create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
-    #     else:
-    #         with open(output_file, 'w') as f:
-    #             f.write(''.join(list(reads.values())))
-    #         if args.others:
-    #             others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
-    #             with open(others_output_file, 'w') as f:
-    #                 f.write(''.join(others))
+    for i in range(len(inputs)):
+        # define output fastq file
+        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq')
+        reads, others = get_reads(args, args.input_fq, inputs[i])
+        if args.paired:
+            # get fw and rv reads
+            fw_reads, rv_reads = get_fw_rv_reads(args, reads)
+            # split reads between paired and unpaired
+            unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
+            # create output fq files
+            create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
+            create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
+        else:
+            with open(output_file, 'w') as f:
+                f.write(''.join(list(reads.values())))
+            if args.others:
+                others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
+                with open(others_output_file, 'w') as f:
+                    f.write(''.join(others))
