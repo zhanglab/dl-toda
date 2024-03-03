@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', help="output directory", default=os.getcwd())
     parser.add_argument('--datatype', help="extract reads based on label or sequence id", choices=['sequence_id', 'label'], default='label')
     # parser.add_argument('--input', help="list of sequences id or species", nargs="+", required=True)
-    parser.add_argument('--input', help="sequences id or label", required=True)
+    parser.add_argument('--input', type=str, help="sequences id or label", required=True)
     parser.add_argument('--paired', action='store_true', help='differentiate reads based on pairs', default=False)
     parser.add_argument('--others', action='store_true', help='group remaining reads into a fq file', default=False)
     args = parser.parse_args()
@@ -92,6 +92,7 @@ if __name__ == "__main__":
             with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
                 content = in_f.readlines()
                 taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in in_f}
+            print(taxa)
             ncbi_sp = taxa[args.input]
             inputs = [k for k, v in taxa.items() if v == ncbi_sp]
             for l in inputs:
