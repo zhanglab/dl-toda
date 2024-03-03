@@ -80,13 +80,9 @@ if __name__ == "__main__":
     parser.add_argument('--others', action='store_true', help='group remaining reads into a fq file', default=False)
     args = parser.parse_args()
 
-
-    print(args.output_dir.rstrip())
-    print(os.path.exists(args.output_dir.rstrip()))
-
     # create output directory
-    # if not os.path.exists(args.output_dir.rstrip()):
-    #     os.makedirs(args.output_dir)
+    if not os.path.exists(args.output_dir, exist_ok=True):
+        os.makedirs(args.output_dir)
 
     # if args.datatype == 'label':
     #     # lookup for ncbi species associated with given label and get all labels of identical ncbi species
