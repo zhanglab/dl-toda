@@ -81,9 +81,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # create output directory
-    if not os.path.exists(args.output_dir):
-        # replace spaces by underscores
-        args.output_dir = args.output_dir.replace(" ", "_") 
+    if not os.path.exists(args.output_dir.rstrip()):
         os.makedirs(args.output_dir)
 
     if args.datatype == 'label':
@@ -92,7 +90,6 @@ if __name__ == "__main__":
             with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
                 content = in_f.readlines()
                 taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in content}
-            print(taxa)
             ncbi_sp = taxa[args.input]
             inputs = [k for k, v in taxa.items() if v == ncbi_sp]
             for l in inputs:
