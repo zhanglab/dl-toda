@@ -91,7 +91,7 @@ if __name__ == "__main__":
         with open(os.path.join(args.output_dir, 'list_labels'), 'w') as out_f:
             with open(os.path.join(dl_toda_dir, 'data', 'dl_toda_taxonomy.tsv'), 'r') as in_f:
                 content = in_f.readlines()
-                taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in in_f}
+                taxa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[2].split(';')[0] for line in content}
             print(taxa)
             ncbi_sp = taxa[args.input]
             inputs = [k for k, v in taxa.items() if v == ncbi_sp]
