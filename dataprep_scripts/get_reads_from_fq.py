@@ -81,8 +81,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # create output directory
-    if not os.path.exists(args.output_dir, exist_ok=True):
-        os.makedirs(args.output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir, exist_ok=True)
 
     # if args.datatype == 'label':
     #     # lookup for ncbi species associated with given label and get all labels of identical ncbi species
