@@ -5,8 +5,8 @@ import random
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 def get_reads(args, input_fq, targets):
-    output_file_reads = open(os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq'), 'w')
-    output_file_others = open(os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq'), 'w')
+    output_file_reads = open(os.path.join(args.output_dir, f'{input_fq.split("/")[-1][:-3]}-{args.input}.fq'), 'w')
+    output_file_others = open(os.path.join(args.output_dir, f'{input_fq.split("/")[-1][:-3]}-others.fq'), 'w')
     # reads = {}
     # others = []
     with open(input_fq, 'r') as f:
