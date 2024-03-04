@@ -4,9 +4,11 @@ import random
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
-def get_reads(args, input_fq, target):
-    reads = {}
-    others = []
+def get_reads(args, input_fq, targets):
+    output_file_reads = open(os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq'), 'w')
+    output_file_others = open(os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq'), 'w')
+    # reads = {}
+    # others = []
     with open(input_fq, 'r') as f:
         rec = ''
         n_line = 0
@@ -15,13 +17,17 @@ def get_reads(args, input_fq, target):
             n_line += 1
             if n_line == 4:
                 read_id = rec.split('\n')[0].rstrip()
-                if (args.datatype == 'label' and read_id.split('|')[1] == target) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
-                    reads[read_id] = rec
+                if (args.datatype == 'label' and read_id.split('|')[1] in targets) or (args.datatype == 'sequence_id' and read_id.split('-')[0][1:] == target):
+                    # reads[read_id] = rec
+                    output_file_reads.write(rec)
                 else:
-                    others.append(rec)
+                    output_file_others.write(rec)
+                    # others.append(rec)
                 n_line = 0
                 rec = ''
-    return reads, others
+    output_file_reads.close()
+    output_file_others.close()
+    # return reads, others
 
 
 def get_fw_rv_reads(args, reads):
@@ -95,22 +101,23 @@ if __name__ == "__main__":
             for l in inputs:
                 out_f.write(f'{l}\n')
                 
-    for i in range(len(inputs)):
+    # for i in range(len(inputs)):
         # define output fastq file
-        output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq')
-        reads, others = get_reads(args, args.input_fq, inputs[i])
-        if args.paired:
-            # get fw and rv reads
-            fw_reads, rv_reads = get_fw_rv_reads(args, reads)
-            # split reads between paired and unpaired
-            unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
-            # create output fq files
-            create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
-            create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
-        else:
-            with open(output_file, 'w') as f:
-                f.write(''.join(list(reads.values())))
-            if args.others:
-                others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
-                with open(others_output_file, 'w') as f:
-                    f.write(''.join(others))
+        # output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-{inputs[i]}.fq')
+        get_reads(args, args.input_fq, inputs)
+        # reads, others = 
+        # if args.paired:
+        #     # get fw and rv reads
+        #     fw_reads, rv_reads = get_fw_rv_reads(args, reads)
+        #     # split reads between paired and unpaired
+        #     unpaired_reads_id, paired_reads_id = split_reads(fw_reads, rv_reads)
+        #     # create output fq files
+        #     create_fq_files(args, unpaired_reads_id, fw_reads, rv_reads, "unpaired", output_file)
+        #     create_fq_files(args, paired_reads_id, fw_reads, rv_reads, "paired", output_file)
+        # else:
+        #     with open(output_file, 'w') as f:
+        #         f.write(''.join(list(reads.values())))
+        #     if args.others:
+        #         others_output_file = os.path.join(args.output_dir, f'{args.input_fq.split("/")[-1][:-3]}-others.fq')
+        #         with open(others_output_file, 'w') as f:
+        #             f.write(''.join(others))
