@@ -80,9 +80,14 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         # prepare input for next sentence prediction task
         dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
         # mask 15% of k-mers in reads
-        input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-        process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
-
+        if args.bert_step == 'pretraining':
+            input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+            process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+        elif args.bert_step == 'finetuning':
+            # create input_mask vector indicating padded values
+            input_mask = [1] * len(dna_list)
+            process_data.append([dna_list, input_mask, segment_ids, label])
+            print(dna_list, input_mask, segment_ids, label)
         if label not in process_nsp_data:
             process_nsp_data[label] = defaultdict(int)
             process_nsp_data[label][str(nsp_label)] += 1
@@ -112,7 +117,7 @@ def create_testing_tfrecords(args, grouped_files):
             grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
             indices = list(range(len(reads)))
             grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
-            print(f'start data preparation: {datetime.datetime.now()}')
+
             with mp.Manager() as manager:
                 data = manager.dict()
                 nsp_data = manager.dict()
@@ -122,7 +127,7 @@ def create_testing_tfrecords(args, grouped_files):
                     p.start()
                 for p in processes:
                     p.join()
-                print(f'end data preparation: {datetime.datetime.now()}')
+
                 total_reads = 0
                 nsp_1_labels = defaultdict(int)
                 nsp_0_labels = defaultdict(int)
@@ -169,7 +174,7 @@ def create_testing_tfrecords(args, grouped_files):
                                         'input_ids': wrap_read(r[0]),
                                         'input_mask': wrap_read(r[1]),
                                         'segment_ids': wrap_read(r[2]),
-                                        'label_ids': wrap_label(r[7]),
+                                        'label_ids': wrap_label(r[3]),
                                         'is_real_example': wrap_label(1)
                                     }
                             feature = tf.train.Features(feature=data)
