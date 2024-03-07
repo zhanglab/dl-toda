@@ -7,7 +7,7 @@ def split_read(args, reads, read, r_index, process):
     nsp_choice = random.choice([True, False])
     # define first segment
     segment_1 = read[:len(read)//2]
-    if nsp_choice == False or args.bert_step == 'finetuning'::
+    if nsp_choice == False or args.bert_step == 'finetuning':
         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
         segment_2 = read[len(read)//2:]
     else:
