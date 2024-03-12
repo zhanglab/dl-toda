@@ -13,7 +13,7 @@ from dataprep_scripts.utils import load_fq_file
 def parse_bert_output(args, data, process, results):
     """ Bert output contains the probability distributions for each example (one example per line)
     """
-    # get labels from fastq file
+    # get labels from fastq file (update labels based on mapping)
     reads = load_fq_file(args.fq_file, 4)
     labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
     print(labels[:10])
