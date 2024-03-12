@@ -79,7 +79,7 @@ def main():
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
-    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
+    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv and 'confusion_matrix' in sys.argv))
     parser.add_argument('--mapping_file', type=str, help='path to file to update labels', required=('--fq_file' in sys.argv))
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
@@ -139,9 +139,9 @@ def main():
                 for r_name, r_cm in all_cm.items():
                     r_cm.to_excel(writer, sheet_name=f'{r_name}')
 
-        files_to_rm = glob.glob(os.path.join(args.input_dir, f'*-confusion-matrix.xlsx'))
-        for f in files_to_rm:
-            os.remove(f)
+        # files_to_rm = glob.glob(os.path.join(args.input_dir, f'*-confusion-matrix.xlsx'))
+        # for f in files_to_rm:
+        #     os.remove(f)
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
