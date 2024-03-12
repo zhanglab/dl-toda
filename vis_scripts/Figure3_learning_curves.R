@@ -4,6 +4,7 @@ library(ggpubr)
 args = commandArgs(trailingOnly = TRUE)
 input_dir = args[1]
 
+
 # load data
 training_data <- read.csv(list.files(path=input_dir, pattern="training_data", full.names=FALSE), sep='\t', header=FALSE)
 validation_data <- read.csv(list.files(path=input_dir, pattern="validation_data", full.names=FALSE), sep='\t', header=FALSE)
@@ -13,8 +14,8 @@ training_info <- read.csv(list.files(path=input_dir, pattern="training-summary",
 num_batch_per_epoch = as.numeric(training_info$V2[16])
 num_epochs = as.numeric(training_info$V2[6])
 
-x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epochs, by = num_batch_per_epoch)
-x_axis_ticks = seq(from = 1, to = num_epochs, by = 1)
+x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epochs, by = num_batch_per_epoch*10)
+x_axis_ticks = seq(from = 1, to = num_epochs, by = 10)
 linetypes <- c("Training" = "solid", "Validation" = "dashed")
 
 colnames(training_data) <- c("epoch", "learning_rate", "batch", "loss", "accuracy")
