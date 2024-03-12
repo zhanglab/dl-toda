@@ -21,7 +21,7 @@ linetypes <- c("Training" = "solid", "Validation" = "dashed")
 print(x_axis_ticks)
 print(x_axis_breaks)
 
-colnames(training_data) <- c("epoch", "learning_rate", "batch", "loss", "accuracy")
+colnames(training_data) <- c("epoch", "batch", "learning_rate", "loss", "accuracy")
 colnames(validation_data) <- c("epoch", "batch", "loss", "accuracy")
 
 print(training_data)
