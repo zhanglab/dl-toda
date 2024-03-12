@@ -43,9 +43,14 @@ def create_cm(args):
         if args.tool == 'dl-toda' or args.tool == 'bert':
             for r_name, r_index in args.ranks.items():
                 cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
+                if args.prefix:
+                    output_file = os.path.join(args.output_dir,
+                                                 f'{args.prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                else:
+                    output_file = os.path.join(args.output_dir,
+                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
                 # store confusion matrices in excel file
-                with pd.ExcelWriter(os.path.join(args.output_dir,
-                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')) as writer:
+                with pd.ExcelWriter(output_file) as writer:
                     cm.to_excel(writer, sheet_name=f'{r_name}')
         elif args.tool == 'bertax':
             cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
@@ -61,12 +66,14 @@ def main():
     parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax', 'bert'])
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
+    parser.add_argument('--output_prefix', type=str, help='prefix of output filename')
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
     parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
+    parser.add_argument('--species', help='summarize output results only at the species level', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
@@ -79,6 +86,8 @@ def main():
     args = parser.parse_args()
 
     args.ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
+    if args.species:
+        args.ranks = {'species': 0}
 
     print(args)
 
