@@ -2,13 +2,14 @@ library(ggplot2)
 library(ggpubr)
 
 args = commandArgs(trailingOnly = TRUE)
-input_dir = args[1]
+input_dir_data = args[1]
+input_dir_info = args[2]
 
 
 # load data
-training_data <- read.csv(list.files(path=input_dir, pattern="training_data", full.names=FALSE), sep='\t', header=FALSE)
-validation_data <- read.csv(list.files(path=input_dir, pattern="validation_data", full.names=FALSE), sep='\t', header=FALSE)
-training_info <- read.csv(list.files(path=input_dir, pattern="training-summary", full.names=FALSE), sep='\t', header=FALSE)
+training_data <- read.csv(list.files(path=input_dir_data, pattern="training_data", full.names=FALSE), sep='\t', header=FALSE)
+validation_data <- read.csv(list.files(path=input_dir_data, pattern="validation_data", full.names=FALSE), sep='\t', header=FALSE)
+training_info <- read.csv(list.files(path=input_dir_info, pattern="training-summary", full.names=FALSE), sep='\t', header=FALSE)
 
 # determine x axis labels
 num_batch_per_epoch = as.numeric(training_info$V2[16])
@@ -18,13 +19,9 @@ x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epo
 x_axis_ticks = seq(from = 1, to = num_epochs, by = 9)
 linetypes <- c("Training" = "solid", "Validation" = "dashed")
 
-print(x_axis_ticks)
-print(x_axis_breaks)
-
 colnames(training_data) <- c("epoch", "batch", "learning_rate", "loss", "accuracy")
 colnames(validation_data) <- c("epoch", "batch", "loss", "accuracy")
 
-print(training_data)
 
 # plot training and validation accuracy
 plot1 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=accuracy, linetype="Training"), size=0.6) +
@@ -62,6 +59,6 @@ plot2 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=loss, linetype=
   coord_cartesian(ylim=c(min(validation_data$loss,training_data$loss),max(validation_data$loss,training_data$loss)+0.5)) +
   scale_x_continuous(breaks=x_axis_breaks, labels=x_axis_ticks) + scale_linetype_manual(values = linetypes)
 
-tiff("Figure3_learning_curves.tiff", units="in", width=6, height=4, res=300)
+tiff(paste(input_dir_data, "Figure3_learning_curves.tiff", sep="/"), units="in", width=6, height=4, res=300)
 ggarrange(plot1, plot2, labels = c("A", "B"), ncol=2, nrow=1)
 dev.off()
