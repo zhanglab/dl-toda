@@ -24,9 +24,12 @@ print(x_axis_breaks)
 colnames(training_data) <- c("epoch", "learning_rate", "batch", "loss", "accuracy")
 colnames(validation_data) <- c("epoch", "batch", "loss", "accuracy")
 
+print(training_data)
+
 # plot training and validation accuracy
 plot1 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=accuracy, linetype="Training"), size=0.6) +
-  geom_line(data=validation_data, aes(x=batch, y=accuracy, linetype="Validation"), size=0.6) + geom_vline(xintercept=14*num_batch_per_epoch,lwd=0.6,colour="black",linetype="dotted") +
+  geom_line(data=validation_data, aes(x=batch, y=accuracy, linetype="Validation"), size=0.6) + 
+  #geom_vline(xintercept=14*num_batch_per_epoch,lwd=0.6,colour="black",linetype="dotted") +
   xlab("Epoch") + ylab("Accuracy") + 
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
@@ -43,7 +46,8 @@ plot1 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=accuracy, linet
 
 # plot training and validation loss
 plot2 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=loss, linetype="Training"), size=0.6) +
-  geom_line(data=validation_data, aes(x=batch, y=loss, linetype="Validation"), size=0.6) + geom_vline(xintercept=14*num_batch_per_epoch,lwd=0.6,colour="black",linetype="dotted") +
+  geom_line(data=validation_data, aes(x=batch, y=loss, linetype="Validation"), size=0.6) + 
+  #geom_vline(xintercept=14*num_batch_per_epoch,lwd=0.6,colour="black",linetype="dotted") +
   xlab("Epoch") + ylab("Loss") + 
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 12),
