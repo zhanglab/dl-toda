@@ -43,9 +43,9 @@ def create_cm(args):
         if args.tool == 'dl-toda' or args.tool == 'bert':
             for r_name, r_index in args.ranks.items():
                 cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
-                if args.prefix:
+                if args.output_prefix:
                     output_file = os.path.join(args.output_dir,
-                                                 f'{args.prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                                                 f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
                 else:
                     output_file = os.path.join(args.output_dir,
                                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
