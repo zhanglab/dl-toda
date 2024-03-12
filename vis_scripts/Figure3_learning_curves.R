@@ -18,6 +18,9 @@ x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epo
 x_axis_ticks = seq(from = 1, to = num_epochs, by = 10)
 linetypes <- c("Training" = "solid", "Validation" = "dashed")
 
+print(x_axis_ticks)
+print(x_axis_breaks)
+
 colnames(training_data) <- c("epoch", "learning_rate", "batch", "loss", "accuracy")
 colnames(validation_data) <- c("epoch", "batch", "loss", "accuracy")
 
