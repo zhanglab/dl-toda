@@ -63,5 +63,5 @@ plot2 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=loss, linetype=
   scale_x_continuous(breaks=x_axis_breaks, labels=x_axis_ticks) + scale_linetype_manual(values = linetypes)
 
 tiff("Figure3_learning_curves.tiff", units="in", width=8, height=6, res=300)
-ggarrange(plot1, plot2, labels = c("A", "B"), widths=c(1, 0.001, 1), ncol=2, nrow=1)
+ggarrange(plot1, plot2, labels = c("A", "B"), widths=c(1, 0.05, 1), ncol=2, nrow=1)
 dev.off()
