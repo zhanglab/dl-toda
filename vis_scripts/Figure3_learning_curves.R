@@ -10,8 +10,8 @@ validation_data <- read.csv(list.files(path=input_dir, pattern="validation_data"
 training_info <- read.csv(list.files(path=input_dir, pattern="training-summary", full.names=FALSE), sep='\t', header=FALSE)
 
 # determine x axis labels
-num_batch_per_epoch = training_info$V2[16]
-num_epochs = training_info$V2[6]
+num_batch_per_epoch = as.numeric(training_info$V2[16])
+num_epochs = as.numeric(training_info$V2[6])
 print(num_batch_per_epoch)
 print(num_epochs)
 x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epochs, by = num_batch_per_epoch)
