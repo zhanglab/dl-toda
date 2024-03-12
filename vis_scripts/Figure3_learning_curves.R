@@ -14,8 +14,8 @@ training_info <- read.csv(list.files(path=input_dir, pattern="training-summary",
 num_batch_per_epoch = as.numeric(training_info$V2[16])
 num_epochs = as.numeric(training_info$V2[6])
 
-x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epochs, by = num_batch_per_epoch*10)
-x_axis_ticks = seq(from = 1, to = num_epochs, by = 10)
+x_axis_breaks = seq(from = num_batch_per_epoch, to = num_batch_per_epoch*num_epochs, by = num_batch_per_epoch*9)
+x_axis_ticks = seq(from = 1, to = num_epochs, by = 9)
 linetypes <- c("Training" = "solid", "Validation" = "dashed")
 
 print(x_axis_ticks)
@@ -40,7 +40,8 @@ plot1 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=accuracy, linet
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_line(color='light grey'),
         panel.grid.minor = element_line(color='light grey'),
-        panel.border = element_rect(colour="light grey", fill=NA)) + 
+        panel.border = element_rect(colour="light grey", fill=NA),
+        panel.spacing = unit(1, "cm", data = NULL)) + 
   coord_cartesian(ylim=c(min(validation_data$accuracy,training_data$accuracy),1)) +
   scale_x_continuous(breaks=x_axis_breaks, labels=x_axis_ticks) + scale_linetype_manual(values = linetypes)
 
@@ -58,7 +59,8 @@ plot2 <- ggplot() + geom_line(data=training_data, aes(x=batch, y=loss, linetype=
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_line(color='light grey'),
         panel.grid.minor = element_line(color='light grey'),
-        panel.border = element_rect(colour="light grey", fill=NA)) +
+        panel.border = element_rect(colour="light grey", fill=NA),
+        panel.spacing = unit(1, "cm", data = NULL)) +
   coord_cartesian(ylim=c(min(validation_data$loss,training_data$loss),max(validation_data$loss,training_data$loss)+0.5)) +
   scale_x_continuous(breaks=x_axis_breaks, labels=x_axis_ticks) + scale_linetype_manual(values = linetypes)
 
