@@ -13,7 +13,7 @@ from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 from summary_utils import *
 
 
-def create_cm(args):
+def parse_results(args):
     # load cami ground truth if testing set was made by cami
     if args.dataset == 'cami':
         args.cami_data = load_cami_data(args)
@@ -30,6 +30,7 @@ def create_cm(args):
             p.start()
         for p in processes:
             p.join()
+        
         # combine results from all processes
         predictions = []
         ground_truth = []
@@ -39,25 +40,43 @@ def create_cm(args):
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
         print(len(predictions), len(ground_truth), len(confidence_scores))
-        # create confusion matrix
-        if args.tool == 'dl-toda' or args.tool == 'bert':
+        
+        if args.confusion_matrix:
+            # create confusion matrix
+            if args.tool == 'dl-toda' or args.tool == 'bert':
+                for r_name, r_index in args.ranks.items():
+                    cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
+                    if args.output_prefix:
+                        output_file = os.path.join(args.output_dir,
+                                                     f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    else:
+                        output_file = os.path.join(args.output_dir,
+                                                     f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    # store confusion matrices in excel file
+                    with pd.ExcelWriter(output_file) as writer:
+                        cm.to_excel(writer, sheet_name=f'{r_name}')
+            elif args.tool == 'bertax':
+                cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
+                # store confusion matrices in excel file
+                with pd.ExcelWriter(os.path.join(args.output_dir,
+                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
+                    cm.to_excel(writer, sheet_name=f'genus')
+
+        if args.false_positives:
             for r_name, r_index in args.ranks.items():
-                cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
                 if args.output_prefix:
                     output_file = os.path.join(args.output_dir,
-                                                 f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                                                     f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
                 else:
                     output_file = os.path.join(args.output_dir,
-                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
-                # store confusion matrices in excel file
-                with pd.ExcelWriter(output_file) as writer:
-                    cm.to_excel(writer, sheet_name=f'{r_name}')
-        elif args.tool == 'bertax':
-            cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
-            # store confusion matrices in excel file
-            with pd.ExcelWriter(os.path.join(args.output_dir,
-                                             f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
-                cm.to_excel(writer, sheet_name=f'genus')
+                                                     f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
+
+                # get taxa at given rank
+                true_taxa = [i.split(';')[r_index] for i in ground_truth]
+                pred_taxa = [i.split(';')[r_index] for i in predictions]
+                df = pd.DataFrame(list(zip(true_taxa, pred_taxa, confidence_scores)), columns = ['true', 'pred', 'score'])
+                # create dataframe
+                df.to_csv(output_file, sep="\t") 
 
 
 def main():
@@ -69,6 +88,8 @@ def main():
     parser.add_argument('--output_prefix', type=str, help='prefix of output filename')
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
+    parser.add_argument('--false_positives', help='get false positives', action='store_true', required=('--positive_label' in sys.argv))
+    parser.add_argument('--positive_class', type=int, help='label of positive class')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
     parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
@@ -121,9 +142,8 @@ def main():
         args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
-    if args.confusion_matrix:
-        # create confusion matrix
-        create_cm(args)
+    if args.confusion_matrix or args.false_positives:
+        parse_results(args)
 
     if args.combine:
         with mp.Manager() as manager:
