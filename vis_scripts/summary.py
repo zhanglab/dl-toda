@@ -63,20 +63,21 @@ def parse_results(args):
                     cm.to_excel(writer, sheet_name=f'genus')
 
         if args.false_positives:
-            for r_name, r_index in args.ranks.items():
-                if args.output_prefix:
-                    output_file = os.path.join(args.output_dir,
-                                                     f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
-                else:
-                    output_file = os.path.join(args.output_dir,
-                                                     f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
+            if len(predictions)+len(ground_truth)+len(confidence_scores) != 0:
+                for r_name, r_index in args.ranks.items():
+                    if args.output_prefix:
+                        output_file = os.path.join(args.output_dir,
+                                                         f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
+                    else:
+                        output_file = os.path.join(args.output_dir,
+                                                         f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
 
-                # get taxa at given rank
-                true_taxa = [i.split(';')[r_index] for i in ground_truth]
-                pred_taxa = [i.split(';')[r_index] for i in predictions]
-                df = pd.DataFrame(list(zip(true_taxa, pred_taxa, confidence_scores)), columns = ['true', 'pred', 'score'])
-                # create dataframe
-                df.to_csv(output_file, sep="\t") 
+                    # get taxa at given rank
+                    true_taxa = [i.split(';')[r_index] for i in ground_truth]
+                    pred_taxa = [i.split(';')[r_index] for i in predictions]
+                    df = pd.DataFrame(list(zip(true_taxa, pred_taxa, confidence_scores)), columns = ['true', 'pred', 'score'])
+                    # create dataframe
+                    df.to_csv(output_file, sep="\t") 
 
 
 def main():
@@ -130,7 +131,6 @@ def main():
         with open(path_dl_toda_tax, 'r') as in_f:
             content = in_f.readlines()
             args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
-        print(args.dl_toda_tax)
         if args.mapping_file:
             # parse file to update labels
             args.labels_mapping = dict()
