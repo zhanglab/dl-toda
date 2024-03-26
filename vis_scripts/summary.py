@@ -101,7 +101,7 @@ def main():
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
     parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
-    parser.add_argument('--mapping_file', type=str, help='path to file to update labels', required=('--fq_file' in sys.argv))
+    parser.add_argument('--mapping_file', type=str, help='path to file to update labels')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
