@@ -87,6 +87,7 @@ def main():
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
     parser.add_argument('--output_prefix', type=str, help='prefix of output filename')
+    parser.add_argument('--num_proc', type=int, help='number of processors to parse results output from classifiers')
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--false_positives', help='get false positives', action='store_true', required=('--positive_label' in sys.argv))
