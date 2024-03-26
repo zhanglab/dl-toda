@@ -13,9 +13,13 @@ from dataprep_scripts.utils import load_fq_file
 def parse_bert_output(args, data, process, results):
     """ Bert output contains the probability distributions for each example (one example per line)
     """
-    # get labels from fastq file (update labels based on mapping)
+    # get ground truth labels from fastq file
     reads = load_fq_file(args.fq_file, 4)
-    labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
+    if args.mapping_file:
+        # update labels based on mapping
+        labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
+    else:
+        labels = [i.split('\n')[0].split('|')[1] for i in reads]
     print(labels[:10])
 
     d_correct = defaultdict(int)
@@ -28,9 +32,16 @@ def parse_bert_output(args, data, process, results):
         # get highest probability
         confidence_score = np.amax(probs)
         pred_label = str(np.argmax(probs))
-        pred_taxonomy = args.dl_toda_tax[str(np.argmax(probs))]
+        # update predicted label to label in dl-toda
+        if pred_label == 1:
+            pred_label = args.positive_class
+        pred_taxonomy = args.dl_toda_tax[pred_label]
         print(f'probs: {probs}\ntrue_label: {labels[i]}\ntrue_taxonomy: {true_taxonomy}\nconfidence_score: {confidence_score}\npred_label: {str(np.argmax(probs))}\npred_taxonomy: {pred_taxonomy}')
-        process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        if args.false_positives:
+            if labels[i] != args.positive_class and pred_label == args.positive_class:
+                process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        elif args.confusion_matrix:
+            process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
         if pred_label == labels[i]:
             d_correct[labels[i]] += 1
         else:
