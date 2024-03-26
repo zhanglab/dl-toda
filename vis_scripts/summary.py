@@ -89,7 +89,7 @@ def main():
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
     parser.add_argument('--false_positives', help='get false positives', action='store_true', required=('--positive_label' in sys.argv))
-    parser.add_argument('--positive_class', type=int, help='label of positive class')
+    parser.add_argument('--positive_class', type=str, help='label of positive class')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
     parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
@@ -100,7 +100,7 @@ def main():
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
-    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv and 'confusion_matrix' in sys.argv))
+    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
     parser.add_argument('--mapping_file', type=str, help='path to file to update labels', required=('--fq_file' in sys.argv))
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
