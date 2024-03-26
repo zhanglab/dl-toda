@@ -10,7 +10,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
     predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
     predictions_taxa.add('unclassified')
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
-    cm = pd.DataFrame(columns=ground_truth_taxa, index=predictions_taxa)
+    cm = pd.DataFrame(columns=list(ground_truth_taxa), index=list(predictions_taxa))
     # fill out table with zeros
     for c in ground_truth_taxa:
         cm[c] = 0
@@ -52,6 +52,7 @@ def get_metrics(args, cm, r_name, r_index):
         list_FP = []
         list_FN = []
         for true_taxon in ground_truth:
+            print(true_taxon)
             # get number of reads in testing dataset for given taxon
             num_reads = sum([cm.loc[i, true_taxon] for i in predicted_taxa])
             if true_taxon != 'na':
@@ -86,25 +87,26 @@ def get_metrics(args, cm, r_name, r_index):
                     print(f'{true_taxon} with {num_reads} reads is not in {args.tool} model')
                     problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
             else:
-                print(f'ground truth unknown: {true_taxon}\t{num_reads}') # true taxa are names 'na'
+                print(f'ground truth unknown: {true_taxon}\t{num_reads}')  # true taxa are names 'na'
                 problematic_reads += sum([cm.loc[i, true_taxon] for i in predicted_taxa])
 
             total_num_reads += num_reads
 
         if 'unclassified' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na' or i not in missing_true_taxa])
-        if 'na' in predicted_taxa:
-            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' or i not in missing_true_taxa])
+            unclassified_reads += sum([cm.loc['unclassified', i] for i in ground_truth if i != 'na' and i not in missing_true_taxa])
 
-        print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}')
+        if 'na' in predicted_taxa:
+            unclassified_reads += sum([cm.loc['na', i] for i in ground_truth if i != 'na' and i not in missing_true_taxa])
+
+        print(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\t{len(missing_true_taxa)}')
         out_f.write(f'{correct_predictions}\t{cm.to_numpy().sum()}\t{classified_reads}\t{problematic_reads}\t{unclassified_reads}\t{problematic_reads+unclassified_reads+classified_reads}\t{total_num_reads}\n')
 
         accuracy_whole = round(correct_predictions/cm.to_numpy().sum(), 5) if cm.to_numpy().sum() > 0 else 0
         accuracy_classified = round(correct_predictions/classified_reads, 5) if classified_reads > 0 else 0
         accuracy_w_misclassified = round(correct_predictions/(classified_reads+unclassified_reads), 5) if (classified_reads+unclassified_reads) > 0 else 0
-        macro_average_precision = sum(list_precision)/len(list_precision)
-        macro_average_recall = sum(list_recall)/len(list_recall)
-        macro_average_f1_score = sum(list_f1_score)/len(list_f1_score)
+        macro_average_precision = sum(list_precision)/len(list_precision) if len(list_precision) > 0 else 0
+        macro_average_recall = sum(list_recall)/len(list_recall) if len(list_recall) > 0 else 0
+        macro_average_f1_score = sum(list_f1_score)/len(list_f1_score) if len(list_f1_score) > 0 else 0
         micro_average_precision = sum(list_TP)/(sum(list_TP) + sum(list_FP))
         micro_average_recall = sum(list_TP)/(sum(list_TP) + sum(list_FN))
         micro_average_f1_score = sum(list_TP)/(sum(list_TP) + 1/2*(sum(list_FP)+sum(list_FN)))
@@ -135,7 +137,7 @@ def combine_cm(args, all_cm, rank):
             files.append(x)
 
     if len(df_list) != 0:
-        predicted_taxa = set(rows)
+        predicted_taxa = list(set(rows))
         true_taxa = list(set(columns)).sort()
         # create combined table
         cm = pd.DataFrame(columns=true_taxa, index=predicted_taxa)
