@@ -47,6 +47,7 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
+print(f'# GPUS: {len(gpus)}')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 if gpus:
@@ -173,9 +174,9 @@ def main():
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
     val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
     # compute number of steps/batches per epoch
-    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
+    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*len(gpus))
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
+    val_steps = args.val_reads_per_epoch // (args.batch_size*len(gpus))
 
     train_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
                                     initial_fill=args.initial_fill, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
@@ -221,43 +222,42 @@ def main():
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
     val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
-    if hvd.rank() == 0:
-        # create output directory
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
+    # create output directory
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
 
-        # create directory for storing checkpoints
-        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-        if not os.path.isdir(ckpt_dir):
-            os.makedirs(ckpt_dir)
+    # create directory for storing checkpoints
+    ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
+    if not os.path.isdir(ckpt_dir):
+        os.makedirs(ckpt_dir)
 
-        # create checkpoint object to save model
-        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # create checkpoint object to save model
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
 
-        # create directory for storing logs
-        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
-        if not os.path.exists(tensorboard_dir):
-            os.makedirs(tensorboard_dir)
+    # create directory for storing logs
+    tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
+    if not os.path.exists(tensorboard_dir):
+        os.makedirs(tensorboard_dir)
 
-        writer = tf.summary.create_file_writer(tensorboard_dir)
-        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+    writer = tf.summary.create_file_writer(tensorboard_dir)
+    td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+    vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
 
-        # create summary file
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
-            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
-                    f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
-                    f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-                    f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                    f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-            if args.model_type in ["DNA_1", "DNA_2"]:
-                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
-                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
-                        f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
-                        f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
+    # create summary file
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
+        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
+                f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
+                f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+                f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
+                f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+        if args.model_type in ["DNA_1", "DNA_2"]:
+            f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
+                    f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
+                    f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
+                    f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
     start = datetime.datetime.now()
 
@@ -272,7 +272,7 @@ def main():
             labels_dict[str(k)] += v
 
 
-        if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 100 == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
@@ -285,7 +285,7 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # save dictionary of labels count
-            with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
+            with open(os.path.join(args.output_dir, f'{epoch}-labels.json'), 'w') as labels_outfile:
                 json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, (reads, labels) in enumerate(val_dataset.take(val_steps)):
@@ -297,16 +297,17 @@ def main():
                 new_lr = current_lr / 2
                 opt.learning_rate = new_lr
 
-            if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
-                # save weights
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-                with writer.as_default():
-                    tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-                    writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+            
+            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
+            
+            # save weights
+            checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+            with writer.as_default():
+                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                writer.flush()
+            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
             # reset metrics variables
             val_loss.reset_states()
@@ -317,27 +318,25 @@ def main():
             epoch += 1
 
 
-    if hvd.rank() == 0:
-        # save final embeddings
-        emb_weights = model.get_layer('embedding').get_weights()[0]
-        out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
-        print(f'# embeddings: {len(emb_weights)}')
-        for i in range(len(emb_weights)):
-            vec = emb_weights[i]
-            out_v.write('\t'.join([str(x) for x in vec]) + "\n")
-        out_v.close()
+    # save final embeddings
+    emb_weights = model.get_layer('embedding').get_weights()[0]
+    out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
+    print(f'# embeddings: {len(emb_weights)}')
+    for i in range(len(emb_weights)):
+        vec = emb_weights[i]
+        out_v.write('\t'.join([str(x) for x in vec]) + "\n")
+    out_v.close()
 
     end = datetime.datetime.now()
 
-    if hvd.rank() == 0:
-        total_time = end - start
-        hours, seconds = divmod(total_time.seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        td_writer.close()
-        vd_writer.close()
+    total_time = end - start
+    hours, seconds = divmod(total_time.seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    td_writer.close()
+    vd_writer.close()
 
 
 if __name__ == "__main__":
