@@ -659,8 +659,10 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
 
 def main():
-
   global_batch_size = 5
+  steps_per_epoch = 5
+  epochs = 1
+  num_train_steps = steps_per_epoch * epochs
   tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   dataset = load_dataset(tfrecords, global_batch_size)
 
@@ -681,15 +683,29 @@ def main():
 
   init_lr = 5e-5
 
+  # define learning rate polynomial decay
+  linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+    initial_learning_rate=init_lr,
+    end_learning_rate=0,
+    decay_steps=num_train_steps)
+
+  # define linear warmup schedule
+  warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+  warmup_steps = int(warmup_proportion * num_train_steps)
+  warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
+    warmup_learning_rate = 0,
+    after_warmup_lr_sched = linear_decay,
+    warmup_steps = warmup_steps)
+
   # define optimizer
-  opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+  opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
   # exclude variables from weight decay
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+
 
   for batch, data in enumerate(dataset.take(1), 1):
       training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
       break
-      # loss_value, probs = 
 
   
 
