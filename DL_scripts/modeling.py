@@ -128,6 +128,7 @@ def PositionalEncoding(config, seq_length, width):
 
 class TokenTypeEncoding(tf.keras.layers.Layer):
     def __init__(self, config):
+        super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
         self.token_type_vocab_size = config.type_vocab_size
