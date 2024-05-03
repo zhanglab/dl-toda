@@ -617,14 +617,16 @@ def training_step(data, train_accuracy, loss, opt, model, first_batch):
         hidden_size = output_layer.shape[-1]
         print(f'hidden_size: {hidden_size}')
 
-        output_weights = tf.get_variable(
-            "output_weights", [num_labels, hidden_size],
-            initializer=tf.truncated_normal_initializer(stddev=0.02))
-        print(f'output_weights: {output_weights}')
+        output_weights = tf.Variable(name="output_weights")
 
-        output_bias = tf.get_variable(
-            "output_bias", [num_labels], initializer=tf.zeros_initializer())
-        print(f'output_bias: {output_bias}')
+        # output_weights = tf.get_variable(
+        #     "output_weights", [num_labels, hidden_size],
+        #     initializer=tf.truncated_normal_initializer(stddev=0.02))
+        # print(f'output_weights: {output_weights}')
+
+        # output_bias = tf.get_variable(
+        #     "output_bias", [num_labels], initializer=tf.zeros_initializer())
+        # print(f'output_bias: {output_bias}')
 
         # with tf.variable_scope("loss"):
         #   if is_training:
