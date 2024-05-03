@@ -613,7 +613,8 @@ def training_step(data, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
         output_layer = model(data)
 
-        hidden_size = output_layer.shape[-1].value
+        # hidden_size = output_layer.shape[-1].value
+        hidden_size = output_layer.shape[-1]
         print(f'hidden_size: {hidden_size}')
 
         output_weights = tf.get_variable(
