@@ -12,6 +12,7 @@ import os
 import numpy as np
 import six
 import tensorflow as tf
+import tensorflow_models as tfm
 
 
 class BertConfig(object):
