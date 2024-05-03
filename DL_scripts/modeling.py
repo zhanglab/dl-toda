@@ -7,6 +7,7 @@ import copy
 import glob
 import json
 import math
+import glob
 import re
 import os
 import numpy as np
@@ -717,7 +718,7 @@ def main():
   initial_fill = 1000
   epochs = 1
   num_train_steps = steps_per_epoch * epochs
-  # tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
+  tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   # dataset = load_dataset(tfrecords, global_batch_size)
 
   train_files = sorted(glob.glob(os.path.join(tfrecords, 'train*.tfrec')))
