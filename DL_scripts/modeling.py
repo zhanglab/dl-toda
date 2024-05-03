@@ -611,7 +611,7 @@ def decode_fn(proto_example):
 @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
-        _, _, _, labels = inputs
+        _, _, _, labels = data
 
         print(f'labels: {labels}')
 
