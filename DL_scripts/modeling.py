@@ -529,8 +529,7 @@ class BertModel(tf.keras.Model):
         self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
                             kernel_initializer=create_initializer(config.initializer_range))
        
-    
-                                             
+                                          
     def __call__(self, inputs):
         input_ids, input_mask, token_type_ids, _ = inputs
         
@@ -611,6 +610,20 @@ def decode_fn(proto_example):
     return input_ids, input_mask, segment_ids, label_ids
 
 
+
+def classifier(output_layer):
+  # hidden_size = output_layer.shape[-1].value
+  hidden_size = output_layer.shape[-1]
+
+  weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+  print(f'weights_initializer: {weights_initializer}')
+
+  output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
+      name="output_weights")
+  print(f'output_weights: {output_weights}')
+
+
+
 @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
@@ -620,16 +633,16 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         print(f'labels: {labels}')
 
         output_layer = model(data)
+        classifier(output_layer)
+        # # hidden_size = output_layer.shape[-1].value
+        # hidden_size = output_layer.shape[-1]
 
-        # hidden_size = output_layer.shape[-1].value
-        hidden_size = output_layer.shape[-1]
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        # print(f'weights_initializer: {weights_initializer}')
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-        print(f'weights_initializer: {weights_initializer}')
-
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
-            name="output_weights")
-        print(f'output_weights: {output_weights}')
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
+        #     name="output_weights")
+        # print(f'output_weights: {output_weights}')
 
         # output_bias = tf.compat.v1.get_variable(
         #     "output_bias", [num_labels], initializer=tf.zeros_initializer())
