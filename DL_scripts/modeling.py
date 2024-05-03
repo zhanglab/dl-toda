@@ -629,7 +629,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
             "output_bias", [num_labels], initializer=tf.zeros_initializer())
         print(f'output_bias: {output_bias}')
 
-        output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+        output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
 
         logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
