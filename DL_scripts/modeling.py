@@ -628,14 +628,14 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
                                  features={
                                      "input_ids": tfrec.FixedLenFeature([253], tfrec.int64, 0),
                                      "input_mask": tfrec.FixedLenFeature([253], tfrec.int64, 0),
-                                     "segment_ids": tfrec.FixedLenFeature([253], tfrec.int64, 0),
+                                     "segment_ids": tfrec.FixedLenFeature([253], tfrec.int64, 0)})
                                      # "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     # "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     # retrieve reads and labels and copy them to the gpus
     input_ids = inputs["input_ids"].gpu()
     input_mask = inputs["input_mask"].gpu()
     segment_ids = inputs["segment_ids"].gpu()
-    label_ids = inputs['label_ids'].gpu()
+    # label_ids = inputs['label_ids'].gpu()
     # is_real_example = inputs['is_real_example'].gpu()
 
     return (input_ids, input_mask, segment_ids, label_ids)
