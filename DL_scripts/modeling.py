@@ -529,7 +529,7 @@ class BertModel(tf.keras.Model):
     
                                              
     def __call__(self, inputs):
-        input_ids, input_mask, token_type_ids = inputs
+        input_ids, input_mask, token_type_ids, _ = inputs
         
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
