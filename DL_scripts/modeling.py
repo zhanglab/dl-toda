@@ -630,26 +630,28 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
             name="output_weights")
         print(f'output_weights: {output_weights}')
 
-        # output_bias = tf.compat.v1.get_variable(
-        #     "output_bias", [num_labels], initializer=tf.zeros_initializer())
-        # print(f'output_bias: {output_bias}')
+        bias_initializer = tf.zeros_initializer()
 
-        # output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
+        output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]),
+            name="output_bias")
+        print(f'output_bias: {output_bias}')
 
-        # logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
-        # logits = tf.nn.bias_add(logits, output_bias)
-        # probabilities = tf.nn.softmax(logits, axis=-1)
-        # log_probs = tf.nn.log_softmax(logits, axis=-1)
+        output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
 
-        # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
 
-        # per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        # loss_value = tf.reduce_mean(per_example_loss)
+        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-        # grads = tape.gradient(loss_value, model.trainable_variables)
-        # opt.apply_gradients(zip(grads, model.trainable_variables))
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss_value = tf.reduce_mean(per_example_loss)
 
-        # print(loss_value)
+        grads = tape.gradient(loss_value, model.trainable_variables)
+        opt.apply_gradients(zip(grads, model.trainable_variables))
+
+        print(loss_value)
 
 
     # #update training accuracy
