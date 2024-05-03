@@ -613,6 +613,7 @@ def decode_fn(proto_example):
 
 @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
+    print(f'Is eager execution enabled: {tf.executing_eagerly()}')
     with tf.GradientTape() as tape:
         _, _, _, labels = data
 
