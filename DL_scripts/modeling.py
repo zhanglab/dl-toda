@@ -608,6 +608,53 @@ def decode_fn(proto_example):
     return input_ids, input_mask, segment_ids
 
 
+@tf.function
+def training_step(data, train_accuracy, loss, opt, model, first_batch):
+    with tf.GradientTape() as tape:
+        output_layer = model(data)
+
+        hidden_size = output_layer.shape[-1].value
+        print(f'hidden_size: {hidden_size}')
+
+        output_weights = tf.get_variable(
+            "output_weights", [num_labels, hidden_size],
+            initializer=tf.truncated_normal_initializer(stddev=0.02))
+        print(f'output_weights: {output_weights}')
+
+        output_bias = tf.get_variable(
+            "output_bias", [num_labels], initializer=tf.zeros_initializer())
+        print(f'output_bias: {output_bias}')
+
+        # with tf.variable_scope("loss"):
+        #   if is_training:
+        #     # I.e., 0.1 dropout
+        #     output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+
+        #   logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+        #   logits = tf.nn.bias_add(logits, output_bias)
+        #   probabilities = tf.nn.softmax(logits, axis=-1)
+        #   log_probs = tf.nn.log_softmax(logits, axis=-1)
+
+        #   one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+
+        #   per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        #   loss = tf.reduce_mean(per_example_loss)
+
+        #   return (loss, per_example_loss, logits, probabilities)
+
+
+        
+    #     # probs = model(reads, training=True)
+    #     # get the loss
+    #     loss_value = loss(labels, probs)
+    #     grads = tape.gradient(loss_value, model.trainable_variables)
+    #     opt.apply_gradients(zip(grads, model.trainable_variables))
+
+
+    # #update training accuracy
+    # train_accuracy.update_state(labels, probs)
+
+    # return loss_value, grads, reads, labels, probs
 
 
 def main():
@@ -626,12 +673,20 @@ def main():
         config=bert_config,
         is_training=is_training)
 
-  for batch, data in enumerate(dataset.take(1), 1):
-      input_ids, input_mask, token_type_ids = data
-      model(data)
+  # define metrics
+  loss = tf.losses.SparseCategoricalCrossentropy()
+  train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
+  # define optimizer
+  opt = tf.keras.optimizers.Adam(init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+  # exclude variables from weight decay
+  opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+
+  for batch, data in enumerate(dataset.take(1), 1):
+      training_step(data, train_accuracy, loss, opt, model, batch == 1)
+      # loss_value, probs = 
+
+  
 
 if __name__ == "__main__":
   main()
-    
-
