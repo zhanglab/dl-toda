@@ -316,6 +316,7 @@ def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
 
 class AttentionLayer(tf.keras.layers.Layer):
     def __init__(self, config):
+        super().__init__()
         self.num_attention_heads = config.num_attention_heads
         self.initializer_range = config.initializer_range
         self.size_per_head = int(config.hidden_size / config.num_attention_heads)
