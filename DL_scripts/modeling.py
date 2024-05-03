@@ -610,21 +610,7 @@ def decode_fn(proto_example):
     return input_ids, input_mask, segment_ids, label_ids
 
 
-
-def classifier(output_layer, num_labels):
-  # hidden_size = output_layer.shape[-1].value
-  hidden_size = output_layer.shape[-1]
-
-  weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-  print(f'weights_initializer: {weights_initializer}')
-
-  output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
-      name="output_weights")
-  print(f'output_weights: {output_weights}')
-
-
-
-@tf.function
+# @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
         print(f'Is eager execution enabled: {tf.executing_eagerly()}')
