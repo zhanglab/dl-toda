@@ -677,6 +677,8 @@ def main():
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
+  init_lr = 5e-5
+
   # define optimizer
   opt = tf.keras.optimizers.Adam(init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
   # exclude variables from weight decay
