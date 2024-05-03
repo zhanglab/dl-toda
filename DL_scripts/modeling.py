@@ -417,6 +417,7 @@ class AttentionLayer(tf.keras.layers.Layer):
 
 class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, config):
+        super().__init__()
         self.num_attention_heads = config.num_attention_heads
         self.hidden_size = config.hidden_size
         self.intermediate_size = config.intermediate_size
