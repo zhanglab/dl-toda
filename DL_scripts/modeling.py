@@ -705,7 +705,7 @@ def main():
   train_idx_files = sorted(glob.glob(os.path.join(os.path.join(tfrecords, 'idx_files'), 'train*.idx')))
 
 
-  train_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
+  dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
                                     initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size)),
                                 output_dtypes=(tf.int64, tf.int64), batch_size=global_batch_size, num_threads=4, device_id=0)
                                 
