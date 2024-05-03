@@ -628,18 +628,18 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
                                  features={
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0)})
-                                     # "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-                                     # "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0)
+                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     # retrieve reads and labels and copy them to the gpus
     input_ids = inputs["input_ids"].gpu()
     input_mask = inputs["input_mask"].gpu()
     segment_ids = inputs["segment_ids"].gpu()
-    # label_ids = inputs['label_ids'].gpu()
+    label_ids = inputs['label_ids'].gpu()
     # is_real_example = inputs['is_real_example'].gpu()
 
-    # return (input_ids, input_mask, segment_ids, label_ids)
-    return (input_ids, input_mask, segment_ids)
+    return (input_ids, input_mask, segment_ids, label_ids)
+
 
 # @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
@@ -706,7 +706,8 @@ def main():
 
 
   dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-                                    initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size)),
+                                    initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size, vector_size)
+                                    (global_batch_size, vector_size), (global_batch_size), (global_batch_size)),
                                 output_dtypes=(tf.int64, tf.int64), batch_size=global_batch_size, num_threads=4, device_id=0)
                                 
 
