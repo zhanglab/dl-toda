@@ -611,7 +611,7 @@ def decode_fn(proto_example):
 
 
 
-def classifier(output_layer):
+def classifier(output_layer, num_labels):
   # hidden_size = output_layer.shape[-1].value
   hidden_size = output_layer.shape[-1]
 
@@ -633,7 +633,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         print(f'labels: {labels}')
 
         output_layer = model(data)
-        classifier(output_layer)
+        classifier(output_layer, num_labels)
         # # hidden_size = output_layer.shape[-1].value
         # hidden_size = output_layer.shape[-1]
 
