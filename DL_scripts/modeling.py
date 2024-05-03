@@ -619,16 +619,16 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         print(f'labels: {labels}')
 
         output_layer = model(data)
-        classifier(output_layer, num_labels)
-        # # hidden_size = output_layer.shape[-1].value
-        # hidden_size = output_layer.shape[-1]
 
-        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-        # print(f'weights_initializer: {weights_initializer}')
+        # hidden_size = output_layer.shape[-1].value
+        hidden_size = output_layer.shape[-1]
 
-        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
-        #     name="output_weights")
-        # print(f'output_weights: {output_weights}')
+        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        print(f'weights_initializer: {weights_initializer}')
+
+        output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
+            name="output_weights")
+        print(f'output_weights: {output_weights}')
 
         # output_bias = tf.compat.v1.get_variable(
         #     "output_bias", [num_labels], initializer=tf.zeros_initializer())
