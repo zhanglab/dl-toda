@@ -638,8 +638,8 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
     # label_ids = inputs['label_ids'].gpu()
     # is_real_example = inputs['is_real_example'].gpu()
 
-    return (input_ids, input_mask, segment_ids, label_ids)
-
+    # return (input_ids, input_mask, segment_ids, label_ids)
+    return (input_ids, input_mask, segment_ids)
 
 # @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
