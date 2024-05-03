@@ -13,6 +13,57 @@ import numpy as np
 import six
 import tensorflow as tf
 import tensorflow_models as tfm
+from nvidia.dali.pipeline import pipeline_def
+import nvidia.dali.fn as fn
+import nvidia.dali.tfrecord as tfrec
+import nvidia.dali.plugin.tf as dali_tf
+
+
+# define the DALI pipeline
+@pipeline_def
+def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    # prefetch_queue_depth = 100
+    # read_ahead = True
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 # prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return (reads, labels)
+
+class DALIPreprocessor(object):
+    def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+               deterministic=False, training=False):
+
+        device_id = hvd.local_rank()
+        shard_id = hvd.rank()
+        num_gpus = hvd.size()
+        self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+        # self.daliop = dali_tf.DALIIterator()
+
+        self.batch_size = batch_size
+        self.device_id = device_id
+
+        self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+            output_shapes=((batch_size, vector_size), (batch_size)),
+            batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+
+    def get_device_dataset(self):
+        return self.dalidataset
 
 
 class BertConfig(object):
@@ -662,10 +713,20 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 def main():
   global_batch_size = 5
   steps_per_epoch = 5
+  vector_size = 253
+  initial_fill = 1000
   epochs = 1
   num_train_steps = steps_per_epoch * epochs
-  tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
-  dataset = load_dataset(tfrecords, global_batch_size)
+  # tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
+  # dataset = load_dataset(tfrecords, global_batch_size)
+
+  train_files = sorted(glob.glob(os.path.join(tfrecords, 'train*.tfrec')))
+  train_idx_files = sorted(glob.glob(os.path.join(os.path.join(tfrecords, 'idx_files'), 'train*.idx')))
+
+  dataset_preprocessor = DALIPreprocessor(train_files, train_idx_files, global_batch_size, vector_size, initial_fill,
+                                           deterministic=False, training=True)
+    
+  dataset = train_preprocessor.get_device_dataset()
 
   bert_config_file = '/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/bert_tf2/bert_config.json'
   bert_config = BertConfig.from_json_file(bert_config_file)
@@ -705,8 +766,8 @@ def main():
 
 
   for batch, data in enumerate(dataset.take(1), 1):
+      print(f'{batch}\t{data}')
       training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-      break
 
   
 
