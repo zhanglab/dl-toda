@@ -530,9 +530,7 @@ class BertModel(tf.keras.Model):
                             kernel_initializer=create_initializer(config.initializer_range))
        
                                           
-    def __call__(self, inputs):
-        input_ids, input_mask, token_type_ids, _ = inputs
-        
+    def __call__(self, input_ids, input_mask, token_type_ids):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
         # batch_size = tf.shape(input_ids)[0]
@@ -614,11 +612,11 @@ def decode_fn(proto_example):
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
         print(f'Is eager execution enabled: {tf.executing_eagerly()}')
-        _, _, _, labels = data
+        input_ids, input_mask, token_type_ids, labels = data
 
         print(f'labels: {labels}')
 
-        output_layer = model(data)
+        output_layer = model(input_ids, input_mask, token_type_ids)
 
         # hidden_size = output_layer.shape[-1].value
         hidden_size = output_layer.shape[-1]
@@ -690,6 +688,7 @@ def main():
 
   for batch, data in enumerate(dataset.take(1), 1):
       training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+      break
       # loss_value, probs = 
 
   
