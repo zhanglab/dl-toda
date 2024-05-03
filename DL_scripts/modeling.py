@@ -680,7 +680,7 @@ def main():
   init_lr = 5e-5
 
   # define optimizer
-  opt = tf.keras.optimizers.Adam(init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+  opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
   # exclude variables from weight decay
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
 
