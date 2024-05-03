@@ -605,12 +605,16 @@ def decode_fn(proto_example):
     label_ids = parsed_example['label_ids']
     is_real_example = parsed_example['is_real_example']
     
-    return input_ids, input_mask, segment_ids
+    return input_ids, input_mask, segment_ids, label_ids
 
 
 @tf.function
-def training_step(data, train_accuracy, loss, opt, model, first_batch):
+def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
+        _, _, _, labels = inputs
+
+        print(f'labels: {labels}')
+
         output_layer = model(data)
 
         # hidden_size = output_layer.shape[-1].value
@@ -659,6 +663,7 @@ def main():
   bert_config = BertConfig.from_json_file(bert_config_file)
   print(bert_config)
 
+  num_labels = 2
 
   is_training = True
   model = BertModel(
@@ -677,7 +682,7 @@ def main():
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
 
   for batch, data in enumerate(dataset.take(1), 1):
-      training_step(data, train_accuracy, loss, opt, model, batch == 1)
+      training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
       # loss_value, probs = 
 
   
