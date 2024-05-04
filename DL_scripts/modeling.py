@@ -804,22 +804,24 @@ def main():
   epoch = 0
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
-      loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    input_ids, input_mask, token_type_ids, labels = data
+    print(input_ids, input_mask, token_type_ids, labels)
+    loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    break
 
+    # if batch % 100 == 0 and hvd.rank() == 0:
+    if batch % 100 == 0 :
+          print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+          # write metrics
+          with writer.as_default():
+              tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+              tf.summary.scalar("train_loss", loss_value, step=batch)
+              tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+              writer.flush()
+          td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-      # if batch % 100 == 0 and hvd.rank() == 0:
-      if batch % 100 == 0 :
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-            # write metrics
-            with writer.as_default():
-                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-                tf.summary.scalar("train_loss", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-                writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-
-      if batch % nstep_per_epoch == 0:
-        epoch += 1
+    if batch % nstep_per_epoch == 0:
+      epoch += 1
 
   
 
