@@ -805,6 +805,8 @@ def main():
 
   start = datetime.datetime.now()
 
+  epoch = 0
+
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
       loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
@@ -819,6 +821,9 @@ def main():
                 tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
                 writer.flush()
             td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+
+       if batch % nstep_per_epoch == 0:
+        epoch += 1
 
   
 
