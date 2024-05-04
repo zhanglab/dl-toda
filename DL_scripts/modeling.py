@@ -721,7 +721,7 @@ def main():
   rnd = 1
   vector_size = 253
   initial_fill = 1000
-  epochs = 1
+  epochs = 50
   num_train_examples = 632118
   nstep_per_epoch = num_train_examples // global_batch_size
   num_train_steps = int(num_train_examples / (nstep_per_epoch * epochs))
@@ -806,7 +806,7 @@ def main():
 
       # if batch % 100 == 0 and hvd.rank() == 0:
       if batch % 100 == 0 :
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100} - Probs: {probs}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
