@@ -822,7 +822,7 @@ def main():
                 writer.flush()
             td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-       if batch % nstep_per_epoch == 0:
+      if batch % nstep_per_epoch == 0:
         epoch += 1
 
   
