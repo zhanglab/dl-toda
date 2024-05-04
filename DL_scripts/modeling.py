@@ -724,7 +724,7 @@ def main():
   epochs = 50
   num_train_examples = 632118
   nstep_per_epoch = num_train_examples // global_batch_size
-  num_train_steps = int(num_train_examples / (nstep_per_epoch * epochs))
+  num_train_steps = int(nstep_per_epoch * epochs).  # total number of training steps/batches
   print(f'num_train_examples: {num_train_examples}\nnstep_per_epoch : {nstep_per_epoch }\nnum_train_steps: {num_train_steps}')
   tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   # dataset = load_dataset(tfrecords, global_batch_size)
