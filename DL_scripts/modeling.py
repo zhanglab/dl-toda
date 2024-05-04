@@ -727,8 +727,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
 
 def main():
-  global_batch_size = 512
-  steps_per_epoch = 5
+  global_batch_size = 256
   output_dir = os.getcwd()
   rnd = 1
   vector_size = 253
