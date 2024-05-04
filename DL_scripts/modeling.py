@@ -10,6 +10,7 @@ import math
 import glob
 import re
 import os
+import datetime
 import numpy as np
 import six
 import tensorflow as tf
@@ -599,38 +600,38 @@ class BertModel(tf.keras.Model):
         return x
 
 
-def load_dataset(tfrecords, global_batch_size):
-    # Get list of TFRecord files
-    tfrecords = glob.glob(os.path.join(tfrecords, "*.tfrec"))
-    print(tfrecords)
-    dataset = tf.data.TFRecordDataset(tfrecords)
-    dataset = dataset.map(map_func=decode_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.cache()
-    dataset = dataset.shuffle(1000)
-    dataset = dataset.batch(global_batch_size)
-    dataset = dataset.prefetch(1)
-    return dataset
+# def load_dataset(tfrecords, global_batch_size):
+#     # Get list of TFRecord files
+#     tfrecords = glob.glob(os.path.join(tfrecords, "*.tfrec"))
+#     print(tfrecords)
+#     dataset = tf.data.TFRecordDataset(tfrecords)
+#     dataset = dataset.map(map_func=decode_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+#     dataset = dataset.cache()
+#     dataset = dataset.shuffle(1000)
+#     dataset = dataset.batch(global_batch_size)
+#     dataset = dataset.prefetch(1)
+#     return dataset
 
 
-def decode_fn(proto_example):
-    features = {
-        'input_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-        'input_mask': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-        'segment_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-        'label_ids': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
-        'is_real_example': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
-    }
+# def decode_fn(proto_example):
+#     features = {
+#         'input_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
+#         'input_mask': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
+#         'segment_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
+#         'label_ids': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
+#         'is_real_example': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
+#     }
 
-    # load one example
-    parsed_example = tf.io.parse_single_example(serialized=proto_example, features=features)
+#     # load one example
+#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=features)
     
-    input_ids = parsed_example["input_ids"]
-    input_mask = parsed_example["input_mask"]
-    segment_ids = parsed_example["segment_ids"]
-    label_ids = parsed_example['label_ids']
-    is_real_example = parsed_example['is_real_example']
+#     input_ids = parsed_example["input_ids"]
+#     input_mask = parsed_example["input_mask"]
+#     segment_ids = parsed_example["segment_ids"]
+#     label_ids = parsed_example['label_ids']
+#     is_real_example = parsed_example['is_real_example']
     
-    return input_ids, input_mask, segment_ids, label_ids
+#     return input_ids, input_mask, segment_ids, label_ids
 
 
 # define the DALI pipeline
@@ -659,60 +660,77 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
     return (input_ids, input_mask, segment_ids, label_ids)
 
 
+# class DALIPreprocessor(object):
+#     def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+#                deterministic=False, training=False):
+
+#         device_id = hvd.local_rank()
+#         shard_id = hvd.rank()
+#         num_gpus = hvd.size()
+#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+#         # self.daliop = dali_tf.DALIIterator()
+
+#         self.batch_size = batch_size
+#         self.device_id = device_id
+
+#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#             output_shapes=((batch_size, vector_size), (batch_size)),
+#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+
+#     def get_device_dataset(self):
+#         return self.dalidataset
+
+
+
 # @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
-        print(f'Is eager execution enabled: {tf.executing_eagerly()}')
-        input_ids, input_mask, token_type_ids, labels = data
+      input_ids, input_mask, token_type_ids, labels = data
 
-        print(f'labels: {labels}')
+      output_layer = model(input_ids, input_mask, token_type_ids)
 
-        output_layer = model(input_ids, input_mask, token_type_ids)
+      # hidden_size = output_layer.shape[-1].value
+      hidden_size = output_layer.shape[-1]
 
-        # hidden_size = output_layer.shape[-1].value
-        hidden_size = output_layer.shape[-1]
+      weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-        print(f'weights_initializer: {weights_initializer}')
+      output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
+          name="output_weights")
 
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
-            name="output_weights")
-        print(f'output_weights: {output_weights}')
+      bias_initializer = tf.zeros_initializer()
 
-        bias_initializer = tf.zeros_initializer()
+      output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]),
+          name="output_bias")
 
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]),
-            name="output_bias")
-        print(f'output_bias: {output_bias}')
+      output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
 
-        output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
+      logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
+      logits = tf.nn.bias_add(logits, output_bias)
+      probabilities = tf.nn.softmax(logits, axis=-1)
+      log_probs = tf.nn.log_softmax(logits, axis=-1)
 
-        logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
-        logits = tf.nn.bias_add(logits, output_bias)
-        probabilities = tf.nn.softmax(logits, axis=-1)
-        log_probs = tf.nn.log_softmax(logits, axis=-1)
+      one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+      per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+      loss_value = tf.reduce_mean(per_example_loss)
 
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value = tf.reduce_mean(per_example_loss)
+      grads = tape.gradient(loss_value, model.trainable_variables)
+      opt.apply_gradients(zip(grads, model.trainable_variables))
 
-        grads = tape.gradient(loss_value, model.trainable_variables)
-        opt.apply_gradients(zip(grads, model.trainable_variables))
+      #update training accuracy
+      train_accuracy.update_state(labels, probabilities)
 
-        print(loss_value)
-
-
-    # #update training accuracy
-    # train_accuracy.update_state(labels, probs)
-
-    # return loss_value, grads, reads, labels, probs
+      return loss_value, probabilities
 
 
 def main():
-  global_batch_size = 5
+  global_batch_size = 512
   steps_per_epoch = 5
-
+  output_dir = os.getcwd()
+  rnd = 1
   vector_size = 253
   initial_fill = 1000
   epochs = 1
@@ -768,10 +786,44 @@ def main():
   # exclude variables from weight decay
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
 
+  # if hvd.rank() == 0:
+  # create output directory
+  if not os.path.isdir(output_dir):
+      os.makedirs(output_dir)
+
+  # create directory for storing checkpoints
+  ckpt_dir = os.path.join(output_dir, f'ckpts-rnd-{rnd}')
+  if not os.path.isdir(ckpt_dir):
+      os.makedirs(ckpt_dir)
+
+  # create checkpoint object to save model
+  checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+
+  # create directory for storing logs
+  tensorboard_dir = os.path.join(output_dir, f'logs-rnd-{rnd}')
+  if not os.path.exists(tensorboard_dir):
+      os.makedirs(tensorboard_dir)
+
+  writer = tf.summary.create_file_writer(tensorboard_dir)
+  td_writer = open(os.path.join(output_dir, f'logs-rnd-{rnd}', f'training_data_rnd_{rnd}.tsv'), 'w')
+  vd_writer = open(os.path.join(output_dir, f'logs-rnd-{rnd}', f'validation_data_rnd_{rnd}.tsv'), 'w')
+
+  start = datetime.datetime.now()
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
-      print(f'{batch}\t{data}')
-      training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+      loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+
+
+      # if batch % 100 == 0 and hvd.rank() == 0:
+      if batch % 100 == 0 :
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100} - Probs: {probs}')
+            # write metrics
+            with writer.as_default():
+                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+                tf.summary.scalar("train_loss", loss_value, step=batch)
+                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                writer.flush()
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
   
 
