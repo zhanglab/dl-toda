@@ -14,11 +14,29 @@ import numpy as np
 import six
 import tensorflow as tf
 import tensorflow_models as tfm
+import horovod.tensorflow as hvd
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
 
+
+# set seed
+seed = 42
+os.environ['PYTHONHASHSEED'] = str(seed)
+tf.random.set_seed(seed)
+tf.experimental.numpy.random.seed(seed)
+
+# Initialize Horovod
+hvd.init()
+# Map one GPU per process
+# use hvd.local_rank() for gpu pinning instead of hvd.rank()
+gpus = tf.config.experimental.list_physical_devices('GPU')
+print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+if gpus:
+    tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 class BertConfig(object):
@@ -700,7 +718,7 @@ def main():
   epochs = 1
   num_train_examples = 632118
   nstep_per_epoch = num_train_examples // global_batch_size
-  num_train_steps = int(num_train_examples / (nsteps_per_epoch * epochs))
+  num_train_steps = int(num_train_examples / (nstep_per_epoch * epochs))
   print(f'num_train_examples: {num_train_examples}\nnstep_per_epoch : {nstep_per_epoch }\nnum_train_steps: {num_train_steps}')
   tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   # dataset = load_dataset(tfrecords, global_batch_size)
