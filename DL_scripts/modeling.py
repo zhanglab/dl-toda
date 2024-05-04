@@ -756,21 +756,22 @@ def main():
   init_lr = 5e-5
 
   # define learning rate polynomial decay
-  linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    initial_learning_rate=init_lr,
-    end_learning_rate=0,
-    decay_steps=num_train_steps)
+  # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+  #   initial_learning_rate=init_lr,
+  #   end_learning_rate=0,
+  #   decay_steps=num_train_steps)
 
   # define linear warmup schedule
-  warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-  warmup_steps = int(warmup_proportion * num_train_steps)
-  warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-    warmup_learning_rate = 0,
-    after_warmup_lr_sched = linear_decay,
-    warmup_steps = warmup_steps)
+  # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+  # warmup_steps = int(warmup_proportion * num_train_steps)
+  # warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
+  #   warmup_learning_rate = 0,
+  #   after_warmup_lr_sched = linear_decay,
+  #   warmup_steps = warmup_steps)
 
   # define optimizer
-  opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+  # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+  opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
   # exclude variables from weight decay
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
 
