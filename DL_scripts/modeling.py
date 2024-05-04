@@ -167,13 +167,9 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
     def __call__(self, token_type_ids):
         # This vocab will be small so we always do one-hot here, since it is always
         # faster for a small vocabulary.
-        print(token_type_ids)
         flat_token_type_ids = tf.reshape(token_type_ids, [-1])
-        print(flat_token_type_ids)
         one_hot_ids = tf.one_hot(flat_token_type_ids, depth=self.token_type_vocab_size)
-        print(one_hot_ids)
         token_type_embeddings = tf.matmul(one_hot_ids, self.token_type_table)
-        print(token_type_embeddings)
 
         return token_type_embeddings
 
@@ -582,17 +578,14 @@ class BertModel(tf.keras.Model):
         
         encoder_output = self.enc_layers(x, attention_mask, True, True)
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        print(x)
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
         first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
-        print('first_token_tensor')
-        print(first_token_tensor)
+
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
         x = self.pooled_output(first_token_tensor)
-        print('x')
-        print(x)
+
         return x
 
 
