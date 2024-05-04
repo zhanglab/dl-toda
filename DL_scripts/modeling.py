@@ -10,6 +10,7 @@ import math
 import glob
 import re
 import os
+import sys
 import datetime
 import numpy as np
 import six
@@ -722,11 +723,12 @@ def main():
   vector_size = 253
   initial_fill = 1000
   epochs = 50
-  num_train_examples = 632118
+  num_train_examples = int(sys.argv[1]) # 632118
   nstep_per_epoch = num_train_examples // global_batch_size
   num_train_steps = int(nstep_per_epoch * epochs)  # total number of training steps/batches
   print(f'num_train_examples: {num_train_examples}\nnstep_per_epoch : {nstep_per_epoch }\nnum_train_steps: {num_train_steps}')
-  tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
+  tfrecords = str(sys.argv[2])
+  # tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   # dataset = load_dataset(tfrecords, global_batch_size)
 
   train_files = sorted(glob.glob(os.path.join(tfrecords, 'train*.tfrec')))
