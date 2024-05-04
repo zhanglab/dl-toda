@@ -694,10 +694,14 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 def main():
   global_batch_size = 5
   steps_per_epoch = 5
+
   vector_size = 253
   initial_fill = 1000
   epochs = 1
-  num_train_steps = steps_per_epoch * epochs
+  num_train_examples = 632118
+  nstep_per_epoch = num_train_examples // global_batch_size
+  num_train_steps = int(num_train_examples / (nsteps_per_epoch * epochs))
+  print(f'num_train_examples: {num_train_examples}\nnstep_per_epoch : {nstep_per_epoch }\nnum_train_steps: {num_train_steps}')
   tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
   # dataset = load_dataset(tfrecords, global_batch_size)
 
@@ -747,7 +751,7 @@ def main():
   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
 
 
-  for batch, data in enumerate(dataset.take(1), 1):
+  for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
       print(f'{batch}\t{data}')
       training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
