@@ -851,12 +851,9 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch == 1:
-      with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-        model.summary(print_fn=lambda x: f.write(x + '\n'))
       print(f'# trainable variables: {len(model.trainable_variables)}')
     if batch % 10 == 0 :
-      
-      print(log_probs, grads, loss_value)
+      print(f'grads: {grads}')
       # print(input_ids, input_mask, token_type_ids, labels)
       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
       # write metrics
