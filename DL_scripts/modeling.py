@@ -564,28 +564,28 @@ class BertModel(tf.keras.Model):
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
         x = self.embedding(input_ids)
-        # token_type_embeddings = self.token_type_encoding(token_type_ids)
-        # token_type_embeddings = tf.reshape(token_type_embeddings,
-        #                                [batch_size, self.seq_length, self.width])
-        # x = x + token_type_embeddings
-        # x = x + self.pos_encoding
-        # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
-        # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
+        token_type_embeddings = self.token_type_encoding(token_type_ids)
+        token_type_embeddings = tf.reshape(token_type_embeddings,
+                                       [batch_size, self.seq_length, self.width])
+        x = x + token_type_embeddings
+        x = x + self.pos_encoding
+        x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
+        x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
-        # # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
-        # # mask of shape [batch_size, seq_length, seq_length] which is used
-        # # for the attention scores.
-        # attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
+        # mask of shape [batch_size, seq_length, seq_length] which is used
+        # for the attention scores.
+        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
-        # encoder_output = self.enc_layers(x, attention_mask, True, True)
-        # x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        # # We "pool" the model by simply taking the hidden state corresponding
-        # # to the first token. We assume that this has been pre-trained
-        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        encoder_output = self.enc_layers(x, attention_mask, True, True)
+        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        # We "pool" the model by simply taking the hidden state corresponding
+        # to the first token. We assume that this has been pre-trained
+        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
-        # #Last layer hidden-state of the first token of the sequence (classification token) 
-        # #further processed by a Linear layer and a Tanh activation function.
-        # x = self.pooled_output(first_token_tensor)
+        #Last layer hidden-state of the first token of the sequence (classification token) 
+        #further processed by a Linear layer and a Tanh activation function.
+        x = self.pooled_output(first_token_tensor)
 
         return x
 
@@ -687,12 +687,12 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
       weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-      output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]),
+      output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]), trainable=True,
           name="output_weights")
 
       bias_initializer = tf.zeros_initializer()
 
-      output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]),
+      output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
           name="output_bias")
 
       output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
