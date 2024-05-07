@@ -762,7 +762,7 @@ def main():
   rnd = 1
   vector_size = 253
   initial_fill = 1000
-  epochs = 50
+  epochs = 100
   num_train_examples = int(sys.argv[1]) # 632118
   nstep_per_epoch = num_train_examples // global_batch_size
   num_train_steps = int(nstep_per_epoch * epochs)  # total number of training steps/batches
@@ -887,9 +887,8 @@ def main():
       # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
       # print(f'# trainable variables: {len(model.trainable_variables)}')
-    # if batch % 10 == 0 :
-    #   # print(f'grads: {grads}')
-    #   # print(input_ids, input_mask, token_type_ids, labels)
+    if batch % 100 == 0 :
+      print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
     #   print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
     #   # write metrics
     #   with writer.as_default():
@@ -898,8 +897,8 @@ def main():
     #       tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
     #       writer.flush()
     #   td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-    if batch % 50 == 0 :
-      break
+    # if batch % 50 == 0 :
+    #   break
 
     if batch % nstep_per_epoch == 0:
       epoch += 1
