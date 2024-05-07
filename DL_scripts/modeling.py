@@ -564,28 +564,28 @@ class BertModel(tf.keras.Model):
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
         x = self.embedding(input_ids)
-        token_type_embeddings = self.token_type_encoding(token_type_ids)
-        token_type_embeddings = tf.reshape(token_type_embeddings,
-                                       [batch_size, self.seq_length, self.width])
-        x = x + token_type_embeddings
-        x = x + self.pos_encoding
-        x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
-        x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
+        # token_type_embeddings = self.token_type_encoding(token_type_ids)
+        # token_type_embeddings = tf.reshape(token_type_embeddings,
+        #                                [batch_size, self.seq_length, self.width])
+        # x = x + token_type_embeddings
+        # x = x + self.pos_encoding
+        # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
+        # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
-        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
-        # mask of shape [batch_size, seq_length, seq_length] which is used
-        # for the attention scores.
-        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        # # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
+        # # mask of shape [batch_size, seq_length, seq_length] which is used
+        # # for the attention scores.
+        # attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
-        encoder_output = self.enc_layers(x, attention_mask, True, True)
-        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        # We "pool" the model by simply taking the hidden state corresponding
-        # to the first token. We assume that this has been pre-trained
-        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        # encoder_output = self.enc_layers(x, attention_mask, True, True)
+        # x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        # # We "pool" the model by simply taking the hidden state corresponding
+        # # to the first token. We assume that this has been pre-trained
+        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
-        #Last layer hidden-state of the first token of the sequence (classification token) 
-        #further processed by a Linear layer and a Tanh activation function.
-        x = self.pooled_output(first_token_tensor)
+        # #Last layer hidden-state of the first token of the sequence (classification token) 
+        # #further processed by a Linear layer and a Tanh activation function.
+        # x = self.pooled_output(first_token_tensor)
 
         return x
 
@@ -780,12 +780,12 @@ def main():
   # if hvd.rank() == 0:
   # create output directory
   if not os.path.isdir(output_dir):
-      os.makedirs(output_dir)
+    os.makedirs(output_dir)
 
   # create directory for storing checkpoints
   ckpt_dir = os.path.join(output_dir, f'ckpts-rnd-{rnd}')
   if not os.path.isdir(ckpt_dir):
-      os.makedirs(ckpt_dir)
+    os.makedirs(ckpt_dir)
 
   # create checkpoint object to save model
   checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
@@ -793,7 +793,7 @@ def main():
   # create directory for storing logs
   tensorboard_dir = os.path.join(output_dir, f'logs-rnd-{rnd}')
   if not os.path.exists(tensorboard_dir):
-      os.makedirs(tensorboard_dir)
+    os.makedirs(tensorboard_dir)
 
   writer = tf.summary.create_file_writer(tensorboard_dir)
   td_writer = open(os.path.join(output_dir, f'logs-rnd-{rnd}', f'training_data_rnd_{rnd}.tsv'), 'w')
@@ -805,30 +805,26 @@ def main():
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
-    # print(input_ids, input_mask, token_type_ids, labels)
     loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch % 10 == 0 :
-          print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-          # write metrics
-          with writer.as_default():
-              tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-              tf.summary.scalar("train_loss", loss_value, step=batch)
-              tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-              writer.flush()
-          td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+      print(input_ids, input_mask, token_type_ids, labels)
+      print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+      # write metrics
+      with writer.as_default():
+          tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+          tf.summary.scalar("train_loss", loss_value, step=batch)
+          tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+          writer.flush()
+      td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-
-    if batch % 100 == 0:
+    if batch % 200 == 0 :
       break
 
     if batch % nstep_per_epoch == 0:
       epoch += 1
-
-  with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-        model.summary(print_fn=lambda x: f.write(x + '\n'))
 
   
 
