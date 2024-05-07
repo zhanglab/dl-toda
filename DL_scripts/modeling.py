@@ -875,7 +875,7 @@ def main():
           tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
           tf.summary.scalar("train_loss", loss_value, step=batch)
           tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-\          writer.flush()
+          writer.flush()
       td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
     if batch % 200 == 0 :
       break
