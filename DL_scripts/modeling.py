@@ -839,7 +839,7 @@ def main():
     log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
-
+    
     # print(f'logits 1: {logits_1}')
     # print(f'logits 2: {logits_2}')
     # print(f'probabilities: {probs}')
@@ -851,6 +851,8 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch == 1:
+      with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+        model.summary(print_fn=lambda x: f.write(x + '\n')) 
       print(f'# trainable variables: {len(model.trainable_variables)}')
     if batch % 10 == 0 :
       print(f'grads: {grads}')
