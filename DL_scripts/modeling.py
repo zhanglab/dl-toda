@@ -837,8 +837,8 @@ def main():
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
-    print(input_ids.shape())
-    print(data.shape())
+    print(input_ids.shape)
+    print(data.shape)
     # model.build()
 
     # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
