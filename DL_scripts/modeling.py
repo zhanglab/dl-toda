@@ -682,8 +682,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
       output_layer = model(input_ids, input_mask, token_type_ids)
 
-      # hidden_size = output_layer.shape[-1].value
-      # hidden_size = output_layer.shape[-1]
+      hidden_size = output_layer.shape[-1]
 
       weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
