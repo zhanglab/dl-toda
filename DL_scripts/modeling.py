@@ -751,6 +751,9 @@ def main():
         config=bert_config,
         is_training=is_training)
 
+  with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+        model.summary(print_fn=lambda x: f.write(x + '\n'))
+
   # define metrics
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -807,10 +810,10 @@ def main():
     input_ids, input_mask, token_type_ids, labels = data
     print(input_ids, input_mask, token_type_ids, labels)
     loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    break
+    # break
 
     # if batch % 100 == 0 and hvd.rank() == 0:
-    if batch % 100 == 0 :
+    if batch % 10 == 0 :
           print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
           # write metrics
           with writer.as_default():
