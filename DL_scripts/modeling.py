@@ -783,6 +783,8 @@ def main():
   for var in model.variables:
     print(var, "\n")
 
+  print(f'# variables: {len(model.variables)}')
+
   
 
   # define metrics
