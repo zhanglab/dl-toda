@@ -751,9 +751,6 @@ def main():
         config=bert_config,
         is_training=is_training)
 
-  with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-        model.summary(print_fn=lambda x: f.write(x + '\n'))
-
   # define metrics
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -825,6 +822,9 @@ def main():
 
     if batch % nstep_per_epoch == 0:
       epoch += 1
+
+  with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+        model.summary(print_fn=lambda x: f.write(x + '\n'))
 
   
 
