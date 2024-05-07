@@ -555,8 +555,9 @@ class BertModel(tf.keras.Model):
         # dimensional representation of the segment.
         self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
                             kernel_initializer=create_initializer(config.initializer_range))
-        # self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
-                            # kernel_initializer=create_initializer(config.initializer_range))
+
+        self.last_dense = tf.keras.layers.Dense(2, activation=tf.nn.log_softmax,
+                            kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
       
 
     def __call__(self, input_ids, input_mask, token_type_ids):
@@ -594,32 +595,33 @@ class BertModel(tf.keras.Model):
 
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
-        x = self.pooled_output(first_token_tensor)
+        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
 
 
         # output_layer = model(input_ids, input_mask, token_type_ids)
 
         # hidden_size = output_layer.shape[-1]
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
-            name="output_weights")
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+        #     name="output_weights")
 
-        bias_initializer = tf.zeros_initializer()
+        # bias_initializer = tf.zeros_initializer()
 
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
-            name="output_bias")
+        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+        #     name="output_bias")
 
         # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        logits_1 = tf.nn.dropout(x, rate=1-0.9)  # [batch_size, hidden_size]
-        logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True)
-        logits_2 = tf.nn.bias_add(logits_2_1, output_bias)
-        probabilities = tf.nn.softmax(logits_2, axis=-1)
-        log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1)
-        log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1)
-        return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
-        # return x
+        x = tf.nn.dropout(x, rate=1-0.9)  # [batch_size, hidden_size]
+        # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
+        # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
+        # probabilities = tf.nn.softmax(logits_2, axis=-1)
+        # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
+        # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
+        x = self.last_dense(x)
+        # return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
+        return x
 
 
 # def load_dataset(tfrecords, global_batch_size):
@@ -730,19 +732,19 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-        # log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
-        x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
+        log_probs = model(input_ids, input_mask, token_type_ids)
+        # x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
 
-    #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-    #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-    #     loss_value = tf.reduce_mean(per_example_loss)
+        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss_value = tf.reduce_mean(per_example_loss)
 
     # grads = tape.gradient(loss_value, model.trainable_variables)
     # opt.apply_gradients(zip(grads, model.trainable_variables))
 
     #update training accuracy
     # train_accuracy.update_state(labels, probabilities)
-    return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
+    return log_probs, one_hot_labels, per_example_loss, loss_value
     # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
@@ -850,8 +852,8 @@ def main():
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities)
+    log_probs, one_hot_labels, per_example_loss, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(log_probs, one_hot_labels, per_example_loss, loss_value)
     break
     # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
