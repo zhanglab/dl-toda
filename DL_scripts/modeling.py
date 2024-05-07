@@ -819,8 +819,8 @@ def main():
     # print(f'loss_value: {loss_value}')
 
     # if batch % 100 == 0 and hvd.rank() == 0:
-    if batch % 50 == 0 :
-      print(input_ids, input_mask, token_type_ids, labels)
+    if batch % 10 == 0 :
+      # print(input_ids, input_mask, token_type_ids, labels)
       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
       # write metrics
       with writer.as_default():
@@ -829,7 +829,6 @@ def main():
           tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
           writer.flush()
       td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-      break
     if batch % 200 == 0 :
       break
 
