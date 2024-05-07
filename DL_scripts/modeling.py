@@ -124,10 +124,15 @@ class BertConfig(object):
 def PositionalEncoding(config, seq_length, width):
     assert_op = tf.debugging.assert_less_equal(seq_length, config.max_position_embeddings)
     with tf.control_dependencies([assert_op]):
-        full_position_embeddings = tf.compat.v1.get_variable(
-            name="position_embeddings",
-            shape=[config.max_position_embeddings, config.hidden_size],
-            initializer=create_initializer(config.initializer_range))
+        # full_position_embeddings = tf.compat.v1.get_variable(
+        #     name="position_embeddings",
+        #     shape=[config.max_position_embeddings, config.hidden_size],
+        #     initializer=create_initializer(config.initializer_range))
+
+        weights_initializer = create_initializer(config.initializer_range)
+        full_position_embeddings = tf.Variable(
+            initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size]),
+            name="position_embeddings")
         # Since the position embedding table is a learned variable, we create it
         # using a (long) sequence length `max_position_embeddings`. The actual
         # sequence length might be shorter than this, for faster training of
@@ -159,11 +164,10 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
         self.seq_length = config.seq_length
         self.width = config.hidden_size
         self.token_type_vocab_size = config.type_vocab_size
-        self.initializer_range = config.initializer_range
-        self.token_type_table = tf.compat.v1.get_variable(
-        name="token_type_embeddings",
-        shape=[self.token_type_vocab_size, self.width],
-        initializer=create_initializer(self.initializer_range))
+        self.weights_initializer = create_initializer(config.initializer_range)
+        self.token_type_table = tf.Variable(
+            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, self.width]),
+            name="token_type_embeddings")
 
     def __call__(self, token_type_ids):
         # This vocab will be small so we always do one-hot here, since it is always
@@ -177,7 +181,8 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
 
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
-    return tf.compat.v1.truncated_normal_initializer(stddev=initializer_range)
+    return tf.keras.initializers.TruncatedNormal(stddev=initializer_range)
+    # return tf.compat.v1.truncated_normal_initializer(stddev=initializer_range)
 
 
 def dropout(input_tensor, dropout_prob):
@@ -805,7 +810,7 @@ def main():
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
-    print(input_ids, input_mask, token_type_ids, labels)
+    # print(input_ids, input_mask, token_type_ids, labels)
     loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
 
