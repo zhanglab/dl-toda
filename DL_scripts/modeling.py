@@ -843,8 +843,8 @@ def main():
     input_ids, input_mask, token_type_ids, labels = data
 
 
-    # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-    #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
+    with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+      model.summary(print_fn=lambda x: f.write(x + '\n')) 
 
 
     # print(input_ids, input_mask, token_type_ids, labels)
