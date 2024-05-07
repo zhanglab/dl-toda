@@ -781,6 +781,8 @@ def main():
         config=bert_config,
         is_training=is_training)
 
+  
+
   # define metrics
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -835,6 +837,14 @@ def main():
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
+    print(input_ids.shape())
+    print(data.shape())
+    # model.build()
+
+    # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+    #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
+
+
     # print(input_ids, input_mask, token_type_ids, labels)
     log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
@@ -851,8 +861,8 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch == 1:
-      with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-        model.summary(print_fn=lambda x: f.write(x + '\n')) 
+      # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
+      #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
       print(f'# trainable variables: {len(model.trainable_variables)}')
     if batch % 10 == 0 :
       print(f'grads: {grads}')
