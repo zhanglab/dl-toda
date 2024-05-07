@@ -850,7 +850,7 @@ def main():
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    log_probs_1, log_probs_2, probabilities, logits_1, logits_2 = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     print(x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities)
     break
     # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
