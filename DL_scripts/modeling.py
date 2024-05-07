@@ -811,7 +811,7 @@ def main():
 
     print(f'logits 1: {logits_1}')
     print(f'logits 2: {logits_2}')
-    print(f'probabilities: {probabilities}')
+    print(f'probabilities: {probs}')
     print(f'log_probs: {log_probs}')
     print(f'one_hot_labels: {one_hot_labels}')
     print(f'per_example_loss: {per_example_loss}')
