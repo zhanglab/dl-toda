@@ -571,52 +571,54 @@ class BertModel(tf.keras.Model):
         
         x = self.embedding(input_ids)
 
-        # token_type_embeddings = self.token_type_encoding(token_type_ids)
-        # token_type_embeddings = tf.reshape(token_type_embeddings,
-        #                                [batch_size, self.seq_length, self.width])
-        # x = x + token_type_embeddings
-        # x = x + self.pos_encoding
+        token_type_embeddings = self.token_type_encoding(token_type_ids)
+        token_type_embeddings = tf.reshape(token_type_embeddings,
+                                       [batch_size, self.seq_length, self.width])
+        x = x + token_type_embeddings
+        x = x + self.pos_encoding
+        x = self.norm_layer(x)
+        x = dropout(x, self.dropout_prob)
         # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
         # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
-        # # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
-        # # mask of shape [batch_size, seq_length, seq_length] which is used
-        # # for the attention scores.
-        # attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
+        # mask of shape [batch_size, seq_length, seq_length] which is used
+        # for the attention scores.
+        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
-        # encoder_output = self.enc_layers(x, attention_mask, True, True)
-        # x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        # # We "pool" the model by simply taking the hidden state corresponding
-        # # to the first token. We assume that this has been pre-trained
-        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        encoder_output = self.enc_layers(x, attention_mask, True, True)
+        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        # We "pool" the model by simply taking the hidden state corresponding
+        # to the first token. We assume that this has been pre-trained
+        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
-        # #Last layer hidden-state of the first token of the sequence (classification token) 
-        # #further processed by a Linear layer and a Tanh activation function.
-        # x = self.pooled_output(first_token_tensor)
+        #Last layer hidden-state of the first token of the sequence (classification token) 
+        #further processed by a Linear layer and a Tanh activation function.
+        x = self.pooled_output(first_token_tensor)
 
 
-        # # output_layer = model(input_ids, input_mask, token_type_ids)
+        # output_layer = model(input_ids, input_mask, token_type_ids)
 
-        # # hidden_size = output_layer.shape[-1]
+        # hidden_size = output_layer.shape[-1]
 
-        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
-        #     name="output_weights")
+        output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+            name="output_weights")
 
-        # bias_initializer = tf.zeros_initializer()
+        bias_initializer = tf.zeros_initializer()
 
-        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
-        #     name="output_bias")
+        output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+            name="output_bias")
 
-        # output_layer = tf.nn.dropout(x, rate=1-0.9)
+        output_layer = tf.nn.dropout(x, rate=1-0.9)
 
-        # logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
-        # logits = tf.nn.bias_add(logits, output_bias)
-        # probabilities = tf.nn.softmax(logits, axis=-1)
-        # log_probs = tf.nn.log_softmax(logits, axis=-1)
-        # return log_probs, probabilities
-        return x
+        logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+        return log_probs, probabilities
+        # return x
 
 
 # def load_dataset(tfrecords, global_batch_size):
@@ -709,8 +711,6 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
     with tf.GradientTape() as tape:
         input_ids, input_mask, token_type_ids, labels = data
 
-        output_layer = model(input_ids, input_mask, token_type_ids)
-
         # hidden_size = output_layer.shape[-1]
 
         # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
@@ -729,19 +729,19 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-    #     log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
+        log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
 
-    #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-    #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-    #     loss_value = tf.reduce_mean(per_example_loss)
+        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss_value = tf.reduce_mean(per_example_loss)
 
-    # grads = tape.gradient(loss_value, model.trainable_variables)
-    # opt.apply_gradients(zip(grads, model.trainable_variables))
+    grads = tape.gradient(loss_value, model.trainable_variables)
+    opt.apply_gradients(zip(grads, model.trainable_variables))
 
-    # #update training accuracy
-    # train_accuracy.update_state(labels, probabilities)
-    return output_layer
-    # return log_probs, grads, loss_value 
+    #update training accuracy
+    train_accuracy.update_state(labels, probabilities)
+    # return output_layer
+    return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
 
@@ -846,9 +846,9 @@ def main():
     input_ids, input_mask, token_type_ids, labels = data
 
     # print(input_ids, input_mask, token_type_ids, labels)
-    output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(output_layer)
-    # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    # print(output_layer)
+    log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
     
@@ -867,7 +867,7 @@ def main():
       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
       print(f'# trainable variables: {len(model.trainable_variables)}')
     if batch % 10 == 0 :
-      print(f'grads: {grads}')
+      # print(f'grads: {grads}')
       # print(input_ids, input_mask, token_type_ids, labels)
       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
       # write metrics
@@ -877,7 +877,7 @@ def main():
           tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
           writer.flush()
       td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-    if batch % 200 == 0 :
+    if batch % 50 == 0 :
       break
 
     if batch % nstep_per_epoch == 0:
