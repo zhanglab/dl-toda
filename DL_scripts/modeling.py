@@ -731,7 +731,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
         # log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
-        log_probs_1, log_probs_2, probabilities, logits_1, logits_2 = model(input_ids, input_mask, token_type_ids)
+        x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
 
     #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
     #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
@@ -742,7 +742,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
     #update training accuracy
     # train_accuracy.update_state(labels, probabilities)
-    return log_probs_1, log_probs_2, probabilities, logits_1, logits_2
+    return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
     # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
