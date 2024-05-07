@@ -535,7 +535,7 @@ class BertModel(tf.keras.Model):
             config.attention_probs_dropout_prob = 0.0 
     
         # create embedding layer
-        self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, mask_zero=True)
+        self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, mask_zero=True, trainable=True)
         # create token type embeddings
         self.token_type_encoding = TokenTypeEncoding(config=config)
         # create positional embeddings
@@ -809,17 +809,17 @@ def main():
     loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
 
-    print(f'logits 1: {logits_1}')
-    print(f'logits 2: {logits_2}')
-    print(f'probabilities: {probs}')
-    print(f'log_probs: {log_probs}')
-    print(f'one_hot_labels: {one_hot_labels}')
-    print(f'per_example_loss: {per_example_loss}')
-    print(f'per_example_loss_1: {per_example_loss_1}')
-    print(f'loss_value: {loss_value}')
+    # print(f'logits 1: {logits_1}')
+    # print(f'logits 2: {logits_2}')
+    # print(f'probabilities: {probs}')
+    # print(f'log_probs: {log_probs}')
+    # print(f'one_hot_labels: {one_hot_labels}')
+    # print(f'per_example_loss: {per_example_loss}')
+    # print(f'per_example_loss_1: {per_example_loss_1}')
+    # print(f'loss_value: {loss_value}')
 
     # if batch % 100 == 0 and hvd.rank() == 0:
-    if batch % 10 == 0 :
+    if batch % 50 == 0 :
       print(input_ids, input_mask, token_type_ids, labels)
       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
       # write metrics
