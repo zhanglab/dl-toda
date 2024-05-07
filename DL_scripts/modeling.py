@@ -683,7 +683,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
       output_layer = model(input_ids, input_mask, token_type_ids)
 
       # hidden_size = output_layer.shape[-1].value
-      hidden_size = output_layer.shape[-1]
+      # hidden_size = output_layer.shape[-1]
 
       weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
@@ -697,13 +697,13 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
 
       output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
 
-      logits = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
-      logits = tf.nn.bias_add(logits, output_bias)
-      probabilities = tf.nn.softmax(logits, axis=-1)
-      log_probs = tf.nn.log_softmax(logits, axis=-1)
+      logits_1 = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
+      logits_2 = tf.nn.bias_add(logits_1, output_bias)
+      probabilities = tf.nn.softmax(logits_2, axis=-1)
+      log_probs = tf.nn.log_softmax(logits_2, axis=-1)
 
       one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-
+      per_example_loss_1 = one_hot_labels * log_probs
       per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
       loss_value = tf.reduce_mean(per_example_loss)
 
@@ -713,7 +713,8 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
       #update training accuracy
       train_accuracy.update_state(labels, probabilities)
 
-      return loss_value, probabilities
+      # return loss_value, probabilities
+      return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
 
 
 def main():
@@ -805,8 +806,18 @@ def main():
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
-    loss_value, probs = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(input_ids, input_mask, token_type_ids, labels)
+    loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
+
+    print(f'logits 1: {logits_1}')
+    print(f'logits 2: {logits_2}')
+    print(f'probabilities: {probabilities}')
+    print(f'log_probs: {log_probs}')
+    print(f'one_hot_labels: {one_hot_labels}')
+    print(f'per_example_loss: {per_example_loss}')
+    print(f'per_example_loss_1: {per_example_loss_1}')
+    print(f'loss_value: {loss_value}')
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch % 10 == 0 :
@@ -819,7 +830,7 @@ def main():
           tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
           writer.flush()
       td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-
+      break
     if batch % 200 == 0 :
       break
 
