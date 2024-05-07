@@ -612,12 +612,13 @@ class BertModel(tf.keras.Model):
         #     name="output_bias")
 
         # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        logits = tf.nn.dropout(x, rate=1-0.9)
-        # logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
-        # logits = tf.nn.bias_add(logits, output_bias)
-        probabilities = tf.nn.softmax(logits, axis=-1)
-        log_probs = tf.nn.log_softmax(logits, axis=-1)
-        return log_probs, probabilities
+        logits_1 = tf.nn.dropout(x, rate=1-0.9)
+        logits_2 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True)
+        logits_2 = tf.nn.bias_add(logits_2, output_bias)
+        probabilities = tf.nn.softmax(logits_2, axis=-1)
+        log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1)
+        log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1)
+        return log_probs_1, log_probs_2, probabilities, logits_1, logits_2
         # return x
 
 
@@ -729,19 +730,20 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-        log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
+        # log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
+        log_probs_1, log_probs_2, probabilities, logits_1, logits_2 = model(input_ids, input_mask, token_type_ids)
 
-        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value = tf.reduce_mean(per_example_loss)
+    #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+    #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+    #     loss_value = tf.reduce_mean(per_example_loss)
 
-    grads = tape.gradient(loss_value, model.trainable_variables)
-    opt.apply_gradients(zip(grads, model.trainable_variables))
+    # grads = tape.gradient(loss_value, model.trainable_variables)
+    # opt.apply_gradients(zip(grads, model.trainable_variables))
 
     #update training accuracy
-    train_accuracy.update_state(labels, probabilities)
-    # return output_layer
-    return log_probs, grads, loss_value 
+    # train_accuracy.update_state(labels, probabilities)
+    return log_probs_1, log_probs_2, probabilities, logits_1, logits_2
+    # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
 
@@ -848,7 +850,10 @@ def main():
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    log_probs_1, log_probs_2, probabilities, logits_1, logits_2 = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(log_probs_1, log_probs_2, probabilities, logits_1, logits_2)
+    break
+    # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
     
