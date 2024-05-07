@@ -556,6 +556,8 @@ class BertModel(tf.keras.Model):
         # dimensional representation of the segment.
         self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
                             kernel_initializer=create_initializer(config.initializer_range))
+
+       
        
                                           
     def __call__(self, input_ids, input_mask, token_type_ids):
@@ -592,7 +594,29 @@ class BertModel(tf.keras.Model):
         #further processed by a Linear layer and a Tanh activation function.
         x = self.pooled_output(first_token_tensor)
 
-        return x
+
+        # output_layer = model(input_ids, input_mask, token_type_ids)
+
+        # hidden_size = output_layer.shape[-1]
+
+        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+
+        output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+            name="output_weights")
+
+        bias_initializer = tf.zeros_initializer()
+
+        output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+            name="output_bias")
+
+        output_layer = tf.nn.dropout(x, rate=1-0.9)
+
+        logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+        return log_probs, probabilities
+        # return x
 
 
 # def load_dataset(tfrecords, global_batch_size):
@@ -685,29 +709,29 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
     with tf.GradientTape() as tape:
         input_ids, input_mask, token_type_ids, labels = data
 
-        output_layer = model(input_ids, input_mask, token_type_ids)
+        # output_layer = model(input_ids, input_mask, token_type_ids)
 
-        hidden_size = output_layer.shape[-1]
+        # hidden_size = output_layer.shape[-1]
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]), trainable=True,
-            name="output_weights")
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]), trainable=True,
+        #     name="output_weights")
 
-        bias_initializer = tf.zeros_initializer()
+        # bias_initializer = tf.zeros_initializer()
 
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
-            name="output_bias")
+        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
+        #     name="output_bias")
 
-        output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
+        # output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
 
-        logits_1 = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
-        logits_2 = tf.nn.bias_add(logits_1, output_bias)
-        probabilities = tf.nn.softmax(logits_2, axis=-1)
-        log_probs = tf.nn.log_softmax(logits_2, axis=-1)
+        # logits_1 = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
+        # logits_2 = tf.nn.bias_add(logits_1, output_bias)
+        # probabilities = tf.nn.softmax(logits_2, axis=-1)
+        # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
+        log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
 
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-        per_example_loss_1 = one_hot_labels * log_probs
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
 
@@ -717,8 +741,9 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
     #update training accuracy
     train_accuracy.update_state(labels, probabilities)
 
+    return log_probs, grads, loss_value 
     # return loss_value, probabilities
-    return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
+    # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
 
 
 def main():
@@ -811,7 +836,8 @@ def main():
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
     input_ids, input_mask, token_type_ids, labels = data
     # print(input_ids, input_mask, token_type_ids, labels)
-    loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
 
     # print(f'logits 1: {logits_1}')
@@ -825,6 +851,8 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch % 10 == 0 :
+      print(model.trainable_variables)
+      print(log_probs, grads, loss_value)
       # print(input_ids, input_mask, token_type_ids, labels)
       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
       # write metrics
