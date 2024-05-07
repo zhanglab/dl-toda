@@ -556,13 +556,12 @@ class BertModel(tf.keras.Model):
         self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
                             kernel_initializer=create_initializer(config.initializer_range))
 
-        self.last_dense = tf.keras.layers.Dense(2, activation=tf.nn.log_softmax,
-                            kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
+        self.last_dense = tf.keras.layers.Dense(2, kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
 
-        self.last_dense_prob = tf.keras.layers.Dense(2, activation=tf.nn.softmax,
-                            kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
+        self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
+        self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
+
       
-
     def __call__(self, input_ids, input_mask, token_type_ids):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
@@ -622,10 +621,11 @@ class BertModel(tf.keras.Model):
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
-        log_x = self.last_dense(x) # [batch_size, num_labels]
-        prob_x = self.last_dense_prob(x)
+        logits = self.last_dense(x) # [batch_size, num_labels]
+        log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
+        probs = self.softmax_act(logits) # [batch_size, num_labels]
         # return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
-        return log_x, prob_x
+        return log_probs, probs, logits
 
 
 # def load_dataset(tfrecords, global_batch_size):
@@ -683,9 +683,9 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
     input_mask = inputs["input_mask"].gpu()
     segment_ids = inputs["segment_ids"].gpu()
     label_ids = inputs['label_ids'].gpu()
-    # is_real_example = inputs['is_real_example'].gpu()
+    is_real_example = inputs['is_real_example'].gpu()
 
-    return (input_ids, input_mask, segment_ids, label_ids)
+    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
 
 # class DALIPreprocessor(object):
@@ -736,20 +736,21 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-        log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
+        log_probs, probs, logits = model(input_ids, input_mask, token_type_ids)
         # x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
-
+        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
         product = one_hot_labels * log_probs
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value = tf.reduce_mean(per_example_loss)
+        loss_value_1 = tf.reduce_mean(per_example_loss)
+        loss_value_2 = loss(labels, probs)
 
     grads = tape.gradient(loss_value, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
 
     #update training accuracy
-    train_accuracy.update_state(labels, probabilities)
-    return log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss
+    train_accuracy.update_state(labels, probs)
+    return log_probs, probs, logits, loss_value_1, loss_value_2, predictions
     # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
@@ -775,8 +776,8 @@ def main():
 
 
   dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-                                    initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size)),
-                                output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), batch_size=global_batch_size, num_threads=4, device_id=0)
+                                    initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size), (global_batch_size)),
+                                output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=global_batch_size, num_threads=4, device_id=0)
                                 
 
   bert_config_file = '/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/bert_tf2/bert_config.json'
@@ -852,14 +853,22 @@ def main():
   epoch = 0
 
   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
-    input_ids, input_mask, token_type_ids, labels = data
+    input_ids, input_mask, token_type_ids, labels, is_real_example = data
 
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss)
-    break
+    log_probs, probs, logits, loss_value_1, loss_value_2, predictions = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions)
+
+    train_accuracy = tf.compat.v1.metrics.accuracy(
+            labels=labels, predictions=predictions, weights=is_real_example)
+
+    print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
+
+
+    # print(log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss)
+    # break
     # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # break
@@ -875,20 +884,21 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch == 1:
+      print(input_ids, input_mask, token_type_ids, labels)
       # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
-      print(f'# trainable variables: {len(model.trainable_variables)}')
-    if batch % 10 == 0 :
-      # print(f'grads: {grads}')
-      # print(input_ids, input_mask, token_type_ids, labels)
-      print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-      # write metrics
-      with writer.as_default():
-          tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-          tf.summary.scalar("train_loss", loss_value, step=batch)
-          tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-          writer.flush()
-      td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+      # print(f'# trainable variables: {len(model.trainable_variables)}')
+    # if batch % 10 == 0 :
+    #   # print(f'grads: {grads}')
+    #   # print(input_ids, input_mask, token_type_ids, labels)
+    #   print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+    #   # write metrics
+    #   with writer.as_default():
+    #       tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+    #       tf.summary.scalar("train_loss", loss_value, step=batch)
+    #       tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+    #       writer.flush()
+    #   td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
     if batch % 50 == 0 :
       break
 
