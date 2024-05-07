@@ -716,7 +716,7 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
 # @tf.function
 def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
     with tf.GradientTape() as tape:
-        input_ids, input_mask, token_type_ids, labels = data
+        input_ids, input_mask, token_type_ids, labels, is_real_example = data
 
         # hidden_size = output_layer.shape[-1]
 
@@ -884,7 +884,7 @@ def main():
 
     # if batch % 100 == 0 and hvd.rank() == 0:
     if batch == 1:
-      print(input_ids, input_mask, token_type_ids, labels)
+      print(input_ids, input_mask, token_type_ids, labels, is_real_example)
       # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
       # print(f'# trainable variables: {len(model.trainable_variables)}')
