@@ -804,8 +804,9 @@ def main():
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-  # init_lr = 5e-5
-  init_lr = 0.001
+  # init_lr = 5e-5 --> too low
+  # init_lr = 0.001 --> works
+  init_lr = 2e-5
 
   # define learning rate polynomial decay
   # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
