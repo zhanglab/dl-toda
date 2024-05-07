@@ -601,20 +601,20 @@ class BertModel(tf.keras.Model):
 
         # hidden_size = output_layer.shape[-1]
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
-            name="output_weights")
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+        #     name="output_weights")
 
-        bias_initializer = tf.zeros_initializer()
+        # bias_initializer = tf.zeros_initializer()
 
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
-            name="output_bias")
+        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+        #     name="output_bias")
 
-        output_layer = tf.nn.dropout(x, rate=1-0.9)
-
-        logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
-        logits = tf.nn.bias_add(logits, output_bias)
+        # output_layer = tf.nn.dropout(x, rate=1-0.9)
+        logits = = tf.nn.dropout(x, rate=1-0.9)
+        # logits = tf.linalg.matmul(x, output_weights, transpose_b=True)
+        # logits = tf.nn.bias_add(logits, output_bias)
         probabilities = tf.nn.softmax(logits, axis=-1)
         log_probs = tf.nn.log_softmax(logits, axis=-1)
         return log_probs, probabilities
