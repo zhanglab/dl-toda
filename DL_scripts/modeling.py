@@ -558,6 +558,9 @@ class BertModel(tf.keras.Model):
 
         self.last_dense = tf.keras.layers.Dense(2, activation=tf.nn.log_softmax,
                             kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
+
+        self.last_dense_prob = tf.keras.layers.Dense(2, activation=tf.nn.softmax,
+                            kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
       
 
     def __call__(self, input_ids, input_mask, token_type_ids):
@@ -619,9 +622,10 @@ class BertModel(tf.keras.Model):
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
-        x = self.last_dense(x) # [batch_size, num_labels]
+        log_x = self.last_dense(x) # [batch_size, num_labels]
+        prob_x = self.last_dense_prob(x)
         # return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
-        return x
+        return log_x, prob_x
 
 
 # def load_dataset(tfrecords, global_batch_size):
@@ -732,7 +736,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-        log_probs = model(input_ids, input_mask, token_type_ids)
+        log_probs, probabilities = model(input_ids, input_mask, token_type_ids)
         # x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
 
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
@@ -740,12 +744,12 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
 
-    # grads = tape.gradient(loss_value, model.trainable_variables)
-    # opt.apply_gradients(zip(grads, model.trainable_variables))
+    grads = tape.gradient(loss_value, model.trainable_variables)
+    opt.apply_gradients(zip(grads, model.trainable_variables))
 
     #update training accuracy
-    # train_accuracy.update_state(labels, probabilities)
-    return log_probs, one_hot_labels, per_example_loss, loss_value, product
+    train_accuracy.update_state(labels, probabilities)
+    return log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss
     # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
@@ -853,8 +857,8 @@ def main():
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    log_probs, one_hot_labels, per_example_loss, loss_value, product = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(log_probs, one_hot_labels, product, per_example_loss, loss_value)
+    log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss)
     break
     # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
