@@ -748,12 +748,9 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
     grads = tape.gradient(loss_value_1, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
 
-    train_accuracy_1 = tf.compat.v1.metrics.accuracy(
-            labels=labels, predictions=predictions, weights=is_real_example)
-
     #update training accuracy
     train_accuracy.update_state(labels, probs)
-    return log_probs, probs, logits, loss_value_1, loss_value_2, predictions, train_accuracy_1
+    return log_probs, probs, logits, loss_value_1, loss_value_2, predictions
     # return log_probs, grads, loss_value 
     # return loss_value, probabilities
     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
@@ -861,10 +858,10 @@ def main():
     # print(input_ids, input_mask, token_type_ids, labels)
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
-    log_probs, probs, logits, loss_value_1, loss_value_2, predictions, train_accuracy_1 = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions, train_accuracy_1)
+    log_probs, probs, logits, loss_value_1, loss_value_2, predictions = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+    print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions)
 
-    print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100} - {train_accuracy_1.result().numpy()*100}')
+    print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
 
 
     # print(log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss)
