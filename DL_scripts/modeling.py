@@ -745,7 +745,7 @@ def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batc
         loss_value_1 = tf.reduce_mean(per_example_loss)
         loss_value_2 = loss(labels, probs)
 
-    grads = tape.gradient(loss_value, model.trainable_variables)
+    grads = tape.gradient(loss_value_1, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
 
     #update training accuracy
