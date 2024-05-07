@@ -804,7 +804,8 @@ def main():
   loss = tf.losses.SparseCategoricalCrossentropy()
   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-  init_lr = 5e-5
+  # init_lr = 5e-5
+  init_lr = 0.001
 
   # define learning rate polynomial decay
   # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
@@ -859,7 +860,7 @@ def main():
     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     # print(output_layer)
     log_probs, probs, logits, loss_value_1, loss_value_2, predictions = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-    print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions)
+    # print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions)
 
     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
 
@@ -880,8 +881,8 @@ def main():
     # print(f'loss_value: {loss_value}')
 
     # if batch % 100 == 0 and hvd.rank() == 0:
-    if batch == 1:
-      print(input_ids, input_mask, token_type_ids, labels, is_real_example)
+    # if batch == 1:
+    #   print(input_ids, input_mask, token_type_ids, labels, is_real_example)
       # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
       # print(f'# trainable variables: {len(model.trainable_variables)}')
