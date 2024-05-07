@@ -780,7 +780,7 @@ def main():
         config=bert_config,
         is_training=is_training)
 
-  for var in my_model.variables:
+  for var in model.variables:
     print(var, "\n")
 
   
