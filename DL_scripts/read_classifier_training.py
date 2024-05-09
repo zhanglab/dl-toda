@@ -280,10 +280,10 @@ def main():
         bert_config = BertConfig.from_json_file(args.bert_config_file)
 
         train_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-                                initial_fill=initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                                initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
                             output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
         val_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
-                                initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                                initial_fill=args.initial_fill, batch_size=global_batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
                             output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
 
     else:
@@ -318,11 +318,11 @@ def main():
         linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
         initial_learning_rate=init_lr,
         end_learning_rate=0,
-        decay_steps=num_train_steps)
+        decay_steps=nstep_per_epoch*args.epochs)
 
         # define linear warmup schedule
         warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-        warmup_steps = int(warmup_proportion * num_train_steps)
+        warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
         warmup_schedule = LinearWarmup(
         warmup_learning_rate = 0,
         after_warmup_lr_sched = linear_decay,
