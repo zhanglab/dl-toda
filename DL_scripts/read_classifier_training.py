@@ -283,7 +283,7 @@ def main():
                                 initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
                             output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
         val_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
-                                initial_fill=args.initial_fill, batch_size=global_batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                                initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
                             output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
 
     else:
