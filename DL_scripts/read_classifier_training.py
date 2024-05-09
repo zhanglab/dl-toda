@@ -21,6 +21,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
+from BERT import BertConfig, BertModel
 import argparse
 
 # set seed
@@ -81,6 +82,34 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fi
     labels = inputs["label"].gpu()
     return (reads, labels)
 
+
+# define the BERT DALI pipeline
+@pipeline_def
+def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, training=True):
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=0,
+                                 num_shards=1,
+                                 stick_to_shard=False,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    input_mask = inputs["input_mask"].gpu()
+    segment_ids = inputs["segment_ids"].gpu()
+    label_ids = inputs['label_ids'].gpu()
+    is_real_example = inputs['is_real_example'].gpu()
+
+    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+
+
+
 class DALIPreprocessor(object):
     def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
                deterministic=False, training=False):
@@ -105,9 +134,21 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 @tf.function
-def training_step(reads, labels, train_accuracy, loss, opt, model, first_batch):
+def training_step(config, args, data, train_accuracy, loss, opt, model, num_labels, first_batch):
+    is_training = True
     with tf.GradientTape() as tape:
-        probs = model(reads, training=True)
+        if args.model_type == 'BERT':
+            input_ids, input_mask, token_type_ids, labels, is_real_example = data
+            log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
+            # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+            # product = one_hot_labels * log_probs
+            # per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+            # loss_value_1 = tf.reduce_mean(per_example_loss)
+            # loss_value_2 = loss(labels, probs)
+        else:
+            reads, labels = data
+            probs = model(reads, training=True)
         # get the loss
         loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
@@ -135,14 +176,22 @@ def training_step(reads, labels, train_accuracy, loss, opt, model, first_batch):
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, grads, reads, labels, probs
+    return loss_value
 
 @tf.function
-def testing_step(reads, labels, loss, val_loss, val_accuracy, model):
-    probs = model(reads, training=False)
+def testing_step(config, data, loss, val_loss, val_accuracy, model):
+    if args.model_type == 'BERT':
+        is_training = False
+        input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
+    else:
+        reads, labels = data
+        probs = model(reads, training=False)
     val_accuracy.update_state(labels, probs)
     loss_value = loss(labels, probs)
     val_loss.update_state(loss_value)
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -176,7 +225,9 @@ def main():
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM'])
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
+    parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
@@ -188,7 +239,7 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
     args = parser.parse_args()
 
-    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
     # define some training and model parameters
     if args.DNA_model:
@@ -207,7 +258,7 @@ def main():
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
     class_mapping = json.load(f)
-    num_classes = len(class_mapping)
+    num_labels = len(class_mapping)
 
     # create dtype policy
     policy = keras.mixed_precision.Policy('mixed_float16')
@@ -225,13 +276,24 @@ def main():
     # compute number of steps/batches to iterate over entire validation set
     val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
 
-    train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
-                                           deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
-                                        deterministic=False, training=True)
+    if args.model_type == 'BERT':
+        bert_config = BertConfig.from_json_file(args.bert_config_file)
 
-    train_input = train_preprocessor.get_device_dataset()
-    val_input = val_preprocessor.get_device_dataset()
+        train_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
+                                initial_fill=initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                            output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
+        val_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
+                                initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                            output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
+
+    else:
+        train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
+                                               deterministic=False, training=True)
+        val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
+                                            deterministic=False, training=True)
+        train_input = train_preprocessor.get_device_dataset()
+        val_input = val_preprocessor.get_device_dataset()
+
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
@@ -249,6 +311,27 @@ def main():
         opt = tf.keras.optimizers.Adam(init_lr)
     elif args.optimizer == 'SGD':
         opt = tf.keras.optimizers.SGD(init_lr)
+    elif args.model_type == 'BERT':
+        from args.path_to_lr_schedule import LinearWarmup
+
+        # define learning rate polynomial decay
+        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=init_lr,
+        end_learning_rate=0,
+        decay_steps=num_train_steps)
+
+        # define linear warmup schedule
+        warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+        warmup_steps = int(warmup_proportion * num_train_steps)
+        warmup_schedule = LinearWarmup(
+        warmup_learning_rate = 0,
+        after_warmup_lr_sched = linear_decay,
+        warmup_steps = warmup_steps)
+
+        opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+        # exclude variables from weight decay
+        opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+    
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
@@ -260,7 +343,10 @@ def main():
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        if args.model_type == 'BERT':
+              model = BertModel(config=bert_config)
+        else:
+            model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -308,17 +394,19 @@ def main():
 
     start = datetime.datetime.now()
 
+
+
     # create empty dictionary to store the labels
     labels_dict = defaultdict(int)
-    for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
+    # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
+    for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value, gradients, reads, labels, probs = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
-        print(loss_value, reads, labels, probs)
+        loss_value = training_step(config, args, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
-        labels_count = Counter(labels.numpy())
-        for k, v in labels_count.items():
-            labels_dict[str(k)] += v
-
+        # labels_count = Counter(labels.numpy())
+        # for k, v in labels_count.items():
+        #     labels_dict[str(k)] += v
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -333,11 +421,12 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # save dictionary of labels count
-            with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
-                json.dump(labels_dict, labels_outfile)
+            # with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
+            #     json.dump(labels_dict, labels_outfile)
             # evaluate model
-            for _, (reads, labels) in enumerate(val_input.take(val_steps)):
-                testing_step(reads, labels, loss, val_loss, val_accuracy, model)
+            for _, data in enumerate(val_input.take(val_steps)):
+                testing_step(config, data, loss, val_loss, val_accuracy, model)
+
 
             # adjust learning rate
             if epoch % args.lr_decay == 0:
@@ -365,7 +454,7 @@ def main():
             epoch += 1
 
 
-    if hvd.rank() == 0:
+    if hvd.rank() == 0 and args.model_type != 'BERT':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
