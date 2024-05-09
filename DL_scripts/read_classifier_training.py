@@ -339,14 +339,14 @@ def main():
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        model = models[args.model_type](args, vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
         if args.model_type == 'BERT':
               model = BertModel(config=bert_config)
         else:
-            model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+            model = models[args.model_type](args, vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -379,7 +379,7 @@ def main():
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
             f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_labels}\nEpochs\t{args.epochs}\n'
                     f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
