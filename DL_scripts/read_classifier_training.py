@@ -277,6 +277,7 @@ def main():
     val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
 
     if args.model_type == 'BERT':
+        print(f'dataset for bert: {args.model_type}')
         bert_config = BertConfig.from_json_file(args.bert_config_file)
 
         train_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
