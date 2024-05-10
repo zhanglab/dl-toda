@@ -168,7 +168,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
         # This vocab will be small so we always do one-hot here, since it is always
         # faster for a small vocabulary.
         flat_token_type_ids = tf.reshape(token_type_ids, [-1])
-        one_hot_ids = tf.one_hot(flat_token_type_ids, depth=self.token_type_vocab_size)
+        one_hot_ids = tf.one_hot(flat_token_type_ids, depth=self.token_type_vocab_size, dtype='float16')
         token_type_embeddings = tf.matmul(one_hot_ids, self.token_type_table)
 
         return token_type_embeddings
