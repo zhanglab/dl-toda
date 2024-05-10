@@ -109,29 +109,37 @@ def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, t
     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
 
-
 class DALIPreprocessor(object):
-    def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
                deterministic=False, training=False):
 
         device_id = hvd.local_rank()
         shard_id = hvd.rank()
         num_gpus = hvd.size()
-        self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
-
-        # self.daliop = dali_tf.DALIIterator()
-
+        
         self.batch_size = batch_size
         self.device_id = device_id
 
-        self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-            output_shapes=((batch_size, vector_size), (batch_size)),
-            batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+        if args.model_type == "BERT":
+            self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        else:
+            self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+   
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
     def get_device_dataset(self):
         return self.dalidataset
+
 
 @tf.function
 def training_step(config, args, data, train_accuracy, loss, opt, model, num_labels, first_batch):
@@ -280,20 +288,13 @@ def main():
         print(f'dataset for bert: {args.model_type}')
         bert_config = BertConfig.from_json_file(args.bert_config_file)
 
-        train_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-                                initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-                            output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
-        val_input = dali_tf.DALIDataset(pipeline=get_bert_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
-                                initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-                            output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)   
-
-    else:
-        train_preprocessor = DALIPreprocessor(train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
-                                               deterministic=False, training=True)
-        val_preprocessor = DALIPreprocessor(val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
-                                            deterministic=False, training=True)
-        train_input = train_preprocessor.get_device_dataset()
-        val_input = val_preprocessor.get_device_dataset()
+    # load data
+    train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
+                                           deterministic=False, training=True)
+    val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
+                                        deterministic=False, training=True)
+    train_input = train_preprocessor.get_device_dataset()
+    val_input = val_preprocessor.get_device_dataset()
 
 
     # update epoch and learning rate if necessary
@@ -308,11 +309,7 @@ def main():
                                                   step_size=2 * nstep_per_epoch)
 
     # define optimizer
-    if args.optimizer == 'Adam':
-        opt = tf.keras.optimizers.Adam(init_lr)
-    elif args.optimizer == 'SGD':
-        opt = tf.keras.optimizers.SGD(init_lr)
-    elif args.model_type == 'BERT':
+    if args.model_type == 'BERT':
         from args.path_to_lr_schedule import LinearWarmup
 
         # define learning rate polynomial decay
@@ -332,6 +329,11 @@ def main():
         opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
         # exclude variables from weight decay
         opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+    else:
+        if args.optimizer == 'Adam':
+            opt = tf.keras.optimizers.Adam(init_lr)
+        elif args.optimizer == 'SGD':
+            opt = tf.keras.optimizers.SGD(init_lr)
     
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
@@ -394,8 +396,6 @@ def main():
                         f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
     start = datetime.datetime.now()
-
-
 
     # create empty dictionary to store the labels
     labels_dict = defaultdict(int)
