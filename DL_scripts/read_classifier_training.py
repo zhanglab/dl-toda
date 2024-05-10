@@ -397,7 +397,7 @@ def main():
                     f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-            if args.model != 'BERT':
+            if args.model_type != 'BERT':
                 f.write(f'Vocabulary size\t{vocab_size}\n')
             if args.model_type in ["DNA_1", "DNA_2"]:
                 f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
