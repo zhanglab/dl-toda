@@ -85,7 +85,7 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fi
 
 # define the BERT DALI pipeline
 @pipeline_def
-def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, training=True):
+def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
