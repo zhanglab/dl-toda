@@ -293,7 +293,7 @@ def main():
 
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
-        bert_config = BertConfig.from_json_file(args.bert_config_file)
+        config = BertConfig.from_json_file(args.bert_config_file)
 
     # load data
     train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
