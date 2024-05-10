@@ -355,7 +355,7 @@ def main():
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
         if args.model_type == 'BERT':
-              model = BertModel(config=bert_config)
+              model = BertModel(config=config)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
