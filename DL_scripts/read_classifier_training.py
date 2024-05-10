@@ -142,10 +142,10 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(config, args, data, train_accuracy, loss, opt, model, num_labels, first_batch):
+def training_step(config, model_type, data, train_accuracy, loss, opt, model, num_labels, first_batch):
     is_training = True
     with tf.GradientTape() as tape:
-        if args.model_type == 'BERT':
+        if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -412,7 +412,7 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value = training_step(config, args, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        loss_value = training_step(config, args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
