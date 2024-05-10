@@ -207,7 +207,7 @@ def main():
     parser.add_argument('--train_idx_files', type=str, help='path to training dali index files', required=True)
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files', required=True)
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'), required=True)
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
@@ -231,9 +231,10 @@ def main():
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
-    parser.add_argument('--vocab', help="Path to the vocabulary file")
+    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
+    parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
@@ -249,18 +250,24 @@ def main():
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
-    # define some training and model parameters
-    if args.DNA_model:
-        vector_size = 500 if args.paired_reads else 250
-        vocab_size = 5
-    else:
+    # get vocabulary size
+    if args.model_type != 'BERT':
         with open(args.vocab, 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
-        if args.paired_reads:
-            vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
-        else:
-            vector_size = args.max_read_size - args.k_value + 1
+
+    # define some training and model parameters
+    # if args.DNA_model:
+    #     vector_size = 500 if args.paired_reads else 250
+    #     vocab_size = 5
+    # else:
+    #     with open(args.vocab, 'r') as f:
+    #         content = f.readlines()
+    #         vocab_size = len(content)
+        # if args.paired_reads:
+        #     vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
+        # else:
+        #     vector_size = args.max_read_size - args.k_value + 1
 
 
     # load class_mapping file mapping label IDs to species
@@ -289,9 +296,9 @@ def main():
         bert_config = BertConfig.from_json_file(args.bert_config_file)
 
     # load data
-    train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, vector_size, args.initial_fill,
+    train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
                                            deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, vector_size, args.initial_fill,
+    val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
                                         deterministic=False, training=True)
     train_input = train_preprocessor.get_device_dataset()
     val_input = val_preprocessor.get_device_dataset()
@@ -342,14 +349,14 @@ def main():
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
         if args.model_type == 'BERT':
               model = BertModel(config=bert_config)
         else:
-            model = models[args.model_type](args, vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
