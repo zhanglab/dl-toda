@@ -275,7 +275,7 @@ def main():
     class_mapping = json.load(f)
     num_labels = len(class_mapping)
 
-    # create dtype policy
+    # modify tensorflow precision mode
     policy = keras.mixed_precision.Policy('mixed_float16')
     keras.mixed_precision.set_global_policy(policy)
     print('Compute dtype: %s' % policy.compute_dtype)
@@ -343,6 +343,7 @@ def main():
         elif args.optimizer == 'SGD':
             opt = tf.keras.optimizers.SGD(init_lr)
     
+    # prevent numeric underflow when using float16
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
@@ -418,7 +419,8 @@ def main():
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
         #     labels_dict[str(k)] += v
-
+        if batch == 1:
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
