@@ -356,7 +356,11 @@ def main():
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
     else:
         if args.model_type == 'BERT':
-              model = BertModel(config=config)
+            model = BertModel(config=config)
+            # define a forward pass to allow the model
+            for element in train_input:
+                input_ids, input_mask, token_type_ids, _, _ = element
+                model(config, input_ids, input_mask, token_type_ids, False)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
