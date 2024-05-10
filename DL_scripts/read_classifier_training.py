@@ -187,8 +187,8 @@ def training_step(config, model_type, data, train_accuracy, loss, opt, model, nu
     return loss_value
 
 @tf.function
-def testing_step(config, data, loss, val_loss, val_accuracy, model):
-    if args.model_type == 'BERT':
+def testing_step(config, model_type, data, loss, val_loss, val_accuracy, model):
+    if model_type == 'BERT':
         is_training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
@@ -438,7 +438,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(config, data, loss, val_loss, val_accuracy, model)
+                testing_step(config, args.model_type, data, loss, val_loss, val_accuracy, model)
 
 
             # adjust learning rate
