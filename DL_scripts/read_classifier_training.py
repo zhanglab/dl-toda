@@ -317,7 +317,8 @@ def main():
 
     # define optimizer
     if args.model_type == 'BERT':
-        from args.path_to_lr_schedule import LinearWarmup
+        sys.path.append(args.path_to_lr_schedule)
+        from lr_schedule import LinearWarmup
 
         # define learning rate polynomial decay
         linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
