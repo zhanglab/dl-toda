@@ -126,8 +126,8 @@ def PositionalEncoding(config, seq_length, width):
 
       weights_initializer = create_initializer(config.initializer_range)
       full_position_embeddings = tf.Variable(
-          initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size]),
-          name="position_embeddings", dtype='float16')
+          initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
+          name="position_embeddings")
       # Since the position embedding table is a learned variable, we create it
       # using a (long) sequence length `max_position_embeddings`. The actual
       # sequence length might be shorter than this, for faster training of
@@ -161,8 +161,8 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
         self.token_type_vocab_size = config.type_vocab_size
         self.weights_initializer = create_initializer(config.initializer_range)
         self.token_type_table = tf.Variable(
-            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, self.width]),
-            name="token_type_embeddings", dtype='float16')
+            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, self.width],dtype='float16'),
+            name="token_type_embeddings")
 
     def __call__(self, token_type_ids):
         # This vocab will be small so we always do one-hot here, since it is always
