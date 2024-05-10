@@ -361,6 +361,7 @@ def main():
             for element in train_input:
                 input_ids, input_mask, token_type_ids, _, _ = element
                 model(config, input_ids, input_mask, token_type_ids, False)
+                break
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
