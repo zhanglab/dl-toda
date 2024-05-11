@@ -579,7 +579,7 @@ class BertModel(tf.keras.Model):
         # for the attention scores.
         attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
-        encoder_output = self.enc_layers(config, x, attention_mask, True, True, training)
+        encoder_output = self.enc_layers(x, attention_mask, True, True, training)
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
