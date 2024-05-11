@@ -317,7 +317,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         self.num_attention_heads = config.num_attention_heads
         self.initializer_range = config.initializer_range
         self.size_per_head = int(config.hidden_size / config.num_attention_heads)
-        # self.attention_probs_dropout_prob = config.attention_probs_dropout_prob
+        self.attention_probs_dropout_prob = config.attention_probs_dropout_prob
         # `query_layer` = [B*F, N*H]
         self.query_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='query', kernel_initializer=create_initializer(self.initializer_range))
@@ -327,7 +327,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         # `value_layer` = [B*T, N*H]
         self.value_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='value', kernel_initializer=create_initializer(self.initializer_range))
-        self.dropout = tf.keras.layers.Dropout(config.attention_probs_dropout_prob)
+        # self.dropout = tf.keras.layers.Dropout(config.attention_probs_dropout_prob)
 
     def __call__(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
 
@@ -386,7 +386,9 @@ class AttentionLayer(tf.keras.layers.Layer):
         # seem a bit unusual, but is taken from the original Transformer paper.
         # attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
         # attention_probs = tf.nn.dropout(attention_probs, 1.0 - self.attention_probs_dropout_prob, training=training)
-        attention_probs = self.dropout(training=training)(attention_probs)
+        # attention_probs = self.dropout(training=training)(attention_probs)
+        if training:
+            tf.nn.dropout(attention_probs, rate=self.attention_probs_dropout_prob)
 
         # `value_layer` = [B, T, N, H]
         value_layer = tf.reshape(
@@ -421,7 +423,7 @@ class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
         self.num_attention_heads = config.num_attention_heads
-        # self.dropout_prob = config.hidden_dropout_prob
+        self.dropout_prob = config.hidden_dropout_prob
         self.hidden_size = config.hidden_size
         self.intermediate_size = config.intermediate_size
         self.num_hidden_layers = config.num_hidden_layers
@@ -430,7 +432,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu")
         self.layer_output = tf.keras.layers.Dense(self.hidden_size)
         self.layer_norm = tf.keras.layers.LayerNormalization()
-        self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
+        # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
 
     def __call__(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
@@ -477,7 +479,9 @@ class EncoderLayer(tf.keras.layers.Layer):
         attention_output = self.attention_output(attention_output)
         # attention_output = dropout(attention_output, self.dropout_prob, training=training)
         # attention_output = tf.nn.dropout(attention_output, 1.0 - self.dropout_prob, training=training)
-        attention_output = self.dropout(training=training)(attention_output)
+        # attention_output = self.dropout(training=training)(attention_output)
+        if training:
+            tf.nn.dropout(attention_output, rate=self.dropout_prob)
         attention_output = self.layer_norm(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
@@ -485,7 +489,9 @@ class EncoderLayer(tf.keras.layers.Layer):
         layer_output = self.layer_output(intermediate_output)
         # layer_output = dropout(layer_output, self.dropout_prob, training=training)
         # layer_output = tf.nn.dropout(layer_output, 1.0 - self.dropout_prob, training=training)
-        layer_output = self.dropout(training=training)(layer_output)
+        # layer_output = self.dropout(training=training)(layer_output)
+        if training:
+            tf.nn.dropout(layer_output, rate=self.dropout_prob)
         layer_output = self.layer_norm(layer_output)
 
         prev_output = layer_output
@@ -509,7 +515,7 @@ class BertModel(tf.keras.Model):
         super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
-        # self.dropout_prob = config.hidden_dropout_prob
+        self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
     
         # create embedding layer
@@ -534,7 +540,7 @@ class BertModel(tf.keras.Model):
 
         self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
-        self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
+        # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
       
     def __call__(self, input_ids, input_mask, token_type_ids, training=False):
@@ -561,10 +567,12 @@ class BertModel(tf.keras.Model):
         x = x + self.pos_encoding
         x = self.norm_layer(x)
         # x = dropout(x, self.dropout_prob, training=training)
-        x = self.dropout(training=training)(x)
+        # x = self.dropout(training=training)(x)
         # x = tf.nn.dropout(x, 1.0 - self.dropout_prob, training=training)
         # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
         # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
         
         # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
         # mask of shape [batch_size, seq_length, seq_length] which is used
@@ -597,8 +605,10 @@ class BertModel(tf.keras.Model):
         #     name="output_bias")
 
         # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        x = self.dropout(training=training)(x)
+        # x = self.dropout(training=training)(x)
         # x = tf.nn.dropout(x, rate=1.0 - 0.9, training=training) # [batch_size, hidden_size]
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
         # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
