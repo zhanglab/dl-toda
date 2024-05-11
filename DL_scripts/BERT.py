@@ -154,22 +154,22 @@ def create_initializer(initializer_range=0.02):
     return tf.keras.initializers.TruncatedNormal(stddev=initializer_range)
 
 
-def dropout(input_tensor, dropout_prob):
-    """Perform dropout.
+# def dropout(input_tensor, dropout_prob):
+#     """Perform dropout.
 
-    Args:
-    input_tensor: float Tensor.
-    dropout_prob: Python float. The probability of dropping out a value (NOT of
-      *keeping* a dimension as in `tf.nn.dropout`).
+#     Args:
+#     input_tensor: float Tensor.
+#     dropout_prob: Python float. The probability of dropping out a value (NOT of
+#       *keeping* a dimension as in `tf.nn.dropout`).
 
-    Returns:
-    A version of `input_tensor` with dropout applied.
-    """
-    if dropout_prob is None or dropout_prob == 0.0:
-        return input_tensor
+#     Returns:
+#     A version of `input_tensor` with dropout applied.
+#     """
+#     if dropout_prob is None or dropout_prob == 0.0:
+#         return input_tensor
 
-    output = tf.nn.dropout(input_tensor, 1.0 - dropout_prob)
-    return output
+#     output = tf.nn.dropout(input_tensor, 1.0 - dropout_prob)
+#     return output
 
 
 def create_attention_mask_from_input_mask(from_tensor, to_mask):
@@ -383,7 +383,8 @@ class AttentionLayer(tf.keras.layers.Layer):
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
+        # attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
+        attention_probs = tf.nn.dropout(attention_probs,, 1.0 - self.attention_probs_dropout_prob, training=training)
 
         # `value_layer` = [B, T, N, H]
         value_layer = tf.reshape(
@@ -471,13 +472,15 @@ class EncoderLayer(tf.keras.layers.Layer):
             attention_output = tf.concat(attention_heads, axis=-1)
 
         attention_output = self.attention_output(attention_output)
-        attention_output = dropout(attention_output, self.dropout_prob, training=training)
+        # attention_output = dropout(attention_output, self.dropout_prob, training=training)
+        attention_output = tf.nn.dropout(attention_output,, 1.0 - self.dropout_prob, training=training)
         attention_output = self.layer_norm(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
 
         layer_output = self.layer_output(intermediate_output)
-        layer_output = dropout(layer_output, self.dropout_prob, training=training)
+        # layer_output = dropout(layer_output, self.dropout_prob, training=training)
+        layer_output = tf.nn.dropout(layer_output,, 1.0 - self.dropout_prob, training=training)
         layer_output = self.layer_norm(layer_output)
 
         prev_output = layer_output
@@ -551,7 +554,8 @@ class BertModel(tf.keras.Model):
         x = x + token_type_embeddings
         x = x + self.pos_encoding
         x = self.norm_layer(x)
-        x = dropout(x, self.dropout_prob, training=training)
+        # x = dropout(x, self.dropout_prob, training=training)
+        x = tf.nn.dropout(x,, 1.0 - self.dropout_prob, training=training)
         # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
         # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
@@ -586,7 +590,7 @@ class BertModel(tf.keras.Model):
         #     name="output_bias")
 
         # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        x = tf.nn.dropout(x, rate=1-0.9)  # [batch_size, hidden_size]
+        x = tf.nn.dropout(x, rate=1.0 - 0.9, training=training))  # [batch_size, hidden_size]
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
         # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
@@ -597,7 +601,7 @@ class BertModel(tf.keras.Model):
         probs = self.softmax_act(logits) # [batch_size, num_labels]
 
         model = tf.keras.models.Model(inputs=[input_ids, input_mask, token_type_ids], outputs=probs, name='BERT')
-        
+
         # return log_probs, probs, logits
         return model
 
