@@ -15,26 +15,6 @@ import datetime
 import numpy as np
 import six
 import tensorflow as tf
-# import tensorflow_models as tfm
-
-
-
-# # set seed
-# seed = 42
-# os.environ['PYTHONHASHSEED'] = str(seed)
-# tf.random.set_seed(seed)
-# tf.experimental.numpy.random.seed(seed)
-
-# # Initialize Horovod
-# hvd.init()
-# # Map one GPU per process
-# # use hvd.local_rank() for gpu pinning instead of hvd.rank()
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
-# for gpu in gpus:
-#     tf.config.experimental.set_memory_growth(gpu, True)
-# if gpus:
-#     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 class BertConfig(object):
@@ -93,64 +73,59 @@ class BertConfig(object):
 
   @classmethod
   def from_dict(cls, json_object):
-    """Constructs a `BertConfig` from a Python dictionary of parameters."""
-    config = BertConfig(vocab_size=None,seq_length=None)
-    for (key, value) in six.iteritems(json_object):
-      config.__dict__[key] = value
-    return config
+      """Constructs a `BertConfig` from a Python dictionary of parameters."""
+      config = BertConfig(vocab_size=None,seq_length=None)
+      for (key, value) in six.iteritems(json_object):
+          config.__dict__[key] = value
+      return config
 
   @classmethod
   def from_json_file(cls, json_file):
-    """Constructs a `BertConfig` from a json file of parameters."""
-    with tf.io.gfile.GFile(json_file, "r") as reader:
-      text = reader.read()
-    return cls.from_dict(json.loads(text))
+      """Constructs a `BertConfig` from a json file of parameters."""
+      with tf.io.gfile.GFile(json_file, "r") as reader:
+          text = reader.read()
+      return cls.from_dict(json.loads(text))
 
   def to_dict(self):
-    """Serializes this instance to a Python dictionary."""
-    output = copy.deepcopy(self.__dict__)
-    return output
+      """Serializes this instance to a Python dictionary."""
+      output = copy.deepcopy(self.__dict__)
+      return output
 
   def to_json_string(self):
-    """Serializes this instance to a JSON string."""
-    return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
+      """Serializes this instance to a JSON string."""
+      return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
 def PositionalEncoding(config, seq_length, width):
     assert_op = tf.debugging.assert_less_equal(seq_length, config.max_position_embeddings)
     with tf.control_dependencies([assert_op]):
-      # full_position_embeddings = tf.compat.v1.get_variable(
-      #     name="position_embeddings",
-      #     shape=[config.max_position_embeddings, config.hidden_size],
-      #     initializer=create_initializer(config.initializer_range))
+        weights_initializer = create_initializer(config.initializer_range)
+        full_position_embeddings = tf.Variable(
+            initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
+            name="position_embeddings")
+        # Since the position embedding table is a learned variable, we create it
+        # using a (long) sequence length `max_position_embeddings`. The actual
+        # sequence length might be shorter than this, for faster training of
+        # tasks that do not have long sequences.
+        #
+        # So `full_position_embeddings` is effectively an embedding table
+        # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
+        # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
+        # perform a slice.
+        position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+                                         [seq_length, -1])
 
-      weights_initializer = create_initializer(config.initializer_range)
-      full_position_embeddings = tf.Variable(
-          initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
-          name="position_embeddings")
-      # Since the position embedding table is a learned variable, we create it
-      # using a (long) sequence length `max_position_embeddings`. The actual
-      # sequence length might be shorter than this, for faster training of
-      # tasks that do not have long sequences.
-      #
-      # So `full_position_embeddings` is effectively an embedding table
-      # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
-      # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
-      # perform a slice.
-      position_embeddings = tf.slice(full_position_embeddings, [0, 0],
-                                       [seq_length, -1])
-
-      # Only the last two dimensions are relevant (`seq_length` and `width`), so
-      # we broadcast among the first dimensions, which is typically just
-      # the batch size.
-      position_broadcast_shape = []
-      num_dims = 3
-      for _ in range(num_dims - 2):
-        position_broadcast_shape.append(1)
-      position_broadcast_shape.extend([seq_length, width])
-      position_embeddings = tf.reshape(position_embeddings,
-                                       position_broadcast_shape)
-      return position_embeddings
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        position_broadcast_shape = []
+        num_dims = 3
+        for _ in range(num_dims - 2):
+            position_broadcast_shape.append(1)
+        position_broadcast_shape.extend([seq_length, width])
+        position_embeddings = tf.reshape(position_embeddings,
+                                         position_broadcast_shape)
+        return position_embeddings
 
 
 class TokenTypeEncoding(tf.keras.layers.Layer):
@@ -177,7 +152,6 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     return tf.keras.initializers.TruncatedNormal(stddev=initializer_range)
-    # return tf.compat.v1.truncated_normal_initializer(stddev=initializer_range)
 
 
 def dropout(input_tensor, dropout_prob):
@@ -343,7 +317,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         self.num_attention_heads = config.num_attention_heads
         self.initializer_range = config.initializer_range
         self.size_per_head = int(config.hidden_size / config.num_attention_heads)
-        # self.attention_probs_dropout_prob = config.attention_probs_dropout_prob
+        self.attention_probs_dropout_prob = config.attention_probs_dropout_prob
         # `query_layer` = [B*F, N*H]
         self.query_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='query', kernel_initializer=create_initializer(self.initializer_range))
@@ -354,11 +328,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         self.value_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='value', kernel_initializer=create_initializer(self.initializer_range))
 
-    def __call__(self, config, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, is_training):
-        if not is_training:
-          attention_probs_dropout_prob = 0.0
-        else:
-          attention_probs_dropout_prob = config.attention_probs_dropout_prob 
+    def __call__(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
 
         batch_size = tf.shape(from_tensor)[0]
         from_seq_length = tf.shape(from_tensor)[1]
@@ -413,7 +383,7 @@ class AttentionLayer(tf.keras.layers.Layer):
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        attention_probs = dropout(attention_probs, attention_probs_dropout_prob)
+        attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
 
         # `value_layer` = [B, T, N, H]
         value_layer = tf.reshape(
@@ -430,15 +400,15 @@ class AttentionLayer(tf.keras.layers.Layer):
         context_layer = tf.transpose(context_layer, [0, 2, 1, 3])
 
         if do_return_2d_tensor:
-          # `context_layer` = [B*F, N*H]
-          context_layer = tf.reshape(
-              context_layer,
-              [batch_size * from_seq_length, self.num_attention_heads * self.size_per_head])
+            # `context_layer` = [B*F, N*H]
+            context_layer = tf.reshape(
+                context_layer,
+                [batch_size * from_seq_length, self.num_attention_heads * self.size_per_head])
         else:
-          # `context_layer` = [B, F, N*H]
-          context_layer = tf.reshape(
-              context_layer,
-              [batch_size, from_seq_length, self.num_attention_heads * self.size_per_head])
+            # `context_layer` = [B, F, N*H]
+            context_layer = tf.reshape(
+                context_layer,
+                [batch_size, from_seq_length, self.num_attention_heads * self.size_per_head])
 
         return context_layer
 
@@ -448,6 +418,7 @@ class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
         self.num_attention_heads = config.num_attention_heads
+        self.dropout_prob = config.hidden_dropout_prob
         self.hidden_size = config.hidden_size
         self.intermediate_size = config.intermediate_size
         self.num_hidden_layers = config.num_hidden_layers
@@ -458,13 +429,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.layer_norm = tf.keras.layers.LayerNormalization()
 
 
-    def __call__(self, config, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, is_training):
-
-        if not is_training:
-            # update dropout probability in inference mode
-            hidden_dropout_prob = 0.0
-        else:
-            hidden_dropout_prob = config.hidden_dropout_prob
+    def __call__(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
 
         if self.hidden_size % self.num_attention_heads != 0:
             raise ValueError(
@@ -494,7 +459,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         for layer_idx in range(self.num_hidden_layers):
             layer_input = prev_output
             attention_heads = []
-            attention_head = self.attention_layer(config, input_tensor, input_tensor, attention_mask, do_return_2d_tensor, is_training)
+            attention_head = self.attention_layer(input_tensor, input_tensor, attention_mask, do_return_2d_tensor, training)
             attention_heads.append(attention_head)
 
         attention_output = None
@@ -506,13 +471,13 @@ class EncoderLayer(tf.keras.layers.Layer):
             attention_output = tf.concat(attention_heads, axis=-1)
 
         attention_output = self.attention_output(attention_output)
-        attention_output = dropout(attention_output, hidden_dropout_prob)
+        attention_output = dropout(attention_output, self.dropout_prob, training=training)
         attention_output = self.layer_norm(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
 
         layer_output = self.layer_output(intermediate_output)
-        layer_output = dropout(layer_output, hidden_dropout_prob)
+        layer_output = dropout(layer_output, self.dropout_prob, training=training)
         layer_output = self.layer_norm(layer_output)
 
         prev_output = layer_output
@@ -536,13 +501,8 @@ class BertModel(tf.keras.Model):
         super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
-        # self.dropout_prob = config.hidden_dropout_prob
+        self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
-        
-        # if not is_training:
-        #     # update dropout probability in inference mode
-        #     config.hidden_dropout_prob = 0.0
-        #     config.attention_probs_dropout_prob = 0.0 
     
         # create embedding layer
         self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, mask_zero=True, trainable=True)
@@ -568,7 +528,8 @@ class BertModel(tf.keras.Model):
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
 
       
-    def __call__(self, config, input_ids, input_mask, token_type_ids, is_training):
+    def __call__(self, input_ids, input_mask, token_type_ids, training=False):
+    # def __call__(self, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
@@ -577,13 +538,11 @@ class BertModel(tf.keras.Model):
 
         if token_type_ids is None:
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
-
-        if not is_training:
-            # update dropout probability in inference mode
-            hidden_dropout_prob = 0.0
-        else:
-            hidden_dropout_prob = config.hidden_dropout_prob
         
+        # input_ids = tf.keras.Input(shape=(self.seq_length), name="input_ids")
+        # input_mask = tf.keras.Input(shape=(self.seq_length), name="input_mask")
+        # token_type_ids = tf.keras.Input(shape=(self.seq_length), name="token_type_ids")
+
         x = self.embedding(input_ids)
 
         token_type_embeddings = self.token_type_encoding(token_type_ids)
@@ -592,7 +551,7 @@ class BertModel(tf.keras.Model):
         x = x + token_type_embeddings
         x = x + self.pos_encoding
         x = self.norm_layer(x)
-        x = dropout(x, hidden_dropout_prob)
+        x = dropout(x, self.dropout_prob, training=training)
         # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
         # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
@@ -601,7 +560,7 @@ class BertModel(tf.keras.Model):
         # for the attention scores.
         attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
-        encoder_output = self.enc_layers(config, x, attention_mask, True, True, is_training)
+        encoder_output = self.enc_layers(config, x, attention_mask, True, True, training)
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
@@ -636,286 +595,9 @@ class BertModel(tf.keras.Model):
         logits = self.last_dense(x) # [batch_size, num_labels]
         log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
         probs = self.softmax_act(logits) # [batch_size, num_labels]
-        # return x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities
-        return log_probs, probs, logits
 
+        model = tf.keras.models.Model(inputs=[input_ids, input_mask, token_type_ids], outputs=probs, name='BERT')
+        
+        # return log_probs, probs, logits
+        return model
 
-# def load_dataset(tfrecords, global_batch_size):
-#     # Get list of TFRecord files
-#     tfrecords = glob.glob(os.path.join(tfrecords, "*.tfrec"))
-#     print(tfrecords)
-#     dataset = tf.data.TFRecordDataset(tfrecords)
-#     dataset = dataset.map(map_func=decode_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-#     dataset = dataset.cache()
-#     dataset = dataset.shuffle(1000)
-#     dataset = dataset.batch(global_batch_size)
-#     dataset = dataset.prefetch(1)
-#     return dataset
-
-
-# def decode_fn(proto_example):
-#     features = {
-#         'input_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-#         'input_mask': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-#         'segment_ids': tf.io.FixedLenFeature([253], dtype=tf.int64, default_value=[0]*253),
-#         'label_ids': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
-#         'is_real_example': tf.io.FixedLenFeature([1], dtype=tf.int64, default_value=-1),
-#     }
-
-#     # load one example
-#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=features)
-    
-#     input_ids = parsed_example["input_ids"]
-#     input_mask = parsed_example["input_mask"]
-#     segment_ids = parsed_example["segment_ids"]
-#     label_ids = parsed_example['label_ids']
-#     is_real_example = parsed_example['is_real_example']
-    
-#     return input_ids, input_mask, segment_ids, label_ids
-
-
-# define the DALI pipeline
-# @pipeline_def
-# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, training=True):
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=0,
-#                                  num_shards=1,
-#                                  stick_to_shard=False,
-#                                  initial_fill=initial_fill,
-#                                  features={
-#                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-#                                      "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     input_ids = inputs["input_ids"].gpu()
-#     input_mask = inputs["input_mask"].gpu()
-#     segment_ids = inputs["segment_ids"].gpu()
-#     label_ids = inputs['label_ids'].gpu()
-#     is_real_example = inputs['is_real_example'].gpu()
-
-#     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
-
-
-# class DALIPreprocessor(object):
-#     def __init__(self, filenames, idx_filenames, batch_size, vector_size, initial_fill,
-#                deterministic=False, training=False):
-
-#         device_id = hvd.local_rank()
-#         shard_id = hvd.rank()
-#         num_gpus = hvd.size()
-#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
-
-#         # self.daliop = dali_tf.DALIIterator()
-
-#         self.batch_size = batch_size
-#         self.device_id = device_id
-
-#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#             output_shapes=((batch_size, vector_size), (batch_size)),
-#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
-
-#     def get_device_dataset(self):
-#         return self.dalidataset
-
-
-
-# @tf.function
-# def training_step(data, num_labels, train_accuracy, loss, opt, model, first_batch):
-#     with tf.GradientTape() as tape:
-#         input_ids, input_mask, token_type_ids, labels, is_real_example = data
-
-#         # hidden_size = output_layer.shape[-1]
-
-#         # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-
-#         # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, hidden_size]), trainable=True,
-#         #     name="output_weights")
-
-#         # bias_initializer = tf.zeros_initializer()
-
-#         # output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
-#         #     name="output_bias")
-
-#         # output_layer = tf.nn.dropout(output_layer, rate=1-0.9)
-
-#         # logits_1 = tf.linalg.matmul(output_layer, output_weights, transpose_b=True)
-#         # logits_2 = tf.nn.bias_add(logits_1, output_bias)
-#         # probabilities = tf.nn.softmax(logits_2, axis=-1)
-#         # log_probs = tf.nn.log_softmax(logits_2, axis=-1)
-#         log_probs, probs, logits = model(input_ids, input_mask, token_type_ids)
-#         # x, logits_1, logits_2_1, logits_2, log_probs_1, log_probs_2, probabilities = model(input_ids, input_mask, token_type_ids)
-#         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-#         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-#         product = one_hot_labels * log_probs
-#         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-#         loss_value_1 = tf.reduce_mean(per_example_loss)
-#         loss_value_2 = loss(labels, probs)
-
-#     grads = tape.gradient(loss_value_1, model.trainable_variables)
-#     opt.apply_gradients(zip(grads, model.trainable_variables))
-
-#     #update training accuracy
-#     train_accuracy.update_state(labels, probs)
-#     return log_probs, probs, logits, loss_value_1, loss_value_2, predictions
-#     # return log_probs, grads, loss_value 
-#     # return loss_value, probabilities
-#     # return loss_value, probabilities, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1
-
-
-# def main():
-#   global_batch_size = 32
-#   output_dir = os.getcwd()
-#   rnd = 1
-#   vector_size = 253
-#   initial_fill = 1000
-#   epochs = 100
-#   num_train_examples = int(sys.argv[1]) # 632118
-#   nstep_per_epoch = num_train_examples // global_batch_size
-#   num_train_steps = int(nstep_per_epoch * epochs)  # total number of training steps/batches
-#   print(f'num_train_examples: {num_train_examples}\nnstep_per_epoch : {nstep_per_epoch }\nnum_train_steps: {num_train_steps}')
-#   tfrecords = str(sys.argv[2])
-#   # tfrecords = "/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/129-data/bert/train-tfrecords/tfrecords-bert-finetuning"
-#   # dataset = load_dataset(tfrecords, global_batch_size)
-
-#   train_files = sorted(glob.glob(os.path.join(tfrecords, 'train*.tfrec')))
-#   train_idx_files = sorted(glob.glob(os.path.join(os.path.join(tfrecords, 'idx_files'), 'train*.idx')))
-
-
-#   dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-#                                     initial_fill=initial_fill, batch_size=global_batch_size, training=True), output_shapes=((global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size, vector_size), (global_batch_size), (global_batch_size)),
-#                                 output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), batch_size=global_batch_size, num_threads=4, device_id=0)
-                                
-
-#   bert_config_file = '/nese/zhanglab/ccres/archive/cecile_cres_uri_edu-dl-toda/bert_tf2/bert_config.json'
-#   bert_config = BertConfig.from_json_file(bert_config_file)
-#   print(bert_config)
-
-#   num_labels = 2
-
-#   is_training = True
-#   model = BertModel(
-#         config=bert_config,
-#         is_training=is_training)
-
-#   for var in model.variables:
-#     print(var, "\n")
-
-#   print(f'# variables: {len(model.variables)}')
-
-
-
-  
-
-#   # define metrics
-#   loss = tf.losses.SparseCategoricalCrossentropy()
-#   train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
-
-#   # init_lr = 5e-5 --> too low
-#   # init_lr = 0.001 --> works
-#   init_lr = 2e-5
-
-#   # define learning rate polynomial decay
-#   # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-#   #   initial_learning_rate=init_lr,
-#   #   end_learning_rate=0,
-#   #   decay_steps=num_train_steps)
-
-#   # define linear warmup schedule
-#   # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-#   # warmup_steps = int(warmup_proportion * num_train_steps)
-#   # warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-#   #   warmup_learning_rate = 0,
-#   #   after_warmup_lr_sched = linear_decay,
-#   #   warmup_steps = warmup_steps)
-
-#   # define optimizer
-#   # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-#   opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-#   # exclude variables from weight decay
-#   opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
-
-#   # if hvd.rank() == 0:
-#   # create output directory
-#   if not os.path.isdir(output_dir):
-#     os.makedirs(output_dir)
-
-#   # create directory for storing checkpoints
-#   ckpt_dir = os.path.join(output_dir, f'ckpts-rnd-{rnd}')
-#   if not os.path.isdir(ckpt_dir):
-#     os.makedirs(ckpt_dir)
-
-#   # create checkpoint object to save model
-#   checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-
-#   # create directory for storing logs
-#   tensorboard_dir = os.path.join(output_dir, f'logs-rnd-{rnd}')
-#   if not os.path.exists(tensorboard_dir):
-#     os.makedirs(tensorboard_dir)
-
-#   writer = tf.summary.create_file_writer(tensorboard_dir)
-#   td_writer = open(os.path.join(output_dir, f'logs-rnd-{rnd}', f'training_data_rnd_{rnd}.tsv'), 'w')
-#   vd_writer = open(os.path.join(output_dir, f'logs-rnd-{rnd}', f'validation_data_rnd_{rnd}.tsv'), 'w')
-
-#   start = datetime.datetime.now()
-
-#   epoch = 0
-
-#   for batch, data in enumerate(dataset.take(nstep_per_epoch*epochs), 1):
-#     input_ids, input_mask, token_type_ids, labels, is_real_example = data
-
-#     # print(input_ids, input_mask, token_type_ids, labels)
-#     # output_layer = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-#     # print(output_layer)
-#     log_probs, probs, logits, loss_value_1, loss_value_2, predictions = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-#     # print(log_probs, probs, logits, loss_value_1, loss_value_2, predictions)
-
-#     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
-
-
-#     # print(log_probs, probabilities, one_hot_labels, loss_value, product, per_example_loss)
-#     # break
-#     # log_probs, grads, loss_value = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-#     # loss_value, probs, logits_1, logits_2, log_probs, one_hot_labels, per_example_loss, per_example_loss_1  = training_step(data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-#     # break
-    
-#     # print(f'logits 1: {logits_1}')
-#     # print(f'logits 2: {logits_2}')
-#     # print(f'probabilities: {probs}')
-#     # print(f'log_probs: {log_probs}')
-#     # print(f'one_hot_labels: {one_hot_labels}')
-#     # print(f'per_example_loss: {per_example_loss}')
-#     # print(f'per_example_loss_1: {per_example_loss_1}')
-#     # print(f'loss_value: {loss_value}')
-
-#     # if batch % 100 == 0 and hvd.rank() == 0:
-#     # if batch == 1:
-#     #   print(input_ids, input_mask, token_type_ids, labels, is_real_example)
-#       # with open(os.path.join(output_dir, f'model-bert.txt'), 'w+') as f:
-#       #   model.summary(print_fn=lambda x: f.write(x + '\n')) 
-#       # print(f'# trainable variables: {len(model.trainable_variables)}')
-#     if batch % 100 == 0 :
-#       print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1} / {loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
-#     #   print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-#     #   # write metrics
-#     #   with writer.as_default():
-#     #       tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-#     #       tf.summary.scalar("train_loss", loss_value, step=batch)
-#     #       tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-#     #       writer.flush()
-#     #   td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-#     # if batch % 50 == 0 :
-#     #   break
-
-#     if batch % nstep_per_epoch == 0:
-#       epoch += 1
-
-  
-
-# if __name__ == "__main__":
-#   main()
