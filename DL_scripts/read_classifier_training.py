@@ -142,12 +142,13 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(config, model_type, data, train_accuracy, loss, opt, model, num_labels, first_batch):
-    is_training = True
+def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels, first_batch):
+    training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
-            log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
+            probs = model(input_ids, input_mask, token_type_ids, training)
+            # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
             # product = one_hot_labels * log_probs
@@ -156,7 +157,7 @@ def training_step(config, model_type, data, train_accuracy, loss, opt, model, nu
             # loss_value_2 = loss(labels, probs)
         else:
             reads, labels = data
-            probs = model(reads, training=True)
+            probs = model(reads, training=training)
         # get the loss
         loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
@@ -189,12 +190,13 @@ def training_step(config, model_type, data, train_accuracy, loss, opt, model, nu
 @tf.function
 def testing_step(config, model_type, data, loss, val_loss, val_accuracy, model):
     if model_type == 'BERT':
-        is_training = False
+        training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
-        log_probs, probs, logits = model(config, input_ids, input_mask, token_type_ids, is_training)
+        probs = model(input_ids, input_mask, token_type_ids, training)
+        # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, training)
     else:
         reads, labels = data
-        probs = model(reads, training=False)
+        probs = model(reads, training=training)
     val_accuracy.update_state(labels, probs)
     loss_value = loss(labels, probs)
     val_loss.update_state(loss_value)
@@ -360,7 +362,8 @@ def main():
             # define a forward pass to allow the model
             for element in train_input:
                 input_ids, input_mask, token_type_ids, _, _ = element
-                model(config, input_ids, input_mask, token_type_ids, False)
+                model(input_ids, input_mask, token_type_ids, False)
+                print(model.summary())
                 break
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
@@ -418,7 +421,7 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value = training_step(config, args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        loss_value = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
