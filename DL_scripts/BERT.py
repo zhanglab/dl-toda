@@ -473,7 +473,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         attention_output = self.attention_output(attention_output)
         # attention_output = dropout(attention_output, self.dropout_prob, training=training)
-        attention_output = tf.nn.dropout(attention_output,, 1.0 - self.dropout_prob, training=training)
+        attention_output = tf.nn.dropout(attention_output, 1.0 - self.dropout_prob, training=training)
         attention_output = self.layer_norm(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
