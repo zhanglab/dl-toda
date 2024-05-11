@@ -367,7 +367,7 @@ def main():
             #     input_ids, input_mask, token_type_ids, _, _ = element
             probs = model(input_ids, input_mask, token_type_ids, False)
             print(probs)
-            model.build((args.batch_size, config.seq_length))
+            # model.build((args.batch_size, config.seq_length))
             print(model.summary())
                 # break
         else:
