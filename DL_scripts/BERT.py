@@ -543,7 +543,7 @@ class BertModel(tf.keras.Model):
         # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
       
-    def call(self, input_ids, input_mask, token_type_ids, training=False):
+    def __call__(self, input_ids, input_mask, token_type_ids, training=False):
     # def __call__(self, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
