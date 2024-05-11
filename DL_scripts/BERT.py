@@ -139,7 +139,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
             initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, self.width],dtype='float16'),
             name="token_type_embeddings")
 
-    def __call__(self, token_type_ids):
+    def call(self, token_type_ids):
         # This vocab will be small so we always do one-hot here, since it is always
         # faster for a small vocabulary.
         flat_token_type_ids = tf.reshape(token_type_ids, [-1])
@@ -329,7 +329,7 @@ class AttentionLayer(tf.keras.layers.Layer):
             name='value', kernel_initializer=create_initializer(self.initializer_range))
         # self.dropout = tf.keras.layers.Dropout(config.attention_probs_dropout_prob)
 
-    def __call__(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
+    def call(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
 
         batch_size = tf.shape(from_tensor)[0]
         from_seq_length = tf.shape(from_tensor)[1]
@@ -435,7 +435,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
 
-    def __call__(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
+    def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
 
         if self.hidden_size % self.num_attention_heads != 0:
             raise ValueError(
