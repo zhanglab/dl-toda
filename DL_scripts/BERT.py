@@ -511,8 +511,8 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 class BertModel(tf.keras.Model):
 
-    def __init__(self, config, *args, **kwargs):
-        super(BertModel, self).__init__()(name='')
+    def __init__(self, config):
+        super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
         self.dropout_prob = config.hidden_dropout_prob
@@ -543,7 +543,7 @@ class BertModel(tf.keras.Model):
         # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
       
-    def __call__(self, input_ids, input_mask, token_type_ids, training=False):
+    def call(self, input_ids, input_mask, token_type_ids, training=False):
     # def __call__(self, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
