@@ -359,17 +359,14 @@ def main():
     else:
         if args.model_type == 'BERT':
             model = BertModel(config=config)
-            # define a forward pass to allow the model
+            # define a forward pass
             input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
             input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
             token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # for element in train_input:
-            #     input_ids, input_mask, token_type_ids, _, _ = element
-            probs = model(input_ids, input_mask, token_type_ids, False)
-            print(probs)
-            # model.build((args.batch_size, config.seq_length))
+            _ = model(input_ids, input_mask, token_type_ids, False)
             print(model.summary())
-                # break
+            with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+                model.summary(print_fn=lambda x: f.write(x + '\n'))
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
