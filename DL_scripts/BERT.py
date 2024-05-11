@@ -555,7 +555,7 @@ class BertModel(tf.keras.Model):
         x = x + self.pos_encoding
         x = self.norm_layer(x)
         # x = dropout(x, self.dropout_prob, training=training)
-        x = tf.nn.dropout(x,, 1.0 - self.dropout_prob, training=training)
+        x = tf.nn.dropout(x, 1.0 - self.dropout_prob, training=training)
         # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
         # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
         
