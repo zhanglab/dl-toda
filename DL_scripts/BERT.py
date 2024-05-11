@@ -618,8 +618,8 @@ class BertModel(tf.keras.Model):
         log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
         probs = self.softmax_act(logits) # [batch_size, num_labels]
 
-        model = tf.keras.models.Model(inputs=[input_ids, input_mask, token_type_ids], outputs=probs, name='BERT')
-
+        # model = tf.keras.models.Model(inputs=[input_ids, input_mask, token_type_ids], outputs=probs, name='BERT')
+        return probs
         # return log_probs, probs, logits
-        return model
+        # return model
 
