@@ -360,9 +360,9 @@ def main():
         if args.model_type == 'BERT':
             model = BertModel(config=config)
             # define a forward pass to allow the model
-            input_ids = tf.ones(shape=[batch_size, config.seq_length], dtype=tf.int32)
-            input_mask = tf.ones(shape=[batch_size, config.seq_length], dtype=tf.int32)
-            token_type_ids = tf.ones(shape=[batch_size, config.seq_length], dtype=tf.int32)
+            input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
             # for element in train_input:
             #     input_ids, input_mask, token_type_ids, _, _ = element
             _ = model(input_ids, input_mask, token_type_ids, False)
