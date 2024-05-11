@@ -512,7 +512,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 class BertModel(tf.keras.Model):
 
     def __init__(self, config, *args, **kwargs):
-        super().__init__()
+        super(BertModel, self).__init__()(name='')
         self.seq_length = config.seq_length
         self.width = config.hidden_size
         self.dropout_prob = config.hidden_dropout_prob
