@@ -384,7 +384,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         # attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
-        attention_probs = tf.nn.dropout(attention_probs,, 1.0 - self.attention_probs_dropout_prob, training=training)
+        attention_probs = tf.nn.dropout(attention_probs, 1.0 - self.attention_probs_dropout_prob, training=training)
 
         # `value_layer` = [B, T, N, H]
         value_layer = tf.reshape(
@@ -480,7 +480,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         layer_output = self.layer_output(intermediate_output)
         # layer_output = dropout(layer_output, self.dropout_prob, training=training)
-        layer_output = tf.nn.dropout(layer_output,, 1.0 - self.dropout_prob, training=training)
+        layer_output = tf.nn.dropout(layer_output, 1.0 - self.dropout_prob, training=training)
         layer_output = self.layer_norm(layer_output)
 
         prev_output = layer_output
