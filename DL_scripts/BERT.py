@@ -590,7 +590,7 @@ class BertModel(tf.keras.Model):
         #     name="output_bias")
 
         # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        x = tf.nn.dropout(x, rate=1.0 - 0.9, training=training))  # [batch_size, hidden_size]
+        x = tf.nn.dropout(x, rate=1.0 - 0.9, training=training) # [batch_size, hidden_size]
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
         # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
