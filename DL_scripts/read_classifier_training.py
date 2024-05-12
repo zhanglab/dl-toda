@@ -367,6 +367,7 @@ def main():
             print(model.summary())
             with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
                 model.summary(print_fn=lambda x: f.write(x + '\n'))
+            print(model.trainable_weights)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
