@@ -290,6 +290,7 @@ def assert_rank(tensor, expected_rank, name=None):
 def reshape_to_matrix(input_tensor):
     """Reshapes a >= rank 2 tensor to a rank 2 tensor (i.e., a matrix)."""
     ndims = input_tensor.shape.ndims
+    print(f'ndims: {ndims}')
     if ndims < 2:
         raise ValueError("Input tensor must have at least rank 2. Shape = %s" %
                      (input_tensor.shape))
@@ -297,7 +298,9 @@ def reshape_to_matrix(input_tensor):
         return input_tensor
 
     width = input_tensor.shape[-1]
+    print(f'width: {width}')
     output_tensor = tf.reshape(input_tensor, [-1, width])
+    print(f'shape of output_tensor: {tf.shape(output_tensor)}')
     return output_tensor
 
 
@@ -339,11 +342,32 @@ class AttentionLayer(tf.keras.layers.Layer):
         self.value_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='value', kernel_initializer=create_initializer(self.initializer_range))
 
-    def call(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
+    def call(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False, batch_size=None, from_seq_length=None, to_seq_length=None):
 
-        batch_size = tf.shape(from_tensor)[0]
-        from_seq_length = tf.shape(from_tensor)[1]
-        to_seq_length = tf.shape(to_tensor)[1]
+        from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
+        to_shape = get_shape_list(to_tensor, expected_rank=[2, 3])
+
+        print(f'from_shape: {from_shape}')
+        print(f'to_shape: {to_shape}')
+
+        if len(from_shape) != len(to_shape):
+            raise ValueError(
+              "The rank of `from_tensor` must match the rank of `to_tensor`.")
+
+        if len(from_shape) == 3:
+            batch_size = from_shape[0]
+            from_seq_length = from_shape[1]
+            to_seq_length = to_shape[1]
+        elif len(from_shape) == 2:
+            if (batch_size is None or from_seq_length is None or to_seq_length is None):
+                raise ValueError(
+                    "When passing in rank 2 tensors to attention_layer, the values "
+                    "for `batch_size`, `from_seq_length`, and `to_seq_length` "
+                    "must all be specified.")
+
+        # batch_size = tf.shape(from_tensor)[0]
+        # from_seq_length = tf.shape(from_tensor)[1]
+        # to_seq_length = tf.shape(to_tensor)[1]
         print(f'shape from_tensor: {tf.shape(from_tensor)}')
         print(f'shape to_tensor: {tf.shape(to_tensor)}')
         
@@ -451,6 +475,8 @@ class EncoderLayer(tf.keras.layers.Layer):
 
     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
 
+
+
         # if self.hidden_size % self.num_attention_heads != 0:
         #     raise ValueError(
         #       "The hidden size (%d) is not a multiple of the number of attention "
@@ -461,7 +487,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         batch_size = input_shape[0]
         seq_length = input_shape[1]
         input_width = input_shape[2]
-        print(f'input_shape : {input_shape}')
+        print(f'input_shape : {input_shape}\t{tf.shape(input_tensor)}')
 
         # The Transformer performs sum residuals on all layers so the input needs
         # to be the same as the hidden size.
