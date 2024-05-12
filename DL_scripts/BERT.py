@@ -449,21 +449,109 @@ class AttentionLayer(tf.keras.layers.Layer):
         return context_layer
 
 
-# class FeedForward(tf.keras.layers.Layer):
-#     def __init__(self, d_model, dff, dropout_rate=0.1):
+
+# class AttentionLayer(tf.keras.layers.Layer):
+#     """ Implementation of the attention layer"""
+#     def __init__(self, **kwargs):
 #         super().__init__()
-#         self.seq = tf.keras.Sequential([
-#           tf.keras.layers.Dense(dff, activation='relu'),
-#           tf.keras.layers.Dense(d_model),
-#           tf.keras.layers.Dropout(dropout_rate)
-#         ])
+#         self.mha = tf.keras.layers.MultiHeadAttention(**kwargs)
+#         self.layernorm = tf.keras.layers.LayerNormalization()
+#         self.add = tf.keras.layers.Add()
+
+#     def call(self, x):
+#         attn_output = self.mha(query=x, value=x, key=x)
+#         x = self.add([x, attn_output])
+#         x = self.layernorm(x)
+#         return x
+
+
+
+# class FeedForward(tf.keras.layers.Layer):
+#     def __init__(self, config):
+#         super().__init__()
+#         self.dropout_prob = config.hidden_dropout_prob
+#         self.attention_output = tf.keras.layers.Dense(config.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
+#         self.intermediate_layer = tf.keras.layers.Dense(config.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
+#         self.layer_output = tf.keras.layers.Dense(config.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
+#         # self.seq = tf.keras.Sequential([
+#         #   tf.keras.layers.Dense(dff, activation='relu'),
+#         #   tf.keras.layers.Dense(d_model),
+#         #   tf.keras.layers.Dropout(dropout_rate)
+#         # ])
 #         self.add = tf.keras.layers.Add()
 #         self.layer_norm = tf.keras.layers.LayerNormalization()
 
-#     def call(self, x):
+#     def call(self, x, training=False):
+#         # Run a linear projection of `hidden_size` then add a residual
+#         # with `layer_input`.
+#         attention_output = self.attention_output(x)
+#         if training:
+#             tf.nn.dropout(attention_output, rate=self.dropout_prob)
+#         attention_output = self.add([attention_output, layer_input])
+#         attention_output = self.layer_norm(attention_output)
+
+#         # Apply activation only to the intermediate hidden layer
+#         intermediate_output = self.intermediate_layer(attention_output)
+
+#         # Down-project back to `hidden_size` then add the residual.
+#         layer_output = self.layer_output(intermediate_output)
+#         if training:
+#             tf.nn.dropout(layer_output, rate=self.dropout_prob)
+#         layer_output = self.add([layer_output, attention_output])
+#         layer_output = self.layer_norm(layer_output)
+
 #         x = self.add([x, self.seq(x)])
 #         x = self.layer_norm(x)
 #         return x
+
+
+# class EncoderLayer(tf.keras.layers.Layer):
+#     def __init__(self,*, d_model, num_heads, dff, dropout_rate=0.1):
+#         super().__init__()
+
+#         self.self_attention = AttentionLayer(
+#             num_heads=num_heads,
+#             key_dim=d_model,
+#             dropout=dropout_rate)
+
+#         self.ffn = FeedForward(d_model, dff)
+
+#     def call(self, x):
+#         x = self.self_attention(x)
+#         x = self.ffn(x)
+#         return x
+
+
+# class Encoder(tf.keras.layers.Layer):
+#     def __init__(self, *, num_layers, d_model, num_heads,
+#                dff, vocab_size, dropout_rate=0.1):
+#         super().__init__()
+
+#         self.d_model = d_model
+#         self.num_layers = num_layers
+
+#         self.pos_embedding = PositionalEmbedding(
+#             vocab_size=vocab_size, d_model=d_model)
+
+#         self.enc_layers = [
+#             EncoderLayer(d_model=d_model,
+#                          num_heads=num_heads,
+#                          dff=dff,
+#                          dropout_rate=dropout_rate)
+#             for _ in range(num_layers)]
+#         self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+#     def call(self, x):
+#         # `x` is token-IDs shape: (batch, seq_len)
+#         x = self.pos_embedding(x)  # Shape `(batch_size, seq_len, d_model)`.
+
+#         # Add dropout.
+#         x = self.dropout(x)
+
+#         for i in range(self.num_layers):
+#           x = self.enc_layers[i](x)
+
+#         return x  # Shape `(batch_size, seq_len, d_model)`.
 
 
 class EncoderLayer(tf.keras.layers.Layer):
@@ -474,12 +562,18 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.hidden_size = config.hidden_size
         self.intermediate_size = config.intermediate_size
         self.num_hidden_layers = config.num_hidden_layers
-        self.attention_layer = AttentionLayer(config=config)
-        self.attention_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
-        self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
-        self.layer_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
-        self.layer_norm = tf.keras.layers.LayerNormalization()
-        self.add = tf.keras.layers.Add()
+        # self.attention_layer = AttentionLayer(config=config)
+        self.attention_layers = [AttentionLayer(config=config) for _ in range(config.num_hidden_layers)]
+        # self.attention_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
+        self.attention_outputs = [tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range)) for _ in range(config.num_hidden_layers)]
+        # self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
+        self.intermediate_layers = [tf.keras.layers.Dense(self.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range)) for _ in range(config.num_hidden_layers)]
+        # self.layer_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
+        self.layer_outputs = [tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range)) for _ in range(config.num_hidden_layers)]
+        # self.layer_norm = tf.keras.layers.LayerNormalization()
+        self.layer_norms = [tf.keras.layers.LayerNormalization() for _ in range(config.num_hidden_layers)]
+        # self.add = tf.keras.layers.Add()
+        self.adds = [tf.keras.layers.Add() for _ in range(config.num_hidden_layers)]
 
 
     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
@@ -507,54 +601,83 @@ class EncoderLayer(tf.keras.layers.Layer):
         # help the optimizer.
         prev_output = reshape_to_matrix(input_tensor)
 
+        all_layer_outputs = []
+        for i in range(self.num_hidden_layers):
+            layer_input = prev_output
+
+            attention_head = self.attention_layers[i](layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
+            print(f'attention_head: {attention_head}')
+            
+            attention_output = attention_head
+
+            # Run a linear projection of `hidden_size` then add a residual
+            # with `layer_input`.
+            attention_output = self.attention_outputs[i](attention_output)
+            if training:
+                tf.nn.dropout(attention_output, rate=self.dropout_prob)
+            attention_output = self.adds[i]([attention_output, layer_input])
+            attention_output = self.layer_norms[i](attention_output)
+
+            # Apply activation only to the intermediate hidden layer
+            intermediate_output = self.intermediate_layers[i](attention_output)
+
+            # Down-project back to `hidden_size` then add the residual.
+            layer_output = self.layer_outputs[i](intermediate_output)
+            if training:
+                tf.nn.dropout(layer_output, rate=self.dropout_prob)
+            layer_output = self.adds[i]([layer_output, attention_output])
+            layer_output = self.layer_norms[i](layer_output)
+
+            prev_output = layer_output
+
+            all_layer_outputs.append(layer_output)
+
         # all_layer_outputs = []
         # for layer_idx in range(self.num_hidden_layers):
-            # layer_input = prev_output
-        attention_heads = []
-        attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
-        attention_heads.append(attention_head)
+        #     layer_input = prev_output
+        #     attention_heads = []
+        #     attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
+        #     attention_heads.append(attention_head)
 
-        attention_output = None
-        if len(attention_heads) == 1:
-            attention_output = attention_heads[0]
-        else:
-            # In the case where we have other sequences, we just concatenate
-            # them to the self-attention head before the projection.
-            attention_output = tf.concat(attention_heads, axis=-1)
+        #     attention_output = None
+        #     if len(attention_heads) == 1:
+        #         attention_output = attention_heads[0]
+        #     else:
+        #         # In the case where we have other sequences, we just concatenate
+        #         # them to the self-attention head before the projection.
+        #         attention_output = tf.concat(attention_heads, axis=-1)
 
-        # Run a linear projection of `hidden_size` then add a residual
-        # with `layer_input`.
-        attention_output = self.attention_output(attention_output)
-        if training:
-            tf.nn.dropout(attention_output, rate=self.dropout_prob)
-        attention_output = self.add([attention_output, layer_input])
-        attention_output = self.layer_norm(attention_output)
+            # # Run a linear projection of `hidden_size` then add a residual
+            # # with `layer_input`.
+            # attention_output = self.attention_output(attention_output)
+            # if training:
+            #     tf.nn.dropout(attention_output, rate=self.dropout_prob)
+            # attention_output = self.add([attention_output, layer_input])
+            # attention_output = self.layer_norm(attention_output)
 
-        # Apply activation only to the intermediate hidden layer
-        intermediate_output = self.intermediate_layer(attention_output)
+            # # Apply activation only to the intermediate hidden layer
+            # intermediate_output = self.intermediate_layer(attention_output)
 
-        # Down-project back to `hidden_size` then add the residual.
-        layer_output = self.layer_output(intermediate_output)
-        if training:
-            tf.nn.dropout(layer_output, rate=self.dropout_prob)
-        layer_output = self.add([layer_output, attention_output])
-        layer_output = self.layer_norm(layer_output)
+            # # Down-project back to `hidden_size` then add the residual.
+            # layer_output = self.layer_output(intermediate_output)
+            # if training:
+            #     tf.nn.dropout(layer_output, rate=self.dropout_prob)
+            # layer_output = self.add([layer_output, attention_output])
+            # layer_output = self.layer_norm(layer_output)
 
             # prev_output = layer_output
 
             # all_layer_outputs.append(layer_output)
-        print(f'shape of layer_output: {tf.shape(layer_output)}')
-        # print(f'size of all_layer_outputs: {len(all_layer_outputs)}')
-        # if do_return_all_layers:
-        #     final_outputs = []
-        #     for layer_output in all_layer_outputs:
-        #         final_output = reshape_from_matrix(layer_output, input_shape)
-        #         final_outputs.append(final_output)
-        #     return final_outputs
-        # else:
-        #     final_output = reshape_from_matrix(prev_output, input_shape)
-        #     return final_output
-        return layer_output
+
+        if do_return_all_layers:
+            final_outputs = []
+            for layer_output in all_layer_outputs:
+                final_output = reshape_from_matrix(layer_output, input_shape)
+                final_outputs.append(final_output)
+            return final_outputs
+        else:
+            final_output = reshape_from_matrix(prev_output, input_shape)
+            return final_output
 
 
 class BertModel(tf.keras.Model):
