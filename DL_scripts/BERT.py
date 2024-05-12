@@ -587,7 +587,8 @@ class BertModel(tf.keras.Model):
         # print(f'after position_embeddings: {position_embeddings}')
         # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
         # print(f'shape of x: {tf.shape(x)}')
-
+        print(f'position_embeddings: {position_embeddings}')
+        print(f'position_embeddings.get_emb: {position_embeddings.get_emb}')
         x = x + position_embeddings.get_emb
 
         x = self.norm_layer(x)
