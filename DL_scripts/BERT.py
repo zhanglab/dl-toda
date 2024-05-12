@@ -548,6 +548,7 @@ class BertModel(tf.keras.Model):
 
         self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
+        self.weights_initializer = create_initializer(config.initializer_range)
         self.full_position_embeddings = tf.Variable(
             initial_value=self.weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
             name="position_embeddings", trainable=True)
