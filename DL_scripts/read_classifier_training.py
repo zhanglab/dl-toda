@@ -282,9 +282,6 @@ def main():
         if not os.path.isdir(ckpt_dir):
             os.makedirs(ckpt_dir)
 
-        # create checkpoint object to save model
-        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-
         # create directory for storing logs
         tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
         if not os.path.exists(tensorboard_dir):
