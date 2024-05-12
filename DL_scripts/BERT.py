@@ -368,14 +368,9 @@ class AttentionLayer(tf.keras.layers.Layer):
         # batch_size = tf.shape(from_tensor)[0]
         # from_seq_length = tf.shape(from_tensor)[1]
         # to_seq_length = tf.shape(to_tensor)[1]
-        print(f'shape from_tensor: {tf.shape(from_tensor)}')
-        print(f'shape to_tensor: {tf.shape(to_tensor)}')
         
         from_tensor_2d = reshape_to_matrix(from_tensor)
         to_tensor_2d = reshape_to_matrix(to_tensor)
-
-        print(f'shape from_tensor_2d: {tf.shape(from_tensor_2d)}')
-        print(f'shape to_tensor_2d: {tf.shape(to_tensor_2d)}')
     
         # `query_layer` = [B, N, F, H]
         query_layer = self.query_layer(from_tensor_2d)
@@ -423,9 +418,6 @@ class AttentionLayer(tf.keras.layers.Layer):
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        # attention_probs = dropout(attention_probs, self.attention_probs_dropout_prob, training=training)
-        # attention_probs = tf.nn.dropout(attention_probs, 1.0 - self.attention_probs_dropout_prob, training=training)
-        # attention_probs = self.dropout(training=training)(attention_probs)
         if training:
             tf.nn.dropout(attention_probs, rate=self.attention_probs_dropout_prob)
 
@@ -457,7 +449,6 @@ class AttentionLayer(tf.keras.layers.Layer):
         return context_layer
 
 
-
 class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
@@ -467,16 +458,14 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.intermediate_size = config.intermediate_size
         self.num_hidden_layers = config.num_hidden_layers
         self.attention_layer = AttentionLayer(config=config)
-        self.attention_output = tf.keras.layers.Dense(self.hidden_size)
-        self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu")
-        self.layer_output = tf.keras.layers.Dense(self.hidden_size)
+        self.attention_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
+        self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
+        self.layer_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
         self.layer_norm = tf.keras.layers.LayerNormalization()
+        self.add = tf.keras.layers.Add()
 
 
     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
-
-
-
         # if self.hidden_size % self.num_attention_heads != 0:
         #     raise ValueError(
         #       "The hidden size (%d) is not a multiple of the number of attention "
@@ -515,21 +504,23 @@ class EncoderLayer(tf.keras.layers.Layer):
                 # In the case where we have other sequences, we just concatenate
                 # them to the self-attention head before the projection.
                 attention_output = tf.concat(attention_heads, axis=-1)
-            print(f'size of attention_heads: {len(attention_heads)}')
-            attention_output = self.attention_output(attention_output)
 
+            # Run a linear projection of `hidden_size` then add a residual
+            # with `layer_input`.
+            attention_output = self.attention_output(attention_output)
             if training:
                 tf.nn.dropout(attention_output, rate=self.dropout_prob)
-        
+            attention_output = self.add([attention_output, layer_input])
             attention_output = self.layer_norm(attention_output)
 
+            # Apply activation only to the intermediate hidden layer
             intermediate_output = self.intermediate_layer(attention_output)
 
+            # Down-project back to `hidden_size` then add the residual.
             layer_output = self.layer_output(intermediate_output)
-        
             if training:
                 tf.nn.dropout(layer_output, rate=self.dropout_prob)
-        
+            layer_output = self.add([layer_output, attention_output])
             layer_output = self.layer_norm(layer_output)
 
             prev_output = layer_output
@@ -632,6 +623,7 @@ class BertModel(tf.keras.Model):
         attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
         encoder_output = self.enc_layers(x, attention_mask, True, True, training)
+        print(f'shape of encoder_output: {tf.shape(encoder_output)}')
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
