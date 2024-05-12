@@ -568,15 +568,16 @@ class BertModel(tf.keras.Model):
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
         x = self.embedding(input_ids)
-
+        print(f'x at the start: {x}')
         token_type_embeddings = self.token_type_encoding(token_type_ids)
         token_type_embeddings = tf.reshape(token_type_embeddings,
                                        [batch_size, self.seq_length, self.width])
+        print(f'token_type_embeddings: {token_type_embeddings}')
         x = x + token_type_embeddings
-        print(f'x before positional encoding layer: {self.pos_encoding}')
+        print(f'x before positional encoding layer: {x}')
         x = x + self.pos_encoding
         print(f'positional encoding layer: {self.pos_encoding}')
-        print(f'x after positional encoding layer: {self.pos_encoding}')
+        print(f'x after positional encoding layer: {x}')
         x = self.norm_layer(x)
 
         if training:
