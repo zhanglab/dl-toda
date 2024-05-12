@@ -2,7 +2,6 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
-from tf.keras.utils import plot_model
 from collections import Counter, defaultdict
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
@@ -412,7 +411,7 @@ def main():
         print(model.summary())
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             model.summary(print_fn=lambda x: f.write(x + '\n'))
-        plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'))
+        keras.utils.plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'))
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
