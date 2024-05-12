@@ -548,6 +548,9 @@ class BertModel(tf.keras.Model):
 
         self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
+        self.full_position_embeddings = tf.Variable(
+            initial_value=self.weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
+            name="position_embeddings", trainable=True)
 
       
     def call(self, input_ids, input_mask, token_type_ids, training=False):
@@ -566,7 +569,20 @@ class BertModel(tf.keras.Model):
                                        [batch_size, self.seq_length, self.width])
         x = x + token_type_embeddings
 
-        position_embeddings = self.pos_encoding.get_emb() # test this again 
+        position_embeddings = tf.slice(self.full_position_embeddings, [0, 0],
+                                         [self.seq_length, -1])
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        position_broadcast_shape = []
+        num_dims = 3
+        for _ in range(num_dims - 2):
+            position_broadcast_shape.append(1)
+        position_broadcast_shape.extend([self.seq_length, self.width])
+        position_embeddings = tf.reshape(position_embeddings,
+                                         position_broadcast_shape)
+
+        # position_embeddings = self.pos_encoding.get_emb() # test this again 
         # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
         #                                  [config.seq_length, -1])
         # print(f'before position_embeddings: {position_embeddings}')
