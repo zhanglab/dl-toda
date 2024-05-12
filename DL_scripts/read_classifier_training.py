@@ -411,7 +411,7 @@ def main():
         print(model.summary())
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             model.summary(print_fn=lambda x: f.write(x + '\n'))
-        keras.utils.plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'))
+        tf.keras.utils.plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
