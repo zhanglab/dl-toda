@@ -17,6 +17,7 @@ import six
 import tensorflow as tf
 
 
+
 class BertConfig(object):
   """Configuration for `BertModel`."""
 
@@ -571,7 +572,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         # self.layer_output = tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
         self.layer_outputs = [tf.keras.layers.Dense(self.hidden_size, kernel_initializer=create_initializer(config.initializer_range)) for _ in range(config.num_hidden_layers)]
         # self.layer_norm = tf.keras.layers.LayerNormalization()
-        self.layer_norms = [tf.keras.layers.LayerNormalization() for _ in range(config.num_hidden_layers)]
+        self.layer_norms_1 = [tf.keras.layers.LayerNormalization() for _ in range(config.num_hidden_layers)]
         # self.add = tf.keras.layers.Add()
         self.adds = [tf.keras.layers.Add() for _ in range(config.num_hidden_layers)]
 
