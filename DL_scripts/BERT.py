@@ -114,6 +114,8 @@ def PositionalEncoding(config):
         # perform a slice.
         position_embeddings = tf.slice(full_position_embeddings, [0, 0],
                                          [config.seq_length, -1])
+        print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
+        print(f'shape of full_position_embeddings: {tf.shape(full_position_embeddings)}')
 
         return position_embeddings
 
@@ -525,7 +527,8 @@ class BertModel(tf.keras.Model):
         self.max_position_embeddings = config.max_position_embeddings
     
         # create embedding layer
-        self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, mask_zero=True, trainable=True)
+        self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, embeddings_initializer=create_initializer(config.initializer_range),
+                                 mask_zero=True, trainable=True)
         # create token type embeddings
         self.token_type_encoding = TokenTypeEncoding(config=config)
         # create positional embeddings
@@ -549,7 +552,6 @@ class BertModel(tf.keras.Model):
 
       
     def call(self, input_ids, input_mask, token_type_ids, training=False):
-    # def __call__(self, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
