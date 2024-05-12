@@ -154,7 +154,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
         position_embeddings = tf.reshape(position_embeddings,
                                          position_broadcast_shape)
 
-        return x + position_embeddings, position_embeddings
+        return x + position_embeddings
         
 
 
