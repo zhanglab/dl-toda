@@ -291,7 +291,6 @@ def assert_rank(tensor, expected_rank, name=None):
 def reshape_to_matrix(input_tensor):
     """Reshapes a >= rank 2 tensor to a rank 2 tensor (i.e., a matrix)."""
     ndims = input_tensor.shape.ndims
-    print(f'ndims: {ndims}')
     if ndims < 2:
         raise ValueError("Input tensor must have at least rank 2. Shape = %s" %
                      (input_tensor.shape))
@@ -345,9 +344,6 @@ class AttentionLayer(tf.keras.layers.Layer):
 
         from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
         to_shape = get_shape_list(to_tensor, expected_rank=[2, 3])
-
-        print(f'from_shape: {from_shape}')
-        print(f'to_shape: {to_shape}')
 
         if len(from_shape) != len(to_shape):
             raise ValueError(
@@ -763,7 +759,7 @@ class BertModel(tf.keras.Model):
         attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
         encoder_output = self.enc_layers(x, attention_mask, True, True, training)
-        print(f'shape of encoder_output: {tf.shape(encoder_output)}')
+
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
