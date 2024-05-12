@@ -402,8 +402,8 @@ def main():
             _ = model(input_ids, input_mask, token_type_ids, False)
             # tf.keras.utils.plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
             print(model.summary())
-                with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            model.summary(print_fn=lambda x: f.write(x + '\n'))
+            with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+                model.summary(print_fn=lambda x: f.write(x + '\n'))
             print(model.trainable_weights)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
