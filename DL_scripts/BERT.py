@@ -96,12 +96,12 @@ class BertConfig(object):
       return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
-def PositionalEncoding(config):
-    assert_op = tf.debugging.assert_less_equal(config.seq_length, config.max_position_embeddings)
+def PositionalEncoding(seq_length, max_position_embeddings, hidden_size, initializer_range):
+    assert_op = tf.debugging.assert_less_equal(seq_length, max_position_embeddings)
     with tf.control_dependencies([assert_op]):
-        weights_initializer = create_initializer(config.initializer_range)
+        weights_initializer = create_initializer(initializer_range)
         full_position_embeddings = tf.Variable(
-            initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
+            initial_value=weights_initializer(shape=[max_position_embeddings, hidden_size],dtype='float16'),
             name="position_embeddings", trainable=True)
         # Since the position embedding table is a learned variable, we create it
         # using a (long) sequence length `max_position_embeddings`. The actual
@@ -113,7 +113,7 @@ def PositionalEncoding(config):
         # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
         # perform a slice.
         position_embeddings = tf.slice(full_position_embeddings, [0, 0],
-                                         [config.seq_length, -1])
+                                         [seq_length, -1])
 
         # Only the last two dimensions are relevant (`seq_length` and `width`), so
         # we broadcast among the first dimensions, which is typically just
@@ -122,7 +122,7 @@ def PositionalEncoding(config):
         num_dims = 3
         for _ in range(num_dims - 2):
             position_broadcast_shape.append(1)
-        position_broadcast_shape.extend([config.seq_length, config.hidden_size])
+        position_broadcast_shape.extend([seq_length, hidden_size])
         position_embeddings = tf.reshape(position_embeddings,
                                          position_broadcast_shape)
         return position_embeddings
@@ -531,13 +531,15 @@ class BertModel(tf.keras.Model):
         self.width = config.hidden_size
         self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
+        self.initializer_range = config.initializer_range
+        self.max_position_embeddings = config.max_position_embeddings
     
         # create embedding layer
         self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, mask_zero=True, trainable=True)
         # create token type embeddings
         self.token_type_encoding = TokenTypeEncoding(config=config)
         # create positional embeddings
-        self.pos_encoding = PositionalEncoding(config=config)
+        # self.pos_encoding = PositionalEncoding(config=config)
         # add normalization layer
         self.norm_layer = tf.keras.layers.LayerNormalization(axis=-1)
         # create encoder
@@ -572,7 +574,8 @@ class BertModel(tf.keras.Model):
         token_type_embeddings = tf.reshape(token_type_embeddings,
                                        [batch_size, self.seq_length, self.width])
         x = x + token_type_embeddings
-        x = x + self.pos_encoding
+        x = x + PositionalEncoding(self.seq_length, self.max_position_embeddings, self.width, self.initializer_range)
+        # x = x + self.pos_encoding
         x = self.norm_layer(x)
 
         if training:
