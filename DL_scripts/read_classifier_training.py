@@ -282,6 +282,20 @@ def main():
     print('Compute dtype: %s' % policy.compute_dtype)
     print('Variable dtype: %s' % policy.variable_dtype)
 
+    # Get training and validation tfrecords
+    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
+    train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
+    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
+    val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
+    # compute number of steps/batches per epoch
+    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
+    # compute number of steps/batches to iterate over entire validation set
+    val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
+
+    if args.model_type == 'BERT':
+        print(f'dataset for bert: {args.model_type}')
+        config = BertConfig.from_json_file(args.bert_config_file)
+
     if hvd.rank() == 0:
         # create output directory
         if not os.path.isdir(args.output_dir):
@@ -318,21 +332,6 @@ def main():
                         f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
                         f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
                         f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
-
-
-    # Get training and validation tfrecords
-    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
-    train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
-    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
-    val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
-    # compute number of steps/batches per epoch
-    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
-    # compute number of steps/batches to iterate over entire validation set
-    val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
-
-    if args.model_type == 'BERT':
-        print(f'dataset for bert: {args.model_type}')
-        config = BertConfig.from_json_file(args.bert_config_file)
 
     # load data
     train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
