@@ -506,7 +506,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         for layer_idx in range(self.num_hidden_layers):
             layer_input = prev_output
             attention_heads = []
-            attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training)
+            attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
             attention_heads.append(attention_head)
 
             attention_output = None
