@@ -128,15 +128,52 @@ def PositionalEncoding(config, seq_length, width):
         return position_embeddings
 
 
-class TokenTypeEncoding(tf.keras.layers.Layer):
+class PositionEncoding(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
+        self.weights_initializer = create_initializer(config.initializer_range)
+        # Since the position embedding table is a learned variable, we create it
+        # using a (long) sequence length `max_position_embeddings`. The actual
+        # sequence length might be shorter than this, for faster training of
+        # tasks that do not have long sequences.
+        #
+        # So `full_position_embeddings` is effectively an embedding table
+        # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
+        # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
+        # perform a slice.
+        self.full_position_embeddings = tf.Variable(
+            initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
+            name="position_embeddings")
+
+    def call(self):
+        full_position_embeddings = self.full_position_embeddings
+        position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+                                         [self.seq_length, -1])
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        position_broadcast_shape = []
+        num_dims = 3
+        for _ in range(num_dims - 2):
+            position_broadcast_shape.append(1)
+        position_broadcast_shape.extend([self.seq_length, self.width])
+        position_embeddings = tf.reshape(position_embeddings,
+                                         position_broadcast_shape)
+        return position_embeddings
+        
+
+
+class TokenTypeEncoding(tf.keras.layers.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.seq_length = config.seq_length
+        # self.width = config.hidden_size
         self.token_type_vocab_size = config.type_vocab_size
         self.weights_initializer = create_initializer(config.initializer_range)
         self.token_type_table = tf.Variable(
-            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, self.width],dtype='float16'),
+            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.width],dtype='float16'),
             name="token_type_embeddings")
 
     def call(self, token_type_ids):
@@ -152,24 +189,6 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     return tf.keras.initializers.TruncatedNormal(stddev=initializer_range)
-
-
-# def dropout(input_tensor, dropout_prob):
-#     """Perform dropout.
-
-#     Args:
-#     input_tensor: float Tensor.
-#     dropout_prob: Python float. The probability of dropping out a value (NOT of
-#       *keeping* a dimension as in `tf.nn.dropout`).
-
-#     Returns:
-#     A version of `input_tensor` with dropout applied.
-#     """
-#     if dropout_prob is None or dropout_prob == 0.0:
-#         return input_tensor
-
-#     output = tf.nn.dropout(input_tensor, 1.0 - dropout_prob)
-#     return output
 
 
 def create_attention_mask_from_input_mask(from_tensor, to_mask):
@@ -327,7 +346,6 @@ class AttentionLayer(tf.keras.layers.Layer):
         # `value_layer` = [B*T, N*H]
         self.value_layer = tf.keras.layers.Dense(self.num_attention_heads * self.size_per_head,
             name='value', kernel_initializer=create_initializer(self.initializer_range))
-        # self.dropout = tf.keras.layers.Dropout(config.attention_probs_dropout_prob)
 
     def call(self, from_tensor, to_tensor, attention_mask, do_return_2d_tensor, training=False):
 
@@ -432,7 +450,6 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.intermediate_layer = tf.keras.layers.Dense(self.intermediate_size, activation="gelu")
         self.layer_output = tf.keras.layers.Dense(self.hidden_size)
         self.layer_norm = tf.keras.layers.LayerNormalization()
-        # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
 
     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
@@ -477,21 +494,19 @@ class EncoderLayer(tf.keras.layers.Layer):
             attention_output = tf.concat(attention_heads, axis=-1)
 
         attention_output = self.attention_output(attention_output)
-        # attention_output = dropout(attention_output, self.dropout_prob, training=training)
-        # attention_output = tf.nn.dropout(attention_output, 1.0 - self.dropout_prob, training=training)
-        # attention_output = self.dropout(training=training)(attention_output)
+
         if training:
             tf.nn.dropout(attention_output, rate=self.dropout_prob)
+        
         attention_output = self.layer_norm(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
 
         layer_output = self.layer_output(intermediate_output)
-        # layer_output = dropout(layer_output, self.dropout_prob, training=training)
-        # layer_output = tf.nn.dropout(layer_output, 1.0 - self.dropout_prob, training=training)
-        # layer_output = self.dropout(training=training)(layer_output)
+        
         if training:
             tf.nn.dropout(layer_output, rate=self.dropout_prob)
+        
         layer_output = self.layer_norm(layer_output)
 
         prev_output = layer_output
@@ -540,7 +555,6 @@ class BertModel(tf.keras.Model):
 
         self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
-        # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
 
       
     def call(self, input_ids, input_mask, token_type_ids, training=False):
@@ -554,10 +568,6 @@ class BertModel(tf.keras.Model):
         if token_type_ids is None:
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
-        # input_ids = tf.keras.Input(shape=(self.seq_length), name="input_ids")
-        # input_mask = tf.keras.Input(shape=(self.seq_length), name="input_mask")
-        # token_type_ids = tf.keras.Input(shape=(self.seq_length), name="token_type_ids")
-
         x = self.embedding(input_ids)
 
         token_type_embeddings = self.token_type_encoding(token_type_ids)
@@ -565,12 +575,9 @@ class BertModel(tf.keras.Model):
                                        [batch_size, self.seq_length, self.width])
         x = x + token_type_embeddings
         x = x + self.pos_encoding
+        print(f'position encoding layer: {self.pos_encoding}')
         x = self.norm_layer(x)
-        # x = dropout(x, self.dropout_prob, training=training)
-        # x = self.dropout(training=training)(x)
-        # x = tf.nn.dropout(x, 1.0 - self.dropout_prob, training=training)
-        # x = x + self.norm_layer(x)  # maybe x = self.norm_layer(x)
-        # x = x + dropout(x, self.dropout_prob)  # and x = dropout(x, self.dropout_prob)
+
         if training:
             tf.nn.dropout(x, rate=self.dropout_prob)
         
@@ -604,9 +611,6 @@ class BertModel(tf.keras.Model):
         # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
         #     name="output_bias")
 
-        # output_layer = tf.nn.dropout(x, rate=1-0.9)
-        # x = self.dropout(training=training)(x)
-        # x = tf.nn.dropout(x, rate=1.0 - 0.9, training=training) # [batch_size, hidden_size]
         if training:
             tf.nn.dropout(x, rate=self.dropout_prob)
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
@@ -618,8 +622,6 @@ class BertModel(tf.keras.Model):
         log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
         probs = self.softmax_act(logits) # [batch_size, num_labels]
 
-        # model = tf.keras.models.Model(inputs=[input_ids, input_mask, token_type_ids], outputs=probs, name='BERT')
         return probs
         # return log_probs, probs, logits
-        # return model
 
