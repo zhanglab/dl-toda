@@ -137,7 +137,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
         # perform a slice.
         self.full_position_embeddings = tf.Variable(
             initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
-            name="position_embeddings")
+            name="position_embeddings", trainable=True)
 
     def get_emb(self):
         position_embeddings = tf.slice(self.full_position_embeddings, [0, 0],
