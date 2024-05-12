@@ -446,12 +446,12 @@ class EncoderLayer(tf.keras.layers.Layer):
 
     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
 
-        if self.hidden_size % self.num_attention_heads != 0:
-            raise ValueError(
-              "The hidden size (%d) is not a multiple of the number of attention "
-              "heads (%d)" % (self.hidden_size, self.num_attention_heads))
+        # if self.hidden_size % self.num_attention_heads != 0:
+        #     raise ValueError(
+        #       "The hidden size (%d) is not a multiple of the number of attention "
+        #       "heads (%d)" % (self.hidden_size, self.num_attention_heads))
 
-        attention_head_size = int(self.hidden_size / self.num_attention_heads)
+        # attention_head_size = int(self.hidden_size / self.num_attention_heads)
         input_shape = get_shape_list(input_tensor, expected_rank=3)
         batch_size = input_shape[0]
         seq_length = input_shape[1]
@@ -463,7 +463,6 @@ class EncoderLayer(tf.keras.layers.Layer):
             raise ValueError("The width of the input tensor (%d) != hidden size (%d)" %
                      (input_width, self.hidden_size))
 
-
         # We keep the representation as a 2D tensor to avoid re-shaping it back and
         # forth from a 3D tensor to a 2D tensor. Re-shapes are normally free on
         # the GPU/CPU but may not be free on the TPU, so we want to minimize them to
@@ -474,36 +473,36 @@ class EncoderLayer(tf.keras.layers.Layer):
         for layer_idx in range(self.num_hidden_layers):
             layer_input = prev_output
             attention_heads = []
-            attention_head = self.attention_layer(input_tensor, input_tensor, attention_mask, do_return_2d_tensor, training)
+            attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training)
             attention_heads.append(attention_head)
 
-        attention_output = None
-        if len(attention_heads) == 1:
-            attention_output = attention_heads[0]
-        else:
-            # In the case where we have other sequences, we just concatenate
-            # them to the self-attention head before the projection.
-            attention_output = tf.concat(attention_heads, axis=-1)
+            attention_output = None
+            if len(attention_heads) == 1:
+                attention_output = attention_heads[0]
+            else:
+                # In the case where we have other sequences, we just concatenate
+                # them to the self-attention head before the projection.
+                attention_output = tf.concat(attention_heads, axis=-1)
+            print(f'attention_heads: {attention_heads}')
+            attention_output = self.attention_output(attention_output)
 
-        attention_output = self.attention_output(attention_output)
-
-        if training:
-            tf.nn.dropout(attention_output, rate=self.dropout_prob)
+            if training:
+                tf.nn.dropout(attention_output, rate=self.dropout_prob)
         
-        attention_output = self.layer_norm(attention_output)
+            attention_output = self.layer_norm(attention_output)
 
-        intermediate_output = self.intermediate_layer(attention_output)
+            intermediate_output = self.intermediate_layer(attention_output)
 
-        layer_output = self.layer_output(intermediate_output)
+            layer_output = self.layer_output(intermediate_output)
         
-        if training:
-            tf.nn.dropout(layer_output, rate=self.dropout_prob)
+            if training:
+                tf.nn.dropout(layer_output, rate=self.dropout_prob)
         
-        layer_output = self.layer_norm(layer_output)
+            layer_output = self.layer_norm(layer_output)
 
-        prev_output = layer_output
+            prev_output = layer_output
 
-        all_layer_outputs.append(layer_output)
+            all_layer_outputs.append(layer_output)
 
         if do_return_all_layers:
             final_outputs = []
@@ -550,10 +549,6 @@ class BertModel(tf.keras.Model):
 
         self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
-        # self.weights_initializer = create_initializer(config.initializer_range)
-        # self.full_position_embeddings = tf.Variable(
-            # initial_value=self.weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
-            # name="position_embeddings", trainable=True)
 
       
     def call(self, input_ids, input_mask, token_type_ids, training=False):
@@ -590,13 +585,8 @@ class BertModel(tf.keras.Model):
         # print(f'after position_embeddings: {position_embeddings}')
         # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
         # print(f'shape of x: {tf.shape(x)}')
-        print(f'x before pos emb: {x}')
-        x, position_embeddings = self.pos_encoding(x)
 
-        print(f'position_embeddings: {position_embeddings}')
-        # x = position_embeddings
-        print(f'x after pos emb: {x}')
-        # x = x + position_embeddings
+        x = self.pos_encoding(x)
 
         x = self.norm_layer(x)
 
