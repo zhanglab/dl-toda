@@ -140,7 +140,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
             name="position_embeddings", trainable=True)
 
     # def get_emb(self):
-    def call(self, x)
+    def call(self, x):
         position_embeddings = tf.slice(self.full_position_embeddings, [0, 0],
                                          [self.seq_length, -1])
         # Only the last two dimensions are relevant (`seq_length` and `width`), so
