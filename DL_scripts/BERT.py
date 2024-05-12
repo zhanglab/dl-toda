@@ -139,7 +139,9 @@ class PositionalEncoding(tf.keras.layers.Layer):
             initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
             name="position_embeddings")
 
-    def call(self):
+    # def call(self):
+    @classmethod
+    def get_emb(self):
         # full_position_embeddings = self.full_position_embeddings
         position_embeddings = tf.slice(self.full_position_embeddings, [0, 0],
                                          [self.seq_length, -1])
@@ -567,7 +569,7 @@ class BertModel(tf.keras.Model):
                                        [batch_size, self.seq_length, self.width])
         x = x + token_type_embeddings
 
-        # position_embeddings = self.pos_encoding
+        position_embeddings = self.pos_encoding
         # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
         #                                  [config.seq_length, -1])
         # print(f'before position_embeddings: {position_embeddings}')
@@ -586,7 +588,7 @@ class BertModel(tf.keras.Model):
         # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
         # print(f'shape of x: {tf.shape(x)}')
 
-        x = x + self.pos_encoding()
+        x = x + position_embeddings.get_emb
 
         x = self.norm_layer(x)
 
