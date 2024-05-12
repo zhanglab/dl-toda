@@ -271,6 +271,16 @@ def main():
         # else:
         #     vector_size = args.max_read_size - args.k_value + 1
 
+        # load class_mapping file mapping label IDs to species
+    f = open(args.class_mapping)
+    class_mapping = json.load(f)
+    num_labels = len(class_mapping)
+
+    # modify tensorflow precision mode
+    policy = keras.mixed_precision.Policy('mixed_float16')
+    keras.mixed_precision.set_global_policy(policy)
+    print('Compute dtype: %s' % policy.compute_dtype)
+    print('Variable dtype: %s' % policy.variable_dtype)
 
     if hvd.rank() == 0:
         # create output directory
@@ -309,17 +319,6 @@ def main():
                         f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
                         f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
-
-    # load class_mapping file mapping label IDs to species
-    f = open(args.class_mapping)
-    class_mapping = json.load(f)
-    num_labels = len(class_mapping)
-
-    # modify tensorflow precision mode
-    policy = keras.mixed_precision.Policy('mixed_float16')
-    keras.mixed_precision.set_global_policy(policy)
-    print('Compute dtype: %s' % policy.compute_dtype)
-    print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
