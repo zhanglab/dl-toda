@@ -272,6 +272,47 @@ def main():
         #     vector_size = args.max_read_size - args.k_value + 1
 
 
+    if hvd.rank() == 0:
+        # create output directory
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(args.output_dir)
+
+        # create directory for storing checkpoints
+        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
+        if not os.path.isdir(ckpt_dir):
+            os.makedirs(ckpt_dir)
+
+        # create checkpoint object to save model
+        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+
+        # create directory for storing logs
+        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
+        if not os.path.exists(tensorboard_dir):
+            os.makedirs(tensorboard_dir)
+
+        writer = tf.summary.create_file_writer(tensorboard_dir)
+        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+
+        # create summary file
+        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
+            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_labels}\nEpochs\t{args.epochs}\n'
+                    f'Vector size\t{args.vector_size}\nEmbedding size\t{args.embedding_size}\n'
+                    f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+                    f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                    f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
+                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+            if args.model_type != 'BERT':
+                f.write(f'Vocabulary size\t{vocab_size}\n')
+            if args.model_type in ["DNA_1", "DNA_2"]:
+                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
+                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
+                        f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
+                        f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
+
+
     # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
     class_mapping = json.load(f)
@@ -371,51 +412,16 @@ def main():
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
+
+    if hvd.rank() == 0:
+        # create checkpoint object to save model
+        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
     val_loss = tf.keras.metrics.Mean(name='val_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
     val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
-
-    if hvd.rank() == 0:
-        # create output directory
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
-
-        # create directory for storing checkpoints
-        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-        if not os.path.isdir(ckpt_dir):
-            os.makedirs(ckpt_dir)
-
-        # create checkpoint object to save model
-        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-
-        # create directory for storing logs
-        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
-        if not os.path.exists(tensorboard_dir):
-            os.makedirs(tensorboard_dir)
-
-        writer = tf.summary.create_file_writer(tensorboard_dir)
-        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
-
-        # create summary file
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
-            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_labels}\nEpochs\t{args.epochs}\n'
-                    f'Vector size\t{args.vector_size}\nEmbedding size\t{args.embedding_size}\n'
-                    f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-                    f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                    f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-            if args.model_type != 'BERT':
-                f.write(f'Vocabulary size\t{vocab_size}\n')
-            if args.model_type in ["DNA_1", "DNA_2"]:
-                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
-                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
-                        f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
-                        f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
     start = datetime.datetime.now()
 
