@@ -500,7 +500,6 @@ class EncoderLayer(tf.keras.layers.Layer):
         # the GPU/CPU but may not be free on the TPU, so we want to minimize them to
         # help the optimizer.
         prev_output = reshape_to_matrix(input_tensor)
-        print(f'prev_output: {tf.shape(prev_output)}')
 
         all_layer_outputs = []
         for layer_idx in range(self.num_hidden_layers):
@@ -516,7 +515,7 @@ class EncoderLayer(tf.keras.layers.Layer):
                 # In the case where we have other sequences, we just concatenate
                 # them to the self-attention head before the projection.
                 attention_output = tf.concat(attention_heads, axis=-1)
-            print(f'attention_heads: {attention_heads}')
+            print(f'size of attention_heads: {len(attention_heads)}')
             attention_output = self.attention_output(attention_output)
 
             if training:
@@ -537,6 +536,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 
             all_layer_outputs.append(layer_output)
 
+        print(f'size of all_layer_outputs: {len(all_layer_outputs)}')
         if do_return_all_layers:
             final_outputs = []
             for layer_output in all_layer_outputs:
