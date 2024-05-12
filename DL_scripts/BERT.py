@@ -102,7 +102,7 @@ def PositionalEncoding(config):
         weights_initializer = create_initializer(config.initializer_range)
         full_position_embeddings = tf.Variable(
             initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
-            name="position_embeddings")
+            name="position_embeddings", trainable=True)
         # Since the position embedding table is a learned variable, we create it
         # using a (long) sequence length `max_position_embeddings`. The actual
         # sequence length might be shorter than this, for faster training of
@@ -173,7 +173,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
         self.weights_initializer = create_initializer(config.initializer_range)
         self.token_type_table = tf.Variable(
             initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.hidden_size],dtype='float16'),
-            name="token_type_embeddings")
+            name="token_type_embeddings", trainable=True)
 
     def call(self, token_type_ids):
         # This vocab will be small so we always do one-hot here, since it is always
@@ -568,16 +568,11 @@ class BertModel(tf.keras.Model):
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
         x = self.embedding(input_ids)
-        print(f'x at the start: {x}')
         token_type_embeddings = self.token_type_encoding(token_type_ids)
         token_type_embeddings = tf.reshape(token_type_embeddings,
                                        [batch_size, self.seq_length, self.width])
-        print(f'token_type_embeddings: {token_type_embeddings}')
         x = x + token_type_embeddings
-        print(f'x before positional encoding layer: {x}')
         x = x + self.pos_encoding
-        print(f'positional encoding layer: {self.pos_encoding}')
-        print(f'x after positional encoding layer: {x}')
         x = self.norm_layer(x)
 
         if training:
