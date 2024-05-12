@@ -96,36 +96,13 @@ class BertConfig(object):
       return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
-def PositionalEncoding(config):
-    assert_op = tf.debugging.assert_less_equal(config.seq_length, config.max_position_embeddings)
-    with tf.control_dependencies([assert_op]):
-        weights_initializer = create_initializer(config.initializer_range)
-        full_position_embeddings = tf.Variable(
-            initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
-            name="position_embeddings", trainable=True)
-        # Since the position embedding table is a learned variable, we create it
-        # using a (long) sequence length `max_position_embeddings`. The actual
-        # sequence length might be shorter than this, for faster training of
-        # tasks that do not have long sequences.
-        #
-        # So `full_position_embeddings` is effectively an embedding table
-        # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
-        # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
-        # perform a slice.
-        position_embeddings = tf.slice(full_position_embeddings, [0, 0],
-                                         [config.seq_length, -1])
-        print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
-        print(f'shape of full_position_embeddings: {tf.shape(full_position_embeddings)}')
-
-        return position_embeddings
-
-
-# class PositionalEncoding(tf.keras.layers.Layer):
-#     def __init__(self, config):
-#         super().__init__()
-#         self.seq_length = config.seq_length
-#         self.width = config.hidden_size
-#         self.weights_initializer = create_initializer(config.initializer_range)
+# def PositionalEncoding(config):
+#     assert_op = tf.debugging.assert_less_equal(config.seq_length, config.max_position_embeddings)
+#     with tf.control_dependencies([assert_op]):
+#         weights_initializer = create_initializer(config.initializer_range)
+#         full_position_embeddings = tf.Variable(
+#             initial_value=weights_initializer(shape=[config.max_position_embeddings, config.hidden_size],dtype='float16'),
+#             name="position_embeddings", trainable=True)
 #         # Since the position embedding table is a learned variable, we create it
 #         # using a (long) sequence length `max_position_embeddings`. The actual
 #         # sequence length might be shorter than this, for faster training of
@@ -135,25 +112,48 @@ def PositionalEncoding(config):
 #         # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
 #         # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
 #         # perform a slice.
-#         self.full_position_embeddings = tf.Variable(
-#             initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
-#             name="position_embeddings")
-
-#     def call(self):
-#         full_position_embeddings = self.full_position_embeddings
 #         position_embeddings = tf.slice(full_position_embeddings, [0, 0],
-#                                          [self.seq_length, -1])
-#         # Only the last two dimensions are relevant (`seq_length` and `width`), so
-#         # we broadcast among the first dimensions, which is typically just
-#         # the batch size.
-#         position_broadcast_shape = []
-#         num_dims = 3
-#         for _ in range(num_dims - 2):
-#             position_broadcast_shape.append(1)
-#         position_broadcast_shape.extend([self.seq_length, self.width])
-#         position_embeddings = tf.reshape(position_embeddings,
-#                                          position_broadcast_shape)
+#                                          [config.seq_length, -1])
+#         print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
+#         print(f'shape of full_position_embeddings: {tf.shape(full_position_embeddings)}')
+
 #         return position_embeddings
+
+
+class PositionalEncoding(tf.keras.layers.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.seq_length = config.seq_length
+        self.width = config.hidden_size
+        self.weights_initializer = create_initializer(config.initializer_range)
+        # Since the position embedding table is a learned variable, we create it
+        # using a (long) sequence length `max_position_embeddings`. The actual
+        # sequence length might be shorter than this, for faster training of
+        # tasks that do not have long sequences.
+        #
+        # So `full_position_embeddings` is effectively an embedding table
+        # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
+        # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
+        # perform a slice.
+        self.full_position_embeddings = tf.Variable(
+            initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
+            name="position_embeddings")
+
+    def call(self):
+        # full_position_embeddings = self.full_position_embeddings
+        position_embeddings = tf.slice(self.full_position_embeddings, [0, 0],
+                                         [self.seq_length, -1])
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        position_broadcast_shape = []
+        num_dims = 3
+        for _ in range(num_dims - 2):
+            position_broadcast_shape.append(1)
+        position_broadcast_shape.extend([self.seq_length, self.width])
+        position_embeddings = tf.reshape(position_embeddings,
+                                         position_broadcast_shape)
+        return position_embeddings
         
 
 
@@ -566,25 +566,27 @@ class BertModel(tf.keras.Model):
         token_type_embeddings = tf.reshape(token_type_embeddings,
                                        [batch_size, self.seq_length, self.width])
         x = x + token_type_embeddings
-        
-        position_embeddings = self.pos_encoding
-        print(f'before position_embeddings: {position_embeddings}')
+
+        # position_embeddings = self.pos_encoding
+        # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+        #                                  [config.seq_length, -1])
+        # print(f'before position_embeddings: {position_embeddings}')
         # Only the last two dimensions are relevant (`seq_length` and `width`), so
         # we broadcast among the first dimensions, which is typically just
         # the batch size.
-        position_broadcast_shape = []
-        num_dims = 3
-        for _ in range(num_dims - 2):
-            position_broadcast_shape.append(1)
-        position_broadcast_shape.extend([self.seq_length, self.width])
-        print(f'position_broadcast_shape: {position_broadcast_shape}')
-        position_embeddings = tf.reshape(position_embeddings,
-                                         position_broadcast_shape)
-        print(f'after position_embeddings: {position_embeddings}')
-        print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
-        print(f'shape of x: {tf.shape(x)}')
+        # position_broadcast_shape = []
+        # num_dims = 3
+        # for _ in range(num_dims - 2):
+        #     position_broadcast_shape.append(1)
+        # position_broadcast_shape.extend([self.seq_length, self.width])
+        # print(f'position_broadcast_shape: {position_broadcast_shape}')
+        # position_embeddings = tf.reshape(position_embeddings,
+        #                                  position_broadcast_shape)
+        # print(f'after position_embeddings: {position_embeddings}')
+        # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
+        # print(f'shape of x: {tf.shape(x)}')
 
-        x = x + position_embeddings
+        x = x + self.pos_encoding
 
         x = self.norm_layer(x)
 
