@@ -169,11 +169,10 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
         self.seq_length = config.seq_length
-        # self.width = config.hidden_size
         self.token_type_vocab_size = config.type_vocab_size
         self.weights_initializer = create_initializer(config.initializer_range)
         self.token_type_table = tf.Variable(
-            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.width],dtype='float16'),
+            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.hidden_size],dtype='float16'),
             name="token_type_embeddings")
 
     def call(self, token_type_ids):
