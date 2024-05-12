@@ -461,6 +461,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         batch_size = input_shape[0]
         seq_length = input_shape[1]
         input_width = input_shape[2]
+        print(f'input_shape : {input_shape}')
 
         # The Transformer performs sum residuals on all layers so the input needs
         # to be the same as the hidden size.
@@ -473,6 +474,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         # the GPU/CPU but may not be free on the TPU, so we want to minimize them to
         # help the optimizer.
         prev_output = reshape_to_matrix(input_tensor)
+        print(f'prev_output: {tf.shape(prev_output)}')
 
         all_layer_outputs = []
         for layer_idx in range(self.num_hidden_layers):
