@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
+from tf.keras.utils import plot_model
 from collections import Counter, defaultdict
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
@@ -400,9 +401,6 @@ def main():
             input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
             token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
             _ = model(input_ids, input_mask, token_type_ids, False)
-            print(model.summary())
-            with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-                model.summary(print_fn=lambda x: f.write(x + '\n'))
             print(model.trainable_weights)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
@@ -411,6 +409,10 @@ def main():
     if hvd.rank() == 0:
         # create checkpoint object to save model
         checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+        print(model.summary())
+        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            model.summary(print_fn=lambda x: f.write(x + '\n'))
+        plot_model(model, to_file=os.path.join(args.output_dir, f'model-bert.png'))
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
