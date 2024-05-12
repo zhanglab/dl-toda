@@ -299,9 +299,7 @@ def reshape_to_matrix(input_tensor):
         return input_tensor
 
     width = input_tensor.shape[-1]
-    print(f'width: {width}')
     output_tensor = tf.reshape(input_tensor, [-1, width])
-    print(f'shape of output_tensor: {tf.shape(output_tensor)}')
     return output_tensor
 
 
@@ -588,7 +586,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         batch_size = input_shape[0]
         seq_length = input_shape[1]
         input_width = input_shape[2]
-        print(f'input_shape : {input_shape}\t{tf.shape(input_tensor)}')
+        # print(f'input_shape : {input_shape}\t{tf.shape(input_tensor)}')
 
         # The Transformer performs sum residuals on all layers so the input needs
         # to be the same as the hidden size.
@@ -607,7 +605,7 @@ class EncoderLayer(tf.keras.layers.Layer):
             layer_input = prev_output
 
             attention_head = self.attention_layers[i](layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
-            print(f'attention_head: {attention_head}')
+            # print(f'attention_head: {attention_head}')
             
             attention_output = attention_head
 
