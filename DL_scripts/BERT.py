@@ -344,14 +344,14 @@ class AttentionLayer(tf.keras.layers.Layer):
         batch_size = tf.shape(from_tensor)[0]
         from_seq_length = tf.shape(from_tensor)[1]
         to_seq_length = tf.shape(to_tensor)[1]
-        print(f'shape from_tensor: tf.shape(from_tensor)')
-        print(f'shape to_tensor: tf.shape(to_tensor)')
+        print(f'shape from_tensor: {tf.shape(from_tensor)}')
+        print(f'shape to_tensor: {tf.shape(to_tensor)}')
         
         from_tensor_2d = reshape_to_matrix(from_tensor)
         to_tensor_2d = reshape_to_matrix(to_tensor)
 
-        print(f'shape from_tensor_2d: tf.shape(from_tensor_2d)')
-        print(f'shape to_tensor_2d: tf.shape(to_tensor_2d)')
+        print(f'shape from_tensor_2d: {tf.shape(from_tensor_2d)}')
+        print(f'shape to_tensor_2d: {tf.shape(to_tensor_2d)}')
     
         # `query_layer` = [B, N, F, H]
         query_layer = self.query_layer(from_tensor_2d)
