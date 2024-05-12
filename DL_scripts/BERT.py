@@ -449,6 +449,23 @@ class AttentionLayer(tf.keras.layers.Layer):
         return context_layer
 
 
+# class FeedForward(tf.keras.layers.Layer):
+#     def __init__(self, d_model, dff, dropout_rate=0.1):
+#         super().__init__()
+#         self.seq = tf.keras.Sequential([
+#           tf.keras.layers.Dense(dff, activation='relu'),
+#           tf.keras.layers.Dense(d_model),
+#           tf.keras.layers.Dropout(dropout_rate)
+#         ])
+#         self.add = tf.keras.layers.Add()
+#         self.layer_norm = tf.keras.layers.LayerNormalization()
+
+#     def call(self, x):
+#         x = self.add([x, self.seq(x)])
+#         x = self.layer_norm(x)
+#         return x
+
+
 class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
@@ -490,53 +507,54 @@ class EncoderLayer(tf.keras.layers.Layer):
         # help the optimizer.
         prev_output = reshape_to_matrix(input_tensor)
 
-        all_layer_outputs = []
-        for layer_idx in range(self.num_hidden_layers):
-            layer_input = prev_output
-            attention_heads = []
-            attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
-            attention_heads.append(attention_head)
+        # all_layer_outputs = []
+        # for layer_idx in range(self.num_hidden_layers):
+            # layer_input = prev_output
+        attention_heads = []
+        attention_head = self.attention_layer(layer_input, layer_input, attention_mask, do_return_2d_tensor, training, batch_size, seq_length, seq_length)
+        attention_heads.append(attention_head)
 
-            attention_output = None
-            if len(attention_heads) == 1:
-                attention_output = attention_heads[0]
-            else:
-                # In the case where we have other sequences, we just concatenate
-                # them to the self-attention head before the projection.
-                attention_output = tf.concat(attention_heads, axis=-1)
-
-            # Run a linear projection of `hidden_size` then add a residual
-            # with `layer_input`.
-            attention_output = self.attention_output(attention_output)
-            if training:
-                tf.nn.dropout(attention_output, rate=self.dropout_prob)
-            attention_output = self.add([attention_output, layer_input])
-            attention_output = self.layer_norm(attention_output)
-
-            # Apply activation only to the intermediate hidden layer
-            intermediate_output = self.intermediate_layer(attention_output)
-
-            # Down-project back to `hidden_size` then add the residual.
-            layer_output = self.layer_output(intermediate_output)
-            if training:
-                tf.nn.dropout(layer_output, rate=self.dropout_prob)
-            layer_output = self.add([layer_output, attention_output])
-            layer_output = self.layer_norm(layer_output)
-
-            prev_output = layer_output
-
-            all_layer_outputs.append(layer_output)
-
-        print(f'size of all_layer_outputs: {len(all_layer_outputs)}')
-        if do_return_all_layers:
-            final_outputs = []
-            for layer_output in all_layer_outputs:
-                final_output = reshape_from_matrix(layer_output, input_shape)
-                final_outputs.append(final_output)
-            return final_outputs
+        attention_output = None
+        if len(attention_heads) == 1:
+            attention_output = attention_heads[0]
         else:
-            final_output = reshape_from_matrix(prev_output, input_shape)
-            return final_output
+            # In the case where we have other sequences, we just concatenate
+            # them to the self-attention head before the projection.
+            attention_output = tf.concat(attention_heads, axis=-1)
+
+        # Run a linear projection of `hidden_size` then add a residual
+        # with `layer_input`.
+        attention_output = self.attention_output(attention_output)
+        if training:
+            tf.nn.dropout(attention_output, rate=self.dropout_prob)
+        attention_output = self.add([attention_output, layer_input])
+        attention_output = self.layer_norm(attention_output)
+
+        # Apply activation only to the intermediate hidden layer
+        intermediate_output = self.intermediate_layer(attention_output)
+
+        # Down-project back to `hidden_size` then add the residual.
+        layer_output = self.layer_output(intermediate_output)
+        if training:
+            tf.nn.dropout(layer_output, rate=self.dropout_prob)
+        layer_output = self.add([layer_output, attention_output])
+        layer_output = self.layer_norm(layer_output)
+
+            # prev_output = layer_output
+
+            # all_layer_outputs.append(layer_output)
+        print(f'shape of layer_output: {tf.shape(layer_output)}')
+        # print(f'size of all_layer_outputs: {len(all_layer_outputs)}')
+        # if do_return_all_layers:
+        #     final_outputs = []
+        #     for layer_output in all_layer_outputs:
+        #         final_output = reshape_from_matrix(layer_output, input_shape)
+        #         final_outputs.append(final_output)
+        #     return final_outputs
+        # else:
+        #     final_output = reshape_from_matrix(prev_output, input_shape)
+        #     return final_output
+        return layer_output
 
 
 class BertModel(tf.keras.Model):
