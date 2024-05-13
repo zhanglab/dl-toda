@@ -711,9 +711,9 @@ class BertModel(tf.keras.Model):
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
 
     def create_model(self):
-        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype='float16')
-        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype='float16')
-        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype='float16')
+        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
+        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
+        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
 
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, False))
 
