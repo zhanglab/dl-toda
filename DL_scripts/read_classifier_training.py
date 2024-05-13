@@ -247,7 +247,7 @@ def main():
     parser.add_argument('--with_insert_size', action='store_true', default=False)
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
-    parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
+    parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
@@ -455,10 +455,11 @@ def main():
 
 
             # adjust learning rate
-            if epoch % args.lr_decay == 0:
-                current_lr = opt.learning_rate
-                new_lr = current_lr / 2
-                opt.learning_rate = new_lr
+            if args.lr_decay:
+                if epoch % args.lr_decay == 0:
+                    current_lr = opt.learning_rate
+                    new_lr = current_lr / 2
+                    opt.learning_rate = new_lr
 
             if hvd.rank() == 0:
                 print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
