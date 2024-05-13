@@ -688,7 +688,7 @@ class BertModel(tf.keras.Model):
     
         # create embedding layer
         self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, embeddings_initializer=create_initializer(config.initializer_range),
-                                 mask_zero=True, trainable=True)
+                                 mask_zero=True, trainable=True, name='token_embeddings')
         # create token type embeddings
         self.token_type_encoding = TokenTypeEncoding(config=config)
         # create positional embeddings
@@ -711,9 +711,9 @@ class BertModel(tf.keras.Model):
         self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
 
     def create_model(self):
-        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
-        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
-        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32)
+        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_ids')
+        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_mask')
+        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='token_type_ids')
 
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, False))
 
