@@ -396,14 +396,14 @@ def main():
         if args.model_type == 'BERT':
             model = BertModel(config=config)
             # define a forward pass
-            input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            _ = model(input_ids, input_mask, token_type_ids, False)
-            # print(f'summary: {model.create_model().summary()}')
-            # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+            # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # _ = model(input_ids, input_mask, token_type_ids, False)
+            print(f'summary: {model.create_model().summary()}')
+            tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
             
-            print(model.summary())
+            # print(model.summary())
             # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             #     model.summary(print_fn=lambda x: f.write(x + '\n'))
             # print(model.trainable_weights)
