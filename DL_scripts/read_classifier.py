@@ -112,6 +112,10 @@ if gpus:
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
+args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, vector_size,args.initial_fill,
+                                           deterministic=False, training=False
+
+
 # define the DALI pipeline
 @pipeline_def
 def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
@@ -258,6 +262,7 @@ def main():
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
+    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
@@ -265,6 +270,7 @@ def main():
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
+    parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
 
     args = parser.parse_args()
@@ -272,13 +278,13 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
     # define some training and model parameters
-    if args.DNA_model:
-        vector_size = 250
-        vocab_size = 5
-    else:
-        vector_size = args.max_read_size - args.k_value + 1
-        vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
-                         else ((4 ** args.k_value) / 2) + 1)
+    # if args.DNA_model:
+    #     vector_size = 250
+    #     vocab_size = 5
+    # else:
+    #     vector_size = args.max_read_size - args.k_value + 1
+    #     vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
+    #                      else ((4 ** args.k_value) / 2) + 1)
 
     # load class_mapping file mapping label IDs to species
     # path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
@@ -342,7 +348,7 @@ def main():
         if args.model_type == 'BERT':
             model = BertModel(config=config)
         else:
-            model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
     elif args.model is not None:
@@ -394,7 +400,8 @@ def main():
         test_steps = math.ceil(num_reads/(args.batch_size))
 
         num_preprocessing_threads = 4
-        test_preprocessor = DALIPreprocessor(gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, num_preprocessing_threads, vector_size, dali_cpu=True, deterministic=False, training=False)
+        test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, vector_size,args.initial_fill,
+                                           deterministic=False, training=False)
 
         test_input = test_preprocessor.get_device_dataset()
 
