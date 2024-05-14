@@ -227,7 +227,7 @@ def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, 
     # get predicted labels and confidence scores
     pred_labels = tf.math.argmax(probs, axis=1)
     pred_probs = tf.reduce_max(probs, axis=1)
-    
+
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
 
@@ -262,7 +262,6 @@ def main():
     parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
-    parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
@@ -274,18 +273,8 @@ def main():
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
-    # define some training and model parameters
-    # if args.DNA_model:
-    #     vector_size = 250
-    #     vocab_size = 5
-    # else:
-    #     vector_size = args.max_read_size - args.k_value + 1
-    #     vocab_size = int(((4 ** args.k_value + 4 ** (args.k_value / 2)) / 2) + 1 if args.k_value % 2 == 0
-    #                      else ((4 ** args.k_value) / 2) + 1)
-
     # load class_mapping file mapping label IDs to species
     # path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
-    # print(f'path_class_mapping: {path_class_mapping}')
     print(f'1: {datetime.datetime.now()}')
     f = open(args.class_mapping)
     class_mapping = json.load(f)
@@ -304,31 +293,7 @@ def main():
         test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     init_lr = 0.0001
-    # define optimizer
-    # if args.model_type == 'BERT':
-    #     sys.path.append(args.path_to_lr_schedule)
-    #     from lr_schedule import LinearWarmup
-
-    #     # define learning rate polynomial decay
-    #     linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    #     initial_learning_rate=init_lr,
-    #     end_learning_rate=0,
-    #     decay_steps=nstep_per_epoch*args.epochs)
-
-    #     # define linear warmup schedule
-    #     warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-    #     warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
-    #     warmup_schedule = LinearWarmup(
-    #     warmup_learning_rate = 0,
-    #     after_warmup_lr_sched = linear_decay,
-    #     warmup_steps = warmup_steps)
-
-    #     opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-    #     # exclude variables from weight decay
-    #     opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
-    # else:
     opt = tf.keras.optimizers.Adam(init_lr)
-    
     opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
 
     if hvd.rank() == 0:
@@ -464,7 +429,7 @@ def main():
             #     # save predictions and labels to file
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
-
+        print(f'7: {datetime.datetime.now()}')
         end_time = time.time()
         # elapsed_time = np.append(elapsed_time, end_time - start_time)
         elapsed_time.append(end_time - start_time)
