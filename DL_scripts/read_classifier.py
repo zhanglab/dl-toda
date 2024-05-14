@@ -112,9 +112,6 @@ if gpus:
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
-args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, vector_size,args.initial_fill,
-                                           deterministic=False, training=False
-
 
 # define the DALI pipeline
 @pipeline_def
@@ -400,8 +397,7 @@ def main():
         test_steps = math.ceil(num_reads/(args.batch_size))
 
         num_preprocessing_threads = 4
-        test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, vector_size,args.initial_fill,
-                                           deterministic=False, training=False)
+        test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, vector_size,args.initial_fill, deterministic=False, training=False)
 
         test_input = test_preprocessor.get_device_dataset()
 
