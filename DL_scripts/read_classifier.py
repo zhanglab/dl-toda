@@ -11,6 +11,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
+from BERT import BertConfig, BertModel
 import os
 import sys
 import json
@@ -48,21 +49,21 @@ if gpus:
 
 
 # define the DALI pipeline
-@pipeline_def
-def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, dali_cpu=True, training=True):
-    inputs = fn.readers.tfrecord(path=tfrec_filenames,
-                                 index_path=tfrec_idx_filenames,
-                                 random_shuffle=training,
-                                 shard_id=shard_id,
-                                 num_shards=num_gpus,
-                                 initial_fill=10000,
-                                 features={
-                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-    # retrieve reads and labels and copy them to the gpus
-    reads = inputs["read"].gpu()
-    labels = inputs["label"].gpu()
-    return reads, labels
+# @pipeline_def
+# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, dali_cpu=True, training=True):
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=shard_id,
+#                                  num_shards=num_gpus,
+#                                  initial_fill=10000,
+#                                  features={
+#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     reads = inputs["read"].gpu()
+#     labels = inputs["label"].gpu()
+#     return reads, labels
 
 
 # class DALIPreprocessor(object):
@@ -88,33 +89,135 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, 
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
+# class DALIPreprocessor(object):
+#     def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, dali_cpu=True,
+#                deterministic=False, training=False):
+
+#         device_id = hvd.local_rank()
+#         shard_id = hvd.rank()
+#         num_gpus = hvd.size()
+#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
+#                                       dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+#         self.daliop = dali_tf.DALIIterator()
+
+#         self.batch_size = batch_size
+#         self.device_id = device_id
+
+#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#             output_shapes=((batch_size, vector_size), (batch_size)),
+#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+
+#     def get_device_dataset(self):
+#         return self.dalidataset
+
+# define the DALI pipeline
+@pipeline_def
+def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    # prefetch_queue_depth = 100
+    # read_ahead = True
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 # prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return (reads, labels)
+
+
+# define the BERT DALI pipeline
+@pipeline_def
+def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=0,
+                                 num_shards=1,
+                                 stick_to_shard=False,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    input_mask = inputs["input_mask"].gpu()
+    segment_ids = inputs["segment_ids"].gpu()
+    label_ids = inputs['label_ids'].gpu()
+    is_real_example = inputs['is_real_example'].gpu()
+
+    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+
+
 class DALIPreprocessor(object):
-    def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, dali_cpu=True,
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
                deterministic=False, training=False):
 
         device_id = hvd.local_rank()
         shard_id = hvd.rank()
         num_gpus = hvd.size()
-        self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
-                                      dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
-
-        self.daliop = dali_tf.DALIIterator()
-
+        
         self.batch_size = batch_size
         self.device_id = device_id
 
-        self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-            output_shapes=((batch_size, vector_size), (batch_size)),
-            batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+        if args.model_type == "BERT":
+            self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        else:
+            self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+   
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
     def get_device_dataset(self):
         return self.dalidataset
 
+
+# @tf.function
+# def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+#     print('inside testing_step')
+#     probs = model(reads, training=False)
+#     if data_type == 'test':
+#         test_accuracy.update_state(labels, probs)
+#         loss_value = loss(labels, probs)
+#         test_loss.update_state(loss_value)
+#     pred_labels = tf.math.argmax(probs, axis=1)
+#     pred_probs = tf.reduce_max(probs, axis=1)
+#     if target_label:
+#         label_prob = tf.gather(probs, target_label, axis=1)
+#     return probs, pred_labels, pred_probs
+#     # return pred_labels, pred_probs, label_prob
+
 @tf.function
-def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
-    print('inside testing_step')
-    probs = model(reads, training=False)
+def testing_step(config, model_type, data, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+    if model_type == 'BERT':
+        training = False
+        input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        probs = model(input_ids, input_mask, token_type_ids, training)
+    else:
+        reads, labels = data
+        probs = model(reads, training=training)
     if data_type == 'test':
         test_accuracy.update_state(labels, probs)
         loss_value = loss(labels, probs)
@@ -123,6 +226,10 @@ def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, tes
     pred_probs = tf.reduce_max(probs, axis=1)
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
+    val_accuracy.update_state(labels, probs)
+    loss_value = loss(labels, probs)
+    val_loss.update_state(loss_value)
+
     return probs, pred_labels, pred_probs
     # return pred_labels, pred_probs, label_prob
 
@@ -151,7 +258,9 @@ def main():
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM'])
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
+    parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
@@ -160,7 +269,7 @@ def main():
 
     args = parser.parse_args()
 
-    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
     # define some training and model parameters
     if args.DNA_model:
@@ -192,7 +301,31 @@ def main():
         test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     init_lr = 0.0001
+    # define optimizer
+    # if args.model_type == 'BERT':
+    #     sys.path.append(args.path_to_lr_schedule)
+    #     from lr_schedule import LinearWarmup
+
+    #     # define learning rate polynomial decay
+    #     linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+    #     initial_learning_rate=init_lr,
+    #     end_learning_rate=0,
+    #     decay_steps=nstep_per_epoch*args.epochs)
+
+    #     # define linear warmup schedule
+    #     warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+    #     warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
+    #     warmup_schedule = LinearWarmup(
+    #     warmup_learning_rate = 0,
+    #     after_warmup_lr_sched = linear_decay,
+    #     warmup_steps = warmup_steps)
+
+    #     opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+    #     # exclude variables from weight decay
+    #     opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+    # else:
     opt = tf.keras.optimizers.Adam(init_lr)
+    
     opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
 
     if hvd.rank() == 0:
@@ -200,9 +333,16 @@ def main():
         if not os.path.isdir(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
     print(f'3: {datetime.datetime.now()}')
+
+    if args.model_type == 'BERT':
+        config = BertConfig.from_json_file(args.bert_config_file)
+
     # load model
     if args.ckpt is not None:
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        if args.model_type == 'BERT':
+            model = BertModel(config=config)
+        else:
+            model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
     elif args.model is not None:
@@ -238,6 +378,7 @@ def main():
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
         gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
+
     print(gpu_test_files)
     print(f'6: {datetime.datetime.now()}')
     elapsed_time = []
@@ -266,11 +407,11 @@ def main():
         for batch, (reads, labels) in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
+                batch_pred_sp, batch_prob_sp = testing_step(config, args.data_type, reads, labels, model)
             elif args.data_type == 'sim':
-                batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-
+                batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.model_type, data, loss, test_loss, test_accuracy, model)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
