@@ -164,8 +164,7 @@ def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initi
 
 
 class DALIPreprocessor(object):
-    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
-               deterministic=False, training=False):
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
 
         device_id = hvd.local_rank()
         shard_id = hvd.rank()
@@ -396,7 +395,6 @@ def main():
         # compute number of steps required to iterate over entire test set
         test_steps = math.ceil(num_reads/(args.batch_size))
 
-        num_preprocessing_threads = 4
         test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
 
         test_input = test_preprocessor.get_device_dataset()
