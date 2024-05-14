@@ -210,7 +210,7 @@ class DALIPreprocessor(object):
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-def testing_step(model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     if model_type == 'BERT':
         training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -218,17 +218,18 @@ def testing_step(model_type, data, model, loss=None, test_loss=None, test_accura
     else:
         reads, labels = data
         probs = model(reads, training=training)
-    if data_type == 'test':
+    
+    if data_type == 'sim':
         test_accuracy.update_state(labels, probs)
         loss_value = loss(labels, probs)
         test_loss.update_state(loss_value)
+
+    # get predicted labels and confidence scores
     pred_labels = tf.math.argmax(probs, axis=1)
     pred_probs = tf.reduce_max(probs, axis=1)
+    
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
-    val_accuracy.update_state(labels, probs)
-    loss_value = loss(labels, probs)
-    val_loss.update_state(loss_value)
 
     return probs, pred_labels, pred_probs, labels
     # return pred_labels, pred_probs, label_prob
@@ -412,7 +413,7 @@ def main():
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, data, model, loss, test_loss, test_accuracy)
+                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, data, model, loss, test_loss, test_accuracy)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
