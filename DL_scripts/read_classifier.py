@@ -230,7 +230,7 @@ def testing_step(config, model_type, data, loss=None, test_loss=None, test_accur
     loss_value = loss(labels, probs)
     val_loss.update_state(loss_value)
 
-    return probs, pred_labels, pred_probs
+    return probs, pred_labels, pred_probs, labels
     # return pred_labels, pred_probs, label_prob
 
 
@@ -405,14 +405,14 @@ def main():
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        for batch, (reads, labels) in enumerate(test_input.take(test_steps), 1):
+        for batch, data in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-                batch_pred_sp, batch_prob_sp = testing_step(config, args.data_type, reads, labels, model)
+                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.model_type, data, loss, test_loss, test_accuracy, model)
+                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, data, loss, test_loss, test_accuracy, model)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
