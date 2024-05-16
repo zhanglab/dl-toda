@@ -259,7 +259,7 @@ def main():
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
-    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
+    parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
