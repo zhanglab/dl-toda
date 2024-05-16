@@ -243,7 +243,7 @@ def main():
     parser.add_argument('--labels', type=int, help='number of labels', default=2)
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
+    # parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--n_rows', type=int, default=50)
     parser.add_argument('--n_cols', type=int, default=5)
     parser.add_argument('--kh_conv_1', type=int, default=2)
@@ -254,7 +254,7 @@ def main():
     parser.add_argument('--sw_conv_1', type=int, default=1)
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
-    parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
+    parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001', required=('--resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
     parser.add_argument('--optimizer', type=str, help='type of optimizer', default='Adam', choices=['Adam', 'SGD'])
@@ -408,30 +408,30 @@ def main():
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
+    if args.model_type == 'BERT':
+        model = BertModel(config=config)
+        # define a forward pass
+        # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # _ = model(input_ids, input_mask, token_type_ids, False)
+        print(f'summary: {model.create_model().summary()}')
+        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        
+        # print(model.summary())
+        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+        #     model.summary(print_fn=lambda x: f.write(x + '\n'))
+        # print(model.trainable_weights)
+    else:
+        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+
     if args.resume:
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
-    else:
-        if args.model_type == 'BERT':
-            model = BertModel(config=config)
-            # define a forward pass
-            # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # _ = model(input_ids, input_mask, token_type_ids, False)
-            print(f'summary: {model.create_model().summary()}')
-            tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-            
-            # print(model.summary())
-            # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            #     model.summary(print_fn=lambda x: f.write(x + '\n'))
-            # print(model.trainable_weights)
-        else:
-            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+        checkpoint.restore(args.ckpt).expect_partial()
+        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
 
     if hvd.rank() == 0:
