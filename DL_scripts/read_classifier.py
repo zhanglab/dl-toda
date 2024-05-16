@@ -273,19 +273,20 @@ def main():
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
-    # load class_mapping file mapping label IDs to species
-    # path_class_mapping = os.path.join(dl_toda_dir, 'data/species_labels.json')
     print(f'1: {datetime.datetime.now()}')
-    f = open(args.class_mapping)
-    class_mapping = json.load(f)
-    num_classes = len(class_mapping)
-    print(f'num_classes: {num_classes}')
+    # load class_mapping file mapping label IDs to species
+    if args.class_mapping:
+        f = open(args.class_mapping)
+        class_mapping = json.load(f)
+        num_labels = len(class_mapping)
+
     # create dtype policy
     policy = tf.keras.mixed_precision.Policy('mixed_float16')
     tf.keras.mixed_precision.set_global_policy(policy)
     print('Compute dtype: %s' % policy.compute_dtype)
     print('Variable dtype: %s' % policy.variable_dtype)
     print(f'2: {datetime.datetime.now()}')
+    
     # define metrics
     if args.data_type == 'sim':
         loss = tf.losses.SparseCategoricalCrossentropy()
