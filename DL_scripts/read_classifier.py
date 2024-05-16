@@ -210,7 +210,7 @@ class DALIPreprocessor(object):
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, labels=):
+def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     if model_type == 'BERT':
         training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
