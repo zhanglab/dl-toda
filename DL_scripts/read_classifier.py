@@ -446,9 +446,9 @@ def main():
         if args.data_type == 'sim':
             outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
-            outfile.write(f'{args.epoch}')
-        else:
-            outfile.write(f'model saved at last epoch')
+            outfile.write(f'{args.ckpt}')
+        # else:
+        #     outfile.write(f'model saved at last epoch')
         outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
 
         if len(elapsed_time) > 1:
