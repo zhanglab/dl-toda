@@ -397,10 +397,10 @@ def main():
             else:
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
-                if args.labels == 2:
-                    all_prob_sp = tf.concat([all_prob_sp, batch_prob_sp], 1)
-                else:
-                    all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
+                # if args.labels == 2:
+                #     all_prob_sp = tf.concat([all_prob_sp, batch_prob_sp], 1)
+                # else:
+                all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
                 all_labels = tf.concat([all_labels, [labels]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
 
