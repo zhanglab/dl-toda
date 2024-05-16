@@ -226,7 +226,10 @@ def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, 
 
     # get predicted labels and confidence scores
     pred_labels = tf.math.argmax(probs, axis=1)
-    pred_probs = tf.reduce_max(probs, axis=1)
+    if tf.shape(probs) == 2:
+        pred_probs = probs
+    else:
+        pred_probs = tf.reduce_max(probs, axis=1)
 
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
@@ -257,6 +260,7 @@ def main():
     parser.add_argument('--sw_conv_2', type=int, default=1)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
+    parser.add_argument('--labels', type=int, help='number of labels')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
@@ -372,7 +376,10 @@ def main():
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+        if labels == 2:
+            all_prob_labels = [tf.zeros([args.batch_size, 2], dtype=tf.dtypes.float32, name=None)]
+        else:
+            all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
@@ -390,7 +397,10 @@ def main():
             else:
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
-                all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
+                if labels == 2:
+                    all_prob_sp = tf.concat([all_prob_sp, batch_prob_sp], 1)
+                else:
+                    all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
                 all_labels = tf.concat([all_labels, [labels]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
 
