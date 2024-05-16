@@ -376,7 +376,7 @@ def main():
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        if labels == 2:
+        if args.labels == 2:
             all_prob_labels = [tf.zeros([args.batch_size, 2], dtype=tf.dtypes.float32, name=None)]
         else:
             all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
@@ -397,7 +397,7 @@ def main():
             else:
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
-                if labels == 2:
+                if args.labels == 2:
                     all_prob_sp = tf.concat([all_prob_sp, batch_prob_sp], 1)
                 else:
                     all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
