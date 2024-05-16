@@ -243,7 +243,7 @@ def main():
     parser.add_argument('--labels', type=int, help='number of labels', default=2)
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--epoch_to_resume', type=int)
+    parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--n_rows', type=int, default=50)
     parser.add_argument('--n_cols', type=int, default=5)
     parser.add_argument('--kh_conv_1', type=int, default=2)
