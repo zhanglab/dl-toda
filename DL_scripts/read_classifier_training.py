@@ -306,8 +306,10 @@ def main():
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
     train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
+    print(f'train_idx_files: {train_idx_files}')
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
     val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
+    print(f'val_idx_files: {val_idx_files}')
     # compute number of steps/batches per epoch
     nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
     # compute number of steps/batches to iterate over entire validation set
