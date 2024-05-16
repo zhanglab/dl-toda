@@ -460,7 +460,7 @@ def main():
         #     labels_dict[str(k)] += v
         if batch == 1:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 10 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
