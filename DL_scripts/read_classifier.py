@@ -226,7 +226,7 @@ def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, 
 
     # get predicted labels and confidence scores
     pred_labels = tf.math.argmax(probs, axis=1)
-    if tf.shape(probs) == 2:
+    if tf.ensure_shape(probs, [None,2]):
         pred_probs = probs
     else:
         pred_probs = tf.reduce_max(probs, axis=1)
