@@ -109,6 +109,7 @@ def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initi
     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
 
+
 class DALIPreprocessor(object):
     def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
                deterministic=False, training=False):
@@ -139,6 +140,35 @@ class DALIPreprocessor(object):
 
     def get_device_dataset(self):
         return self.dalidataset
+
+
+# def load_tfrecords(proto_example):
+#     print('in read_tfrecord', tf.executing_eagerly())
+#     data_description = {
+#         'read': tf.io.VarLenFeature(tf.int64),
+#         # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
+#         'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
+#     }
+#     # load one example
+#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
+#     read = parsed_example['read']
+#     label = tf.cast(parsed_example['label'], tf.int64)
+#     print(read, label)
+#     read = tf.sparse.to_dense(read)
+#     return read, label
+
+# def make_batches(tfrecord_path, batch_size, vector_size, num_classes):
+#     """ Return reads and labels """
+#     # Load data as shards
+#     dataset = tf.data.Dataset.list_files(tfrecord_path)
+#     dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
+#                                  deterministic=False)
+#     dataset = dataset.map(map_func=load_tfrecords, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+#     dataset = dataset.padded_batch(batch_size,
+#                                    padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
+#     # dataset = dataset.cache()
+#     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+#     return dataset
 
 
 @tf.function
@@ -188,7 +218,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
     return loss_value
 
 @tf.function
-def testing_step(config, model_type, data, loss, val_loss, val_accuracy, model):
+def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
     if model_type == 'BERT':
         training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -258,20 +288,7 @@ def main():
             content = f.readlines()
             vocab_size = len(content)
 
-    # define some training and model parameters
-    # if args.DNA_model:
-    #     vector_size = 500 if args.paired_reads else 250
-    #     vocab_size = 5
-    # else:
-    #     with open(args.vocab, 'r') as f:
-    #         content = f.readlines()
-    #         vocab_size = len(content)
-        # if args.paired_reads:
-        #     vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
-        # else:
-        #     vector_size = args.max_read_size - args.k_value + 1
-
-        # load class_mapping file mapping label IDs to species
+    # load class_mapping file mapping label IDs to species
     f = open(args.class_mapping)
     class_mapping = json.load(f)
     num_labels = len(class_mapping)
@@ -453,7 +470,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(config, args.model_type, data, loss, val_loss, val_accuracy, model)
+                testing_step(args.model_type, data, loss, val_loss, val_accuracy, model)
 
 
             # adjust learning rate
