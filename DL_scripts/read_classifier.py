@@ -376,10 +376,10 @@ def main():
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        if args.labels == 2:
-            all_prob_labels = [tf.zeros([args.batch_size, 2], dtype=tf.dtypes.float32, name=None)]
-        else:
-            all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+        # if args.labels == 2:
+        #     all_prob_labels = [tf.zeros([args.batch_size, 2], dtype=tf.dtypes.float32, name=None)]
+        # else:
+        #     all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
@@ -435,8 +435,12 @@ def main():
             out_filename = os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(gpu_test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(gpu_test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
+                    out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t')
                     # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
-                    out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
+                    if len(all_prob_sp[j]) == args.labels:
+                        out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
+                    else:
+                        out_f.write(f'{all_prob_sp[j]}\n')
             # if args.save_probs:
             #     # save predictions and labels to file
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
