@@ -376,10 +376,7 @@ def main():
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        # if args.labels == 2:
-        #     all_prob_labels = [tf.zeros([args.batch_size, 2], dtype=tf.dtypes.float32, name=None)]
-        # else:
-        #     all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+        # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
@@ -397,9 +394,6 @@ def main():
             else:
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
-                # if args.labels == 2:
-                #     all_prob_sp = tf.concat([all_prob_sp, batch_prob_sp], 1)
-                # else:
                 all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
                 all_labels = tf.concat([all_labels, [labels]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
