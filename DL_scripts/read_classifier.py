@@ -436,6 +436,7 @@ def main():
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
                     out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t')
+                    print(f'size of all_prob_sp: {len(all_prob_sp[j])}')
                     # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
                     if len(all_prob_sp[j]) == args.labels:
                         out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
