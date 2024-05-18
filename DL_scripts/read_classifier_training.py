@@ -177,7 +177,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
-            probs = model(input_ids, input_mask, token_type_ids, training)
+            probs, attention_mask = model(input_ids, input_mask, token_type_ids, training)
             # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
@@ -185,6 +185,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
             # per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
             # loss_value_1 = tf.reduce_mean(per_example_loss)
             # loss_value_2 = loss(labels, probs)
+            print(f'attention_mask: {attention_mask}\tinput_mask: {input_mask}\tinput_ids: {input_ids}')
         else:
             reads, labels = data
             probs = model(reads, training=training)
