@@ -194,19 +194,26 @@ def create_attention_mask_from_input_mask(from_tensor, to_mask):
     Returns:
     float Tensor of shape [batch_size, from_seq_length, to_seq_length].
     """
+    print(f'from_tensor: {from_tensor}')
+    print(f'to_mask: {to_mask}')
     from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
+    print(f'from_shape\t{from_shape}')
     # batch_size = tf.shape(from_tensor)[0]
     batch_size = from_shape[0]
+    print(f'batch_size: {batch_size}')
     from_seq_length = from_shape[1]
+    print(f'from_seq_length: {from_seq_length}')
     # from_seq_length = tf.shape(from_tensor)[1]
 
     to_shape = get_shape_list(to_mask, expected_rank=2)
+    print(f'to_shape: {to_shape}')
     to_seq_length = to_shape[1]
+    print(f'to_seq_length: {to_seq_length}')
     # to_seq_length = tf.shape(from_tensor)[1]
 
     to_mask = tf.cast(
       tf.reshape(to_mask, [batch_size, 1, to_seq_length]), tf.float16)
-
+    print(f'to_mask: {to_mask}')
     # We don't assume that `from_tensor` is a mask (although it could be). We
     # don't actually care if we attend *from* padding tokens (only *to* padding)
     # tokens so we create a tensor of all ones.
@@ -214,9 +221,10 @@ def create_attention_mask_from_input_mask(from_tensor, to_mask):
     # `broadcast_ones` = [batch_size, from_seq_length, 1]
     broadcast_ones = tf.ones(
       shape=[batch_size, from_seq_length, 1], dtype=tf.float16)
-
+    print(f'broadcast_ones: {broadcast_ones}')
     # Here we broadcast along two dimensions to create the mask.
     mask = broadcast_ones * to_mask
+    print(f'mask: {mask}')
 
     return mask
 
