@@ -454,6 +454,7 @@ def main():
         # get training loss
         loss_value, attention_mask, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         print(f'attention_mask: {attention_mask}\tinput_mask: {input_mask}\tinput_ids: {input_ids}')
+        print(f'attention_mask: {tf.shape(attention_mask)}\tinput_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
