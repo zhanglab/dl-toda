@@ -772,6 +772,7 @@ class BertModel(tf.keras.Model):
         # mask of shape [batch_size, seq_length, seq_length] which is used
         # for the attention scores.
         attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        print(f'attention_mask: {attention_mask}\tinput_mask: {input_mask}\tinput_ids: {input_ids}')
         
         encoder_output = self.enc_layers(x, attention_mask, True, True, training)
 
