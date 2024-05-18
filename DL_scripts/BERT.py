@@ -811,6 +811,6 @@ class BertModel(tf.keras.Model):
         log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
         probs = self.softmax_act(logits) # [batch_size, num_labels]
 
-        return probs
+        return probs, attention_mask
         # return log_probs, probs, logits
 
