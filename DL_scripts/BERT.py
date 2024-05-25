@@ -821,16 +821,16 @@ class BertModel(tf.keras.Model):
  #       # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
  #       #     name="output_bias")
 
-        # if training:
-        #     tf.nn.dropout(x, rate=self.dropout_prob)
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
         # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
-        # logits = self.last_dense(x) # [batch_size, num_labels]
+        logits = self.last_dense(x) # [batch_size, num_labels]
         # log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
-        # probs = self.softmax_act(logits) # [batch_size, num_labels]
+        probs = self.softmax_act(logits) # [batch_size, num_labels]
 
         return probs
         # return probs, attention_mask
