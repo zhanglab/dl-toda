@@ -560,7 +560,7 @@ class Encoder(tf.keras.layers.Layer):
                          num_heads=config.num_attention_heads,
                          hidden_size=config.hidden_size,
                          intermediate_size=config.intermediate_size,
-                         dropout_rate=self.dropout_rate)
+                         dropout_rate=self.dropout_prob)
             for _ in range(self.num_hidden_layers)]
 
 
