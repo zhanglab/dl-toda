@@ -215,7 +215,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, attention_mask, input_ids, input_mask
+    return loss_value, input_ids, input_mask
 
 @tf.function
 def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
@@ -452,9 +452,9 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value, attention_mask, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
-        print(f'attention_mask: {attention_mask}\tinput_mask: {input_mask}\tinput_ids: {input_ids}')
-        print(f'attention_mask: {tf.shape(attention_mask)}\tinput_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
+        loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
+        print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
