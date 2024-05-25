@@ -796,40 +796,43 @@ class BertModel(tf.keras.Model):
         encoder_output = self.enc_layers(x, training)
 
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        print(f'encoder_output: {encoder_output}')
+        print(f'x: {x}')
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
-        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
-        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
+        # x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
 
 
-        # output_layer = model(input_ids, input_mask, token_type_ids)
+ #       # output_layer = model(input_ids, input_mask, token_type_ids)
 
-        # hidden_size = output_layer.shape[-1]
+ #       # hidden_size = output_layer.shape[-1]
 
-        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+ #       # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
-        #     name="output_weights")
+ #       # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+ #       #     name="output_weights")
 
-        # bias_initializer = tf.zeros_initializer()
+ #       # bias_initializer = tf.zeros_initializer()
 
-        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
-        #     name="output_bias")
+ #       # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+ #       #     name="output_bias")
 
-        if training:
-            tf.nn.dropout(x, rate=self.dropout_prob)
+        # if training:
+        #     tf.nn.dropout(x, rate=self.dropout_prob)
         # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
         # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
         # probabilities = tf.nn.softmax(logits_2, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
-        logits = self.last_dense(x) # [batch_size, num_labels]
-        log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
-        probs = self.softmax_act(logits) # [batch_size, num_labels]
+        # logits = self.last_dense(x) # [batch_size, num_labels]
+        # log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
+        # probs = self.softmax_act(logits) # [batch_size, num_labels]
 
-        return probs, attention_mask
+        return probs
+        # return probs, attention_mask
         # return log_probs, probs, logits
 
