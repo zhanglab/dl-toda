@@ -793,19 +793,19 @@ class BertModel(tf.keras.Model):
         
         # encoder_output = self.enc_layers(x, attention_mask, True, True, training)
 
-        encoder_output = self.enc_layers(x, training)
+        x = self.enc_layers(x, training)
 
-        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        print(f'encoder_output: {encoder_output}')
+        # x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        # print(f'encoder_output: {encoder_output}')
         print(f'x: {x}')
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
-        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
-        # x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
-
+        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
+        print(f'x: {x}')
 
  #       # output_layer = model(input_ids, input_mask, token_type_ids)
 
