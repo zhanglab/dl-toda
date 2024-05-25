@@ -533,7 +533,7 @@ class FeedForward(tf.keras.layers.Layer):
 
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self,*, seq_length, num_heads, hidden_size, intermediate_size, dropout_rate):
+    def __init__(self,*, seq_length, num_heads, hidden_size, intermediate_size, initializer_range, dropout_rate):
         super().__init__()
 
         self.self_attention = AttentionLayer(
@@ -559,6 +559,7 @@ class Encoder(tf.keras.layers.Layer):
             EncoderLayer(seq_length=config.seq_length,
                          num_heads=config.num_attention_heads,
                          hidden_size=config.hidden_size,
+                         initializer_range=config.initializer_range,
                          intermediate_size=config.intermediate_size,
                          dropout_rate=self.dropout_prob)
             for _ in range(self.num_hidden_layers)]
