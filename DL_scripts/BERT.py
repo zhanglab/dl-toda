@@ -500,7 +500,7 @@ class AttentionLayer(tf.keras.layers.Layer):
 class FeedForward(tf.keras.layers.Layer):
     def __init__(self, seq_length, hidden_size, intermediate_size, initializer_range, dropout_rate=0.1):
         super().__init__()
-
+        self.dropout_prob = dropout_rate
         self.attention_output_layer = tf.keras.layers.Dense(hidden_size, kernel_initializer=create_initializer(initializer_range))
         # Apply activation only to the intermediate hidden layer
         self.intermediate_layer = tf.keras.layers.Dense(intermediate_size, activation="gelu", kernel_initializer=create_initializer(initializer_range))
