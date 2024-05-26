@@ -137,7 +137,7 @@ class TokenEmbedding(tf.keras.layers.Layer):
         flat_input_ids = tf.reshape(input_ids, [-1])
         print(f'flat_input_ids: {flat_input_ids}')
         output_1 = tf.gather(self.embedding_table, flat_input_ids)
-        print(f'output: {output}')
+        print(f'output: {output_1}')
 
         input_shape = get_shape_list(input_ids)
         print(f'input_shape: {input_shape}')
