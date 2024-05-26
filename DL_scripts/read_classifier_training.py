@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
+from keras import backend as K
 from collections import Counter, defaultdict
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
@@ -425,8 +426,8 @@ def main():
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
         # print(model.trainable_weights)
-        trainable_params = sum(keras.utils.layer_utils.count_params(layer) for layer in model.trainable_weights)
-        non_trainable_params = sum(keras.utils.layer_utils.count_params(layer) for layer in model.non_trainable_weights)
+        trainable_params = sum(K.count_params(layer) for layer in set(model.trainable_weights))
+        non_trainable_params = sum(K.count_params(layer) for layer in set(model.non_trainable_weights))
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
