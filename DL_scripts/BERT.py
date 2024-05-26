@@ -138,18 +138,14 @@ class TokenEmbedding(tf.keras.layers.Layer):
             input_ids = tf.expand_dims(input_ids, axis=[-1])
 
         flat_input_ids = tf.reshape(input_ids, [-1])
-        print(f'flat_input_ids: {flat_input_ids}')
-        output_1 = tf.gather(self.embedding_table, flat_input_ids)
-        print(f'output: {output_1}')
+        output = tf.gather(self.embedding_table, flat_input_ids)
 
         input_shape = get_shape_list(input_ids)
-        print(f'input_shape: {input_shape}\t{input_shape[0:-1]}\t{[input_shape[-1] * self.width]}\t{input_shape[0:-1] + [input_shape[-1] * self.width]}\n{input_shape[0:-1] + [input_shape[-1]] + [self.width]}')
 
-        output = tf.reshape(output_1,
+        output = tf.reshape(output,
                       input_shape[0:-1] + [input_shape[-1] * self.width])
-        print(f'output: {output}')
 
-        return output, self.embedding_table, flat_input_ids, input_shape, output_1
+        return output, self.embedding_table
 
 
 
@@ -795,83 +791,82 @@ class BertModel(tf.keras.Model):
             token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
         
         # x = self.embedding(input_ids)
-        x, embedding_table, flat_input_ids, input_shape, output_1 = self.token_embedding(input_ids)
- #        token_type_embeddings = self.token_type_encoding(token_type_ids)
- #        x = x + token_type_embeddings
+        x, embedding_table = self.token_embedding(input_ids)
+        token_type_embeddings = self.token_type_encoding(token_type_ids)
+        x = x + token_type_embeddings
 
- #        # position_embeddings = self.pos_encoding.get_emb() # test this again 
- #        # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
- #        #                                  [config.seq_length, -1])
- #        # print(f'before position_embeddings: {position_embeddings}')
- #        # Only the last two dimensions are relevant (`seq_length` and `width`), so
- #        # we broadcast among the first dimensions, which is typically just
- #        # the batch size.
- #        # position_broadcast_shape = []
- #        # num_dims = 3
- #        # for _ in range(num_dims - 2):
- #        #     position_broadcast_shape.append(1)
- #        # position_broadcast_shape.extend([self.seq_length, self.width])
- #        # print(f'position_broadcast_shape: {position_broadcast_shape}')
- #        # position_embeddings = tf.reshape(position_embeddings,
- #        #                                  position_broadcast_shape)
- #        # print(f'after position_embeddings: {position_embeddings}')
- #        # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
- #        # print(f'shape of x: {tf.shape(x)}')
+        # position_embeddings = self.pos_encoding.get_emb() # test this again 
+        # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+        #                                  [config.seq_length, -1])
+        # print(f'before position_embeddings: {position_embeddings}')
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        # position_broadcast_shape = []
+        # num_dims = 3
+        # for _ in range(num_dims - 2):
+        #     position_broadcast_shape.append(1)
+        # position_broadcast_shape.extend([self.seq_length, self.width])
+        # print(f'position_broadcast_shape: {position_broadcast_shape}')
+        # position_embeddings = tf.reshape(position_embeddings,
+        #                                  position_broadcast_shape)
+        # print(f'after position_embeddings: {position_embeddings}')
+        # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
+        # print(f'shape of x: {tf.shape(x)}')
 
- #        x = self.pos_encoding(x)
+        x = self.pos_encoding(x)
 
- #        x = self.norm_layer(x)
+        x = self.norm_layer(x)
 
- #        if training:
- #            tf.nn.dropout(x, rate=self.dropout_prob)
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
         
- #        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
- #        # mask of shape [batch_size, seq_length, seq_length] which is used
- #        # for the attention scores.
- #        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
+        # mask of shape [batch_size, seq_length, seq_length] which is used
+        # for the attention scores.
+        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
         
- #        encoder_output = self.enc_layers(x, attention_mask, True, True, training)
+        encoder_output = self.enc_layers(x, attention_mask, True, True, training)
 
- #        # x = self.enc_layers(x, training)
+        # x = self.enc_layers(x, training)
 
- #        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
- #        print(f'encoder_output: {encoder_output}')
- #        print(f'x: {x}')
- #        # We "pool" the model by simply taking the hidden state corresponding
- #        # to the first token. We assume that this has been pre-trained
- #        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+        x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+        print(f'encoder_output: {encoder_output}')
+        print(f'x: {x}')
+        # We "pool" the model by simply taking the hidden state corresponding
+        # to the first token. We assume that this has been pre-trained
+        first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
 
- #        #Last layer hidden-state of the first token of the sequence (classification token) 
- #        #further processed by a Linear layer and a Tanh activation function.
- #        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
- #        print(f'x: {x}')
+        #Last layer hidden-state of the first token of the sequence (classification token) 
+        #further processed by a Linear layer and a Tanh activation function.
+        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
+        print(f'x: {x}')
 
- # #       # output_layer = model(input_ids, input_mask, token_type_ids)
+ #       # output_layer = model(input_ids, input_mask, token_type_ids)
 
- # #       # hidden_size = output_layer.shape[-1]
+ #       # hidden_size = output_layer.shape[-1]
 
- # #       # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+ #       # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
- # #       # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
- # #       #     name="output_weights")
+ #       # output_weights = tf.Variable(initial_value=weights_initializer(shape=[2, self.width]), trainable=True,
+ #       #     name="output_weights")
 
- # #       # bias_initializer = tf.zeros_initializer()
+ #       # bias_initializer = tf.zeros_initializer()
 
- # #       # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
- # #       #     name="output_bias")
+ #       # output_bias = tf.Variable(initial_value=bias_initializer(shape=[2]), trainable=True,
+ #       #     name="output_bias")
 
- #        if training:
- #            tf.nn.dropout(x, rate=self.dropout_prob)
- #        # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
- #        # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
- #        # probabilities = tf.nn.softmax(logits_2, axis=-1)
- #        # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
- #        # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
- #        logits = self.last_dense(x) # [batch_size, num_labels]
- #        # log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
- #        probs = self.softmax_act(logits) # [batch_size, num_labels]
-        return x, embedding_table, flat_input_ids, input_shape, output_1
-        # return probs
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
+        # logits_2_1 = tf.linalg.matmul(logits_1, output_weights, transpose_b=True) # [batch_size, num_labels]
+        # logits_2 = tf.nn.bias_add(logits_2_1, output_bias) # [batch_size, num_labels]
+        # probabilities = tf.nn.softmax(logits_2, axis=-1)
+        # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
+        # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
+        logits = self.last_dense(x) # [batch_size, num_labels]
+        # log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
+        probs = self.softmax_act(logits) # [batch_size, num_labels]
+        return probs
         # return probs, attention_mask
         # return log_probs, probs, logits
 
