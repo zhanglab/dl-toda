@@ -429,8 +429,8 @@ def main():
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
         print(f'# non trainable parameters: {non_trainable_params}')
-        print(model.trainable_weights)
-        print(len(model.trainable_weights))
+        # print(model.trainable_weights)
+        # print(len(model.trainable_weights))
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -463,8 +463,8 @@ def main():
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
-        print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
-        print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
+        # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
+        # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
