@@ -422,9 +422,11 @@ def main():
         tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
         
         # print(model.summary())
-        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-        #     model.summary(print_fn=lambda x: f.write(x + '\n'))
-        # print(model.trainable_weights)
+        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        print(model.trainable_weights)
+        trainable_params = sum(layer.count_params() for layer in model.trainable_weights)
+        non_trainable_params = sum(layer.count_params() for layer in model.non_trainable_weights)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
