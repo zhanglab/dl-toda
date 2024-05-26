@@ -427,6 +427,8 @@ def main():
             model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
         trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+        print(f'# trainable parameters: {trainable_params}')
+        print(f'# non trainable parameters: {non_trainable_params}')
         print(model.trainable_weights)
         print(len(model.trainable_weights))
     else:
