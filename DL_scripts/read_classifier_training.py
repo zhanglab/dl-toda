@@ -177,8 +177,8 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
-            x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
-            # probs = model(input_ids, input_mask, token_type_ids, training)
+            # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
+            probs = model(input_ids, input_mask, token_type_ids, training)
             # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
@@ -190,34 +190,34 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
             reads, labels = data
             probs = model(reads, training=training)
         # get the loss
-    #     loss_value = loss(labels, probs)
-    #     # scale the loss (multiply the loss by a factor) to avoid numeric underflow
-    #     scaled_loss = opt.get_scaled_loss(loss_value)
-    # # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
-    # # combine gradient values before applying gradients to model weights
-    # tape = hvd.DistributedGradientTape(tape)
-    # # get the scaled gradients
-    # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
-    # # get the unscaled gradients
-    # grads = opt.get_unscaled_gradients(scaled_gradients)
-    # #grads = tape.gradient(loss_value, model.trainable_variables)
-    # #opt.apply_gradients(zip(grads, model.trainable_variables))
-    # opt.apply_gradients(zip(grads, model.trainable_variables))
-    # # Horovod: broadcast initial variable states from rank 0 to all other processes.
-    # # This is necessary to ensure consistent initialization of all workers when
-    # # training is started with random weights or restored from a checkpoint.
-    # # Note: broadcast should be done after the first gradient step to ensure optimizer
-    # # initialization.
-    # if first_batch:
-    #     print(f'First_batch: {first_batch}')
-    #     hvd.broadcast_variables(model.variables, root_rank=0)
-    #     hvd.broadcast_variables(opt.variables(), root_rank=0)
+        loss_value = loss(labels, probs)
+        # scale the loss (multiply the loss by a factor) to avoid numeric underflow
+        scaled_loss = opt.get_scaled_loss(loss_value)
+    # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
+    # combine gradient values before applying gradients to model weights
+    tape = hvd.DistributedGradientTape(tape)
+    # get the scaled gradients
+    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    # get the unscaled gradients
+    grads = opt.get_unscaled_gradients(scaled_gradients)
+    #grads = tape.gradient(loss_value, model.trainable_variables)
+    #opt.apply_gradients(zip(grads, model.trainable_variables))
+    opt.apply_gradients(zip(grads, model.trainable_variables))
+    # Horovod: broadcast initial variable states from rank 0 to all other processes.
+    # This is necessary to ensure consistent initialization of all workers when
+    # training is started with random weights or restored from a checkpoint.
+    # Note: broadcast should be done after the first gradient step to ensure optimizer
+    # initialization.
+    if first_batch:
+        print(f'First_batch: {first_batch}')
+        hvd.broadcast_variables(model.variables, root_rank=0)
+        hvd.broadcast_variables(opt.variables(), root_rank=0)
 
-    # #update training accuracy
-    # train_accuracy.update_state(labels, probs)
+    #update training accuracy
+    train_accuracy.update_state(labels, probs)
 
-    # return loss_value, input_ids, input_mask
-    return x, embedding_table, flat_input_ids, input_shape, output_1
+    return loss_value, input_ids, input_mask
+    # return x, embedding_table, flat_input_ids, input_shape, output_1
 
 @tf.function
 def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
@@ -454,9 +454,9 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
-        print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        # loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        # print(x, embedding_table, flat_input_ids, input_shape, output_1)
+        loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
