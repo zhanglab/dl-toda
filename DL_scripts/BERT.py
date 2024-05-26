@@ -585,8 +585,8 @@ class EncoderLayer(tf.keras.layers.Layer):
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, config):
         super().__init__()
-        self.dropout_prob = config.hidden_dropout_prob
         self.num_hidden_layers = config.num_hidden_layers
+        self.hidden_size = config.hidden_size
 
         self.enc_layers = [
             EncoderLayer(config=config)
