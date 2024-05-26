@@ -140,7 +140,7 @@ class TokenEmbedding(tf.keras.layers.Layer):
         print(f'output: {output_1}')
 
         input_shape = get_shape_list(input_ids)
-        print(f'input_shape: {input_shape}')
+        print(f'input_shape: {input_shape}\t{input_shape[0:-1]}\t{[input_shape[-1] * self.width]}\t{input_shape[0:-1] + [input_shape[-1] * self.width]}')
 
         output = tf.reshape(output_1,
                       input_shape[0:-1] + [input_shape[-1] * self.width])
