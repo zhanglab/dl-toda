@@ -592,7 +592,7 @@ class Encoder(tf.keras.layers.Layer):
             EncoderLayer(config=config)
             for _ in range(self.num_hidden_layers)]
 
-     def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
+    def call(self, input_tensor, attention_mask, do_return_2d_tensor, do_return_all_layers, training=False):
 
         input_shape = get_shape_list(input_tensor, expected_rank=3)
         batch_size = input_shape[0]
