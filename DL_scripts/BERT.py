@@ -780,7 +780,7 @@ class BertModel(tf.keras.Model):
         # add normalization layer
         self.norm_layer = tf.keras.layers.LayerNormalization(axis=-1) # normalize across the last dimension corresponding to the features
         # create encoder
-        self.enc_layers = EncoderLayer(config=config)
+        self.enc_layers = Encoder(config=config)
         # The "pooler" converts the encoded sequence tensor of shape
         # [batch_size, seq_length, hidden_size] to a tensor of shape
         # [batch_size, hidden_size]. This is necessary for segment-level
