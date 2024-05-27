@@ -234,8 +234,6 @@ def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
     loss_value = loss(labels, probs)
     val_loss.update_state(loss_value)
 
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tfrecords', type=str, help='path to training tfrecords', required=True)
@@ -431,28 +429,12 @@ def main():
         print(f'# non trainable parameters: {non_trainable_params}')
         print(f'# variables: {len(model.trainable_weights)}')
         for var in model.trainable_weights:
-            print(var[1])
+            print(var)
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
-
-
-    # tf.compat.v1.logging.info("**** Trainable Variables ****")
-    # model_var_file = open(os.path.join(args.output_dir, "model_trainable_variables.txt"), "w")
-    # total_params = 0
-    # tvars = tf.compat.v1.trainable_variables()
-    # for var in tvars:
-    #   count = 1
-    #   for dim in var.shape:
-    #       count *= dim
-    #       total_params += count
-    #   model_var_file.write(f"name = {var.name}, shape = {var.shape}\n")
-    #   tf.compat.v1.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-    #                   init_string)
-    # model_var_file.write(f"Total Params = {total_params}\n")
-    # tf.compat.v1.logging.info("  Total Params = %d" % total_params)  
 
     if args.resume:
         # load model in SavedModel format
