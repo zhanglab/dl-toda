@@ -173,13 +173,13 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels, first_batch):
+def training_step(model_type, data, train_accuracy, loss, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
-            probs = model(input_ids, input_mask, token_type_ids, num_labels, training)
+            probs = model(input_ids, input_mask, token_type_ids, training)
             # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
@@ -241,7 +241,6 @@ def main():
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files', required=True)
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
-    parser.add_argument('--labels', type=int, help='number of labels', default=2)
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
@@ -295,10 +294,6 @@ def main():
         f = open(args.class_mapping)
         class_mapping = json.load(f)
         num_labels = len(class_mapping)
-    elif args.labels:
-        num_labels = args.labels
-
-    print(f'number of labels: {num_labels}')
 
     # modify tensorflow precision mode
     # policy = keras.mixed_precision.Policy('mixed_float16')
@@ -344,13 +339,14 @@ def main():
         # create summary file
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
             f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_labels}\nEpochs\t{args.epochs}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
                     f'Vector size\t{args.vector_size}\nEmbedding size\t{args.embedding_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                     f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+            # \nNumber of classes\t{num_labels}
             if args.model_type != 'BERT':
                 f.write(f'Vocabulary size\t{vocab_size}\n')
             if args.model_type in ["DNA_1", "DNA_2"]:
@@ -419,13 +415,13 @@ def main():
         # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
         # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
         # _ = model(input_ids, input_mask, token_type_ids, False)
-        print(f'summary: {model.create_model(num_labels).summary()}')
-        tf.keras.utils.plot_model(model.create_model(num_labels), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        print(f'summary: {model.create_model().summary()}')
+        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
         
         # print(model.summary())
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            model.create_model(num_labels).summary(print_fn=lambda x: f.write(x + '\n'))
-        print(f'number of parameters: {model.create_model(num_labels).count_params()}')
+            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        print(f'number of parameters: {model.create_model().count_params()}')
         trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
@@ -475,7 +471,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
+        loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
