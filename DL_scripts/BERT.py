@@ -814,6 +814,7 @@ class BertModel(tf.keras.Model):
       
     def call(self, input_ids, input_mask, token_type_ids, num_labels, training=False):
         print(f'token_type_ids: {token_type_ids}')
+        print(f'num_labels: {num_labels}')
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
@@ -882,12 +883,12 @@ class BertModel(tf.keras.Model):
         weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
         output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, self.width]), trainable=True,
-               name="output_weights", dtype='float16')
+               name="output_weights", dtype='float32')
 
         bias_initializer = tf.zeros_initializer()
 
         output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
-           name="output_bias", dtype='float16')
+           name="output_bias", dtype='float32')
 
         if training:
             tf.nn.dropout(x, rate=self.dropout_prob)
