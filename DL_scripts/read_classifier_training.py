@@ -429,10 +429,16 @@ def main():
         print(f'# trainable parameters: {trainable_params}')
         print(f'# non trainable parameters: {non_trainable_params}')
         print(f'# variables: {len(model.trainable_weights)}')
+        total_params = 0
         with open(os.path.join(args.output_dir, f'model_trainable_variables.txt'), 'w') as f:
             for var in model.trainable_weights:
+                count = 1
+                for dim in var.shape:
+                    count *= dim
+                    total_params += count
                 f.write(f'name = {var.name}, shape = {var.shape}\n')
                 print(f'name = {var.name}, shape = {var.shape}')
+        f.write(f'Total params: {total_params}')
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
