@@ -423,7 +423,7 @@ def main():
         # print(model.summary())
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-        
+        print(f'number of parameters: {model.count_params()}')
         trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
