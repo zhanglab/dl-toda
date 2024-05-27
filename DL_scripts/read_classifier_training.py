@@ -299,8 +299,8 @@ def main():
         num_labels = args.labels
 
     # modify tensorflow precision mode
-    policy = keras.mixed_precision.Policy('mixed_float16')
-    keras.mixed_precision.set_global_policy(policy)
+    # policy = keras.mixed_precision.Policy('mixed_float16')
+    # keras.mixed_precision.set_global_policy(policy)
     print('Compute dtype: %s' % policy.compute_dtype)
     print('Variable dtype: %s' % policy.variable_dtype)
 
