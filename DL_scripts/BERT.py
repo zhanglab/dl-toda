@@ -882,12 +882,12 @@ class BertModel(tf.keras.Model):
         weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
         output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, self.width]), trainable=True,
-               name="output_weights")
+               name="output_weights", dtype='float16')
 
         bias_initializer = tf.zeros_initializer()
 
         output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
-           name="output_bias")
+           name="output_bias", dtype='float16')
 
         if training:
             tf.nn.dropout(x, rate=self.dropout_prob)
