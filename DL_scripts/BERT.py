@@ -24,6 +24,7 @@ class BertConfig(object):
   def __init__(self,
                vocab_size,
                seq_length,
+               num_labels,
                hidden_size=768,
                num_hidden_layers=12,
                num_attention_heads=12,
@@ -71,6 +72,7 @@ class BertConfig(object):
     self.initializer_range = initializer_range
     # add seq_length
     self.seq_length = seq_length
+    self.num_labels = num_labels
 
   @classmethod
   def from_dict(cls, json_object):
@@ -767,6 +769,7 @@ class BertModel(tf.keras.Model):
         super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
+        self.num_labels = config.num_labels
         self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
         self.initializer_range = config.initializer_range
@@ -794,27 +797,25 @@ class BertModel(tf.keras.Model):
 
         # self.last_dense = tf.keras.layers.Dense(2, kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
 
-        # self.weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
-        # self.output_weights = tf.Variable(
-        #     initial_value=self.weights_initializer(shape=[2, config.hidden_size], dtype='float16'),
-        #     name="output_weights", trainable=True)
-        # self.output_bias = tf.Variable(
-        #         name="output_bias", [2], initializer=tf.zeros_initializer())
+        self.weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        self.output_weights = tf.Variable(
+            initial_value=self.weights_initializer(shape=[config.num_labels, config.hidden_size], dtype='float32'),
+            name="output_weights", trainable=True)
+        self.output_bias = tf.Variable(
+                name="output_bias", [config.num_labels], initializer=tf.zeros_initializer(), dtype='float32')
 
         # self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         # self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
 
-    def create_model(self, num_labels):
+    def create_model(self):
         input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_ids')
         input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_mask')
         token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='token_type_ids')
 
-        return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, num_labels, False))
+        return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, self.num_labels, False))
 
       
-    def call(self, input_ids, input_mask, token_type_ids, num_labels, training=False):
-        print(f'token_type_ids: {token_type_ids}')
-        print(f'num_labels: {num_labels}')
+    def call(self, input_ids, input_mask, token_type_ids, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
@@ -880,21 +881,21 @@ class BertModel(tf.keras.Model):
 
  #       # hidden_size = output_layer.shape[-1]
 
-        weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
-        output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, self.width]), trainable=True,
-               name="output_weights", dtype='float32')
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, self.width]), trainable=True,
+        #        name="output_weights", dtype='float32')
 
-        bias_initializer = tf.zeros_initializer()
+        # bias_initializer = tf.zeros_initializer()
 
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
-           name="output_bias", dtype='float32')
+        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
+        #    name="output_bias", dtype='float32')
 
         if training:
             tf.nn.dropout(x, rate=self.dropout_prob)
 
-        logits = tf.linalg.matmul(x, output_weights, transpose_b=True) # [batch_size, num_labels]
-        logits = tf.nn.bias_add(logits, output_bias) # [batch_size, num_labels]
+        logits = tf.linalg.matmul(x, self.output_weights, transpose_b=True) # [batch_size, num_labels]
+        logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, num_labels]
         probs = tf.nn.softmax(logits, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
