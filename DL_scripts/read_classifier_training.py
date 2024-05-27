@@ -423,13 +423,16 @@ def main():
         # print(model.summary())
         with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
             model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        
         trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
         print(f'# non trainable parameters: {non_trainable_params}')
         print(f'# variables: {len(model.trainable_weights)}')
-        for var in model.trainable_weights:
-            print(var.name)
+        with open(os.path.join(args.output_dir, f'model_trainable_variables.txt'), 'w') as f:
+            for var in model.trainable_weights:
+                f.write(f'name = {var.name}, shape = {var.shape}\n')
+                print(f'name = {var.name}, shape = {var.shape}')
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
