@@ -179,7 +179,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, num_labels
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
-            probs = model(num_labels, input_ids, input_mask, token_type_ids, training)
+            probs = model(input_ids, input_mask, token_type_ids, num_labels, training)
             # log_probs, probs, logits = model(input_ids, input_mask, token_type_ids, is_training)
             # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             # one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
