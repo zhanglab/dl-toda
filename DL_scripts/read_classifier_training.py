@@ -431,7 +431,7 @@ def main():
         print(f'# non trainable parameters: {non_trainable_params}')
         print(f'# variables: {len(model.trainable_weights)}')
         for var in model.trainable_weights:
-            print(var[0])
+            print(var[1])
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
