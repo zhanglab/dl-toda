@@ -545,7 +545,7 @@ class FeedForward(tf.keras.layers.Layer):
         self.layer_norm_first = tf.keras.layers.LayerNormalization()
 
         self.add_second = tf.keras.layers.Add()
-        self.layer_second = tf.keras.layers.LayerNormalization()
+        self.layer_norm_second = tf.keras.layers.LayerNormalization()
 
     def call(self, x, training=False):
         
