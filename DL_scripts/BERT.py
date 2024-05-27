@@ -128,7 +128,7 @@ class TokenEmbedding(tf.keras.layers.Layer):
         self.width = config.hidden_size
         self.weights_initializer = create_initializer(config.initializer_range)
         self.embedding_table = tf.Variable(
-            initial_value=self.weights_initializer(shape=[config.vocab_size, self.width],dtype='float16'),
+            initial_value=self.weights_initializer(shape=[config.vocab_size, self.width],dtype='float32'),
             name="token_embeddings", trainable=True)
 
     def call(self, input_ids):
@@ -165,7 +165,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
         # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
         # perform a slice.
         self.full_position_embeddings = tf.Variable(
-            initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float16'),
+            initial_value=self.weights_initializer(shape=[config.max_position_embeddings, self.width],dtype='float32'),
             name="position_embeddings", trainable=True)
 
     # def get_emb(self):
@@ -195,7 +195,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
         self.token_type_vocab_size = config.type_vocab_size
         self.weights_initializer = create_initializer(config.initializer_range)
         self.token_type_table = tf.Variable(
-            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.hidden_size], dtype='float16'),
+            initial_value=self.weights_initializer(shape=[self.token_type_vocab_size, config.hidden_size], dtype='float32'),
             name="token_type_embeddings", trainable=True)
 
     def call(self, token_type_ids):
