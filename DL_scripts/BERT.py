@@ -802,7 +802,7 @@ class BertModel(tf.keras.Model):
             initial_value=self.weights_initializer(shape=[config.num_labels, config.hidden_size], dtype='float32'),
             name="output_weights", trainable=True)
         self.output_bias = tf.Variable(
-                name="output_bias", [config.num_labels], initializer=tf.zeros_initializer(), dtype='float32')
+                name="output_bias", shape=[config.num_labels], initializer=tf.zeros_initializer(), dtype='float32')
 
         # self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
         # self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
