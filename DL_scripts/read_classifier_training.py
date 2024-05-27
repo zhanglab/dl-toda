@@ -429,26 +429,26 @@ def main():
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
         print(f'# non trainable parameters: {non_trainable_params}')
-        # print(model.trainable_weights)
+        print(model.trainable_weights)
         # print(len(model.trainable_weights))
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
 
-    tf.compat.v1.logging.info("**** Trainable Variables ****")
-    model_var_file = open(os.path.join(args.output_dir, "model_trainable_variables.txt"), "w")
-    total_params = 0
-    tvars = tf.compat.v1.trainable_variables()
-    for var in tvars:
-      count = 1
-      for dim in var.shape:
-          count *= dim
-          total_params += count
-      model_var_file.write(f"name = {var.name}, shape = {var.shape}\n")
-      tf.compat.v1.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                      init_string)
-    model_var_file.write(f"Total Params = {total_params}\n")
-    tf.compat.v1.logging.info("  Total Params = %d" % total_params)  
+    # tf.compat.v1.logging.info("**** Trainable Variables ****")
+    # model_var_file = open(os.path.join(args.output_dir, "model_trainable_variables.txt"), "w")
+    # total_params = 0
+    # tvars = tf.compat.v1.trainable_variables()
+    # for var in tvars:
+    #   count = 1
+    #   for dim in var.shape:
+    #       count *= dim
+    #       total_params += count
+    #   model_var_file.write(f"name = {var.name}, shape = {var.shape}\n")
+    #   tf.compat.v1.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+    #                   init_string)
+    # model_var_file.write(f"Total Params = {total_params}\n")
+    # tf.compat.v1.logging.info("  Total Params = %d" % total_params)  
 
     if args.resume:
         # load model in SavedModel format
