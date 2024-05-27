@@ -812,7 +812,8 @@ class BertModel(tf.keras.Model):
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, False))
 
       
-    def call(self, num_labels, input_ids, input_mask, token_type_ids, training=False):
+    def call(self, input_ids, input_mask, token_type_ids, num_labels, training=False):
+        print(f'token_type_ids: {token_type_ids}')
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
