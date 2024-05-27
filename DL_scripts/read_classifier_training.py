@@ -429,7 +429,11 @@ def main():
         non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
         print(f'# trainable parameters: {trainable_params}')
         print(f'# non trainable parameters: {non_trainable_params}')
-        print(model.trainable_weights)
+        print(f'# variables: {len(model.trainable_weights)}')
+        for var in model.trainable_weights:
+            print(var, len(var))
+
+        # print(model.trainable_weights)
         # print(len(model.trainable_weights))
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
