@@ -77,7 +77,7 @@ class BertConfig(object):
   @classmethod
   def from_dict(cls, json_object):
       """Constructs a `BertConfig` from a Python dictionary of parameters."""
-      config = BertConfig(vocab_size=None,seq_length=None)
+      config = BertConfig(vocab_size=None,seq_length=None,num_labels=None)
       for (key, value) in six.iteritems(json_object):
           config.__dict__[key] = value
       return config
