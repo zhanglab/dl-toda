@@ -300,9 +300,9 @@ def main():
 
     # modify tensorflow precision mode
     # policy = keras.mixed_precision.Policy('mixed_float16')
-    # keras.mixed_precision.set_global_policy(policy)
-    print('Compute dtype: %s' % policy.compute_dtype)
-    print('Variable dtype: %s' % policy.variable_dtype)
+    # # keras.mixed_precision.set_global_policy(policy)
+    # print('Compute dtype: %s' % policy.compute_dtype)
+    # print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
