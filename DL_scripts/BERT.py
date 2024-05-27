@@ -541,8 +541,11 @@ class FeedForward(tf.keras.layers.Layer):
         self.intermediate_layer = tf.keras.layers.Dense(config.intermediate_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
         self.output_layer = tf.keras.layers.Dense(config.hidden_size, kernel_initializer=create_initializer(config.initializer_range))
 
-        self.add = tf.keras.layers.Add()
-        self.layer_norm = tf.keras.layers.LayerNormalization()
+        self.add_first = tf.keras.layers.Add()
+        self.layer_norm_first = tf.keras.layers.LayerNormalization()
+
+        self.add_second = tf.keras.layers.Add()
+        self.layer_second = tf.keras.layers.LayerNormalization()
 
     def call(self, x, training=False):
         
@@ -551,8 +554,8 @@ class FeedForward(tf.keras.layers.Layer):
         if training:
             tf.nn.dropout(attention_output, rate=self.dropout_prob)
 
-        attention_output = self.add([attention_output, x])
-        attention_output = self.layer_norm(attention_output)
+        attention_output = self.add_first([attention_output, x])
+        attention_output = self.layer_norm_first(attention_output)
 
         intermediate_output = self.intermediate_layer(attention_output)
 
@@ -561,8 +564,8 @@ class FeedForward(tf.keras.layers.Layer):
         if training:
             tf.nn.dropout(layer_output, rate=self.dropout_prob)
 
-        layer_output = self.add([layer_output, attention_output]) # changed self.add([layer_output, x]) to self.add([layer_output, attention_output])
-        layer_output = self.layer_norm(layer_output)
+        layer_output = self.add_second([layer_output, attention_output]) # changed self.add([layer_output, x]) to self.add([layer_output, attention_output])
+        layer_output = self.layer_norm_second(layer_output)
 
         return layer_output
 
