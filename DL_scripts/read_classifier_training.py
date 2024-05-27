@@ -438,7 +438,7 @@ def main():
                     total_params += count
                 f.write(f'name = {var.name}, shape = {var.shape}\n')
                 print(f'name = {var.name}, shape = {var.shape}')
-        f.write(f'Total params: {total_params}')
+            f.write(f'Total params: {total_params}')
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
