@@ -769,7 +769,6 @@ class BertModel(tf.keras.Model):
         super().__init__()
         self.seq_length = config.seq_length
         self.width = config.hidden_size
-        self.num_labels = config.num_labels
         self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
         self.initializer_range = config.initializer_range
@@ -813,7 +812,7 @@ class BertModel(tf.keras.Model):
         input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_mask')
         token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='token_type_ids')
 
-        return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, self.num_labels, False))
+        return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, False))
 
       
     def call(self, input_ids, input_mask, token_type_ids, training=False):
