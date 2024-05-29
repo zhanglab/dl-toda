@@ -55,8 +55,50 @@ if gpus:
     tf.config.experimental.set_visible_devices(gpus, 'GPU')
 
 # define the DALI pipeline
+# @pipeline_def
+# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, training=True):
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=0,
+#                                  num_shards=1,
+#                                  stick_to_shard=False,
+#                                  initial_fill=initial_fill,
+#                                  features={
+#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     reads = inputs["read"].gpu()
+#     labels = inputs["label"].gpu()
+#     return (reads, labels)
+
+# define the DALI pipeline
 @pipeline_def
-def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, training=True):
+def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    # prefetch_queue_depth = 100
+    # read_ahead = True
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 # prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return (reads, labels)
+
+
+# define the BERT DALI pipeline
+@pipeline_def
+def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
@@ -65,12 +107,52 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
                                  stick_to_shard=False,
                                  initial_fill=initial_fill,
                                  features={
-                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     # retrieve reads and labels and copy them to the gpus
-    reads = inputs["read"].gpu()
-    labels = inputs["label"].gpu()
-    return (reads, labels)
+    input_ids = inputs["input_ids"].gpu()
+    input_mask = inputs["input_mask"].gpu()
+    segment_ids = inputs["segment_ids"].gpu()
+    label_ids = inputs['label_ids'].gpu()
+    is_real_example = inputs['is_real_example'].gpu()
+
+    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+
+
+
+class DALIPreprocessor(object):
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+               deterministic=False, training=False):
+
+        device_id = 0
+        shard_id = 0
+        num_gpus = len(gpus)
+        
+        self.batch_size = batch_size
+        self.device_id = device_id
+
+        if args.model_type == "BERT":
+            self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        else:
+            self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 if deterministic else None)
+   
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+
+    def get_device_dataset(self):
+        return self.dalidataset
 
 
 @tf.function
@@ -145,6 +227,7 @@ def main():
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vocab', help="Path to the vocabulary file")
+    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
@@ -173,7 +256,6 @@ def main():
         num_labels = len(class_mapping)
 
     if args.model_type == 'BERT':
-        print(f'dataset for bert: {args.model_type}')
         config = BertConfig.from_json_file(args.bert_config_file)
 
     # create dtype policy
@@ -192,18 +274,19 @@ def main():
     # compute number of steps/batches to iterate over entire validation set
     val_steps = args.val_reads_per_epoch // args.batch_size
 
-    train_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
-                                    initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
-                                output_dtypes=(tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)
+    # train_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=train_files, tfrec_idx_filenames=train_idx_files, 
+    #                                 initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
+    #                             output_dtypes=(tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)
                                 
-    val_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
-                                initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
-                            output_dtypes=(tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)
+    # val_dataset = dali_tf.DALIDataset(pipeline=get_dali_pipeline(tfrec_filenames=val_files, tfrec_idx_filenames=val_idx_files, 
+    #                             initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
+    #                         output_dtypes=(tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)
                             
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
-    init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
+    init_lr = args.init_lr
+    # init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
 
     # define cyclical learning rate
     if args.clr:
