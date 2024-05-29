@@ -258,6 +258,7 @@ def main():
 
     if args.model_type == 'BERT':
         config = BertConfig.from_json_file(args.bert_config_file)
+        vocab_size = config.vocab_size
 
     # create dtype policy
     # policy = keras.mixed_precision.Policy('mixed_float16')
