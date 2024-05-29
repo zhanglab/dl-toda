@@ -284,6 +284,13 @@ def main():
     #                             initial_fill=args.initial_fill, batch_size=args.batch_size, training=True), output_shapes=((args.batch_size, vector_size), (args.batch_size)),
     #                         output_dtypes=(tf.int64, tf.int64), batch_size=args.batch_size, num_threads=4, device_id=0)
                             
+    # load data
+    train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                           deterministic=False, training=True)
+    val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                        deterministic=False, training=True)
+    train_input = train_preprocessor.get_device_dataset()
+    val_input = val_preprocessor.get_device_dataset()
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
@@ -421,7 +428,8 @@ def main():
     # create empty dictionary to store the labels
     # labels_dict = defaultdict(int)
     
-    for batch, (reads, labels) in enumerate(train_dataset.take(nstep_per_epoch*args.epochs), 1):
+    # for batch, (reads, labels) in enumerate(train_dataset.take(nstep_per_epoch*args.epochs), 1):
+    for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
         loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, batch == 1)
         
