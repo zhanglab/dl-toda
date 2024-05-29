@@ -20,6 +20,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
+from BERT import BertConfig, BertModel
 import argparse
 
 # set seed
@@ -73,12 +74,18 @@ def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, initial_fill, traini
 
 
 @tf.function
-def training_step(reads, labels, train_accuracy, loss, opt, model, first_batch):
+def training_step(model_type, data, train_accuracy, loss, opt, model, first_batch):
+    training = True
     with tf.GradientTape() as tape:
-        probs = model(reads, training=True)
+        if model_type == 'BERT':
+            input_ids, input_mask, token_type_ids, labels, is_real_example = data
+            probs = model(input_ids, input_mask, token_type_ids, training)
+        else:
+            reads, labels = data
+            probs = model(reads, training=training)
         # get the loss
         loss_value = loss(labels, probs)
-        # scale the loss to avoid numeric underflow
+        # scale the loss (multiply the loss by a factor) to avoid numeric underflow
         scaled_loss = opt.get_scaled_loss(loss_value)
     # get the scaled gradients
     scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
@@ -88,14 +95,22 @@ def training_step(reads, labels, train_accuracy, loss, opt, model, first_batch):
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, grads, reads, labels, probs
+    return loss_value, input_ids, input_mask
+
 
 @tf.function
-def testing_step(reads, labels, loss, val_loss, val_accuracy, model):
-    probs = model(reads, training=False)
+def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
+    if model_type == 'BERT':
+        training = False
+        input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        probs = model(input_ids, input_mask, token_type_ids, training)
+    else:
+        reads, labels = data
+        probs = model(reads, training=training)
     val_accuracy.update_state(labels, probs)
     loss_value = loss(labels, probs)
     val_loss.update_state(loss_value)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -117,6 +132,7 @@ def main():
     parser.add_argument('--sw_conv_1', type=int, default=1)
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
@@ -141,32 +157,29 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', default=20)
     args = parser.parse_args()
 
-    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
+    models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
-    # define some training and model parameters
-    if args.DNA_model:
-        vector_size = 500 if args.paired_reads else 250
-        vocab_size = 5
-    else:
+    # get vocabulary size
+    if args.model_type != 'BERT':
         with open(args.vocab, 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
-        if args.paired_reads:
-            vector_size = (args.max_read_size - args.k_value + 1)*2 + 1 if args.with_insert_size else (args.max_read_size - args.k_value + 1)*2
-        else:
-            vector_size = args.max_read_size - args.k_value + 1
-
 
     # load class_mapping file mapping label IDs to species
-    f = open(args.class_mapping)
-    class_mapping = json.load(f)
-    num_classes = len(class_mapping)
+    if args.class_mapping:
+        f = open(args.class_mapping)
+        class_mapping = json.load(f)
+        num_labels = len(class_mapping)
+
+    if args.model_type == 'BERT':
+        print(f'dataset for bert: {args.model_type}')
+        config = BertConfig.from_json_file(args.bert_config_file)
 
     # create dtype policy
-    policy = keras.mixed_precision.Policy('mixed_float16')
-    keras.mixed_precision.set_global_policy(policy)
-    print('Compute dtype: %s' % policy.compute_dtype)
-    print('Variable dtype: %s' % policy.variable_dtype)
+    # policy = keras.mixed_precision.Policy('mixed_float16')
+    # keras.mixed_precision.set_global_policy(policy)
+    # print('Compute dtype: %s' % policy.compute_dtype)
+    # print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
@@ -199,22 +212,81 @@ def main():
                                                   step_size=2 * nstep_per_epoch)
 
     # define optimizer
-    if args.optimizer == 'Adam':
-        opt = tf.keras.optimizers.Adam(init_lr)
-    elif args.optimizer == 'SGD':
-        opt = tf.keras.optimizers.SGD(init_lr)
-    opt = keras.mixed_precision.LossScaleOptimizer(opt)
+    if args.model_type == 'BERT':
+        sys.path.append(args.path_to_lr_schedule)
+        from lr_schedule import LinearWarmup
+
+        # define learning rate polynomial decay
+        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=init_lr,
+        end_learning_rate=0,
+        decay_steps=nstep_per_epoch*args.epochs)
+
+        # define linear warmup schedule
+        warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+        warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
+        warmup_schedule = LinearWarmup(
+        warmup_learning_rate = 0,
+        after_warmup_lr_sched = linear_decay,
+        warmup_steps = warmup_steps)
+
+        opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+        # exclude variables from weight decay
+        opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+    else:
+        if args.optimizer == 'Adam':
+            opt = tf.keras.optimizers.Adam(init_lr)
+        elif args.optimizer == 'SGD':
+            opt = tf.keras.optimizers.SGD(init_lr)
+
+    # prevent numeric underflow when using float16
+    # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
+    if args.model_type == 'BERT':
+        model = BertModel(config=config)
+        # define a forward pass
+        # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # _ = model(input_ids, input_mask, token_type_ids, False)
+        print(f'summary: {model.create_model().summary()}')
+        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        
+        # print(model.summary())
+        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        print(f'number of parameters: {model.create_model().count_params()}')
+        trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+        non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+        print(f'# trainable parameters: {trainable_params}')
+        print(f'# non trainable parameters: {non_trainable_params}')
+        print(f'# variables: {len(model.trainable_weights)}')
+        total_params = 0
+        with open(os.path.join(args.output_dir, f'model_trainable_variables.txt'), 'w') as f:
+            for var in model.trainable_weights:
+                count = 1
+                for dim in var.shape:
+                    count *= dim
+                    total_params += count
+                f.write(f'name = {var.name}, shape = {var.shape}\n')
+                print(f'name = {var.name}, shape = {var.shape}\t {count}')
+            f.write(f'Total params: {total_params}')
+
+        # print(model.trainable_weights)
+        # print(len(model.trainable_weights))
+    else:
+        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+
+
     if args.resume:
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
-    else:
-        model = models[args.model_type](args, vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+        checkpoint.restore(args.ckpt).expect_partial()
+        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -246,7 +318,7 @@ def main():
     # create summary file
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
         f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nNumber of classes\t{num_classes}\nEpochs\t{args.epochs}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
                 f'Vector size\t{vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
                 f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size*len(gpus)}\nNumber of gpus\t{len(gpus)}\n'
@@ -262,14 +334,16 @@ def main():
     start = datetime.datetime.now()
 
     # create empty dictionary to store the labels
-    labels_dict = defaultdict(int)
+    # labels_dict = defaultdict(int)
+    
     for batch, (reads, labels) in enumerate(train_dataset.take(nstep_per_epoch*args.epochs), 1):
         # get training loss
-        loss_value, gradients, reads, labels, probs = training_step(reads, labels, train_accuracy, loss, opt, model, batch == 1)
+        loss_value, input_ids, input_mask = training_step(args.model_type, data, train_accuracy, loss, opt, model, batch == 1)
+        
         # create dictionary mapping the species to their occurrence in batches
-        labels_count = Counter(labels.numpy())
-        for k, v in labels_count.items():
-            labels_dict[str(k)] += v
+        # labels_count = Counter(labels.numpy())
+        # for k, v in labels_count.items():
+        #     labels_dict[str(k)] += v
 
 
         if batch % 100 == 0:
@@ -285,11 +359,11 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # save dictionary of labels count
-            with open(os.path.join(args.output_dir, f'{epoch}-labels.json'), 'w') as labels_outfile:
-                json.dump(labels_dict, labels_outfile)
+            # with open(os.path.join(args.output_dir, f'{epoch}-labels.json'), 'w') as labels_outfile:
+            #     json.dump(labels_dict, labels_outfile)
             # evaluate model
-            for _, (reads, labels) in enumerate(val_dataset.take(val_steps)):
-                testing_step(reads, labels, loss, val_loss, val_accuracy, model)
+            for _, data in enumerate(val_input.take(val_steps)):
+                testing_step(args.model_type, data, loss, val_loss, val_accuracy, model)
 
             # adjust learning rate
             if epoch % args.lr_decay == 0:
