@@ -133,6 +133,7 @@ def main():
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
+    parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py', required=('BERT' in sys.argv))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file', required=('--resume' in sys.argv))
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
