@@ -341,9 +341,6 @@ def main():
     if not os.path.isdir(ckpt_dir):
         os.makedirs(ckpt_dir)
 
-    # create checkpoint object to save model
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-
     # create directory for storing logs
     tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
     if not os.path.exists(tensorboard_dir):
@@ -389,16 +386,17 @@ def main():
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
+    # create checkpoint object to save model
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
 
     if args.resume:
         # load model in SavedModel format
         #model = tf.keras.models.load_model(args.model)
         # load model saved with checkpoints
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+        # checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(args.ckpt).expect_partial()
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
-
-
+    
 
     # create summary file
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
