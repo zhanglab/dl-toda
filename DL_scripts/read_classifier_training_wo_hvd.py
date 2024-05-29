@@ -169,11 +169,13 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, first_batc
         # get the loss
         loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
-        scaled_loss = opt.get_scaled_loss(loss_value)
+        # scaled_loss = opt.get_scaled_loss(loss_value)
     # get the scaled gradients
-    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
     # get the unscaled gradients
-    grads = opt.get_unscaled_gradients(scaled_gradients)
+    # grads = opt.get_unscaled_gradients(scaled_gradients)
+    # opt.apply_gradients(zip(grads, model.trainable_variables))
+    grads = tape.gradient(loss_value, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
     #update training accuracy
     train_accuracy.update_state(labels, probs)
