@@ -326,6 +326,33 @@ def main():
     # prevent numeric underflow when using float16
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
+    # define metrics
+    loss = tf.losses.SparseCategoricalCrossentropy()
+    val_loss = tf.keras.metrics.Mean(name='val_loss')
+    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+    val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
+
+    # create output directory
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    # create directory for storing checkpoints
+    ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
+    if not os.path.isdir(ckpt_dir):
+        os.makedirs(ckpt_dir)
+
+    # create checkpoint object to save model
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+
+    # create directory for storing logs
+    tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
+    if not os.path.exists(tensorboard_dir):
+        os.makedirs(tensorboard_dir)
+
+    writer = tf.summary.create_file_writer(tensorboard_dir)
+    td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+    vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+
     # define model
     if args.model_type == 'BERT':
         model = BertModel(config=config)
@@ -372,32 +399,6 @@ def main():
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
 
-    # define metrics
-    loss = tf.losses.SparseCategoricalCrossentropy()
-    val_loss = tf.keras.metrics.Mean(name='val_loss')
-    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
-    val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
-
-    # create output directory
-    if not os.path.isdir(args.output_dir):
-        os.makedirs(args.output_dir)
-
-    # create directory for storing checkpoints
-    ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-    if not os.path.isdir(ckpt_dir):
-        os.makedirs(ckpt_dir)
-
-    # create checkpoint object to save model
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-
-    # create directory for storing logs
-    tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
-    if not os.path.exists(tensorboard_dir):
-        os.makedirs(tensorboard_dir)
-
-    writer = tf.summary.create_file_writer(tensorboard_dir)
-    td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-    vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
 
     # create summary file
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
