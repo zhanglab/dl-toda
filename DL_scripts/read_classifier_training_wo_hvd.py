@@ -486,15 +486,15 @@ def main():
             # define end of current epoch
             epoch += 1
 
-
-    # save final embeddings
-    emb_weights = model.get_layer('embedding').get_weights()[0]
-    out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
-    print(f'# embeddings: {len(emb_weights)}')
-    for i in range(len(emb_weights)):
-        vec = emb_weights[i]
-        out_v.write('\t'.join([str(x) for x in vec]) + "\n")
-    out_v.close()
+    if args.model_type != 'BERT':
+        # save final embeddings
+        emb_weights = model.get_layer('embedding').get_weights()[0]
+        out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
+        print(f'# embeddings: {len(emb_weights)}')
+        for i in range(len(emb_weights)):
+            vec = emb_weights[i]
+            out_v.write('\t'.join([str(x) for x in vec]) + "\n")
+        out_v.close()
 
     end = datetime.datetime.now()
 
