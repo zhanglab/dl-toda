@@ -264,7 +264,7 @@ def main():
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
-    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=('BERT' not in sys.argv))
+    parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
@@ -405,7 +405,7 @@ def main():
             opt = tf.keras.optimizers.SGD(init_lr)
     
     # prevent numeric underflow when using float16
-    opt = keras.mixed_precision.LossScaleOptimizer(opt)
+    # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
     if args.model_type == 'BERT':
@@ -479,10 +479,10 @@ def main():
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
         #     labels_dict[str(k)] += v
-        if batch == 1:
+     
+        if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
