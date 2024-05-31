@@ -193,15 +193,15 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, first_batc
         # get the loss
         loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
-        scaled_loss = opt.get_scaled_loss(loss_value)
+        # scaled_loss = opt.get_scaled_loss(loss_value)
     # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
     # combine gradient values before applying gradients to model weights
     tape = hvd.DistributedGradientTape(tape)
     # get the scaled gradients
-    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
     # get the unscaled gradients
-    grads = opt.get_unscaled_gradients(scaled_gradients)
-    #grads = tape.gradient(loss_value, model.trainable_variables)
+    # grads = opt.get_unscaled_gradients(scaled_gradients)
+    grads = tape.gradient(loss_value, model.trainable_variables)
     #opt.apply_gradients(zip(grads, model.trainable_variables))
     opt.apply_gradients(zip(grads, model.trainable_variables))
     # Horovod: broadcast initial variable states from rank 0 to all other processes.
