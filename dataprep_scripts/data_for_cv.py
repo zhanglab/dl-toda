@@ -28,9 +28,9 @@ def main():
 	examples_per_fold = len(all_data) // args.folds
 	print(f'# examples per fold: {examples_per_fold}')
 	subsets = [all_data[i:i+examples_per_fold] for i in range(0, len(all_data), examples_per_fold)]
-
+	print(len(subsets))
 	# create files of data for cross-validation
-	for k in range(folds):
+	for k in range(args.folds):
 		# create output directory for every subset of data
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 		if not os.path.isdir(fold_dir):
@@ -41,14 +41,6 @@ def main():
 			out_f.write(''.join(train_data))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
 			out_f.write(''.join(val_data))
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
