@@ -1,6 +1,7 @@
 import os
 import argparse
 import random
+import sys
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -30,7 +31,8 @@ def main():
 	subsets = [all_data[i:i+examples_per_fold] for i in range(0, len(all_data), examples_per_fold)]
 	print(len(subsets))
 	# create files of data for cross-validation
-	# for k in range(args.folds):
+	for k in range(args.folds):
+		print(k)
 	# 	# create output directory for every subset of data
 	# 	fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 	# 	# if not os.path.isdir(fold_dir):
