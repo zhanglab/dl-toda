@@ -33,16 +33,16 @@ def main():
 	# create files of data for cross-validation
 	for k in range(args.folds):
 		print(k)
-	# 	# create output directory for every subset of data
-	# 	fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
-	# 	# if not os.path.isdir(fold_dir):
-    #     # 	os.makedirs(fold_dir)
-    # 	val_data = subsets[k]
-    # 	train_data = [subsets[i] for i in range(k) if i != k]
-	# 	with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
-	# 		out_f.write(''.join(train_data))
-	# 	with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
-	# 		out_f.write(''.join(val_data))
+		# create output directory for every subset of data
+		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
+		# if not os.path.isdir(fold_dir):
+        # 	os.makedirs(fold_dir)
+    	# val_data = subsets[k]
+    	# train_data = [subsets[i] for i in range(k) if i != k]
+		# with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
+		# 	out_f.write(''.join(train_data))
+		# with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
+		# 	out_f.write(''.join(val_data))
 
 
 if __name__ == "__main__":
