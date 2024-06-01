@@ -33,8 +33,8 @@ def main():
 	for k in range(args.folds):
 		# create output directory for every subset of data
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
-		if not os.path.isdir(fold_dir):
-        	os.makedirs(fold_dir)
+		# if not os.path.isdir(fold_dir):
+        # 	os.makedirs(fold_dir)
     	val_data = subsets[k]
     	train_data = [subsets[i] for i in range(k) if i != k]
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
