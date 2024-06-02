@@ -22,7 +22,7 @@ def main():
 			content = f.readlines()
 			if args.header:
 				all_data += content[1:]
-				header = content[1]
+				header = content[0]
 			else:
 				all_data += content
 
@@ -44,7 +44,8 @@ def main():
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 		if not os.path.isdir(fold_dir):
 			os.makedirs(fold_dir)
-		val_data = subsets[k].append(header)		 
+		val_data = subsets[k].append(header)
+		print(val_data)	 
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
