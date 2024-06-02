@@ -2,6 +2,7 @@ import os
 import argparse
 import random
 import sys
+import math
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -33,7 +34,7 @@ def main():
 	random.shuffle(all_data)
 	
 	# split data into 5 identical subsets
-	examples_per_fold = len(all_data) // args.folds
+	examples_per_fold = math.ceil(len(all_data)/args.folds)
 	print(f'# examples per fold: {examples_per_fold}')
 	subsets = [all_data[i:i+examples_per_fold] for i in range(0, len(all_data), examples_per_fold)]
 	print(len(subsets))
@@ -44,8 +45,7 @@ def main():
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 		if not os.path.isdir(fold_dir):
 			os.makedirs(fold_dir)
-		val_data = subsets[k].append(header)
-		print(val_data)	 
+		val_data = subsets[k]
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
