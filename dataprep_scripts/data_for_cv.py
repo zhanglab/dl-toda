@@ -41,7 +41,7 @@ def main():
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
-					out_f.write(''.join(train_data[i]))
+					out_f.write(''.join(subsets[i]))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
 			out_f.write(''.join(val_data))
 
