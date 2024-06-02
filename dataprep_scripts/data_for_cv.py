@@ -27,6 +27,7 @@ def main():
 				all_data += content
 
 	print(len(all_data))
+	print(header)
 
 	# shuffle data
 	random.shuffle(all_data)
@@ -47,7 +48,8 @@ def main():
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
-					out_f.write(''.join(subsets[i].append(header)))
+					subsets[i].append(header)
+					out_f.write(''.join(subsets[i]))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
 			out_f.write(''.join(val_data))
 
