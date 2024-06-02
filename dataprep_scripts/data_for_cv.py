@@ -12,6 +12,8 @@ def main():
 	parser.add_argument('--header', action='store_true', required=('tsv' in sys.argv))
 	args = parser.parse_args()
 
+	print(args.data)
+
 	# load data
 	all_data = []
 	for datafile in args.data:
