@@ -16,11 +16,13 @@ def main():
 
 	# load data
 	all_data = []
+	header = ''
 	for datafile in args.data:
 		with open(datafile, 'r') as f:
 			content = f.readlines()
 			if args.header:
 				all_data += content[1:]
+				header = content[1]
 			else:
 				all_data += content
 
@@ -41,11 +43,11 @@ def main():
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 		if not os.path.isdir(fold_dir):
 			os.makedirs(fold_dir)
-		val_data = subsets[k]		 
+		val_data = subsets[k].append(header)		 
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
-					out_f.write(''.join(subsets[i]))
+					out_f.write(''.join(subsets[i].append(header)))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
 			out_f.write(''.join(val_data))
 
