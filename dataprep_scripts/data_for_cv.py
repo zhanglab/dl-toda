@@ -45,13 +45,15 @@ def main():
 		fold_dir = os.path.join(args.output_dir, f'cv_subset_{k}')
 		if not os.path.isdir(fold_dir):
 			os.makedirs(fold_dir)
-		val_data = subsets[k]
+		
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
 			for i in range(args.folds):
 				if i != k:
-					subsets[i].append(header)
+					train_data = subsets[i]
+					train_data.append(header)
 					out_f.write(''.join(subsets[i]))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
+			val_data = subsets[k]
 			val_data.append(header)
 			out_f.write(''.join(val_data))
 
