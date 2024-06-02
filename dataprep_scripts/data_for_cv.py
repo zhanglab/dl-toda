@@ -47,15 +47,13 @@ def main():
 			os.makedirs(fold_dir)
 		
 		with open(os.path.join(fold_dir, 'train.tsv'), 'w') as out_f:
+			out_f.write(header)
 			for i in range(args.folds):
 				if i != k:
-					train_data = subsets[i]
-					train_data.insert(0, header)
 					out_f.write(''.join(subsets[i]))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
-			val_data = subsets[k]
-			val_data.insert(0, header)
-			out_f.write(''.join(val_data))
+			out_f.write(header)
+			out_f.write(''.join(subsets[k]))
 
 
 if __name__ == "__main__":
