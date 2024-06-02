@@ -52,6 +52,7 @@ def main():
 					subsets[i].append(header)
 					out_f.write(''.join(subsets[i]))
 		with open(os.path.join(fold_dir, 'dev.tsv'), 'w') as out_f:
+			val_data.append(header)
 			out_f.write(''.join(val_data))
 
 
