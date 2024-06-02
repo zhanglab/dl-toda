@@ -22,6 +22,8 @@ def main():
 			else:
 				all_data += content
 
+	print(len(all_data))
+
 	# shuffle data
 	random.shuffle(all_data)
 	
