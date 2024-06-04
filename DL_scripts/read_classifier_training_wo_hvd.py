@@ -251,7 +251,7 @@ def main():
         with open(args.vocab, 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
-        print(f'vocab_size: {len(vocab_size)}')
+        print(f'vocab_size: {vocab_size}')
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
         f = open(args.class_mapping)
