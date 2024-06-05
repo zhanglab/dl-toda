@@ -185,8 +185,8 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, first_batc
 
 @tf.function
 def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
+    training = False
     if model_type == 'BERT':
-        training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         probs = model(input_ids, input_mask, token_type_ids, training)
     else:
