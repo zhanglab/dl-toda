@@ -429,7 +429,7 @@ def main():
 
     start = datetime.datetime.now()
 
-    create empty dictionary to store the labels
+    # create empty dictionary to store the labels
     labels_dict = defaultdict(int)
     
     for batch, (reads, labels) in enumerate(train_dataset.take(nstep_per_epoch*args.epochs), 1):
