@@ -308,6 +308,8 @@ def main():
         f = open(args.class_mapping)
         class_mapping = json.load(f)
         num_labels = len(class_mapping)
+    else:
+        num_labels = args.num_labels
 
     # modify tensorflow precision mode
     # policy = keras.mixed_precision.Policy('mixed_float16')
