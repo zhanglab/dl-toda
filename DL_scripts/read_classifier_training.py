@@ -173,7 +173,7 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(model_type, data, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, loss, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, train_loss_1, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -184,11 +184,12 @@ def training_step(model_type, data, train_accuracy_1, train_accuracy_2, train_ac
             one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
             # product = one_hot_labels * log_probs
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-            loss_value_1 = tf.reduce_mean(per_example_loss)
-            loss_value_2 = loss(labels, probs)
+            # loss_value_1 = tf.reduce_mean(per_example_loss)
+            loss_value_1 = train_loss_1(per_example_loss)
+            loss_value = train_loss_2(labels, probs)
         else:
             reads, labels = data
-            probs = model(reads, training=training)
+            # probs = model(reads, training=training)
         # get the loss
         loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
@@ -220,10 +221,10 @@ def training_step(model_type, data, train_accuracy_1, train_accuracy_2, train_ac
     train_accuracy_4.update_state(labels, predictions)
 
     # return loss_value, input_ids, input_mask
-    return loss_value_1, loss_value_2
+    return loss_value_1, loss_value
 
 @tf.function
-def testing_step(model_type, data, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model):
+def testing_step(model_type, data, num_labels, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, val_accuracy_3, val_accuracy_4, model):
     if model_type == 'BERT':
         training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -231,13 +232,17 @@ def testing_step(model_type, data, loss, val_loss_1, val_loss_2, val_accuracy_1,
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value_1 = tf.reduce_mean(per_example_loss)
-        loss_value_2 = loss(labels, probs)
+        # loss_value_1 = tf.reduce_mean(per_example_loss)
+        loss_value_1 = val_loss_1(per_example_loss)
+        # loss_value_2 = loss(labels, probs)
+        loss_value_2 = val_loss_2(labels, probs)
     else:
         reads, labels = data
         probs = model(reads, training=training)
     val_accuracy_1.update_state(labels, probs)
     val_accuracy_2.update_state(labels, predictions)
+    val_accuracy_3.update_state(labels, probs)
+    val_accuracy_4.update_state(labels, predictions)
     # loss_value = loss(labels, probs)
     val_loss_1.update_state(loss_value_1)
     val_loss_2.update_state(loss_value_2)
@@ -465,16 +470,26 @@ def main():
         # create checkpoint object to save model
         checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
+
+    # # define metrics
+    # loss = tf.losses.SparseCategoricalCrossentropy()
+    # val_loss = tf.keras.metrics.Mean(name='val_loss')
+    # train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+    # val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
+
     # define metrics
-    loss = tf.losses.SparseCategoricalCrossentropy()
+    train_loss_1 = tf.keras.metrics.Mean(name='train_loss_1')
+    train_loss_2 = tf.losses.SparseCategoricalCrossentropy()
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
-    val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
+    val_loss_2 = tf.losses.SparseCategoricalCrossentropy()
     train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
     train_accuracy_2= tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_2')
     val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
+    val_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
     train_accuracy_3 = tf.keras.metrics.Accuracy(name='train_accuracy_3')
     train_accuracy_4 = tf.keras.metrics.Accuracy(name='train_accuracy_4')
-    val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
+    val_accuracy_3 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
+    val_accuracy_4 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
     start = datetime.datetime.now()
 
@@ -485,7 +500,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value_1, loss_value_2 = training_step(args.model_type, data, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, loss, opt, model, batch == 1)
+        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, loss, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -517,7 +532,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model)
+                testing_step(args.model_type, data, num_labels, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, val_accuracy_3, val_accuracy_4, model)
 
 
             # adjust learning rate
@@ -528,20 +543,31 @@ def main():
                     opt.learning_rate = new_lr
 
             if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()}\t{val_loss_2.result().numpy()} - Validation accuracy: {val_accuracy_1.result().numpy()*100}\t{val_accuracy_2.result().numpy()*100}\t{val_accuracy_3.result().numpy()*100}\t{val_accuracy_4.result().numpy()*100}')
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
                 with writer.as_default():
-                    tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_1", val_accuracy_1.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_3", val_accuracy_3.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_4", val_accuracy_4.result().numpy(), step=epoch)
                     writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_loss_2.result().numpy()}\t{val_accuracy_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\t{val_accuracy_3.result().numpy()}\t{val_accuracy_4.result().numpy()}\n')
 
             # reset metrics variables
-            val_loss.reset_states()
-            train_accuracy.reset_states()
-            val_accuracy.reset_states()
+            train_loss_1.reset_states()
+            val_loss_1.reset_states()
+            train_accuracy_1.reset_states()
+            train_accuracy_2.reset_states()
+            train_accuracy_3.reset_states()
+            train_accuracy_4.reset_states()
+            val_accuracy_1.reset_states()
+            val_accuracy_2.reset_states()
+            val_accuracy_3.reset_states()
+            val_accuracy_4.reset_states()
 
             # define end of current epoch
             epoch += 1
