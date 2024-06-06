@@ -434,9 +434,10 @@ def main():
                 for dim in var.shape:
                     count *= dim
                     total_params += count
-                f.write(f'name = {var.name}, shape = {var.shape}\n')
+                f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
                 print(f'name = {var.name}, shape = {var.shape}\t {count}')
             f.write(f'Total params: {total_params}')
+            print(f'Total params: {total_params}')
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
