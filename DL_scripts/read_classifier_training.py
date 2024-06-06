@@ -503,7 +503,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, loss, opt, model, batch == 1)
+        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, train_accuracy_3, train_accuracy_4, train_loss_1, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
