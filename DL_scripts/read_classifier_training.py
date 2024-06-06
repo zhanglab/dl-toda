@@ -191,7 +191,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
             reads, labels = data
             # probs = model(reads, training=training)
         # get the loss
-        loss_value = loss(labels, probs)
+        # loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
         # scaled_loss = opt.get_scaled_loss(loss_value)
     # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
