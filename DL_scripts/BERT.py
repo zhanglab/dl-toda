@@ -900,7 +900,7 @@ class BertModel(tf.keras.Model):
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
         # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
         # logits = self.last_dense(x) # [batch_size, num_labels]
-        log_probs = self.log_softmax_act(logits)  # [batch_size, num_labels]
+        log_probs = tf.nn.log_softmax(logits)  # [batch_size, num_labels]
         # probs = self.softmax_act(logits) # [batch_size, num_labels]
         return probs, log_probs, logits
         # return probs, attention_mask
