@@ -240,8 +240,8 @@ def testing_step(model_type, data, num_labels, val_loss_1, val_loss_2, val_accur
         reads, labels = data
         probs = model(reads, training=training)
     val_accuracy_1.update_state(labels, probs)
-    val_accuracy_2.update_state(labels, predictions)
-    val_accuracy_3.update_state(labels, probs)
+    val_accuracy_2.update_state(labels, probs)
+    val_accuracy_3.update_state(labels, predictions)
     val_accuracy_4.update_state(labels, predictions)
     # loss_value = loss(labels, probs)
     val_loss_1.update_state(loss_value_1)
