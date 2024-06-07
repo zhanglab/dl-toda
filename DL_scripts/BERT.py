@@ -202,9 +202,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
 
     def call(self, token_type_ids):
         from_shape = get_shape_list(token_type_ids, expected_rank=[2, 3])
-        print(f'from_shape: {from_shape}')
         batch_size = from_shape[0]
-        print(f'batch_size: {batch_size}')
         # This vocab will be small so we always do one-hot here, since it is always
         # faster for a small vocabulary.
         flat_token_type_ids = tf.reshape(token_type_ids, [-1])
@@ -449,6 +447,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         if training:
+            print('ADDING DROPOUT IN ATTENTION')
             tf.nn.dropout(attention_probs, rate=self.attention_probs_dropout_prob)
 
         # `value_layer` = [B, T, N, H]
@@ -554,6 +553,7 @@ class FeedForward(tf.keras.layers.Layer):
         attention_output = self.attention_output_layer(x)
 
         if training:
+            print('ADDING 1st DROPOUT IN FFN')
             tf.nn.dropout(attention_output, rate=self.dropout_prob)
 
         attention_output = self.add_first([attention_output, x])
@@ -564,6 +564,7 @@ class FeedForward(tf.keras.layers.Layer):
         layer_output = self.output_layer(intermediate_output)
 
         if training:
+            print('ADDING 2nd DROPOUT IN FFN')
             tf.nn.dropout(layer_output, rate=self.dropout_prob)
 
         layer_output = self.add_second([layer_output, attention_output]) # changed self.add([layer_output, x]) to self.add([layer_output, attention_output])
@@ -854,6 +855,7 @@ class BertModel(tf.keras.Model):
         x = self.norm_layer(x)
 
         if training:
+            print('ADDING DROPOUT IN CALL')
             tf.nn.dropout(x, rate=self.dropout_prob)
         
         # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
@@ -866,8 +868,7 @@ class BertModel(tf.keras.Model):
         # x = self.enc_layers(x, training)
 
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        print(f'encoder_output: {encoder_output}')
-        print(f'x: {x}')
+ 
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
         first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
@@ -875,7 +876,6 @@ class BertModel(tf.keras.Model):
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
         x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
-        print(f'x: {x}')
 
  #       # output_layer = model(input_ids, input_mask, token_type_ids)
 
