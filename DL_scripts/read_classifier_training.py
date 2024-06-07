@@ -217,7 +217,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
     #update training accuracy
     train_accuracy_1.update_state(labels, probs)
     train_accuracy_2.update_state(labels, probs)
-    train_accuracy_3.update_state(labels, probs)
+    train_accuracy_3.update_state(labels, predictions)
     train_accuracy_4.update_state(labels, predictions)
 
     # return loss_value, input_ids, input_mask
