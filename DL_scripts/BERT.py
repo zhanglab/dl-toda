@@ -447,10 +447,7 @@ class AttentionLayer(tf.keras.layers.Layer):
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         if training:
-            print('ADDING DROPOUT IN ATTENTION')
             tf.nn.dropout(attention_probs, rate=self.attention_probs_dropout_prob)
-        else:
-            print('NOT ADDING DROPOUT IN ATTENTION')
 
         # `value_layer` = [B, T, N, H]
         value_layer = tf.reshape(
@@ -555,10 +552,7 @@ class FeedForward(tf.keras.layers.Layer):
         attention_output = self.attention_output_layer(x)
 
         if training:
-            print('ADDING 1st DROPOUT IN FFN')
             tf.nn.dropout(attention_output, rate=self.dropout_prob)
-        else:
-            print('NOT ADDING 1st DROPOUT IN FFN')
 
         attention_output = self.add_first([attention_output, x])
         attention_output = self.layer_norm_first(attention_output)
@@ -568,10 +562,7 @@ class FeedForward(tf.keras.layers.Layer):
         layer_output = self.output_layer(intermediate_output)
 
         if training:
-            print('ADDING 2nd DROPOUT IN FFN')
             tf.nn.dropout(layer_output, rate=self.dropout_prob)
-        else:
-            print('NOT ADDING 2nd DROPOUT IN FFN')
 
         layer_output = self.add_second([layer_output, attention_output]) # changed self.add([layer_output, x]) to self.add([layer_output, attention_output])
         layer_output = self.layer_norm_second(layer_output)
@@ -861,10 +852,8 @@ class BertModel(tf.keras.Model):
         x = self.norm_layer(x)
 
         if training:
-            print('ADDING 1st DROPOUT IN CALL')
             tf.nn.dropout(x, rate=self.dropout_prob)
-        else:
-            print('NOT ADDING DROPOUT IN CALL')
+
         # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
         # mask of shape [batch_size, seq_length, seq_length] which is used
         # for the attention scores.
@@ -899,10 +888,7 @@ class BertModel(tf.keras.Model):
         #    name="output_bias", dtype='float32')
 
         if training:
-            print('ADDING 2nd DROPOUT IN CALL')
             tf.nn.dropout(x, rate=self.dropout_prob)
-        else:
-            print('NOT ADDING DROPOUT IN CALL')
 
         logits = tf.linalg.matmul(x, self.output_weights, transpose_b=True) # [batch_size, num_labels]
         logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, num_labels]
