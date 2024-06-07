@@ -528,7 +528,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, val_accuracy_3, val_accuracy_4, model)
+                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model)
 
 
             # adjust learning rate
