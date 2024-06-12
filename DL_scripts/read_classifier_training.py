@@ -190,8 +190,8 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
         else:
             reads, labels = data
             # probs = model(reads, training=training)
-        # get the loss
-        # loss_value = loss(labels, probs)
+            # get the loss
+            loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
         # scaled_loss = opt.get_scaled_loss(loss_value)
     # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
@@ -227,8 +227,8 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
 @tf.function
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model):
     print('VALIDATION')
+    training = False
     if model_type == 'BERT':
-        training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
