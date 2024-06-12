@@ -189,7 +189,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
             loss_value = loss(labels, probs)
         else:
             reads, labels = data
-            # probs = model(reads, training=training)
+            probs = model(reads, training=training)
             # get the loss
             loss_value = loss(labels, probs)
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
