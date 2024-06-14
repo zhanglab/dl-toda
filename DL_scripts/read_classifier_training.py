@@ -521,8 +521,7 @@ def main():
                 tf.summary.scalar("train_accuracy_1", train_accuracy_1.result().numpy(), step=batch)
                 # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
-            # td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value_1}\t{loss_value_2}\t{train_accuracy_1.result().numpy()}\t{train_accuracy_2.result().numpy()}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
