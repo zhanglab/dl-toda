@@ -222,7 +222,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
     train_loss_2.update_state(loss_value)
 
     # return loss_value, input_ids, input_mask
-    return loss_value_1, loss_value
+    return loss_value
 
 @tf.function
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
@@ -499,7 +499,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -509,7 +509,7 @@ def main():
         #     labels_dict[str(k)] += v
      
         if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
