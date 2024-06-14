@@ -173,7 +173,7 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_1, train_loss_2, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_1, opt, model, first_batch):
     print('TRAINING')
     training = True
     with tf.GradientTape() as tape:
@@ -216,16 +216,16 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
 
     #update training accuracy
     train_accuracy_1.update_state(labels, probs)
-    train_accuracy_2.update_state(labels, predictions)
+    # train_accuracy_2.update_state(labels, predictions)
 
-    train_loss_1.update_state(loss_value_1)
+    # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
 
     # return loss_value, input_ids, input_mask
     return loss_value_1, loss_value
 
 @tf.function
-def testing_step(model_type, data, num_labels, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model):
+def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
     print('VALIDATION')
     training = False
     if model_type == 'BERT':
@@ -234,16 +234,17 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_loss_2, val
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value_1 = tf.reduce_mean(per_example_loss)
+        loss_value = tf.reduce_mean(per_example_loss)
         loss_value_2 = loss(labels, probs)
     else:
         reads, labels = data
+        loss_value = loss(labels, probs)
         probs = model(reads, training=training)
     val_accuracy_1.update_state(labels, probs)
-    val_accuracy_2.update_state(labels, predictions)
+    # val_accuracy_2.update_state(labels, predictions)
     # loss_value = loss(labels, probs)
-    val_loss_1.update_state(loss_value_1)
-    val_loss_2.update_state(loss_value_2)
+    val_loss_1.update_state(loss_value)
+    # val_loss_2.update_state(loss_value_2)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -480,14 +481,14 @@ def main():
 
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
-    train_loss_1 = tf.keras.metrics.Mean(name='train_loss_1')
+    # train_loss_1 = tf.keras.metrics.Mean(name='train_loss_1')
     train_loss_2 = tf.keras.metrics.Mean(name='train_loss_2')
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
-    val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
+    # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
     train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
-    train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
+    # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
     val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
-    val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
+    # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
     start = datetime.datetime.now()
 
@@ -498,7 +499,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_1, train_loss_2, opt, model, batch == 1)
+        loss_value_1, loss_value_2 = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -508,17 +509,17 @@ def main():
         #     labels_dict[str(k)] += v
      
         if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy_1.result().numpy()*100}\t{train_accuracy_2.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
                 # tf.summary.scalar("train_loss_1", loss_value_1, step=batch)
                 # tf.summary.scalar("train_loss_2", loss_value_2, step=batch)
-                tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
+                # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
                 tf.summary.scalar("train_accuracy_1", train_accuracy_1.result().numpy(), step=batch)
-                tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+                # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
             # td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
             td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value_1}\t{loss_value_2}\t{train_accuracy_1.result().numpy()}\t{train_accuracy_2.result().numpy()}\n')
@@ -530,7 +531,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_loss_2, val_accuracy_1, val_accuracy_2, model)
+                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model)
 
 
             # adjust learning rate
@@ -541,17 +542,17 @@ def main():
                     opt.learning_rate = new_lr
 
             if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()}\t{val_loss_2.result().numpy()} - Validation accuracy: {val_accuracy_1.result().numpy()*100}\t{val_accuracy_2.result().numpy()*100}\n')
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_1.result().numpy()*100}\n')
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
                 with writer.as_default():
                     tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
+                    # tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
                     tf.summary.scalar("val_accuracy_1", val_accuracy_1.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
+                    # tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
                     writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_loss_2.result().numpy()}\t{val_accuracy_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\n')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_1.result().numpy()}\n')
 
             # reset metrics variables
             train_loss_1.reset_states()
