@@ -553,14 +553,14 @@ def main():
                 vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_1.result().numpy()}\n')
 
             # reset metrics variables
-            train_loss_1.reset_states()
+            # train_loss_1.reset_states()
             train_loss_2.reset_states()
             val_loss_1.reset_states()
-            val_loss_2.reset_states()
+            # val_loss_2.reset_states()
             train_accuracy_1.reset_states()
-            train_accuracy_2.reset_states()
+            # train_accuracy_2.reset_states()
             val_accuracy_1.reset_states()
-            val_accuracy_2.reset_states()
+            # val_accuracy_2.reset_states()
 
             # define end of current epoch
             epoch += 1
