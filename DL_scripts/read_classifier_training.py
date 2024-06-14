@@ -173,7 +173,7 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_1, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, first_batch):
     print('TRAINING')
     training = True
     with tf.GradientTape() as tape:
