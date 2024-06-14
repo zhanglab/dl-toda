@@ -174,7 +174,6 @@ class DALIPreprocessor(object):
 
 @tf.function
 def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, first_batch):
-    print('TRAINING')
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -226,7 +225,6 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
 
 @tf.function
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
-    print('VALIDATION')
     training = False
     if model_type == 'BERT':
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -238,8 +236,9 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1,
         loss_value_2 = loss(labels, probs)
     else:
         reads, labels = data
-        loss_value = loss(labels, probs)
         probs = model(reads, training=training)
+        loss_value = loss(labels, probs)
+    
     val_accuracy_1.update_state(labels, probs)
     # val_accuracy_2.update_state(labels, predictions)
     # loss_value = loss(labels, probs)
