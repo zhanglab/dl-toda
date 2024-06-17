@@ -230,6 +230,7 @@ def main():
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vocab', help="Path to the vocabulary file")
+    parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--vector_size', type=int, help='size of input vectors', required=True)
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
@@ -252,12 +253,14 @@ def main():
             content = f.readlines()
             vocab_size = len(content)
         print(f'vocab_size: {vocab_size}')
+    
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
         f = open(args.class_mapping)
         class_mapping = json.load(f)
         num_labels = len(class_mapping)
-        print(f'num_labels: {num_labels}')
+    else:
+        num_labels = args.num_labels
 
     if args.model_type == 'BERT':
         config = BertConfig.from_json_file(args.bert_config_file)
