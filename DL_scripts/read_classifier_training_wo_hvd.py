@@ -162,7 +162,8 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, first_batc
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
-            probs = model(input_ids, input_mask, token_type_ids, training)
+            probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
+            loss_value = loss(labels, probs)
         else:
             reads, labels = data
             probs = model(reads, training=training)
