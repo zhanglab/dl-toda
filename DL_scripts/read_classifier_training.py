@@ -173,7 +173,7 @@ class DALIPreprocessor(object):
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -215,7 +215,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
 
     #update training accuracy
     train_accuracy_1.update_state(labels, probs)
-    # train_accuracy_2.update_state(labels, predictions)
+    train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
 
     # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
@@ -485,7 +485,7 @@ def main():
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
     # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
     train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
-    # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
+    train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
     val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
     # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
@@ -498,7 +498,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -508,7 +508,7 @@ def main():
         #     labels_dict[str(k)] += v
      
         if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}\t{train_accuracy_2.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
@@ -518,9 +518,9 @@ def main():
                 # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
                 tf.summary.scalar("train_accuracy_1", train_accuracy_1.result().numpy(), step=batch)
-                # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+                tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\t{train_accuracy_2.result().numpy()*100}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
