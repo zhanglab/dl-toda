@@ -187,7 +187,7 @@ class DALIPreprocessor(object):
                                    # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
     # dataset = dataset.cache()
     # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-    return dataset
+    # return dataset
 
 
 @tf.function
