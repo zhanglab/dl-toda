@@ -49,17 +49,6 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
-# Initialize Horovod
-hvd.init()
-# Map one GPU per process
-# use hvd.local_rank() for gpu pinning instead of hvd.rank()
-gpus = tf.config.experimental.list_physical_devices('GPU')
-print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-if gpus:
-    tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
-
 # define the DALI pipeline
 @pipeline_def
 def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
@@ -143,8 +132,7 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 
-# def load_tfrecords(proto_example):
-#     print('in read_tfrecord', tf.executing_eagerly())
+# def load_tfrecords_with_reads(proto_example):
 #     data_description = {
 #         'read': tf.io.VarLenFeature(tf.int64),
 #         # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
@@ -154,26 +142,56 @@ class DALIPreprocessor(object):
 #     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
 #     read = parsed_example['read']
 #     label = tf.cast(parsed_example['label'], tf.int64)
-#     print(read, label)
 #     read = tf.sparse.to_dense(read)
 #     return read, label
 
-# def make_batches(tfrecord_path, batch_size, vector_size, num_classes):
-#     """ Return reads and labels """
-#     # Load data as shards
-#     dataset = tf.data.Dataset.list_files(tfrecord_path)
-#     dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
-#                                  deterministic=False)
-#     dataset = dataset.map(map_func=load_tfrecords, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-#     dataset = dataset.padded_batch(batch_size,
-#                                    padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
-#     # dataset = dataset.cache()
-#     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-#     return dataset
+
+# def load_tfrecords_with_sentences(proto_example):
+#     name_to_features = {
+#       "input_ids": tf.io.FixedLenFeature([seq_length], tf.int64),
+#       "input_mask": tf.io.FixedLenFeature([seq_length], tf.int64),
+#       "segment_ids": tf.io.FixedLenFeature([seq_length], tf.int64),
+#       "label_ids": tf.io.FixedLenFeature([], tf.int64),
+#       "is_real_example": tf.io.FixedLenFeature([], tf.int64),
+#     }
+#     # load one example
+#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
+#     input_ids = parsed_example['input_ids']
+#     input_mask = parsed_example['input_mask']
+#     segment_ids = parsed_example['segment_ids']
+#     label_ids = parsed_example['label_ids']
+#     is_real_example = parsed_example['is_real_example']
+
+#     return  input_ids, input_mask, segment_ids, label_ids, is_real_example
+
+# def make_batches(filenames, batch_size, vector_size, num_classes, datatype, is_training=False):
+#     """ Return data in TFRecords """
+#     fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
+
+#     dataset = tf.data.TFRecordDataset([filenames])
+
+#     if is_training:
+#         dataset = dataset.repeat()
+#         dataset = dataset.shuffle(buffer_size=100)
+
+#     dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+
+
+    # Load data as shards
+    # dataset = tf.data.Dataset.list_files(tfrecord_path)
+    # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                                 # deterministic=False)
+    # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    # dataset = dataset.padded_batch(batch_size,
+                                   # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
+    # dataset = dataset.cache()
+    # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    return dataset
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -215,7 +233,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, train_accuracy
 
     #update training accuracy
     train_accuracy_1.update_state(labels, probs)
-    train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
 
     # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
@@ -285,6 +303,7 @@ def main():
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
+    parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--paired_reads', action='store_true', default=False)
     parser.add_argument('--with_insert_size', action='store_true', default=False)
@@ -292,6 +311,17 @@ def main():
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
+
+    # Initialize Horovod
+    hvd.init()
+    # Map one GPU per process
+    # use hvd.local_rank() for gpu pinning instead of hvd.rank()
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    if gpus:
+        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
@@ -301,7 +331,7 @@ def main():
             content = f.readlines()
             vocab_size = len(content)
 
-    # load class_mapping file mapping label IDs to species
+    # load class_mapping file mapping label IDs to labels and get number of labels
     if args.class_mapping:
         f = open(args.class_mapping)
         class_mapping = json.load(f)
@@ -485,7 +515,7 @@ def main():
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
     # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
     train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
-    train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
+    # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
     val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
     # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
@@ -498,7 +528,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -508,7 +538,7 @@ def main():
         #     labels_dict[str(k)] += v
      
         if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}\t{train_accuracy_2.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
@@ -518,9 +548,9 @@ def main():
                 # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
                 tf.summary.scalar("train_accuracy_1", train_accuracy_1.result().numpy(), step=batch)
-                tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+                # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\t{train_accuracy_2.result().numpy()*100}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
