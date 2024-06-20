@@ -550,7 +550,7 @@ def main():
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
         for i in range(len(input_ids)):
-            input_data.add(input_ids[i])
+            input_data.add(input_ids[i].numpy())
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
