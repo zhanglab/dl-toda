@@ -552,15 +552,17 @@ def main():
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
         #     labels_dict[str(k)] += v
-        # if batch == 1 or batch == (nstep_per_epoch + 1):
-            # print(f'epoch: {epoch}\tbatch: {batch}')
+        if batch in (1 ,nstep_per_epoch, (nstep_per_epoch + 1), (2*nstep_per_epoch)):
+            print(f'epoch: {epoch}\tbatch: {batch}')
+            for i in range(len(input_ids)):
+                print(input_ids[i])
             # print(input_ids[0])
 
         if batch % 10 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
-            print(f'epoch: {epoch}\tbatch: {batch}')
-            print(input_ids)
+            # print(f'epoch: {epoch}\tbatch: {batch}')
+            # print(input_ids)
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
