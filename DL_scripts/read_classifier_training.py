@@ -538,7 +538,6 @@ def main():
 
     # create empty dictionary to store the labels
     # labels_dict = defaultdict(int)
-    input_data = set()
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -549,8 +548,6 @@ def main():
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
-        for i in range(len(input_ids)):
-            input_data.add(input_ids[i].numpy())
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
@@ -563,7 +560,7 @@ def main():
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             print(f'epoch: {epoch}\tbatch: {batch}')
-            print(input_ids[0])
+            print(input_ids)
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
