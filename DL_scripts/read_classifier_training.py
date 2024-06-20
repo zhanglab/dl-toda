@@ -556,6 +556,7 @@ def main():
         if batch % 10 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
+            print(f'epoch: {epoch}\tbatch: {batch}')
             print(input_ids, input_mask, token_type_ids, labels, is_real_example)
             # write metrics
             with writer.as_default():
@@ -571,6 +572,7 @@ def main():
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
+            print(f'epoch: {epoch}\tbatch: {batch}')
             print(input_ids, input_mask, token_type_ids, labels, is_real_example)
             # save dictionary of labels count
             # with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
