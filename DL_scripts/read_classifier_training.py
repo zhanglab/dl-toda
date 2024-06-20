@@ -374,8 +374,8 @@ def main():
         else:
             datatype = 'reads'
 
-        train_input = build_dataset(train_files, batch_size, vector_size, num_labels, datatype, is_training=True, drop_remainder=True)
-        val_input = build_dataset(val_files, batch_size, vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
+        train_input = build_dataset(train_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=True, drop_remainder=True)
+        val_input = build_dataset(val_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
