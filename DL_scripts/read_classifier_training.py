@@ -552,7 +552,7 @@ def main():
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
         #     labels_dict[str(k)] += v
-        if batch == 1:
+        if batch == 1 or batch == (nstep_per_epoch + 1):
             print(f'epoch: {epoch}\tbatch: {batch}')
             print(input_ids, input_mask, token_type_ids, labels, is_real_example)
 
