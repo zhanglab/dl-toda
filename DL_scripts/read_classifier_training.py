@@ -165,7 +165,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
         label_ids = parsed_example['label_ids']
         is_real_example = parsed_example['is_real_example']
 
-        return  input_ids, input_mask, segment_ids, label_ids, is_real_example
+        return  (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
@@ -249,6 +249,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
     training = False
     if model_type == 'BERT':
+        prit(data)
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
