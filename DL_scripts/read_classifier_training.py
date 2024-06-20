@@ -270,9 +270,9 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tfrecords', type=str, help='path to training tfrecords', required=True)
-    parser.add_argument('--train_idx_files', type=str, help='path to training dali index files', required=True)
+    parser.add_argument('--train_idx_files', type=str, help='path to training dali index files')
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
-    parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files', required=True)
+    parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
