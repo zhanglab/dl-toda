@@ -249,7 +249,6 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
     training = False
     if model_type == 'BERT':
-        prit(data)
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -368,7 +367,7 @@ def main():
         val_input = val_preprocessor.get_device_dataset()
 
     else:
-        if args.model_type != 'BERT':
+        if args.model_type == 'BERT':
             datatype = 'sentences'
         else:
             datatype = 'reads'
