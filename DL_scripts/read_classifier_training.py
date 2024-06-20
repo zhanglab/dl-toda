@@ -132,62 +132,68 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 
-# def load_tfrecords_with_reads(proto_example):
-#     data_description = {
-#         'read': tf.io.VarLenFeature(tf.int64),
-#         # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
-#         'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
-#     }
-#     # load one example
-#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
-#     read = parsed_example['read']
-#     label = tf.cast(parsed_example['label'], tf.int64)
-#     read = tf.sparse.to_dense(read)
-#     return read, label
+
+def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_training, drop_remainder):
+
+    def load_tfrecords_with_reads(proto_example):
+        data_description = {
+            'read': tf.io.VarLenFeature(tf.int64),
+            # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
+            'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
+        }
+        # load one example
+        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
+        read = parsed_example['read']
+        label = tf.cast(parsed_example['label'], tf.int64)
+        read = tf.sparse.to_dense(read)
+        return read, label
 
 
-# def load_tfrecords_with_sentences(proto_example):
-#     name_to_features = {
-#       "input_ids": tf.io.FixedLenFeature([seq_length], tf.int64),
-#       "input_mask": tf.io.FixedLenFeature([seq_length], tf.int64),
-#       "segment_ids": tf.io.FixedLenFeature([seq_length], tf.int64),
-#       "label_ids": tf.io.FixedLenFeature([], tf.int64),
-#       "is_real_example": tf.io.FixedLenFeature([], tf.int64),
-#     }
-#     # load one example
-#     parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-#     input_ids = parsed_example['input_ids']
-#     input_mask = parsed_example['input_mask']
-#     segment_ids = parsed_example['segment_ids']
-#     label_ids = parsed_example['label_ids']
-#     is_real_example = parsed_example['is_real_example']
+    def load_tfrecords_with_sentences(proto_example):
+        name_to_features = {
+          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "label_ids": tf.io.FixedLenFeature([], tf.int64),
+          "is_real_example": tf.io.FixedLenFeature([], tf.int64),
+        }
+        # load one example
+        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
+        input_ids = parsed_example['input_ids']
+        input_mask = parsed_example['input_mask']
+        segment_ids = parsed_example['segment_ids']
+        label_ids = parsed_example['label_ids']
+        is_real_example = parsed_example['is_real_example']
 
-#     return  input_ids, input_mask, segment_ids, label_ids, is_real_example
-
-# def make_batches(filenames, batch_size, vector_size, num_classes, datatype, is_training=False):
-#     """ Return data in TFRecords """
-#     fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
-
-#     dataset = tf.data.TFRecordDataset([filenames])
-
-#     if is_training:
-#         dataset = dataset.repeat()
-#         dataset = dataset.shuffle(buffer_size=100)
-
-#     dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        return  input_ids, input_mask, segment_ids, label_ids, is_real_example
 
 
+    def make_batches():
+        """ Return data in TFRecords """
+        fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
 
-    # Load data as shards
-    # dataset = tf.data.Dataset.list_files(tfrecord_path)
-    # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
-                                 # deterministic=False)
-    # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    # dataset = dataset.padded_batch(batch_size,
-                                   # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
-    # dataset = dataset.cache()
-    # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-    # return dataset
+        dataset = tf.data.TFRecordDataset([filenames])
+
+        if is_training:
+            dataset = dataset.repeat()
+            dataset = dataset.shuffle(buffer_size=100)
+
+        dataset = dataset.map(map_func=fn_load_data[datatype])
+        dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+
+
+        # Load data as shards
+        # dataset = tf.data.Dataset.list_files(tfrecord_path)
+        # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                                     # deterministic=False)
+        # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        # dataset = dataset.padded_batch(batch_size,
+                                       # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
+        # dataset = dataset.cache()
+        # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+        return dataset
+
+    return make_batches
 
 
 @tf.function
@@ -347,15 +353,35 @@ def main():
 
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
-    train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
-    print(f'train_idx_files: {train_idx_files}')
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
-    val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
-    print(f'val_idx_files: {val_idx_files}')
+
+    if args.nvidia_dali:
+        # get nvidia dali indexes
+        train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
+        val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
+
+        # load data
+        train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                               deterministic=False, training=True)
+        val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                            deterministic=False, training=True)
+        train_input = train_preprocessor.get_device_dataset()
+        val_input = val_preprocessor.get_device_dataset()
+
+    else:
+        if args.model_type != 'BERT':
+            datatype = 'sentences'
+        else:
+            datatype = 'reads'
+
+        train_input = build_dataset(train_files, batch_size, vector_size, num_labels, datatype, is_training=True, drop_remainder=True)
+        val_input = build_dataset(val_files, batch_size, vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
+
     # compute number of steps/batches per epoch
     nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
     # compute number of steps/batches to iterate over entire validation set
     val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
+
 
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
@@ -398,15 +424,6 @@ def main():
                         f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
                         f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
                         f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
-
-    # load data
-    train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
-                                           deterministic=False, training=True)
-    val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
-                                        deterministic=False, training=True)
-    train_input = train_preprocessor.get_device_dataset()
-    val_input = val_preprocessor.get_device_dataset()
-
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
