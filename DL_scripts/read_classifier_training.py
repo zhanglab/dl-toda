@@ -167,33 +167,31 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
         return  input_ids, input_mask, segment_ids, label_ids, is_real_example
 
+    """ Return data in TFRecords """
+    fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
 
-    def make_batches():
-        """ Return data in TFRecords """
-        fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
+    dataset = tf.data.TFRecordDataset([filenames])
 
-        dataset = tf.data.TFRecordDataset([filenames])
+    if is_training:
+        dataset = dataset.repeat()
+        dataset = dataset.shuffle(buffer_size=100)
 
-        if is_training:
-            dataset = dataset.repeat()
-            dataset = dataset.shuffle(buffer_size=100)
-
-        dataset = dataset.map(map_func=fn_load_data[datatype])
-        dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+    dataset = dataset.map(map_func=fn_load_data[datatype])
+    dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
 
 
-        # Load data as shards
-        # dataset = tf.data.Dataset.list_files(tfrecord_path)
-        # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
-                                     # deterministic=False)
-        # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        # dataset = dataset.padded_batch(batch_size,
-                                       # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
-        # dataset = dataset.cache()
-        # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-        return dataset
+    # Load data as shards
+    # dataset = tf.data.Dataset.list_files(tfrecord_path)
+    # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                                 # deterministic=False)
+    # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    # dataset = dataset.padded_batch(batch_size,
+                                   # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
+    # dataset = dataset.cache()
+    # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    return dataset
 
-    return make_batches
+    
 
 
 @tf.function
