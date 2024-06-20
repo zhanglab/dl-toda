@@ -172,8 +172,8 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
     dataset = tf.data.TFRecordDataset([filenames])
 
-    # if is_training:
-        # dataset = dataset.repeat()
+    if is_training:
+        dataset = dataset.repeat()
         # dataset = dataset.shuffle(buffer_size=100)
 
     dataset = dataset.map(map_func=fn_load_data[datatype])
