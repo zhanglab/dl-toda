@@ -377,10 +377,10 @@ def main():
         val_input = build_dataset(val_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
 
     # compute number of steps/batches per epoch
-    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
+    nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
     num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
     num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
 
     if args.model_type == 'BERT':
