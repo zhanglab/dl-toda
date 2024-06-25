@@ -616,10 +616,10 @@ def main():
             train_loss_2.reset_states()
             val_loss_1.reset_states()
             # val_loss_2.reset_states()
-            train_accuracy_1.reset_states()
-            # train_accuracy_2.reset_states()
-            val_accuracy_1.reset_states()
-            # val_accuracy_2.reset_states()
+            # train_accuracy_1.reset_states()
+            train_accuracy_2.reset_states()
+            # val_accuracy_1.reset_states()
+            val_accuracy_2.reset_states()
 
             # define end of current epoch
             epoch += 1
