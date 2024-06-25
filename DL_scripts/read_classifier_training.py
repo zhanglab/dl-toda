@@ -23,6 +23,7 @@ from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
 from BERT import BertConfig, BertModel
+from optimizers import AdamWeightDecayOptimizer
 import argparse
 
 # set seed
@@ -195,7 +196,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -206,8 +207,8 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
             one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
             # product = one_hot_labels * log_probs
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-            loss_value_1 = tf.reduce_mean(per_example_loss)
-            loss_value = loss(labels, probs)
+            loss_value = tf.reduce_mean(per_example_loss)
+            # loss_value = loss(labels, probs)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -236,8 +237,8 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy
-    train_accuracy_1.update_state(labels, probs)
-    # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    # train_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
+    train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
 
     # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
@@ -246,7 +247,7 @@ def training_step(model_type, data, num_labels, train_accuracy_1, loss, train_lo
     return loss_value
 
 @tf.function
-def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model):
+def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
     training = False
     if model_type == 'BERT':
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -255,14 +256,14 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_1,
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
-        loss_value_2 = loss(labels, probs)
+        # loss_value_2 = loss(labels, probs)
     else:
         reads, labels = data
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
     
-    val_accuracy_1.update_state(labels, probs)
-    # val_accuracy_2.update_state(labels, predictions)
+    # val_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
+    val_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
     # loss_value = loss(labels, probs)
     val_loss_1.update_state(loss_value)
     # val_loss_2.update_state(loss_value_2)
@@ -376,10 +377,11 @@ def main():
         val_input = build_dataset(val_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
 
     # compute number of steps/batches per epoch
-    nstep_per_epoch = args.train_reads_per_epoch // (args.batch_size*hvd.size())
+    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = args.val_reads_per_epoch // (args.batch_size*hvd.size())
-
+    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
 
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
@@ -440,15 +442,18 @@ def main():
         sys.path.append(args.path_to_lr_schedule)
         from lr_schedule import LinearWarmup
 
-        # define learning rate polynomial decay
+        # define linear decay of the learning rate 
+        # use tf.compat.v1.train.polynomial_decay instead
         linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
         initial_learning_rate=init_lr,
-        end_learning_rate=0,
-        decay_steps=nstep_per_epoch*args.epochs)
+        decay_steps=nstep_per_epoch*args.epochs,
+        end_learning_rate=0.0,
+        power=1.0,
+        cycle=False)
 
         # define linear warmup schedule
         warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-        warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
+        warmup_steps = int(warmup_proportion * num_train_steps)
         warmup_schedule = LinearWarmup(
         warmup_learning_rate = 0,
         after_warmup_lr_sched = linear_decay,
@@ -529,22 +534,23 @@ def main():
     train_loss_2 = tf.keras.metrics.Mean(name='train_loss_2')
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
     # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
-    train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
-    # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
-    val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
-    # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
+    # train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
+    train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
+    # val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
+    val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
     start = datetime.datetime.now()
 
     # create empty dictionary to store the labels
     # labels_dict = defaultdict(int)
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-    for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
+    # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
+    for batch, data in enumerate(train_input.take(num_train_steps), 1):
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_1, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -559,7 +565,7 @@ def main():
             # print(input_ids[0])
 
         if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_1.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_2.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # print(f'epoch: {epoch}\tbatch: {batch}')
             # print(input_ids)
@@ -570,10 +576,10 @@ def main():
                 # tf.summary.scalar("train_loss_2", loss_value_2, step=batch)
                 # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
-                tf.summary.scalar("train_accuracy_1", train_accuracy_1.result().numpy(), step=batch)
+                tf.summary.scalar("train_accuracy_1", train_accuracy_2.result().numpy(), step=batch)
                 # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_1.result().numpy()*100}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_2.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
@@ -582,7 +588,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_1, model)
+                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
 
 
             # adjust learning rate
@@ -593,17 +599,17 @@ def main():
                     opt.learning_rate = new_lr
 
             if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_1.result().numpy()*100}\n')
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_2.result().numpy()*100}\n')
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
                 with writer.as_default():
                     tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
                     # tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy_1", val_accuracy_1.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_1", val_accuracy_2.result().numpy(), step=epoch)
                     # tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
                     writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_1.result().numpy()}\n')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\n')
 
             # reset metrics variables
             # train_loss_1.reset_states()
@@ -618,7 +624,6 @@ def main():
             # define end of current epoch
             epoch += 1
 
-    print(f'# unique sentences: {len(input_data)}')
     if hvd.rank() == 0 and args.model_type != 'BERT':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
