@@ -240,11 +240,13 @@ def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_lo
     # train_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
     train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
 
+    accuracy = tf.compat.v1.metrics.accuracy(labels=labels, predictions=predictions, weights=is_real_example)
+
     # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
 
     # return loss_value, input_ids, input_mask
-    return loss_value
+    return loss_value, accuracy
 
 @tf.function
 def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
@@ -550,7 +552,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+        loss_value, accuracy = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -576,7 +578,9 @@ def main():
                 # tf.summary.scalar("train_loss_2", loss_value_2, step=batch)
                 # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
+                tf.summary.scalar("train_loss_3", loss_value, step=batch)
                 tf.summary.scalar("train_accuracy_1", train_accuracy_2.result().numpy(), step=batch)
+                tf.summary.scalar("train_accuracy_3", accuracy[1], step=batch)
                 # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
             td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_2.result().numpy()}\n')
