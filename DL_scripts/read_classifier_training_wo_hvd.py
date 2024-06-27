@@ -418,7 +418,12 @@ def main():
 
     # define optimizer
     if args.model_type == 'BERT':
-        opt = AdamWeightDecayOptimizer(learning_rate=init_lr,weight_decay_rate=0.01,beta_1=0.9,beta_2=0.999,epsilon=1e-6,exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
+        opt = AdamWeightDecayOptimizer(learning_rate=init_lr,
+            weight_decay_rate=0.01,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-6,
+            exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
     #     sys.path.append(args.path_to_lr_schedule)
     #     from lr_schedule import LinearWarmup
 
