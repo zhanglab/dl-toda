@@ -72,7 +72,7 @@ class AdamWeightDecayOptimizer(tf.keras.optimizers.Optimizer):
   """A basic Adam optimizer that includes "correct" L2 weight decay."""
 
   def __init__(self,
-               learning_rate,
+               learning_rate=2e-5,
                weight_decay_rate=0.0,
                beta_1=0.9,
                beta_2=0.999,
@@ -80,9 +80,7 @@ class AdamWeightDecayOptimizer(tf.keras.optimizers.Optimizer):
                exclude_from_weight_decay=None,
                name="AdamWeightDecayOptimizer"):
     """Constructs a AdamWeightDecayOptimizer."""
-    # super(AdamWeightDecayOptimizer, self).__init__(False, name)
-    super(AdamWeightDecayOptimizer, self).__init__(name=name)
-
+    super(AdamWeightDecayOptimizer, self).__init__(False, name)
     self.learning_rate = learning_rate
     self.weight_decay_rate = weight_decay_rate
     self.beta_1 = beta_1
