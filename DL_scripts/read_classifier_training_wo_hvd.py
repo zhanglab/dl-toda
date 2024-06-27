@@ -418,7 +418,7 @@ def main():
 
     # define optimizer
     if args.model_type == 'BERT':
-        opt = AdamWeightDecayOptimizer(learning_rate=learning_rate,
+        opt = AdamWeightDecayOptimizer(learning_rate=init_lr,
             weight_decay_rate=0.01,
             beta_1=0.9,
             beta_2=0.999,
