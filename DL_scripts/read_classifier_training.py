@@ -468,7 +468,7 @@ def main():
     #     elif args.optimizer == 'SGD':
     #         opt = tf.keras.optimizers.SGD(init_lr)
 
-    optimizer = AdamWeightDecayOptimizer(
+    opt = AdamWeightDecayOptimizer(
       learning_rate=init_lr,
       weight_decay_rate=0.01,
       beta_1=0.9,
