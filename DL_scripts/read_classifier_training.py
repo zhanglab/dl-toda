@@ -444,20 +444,20 @@ def main():
 
     # define linear decay of the learning rate 
     # use tf.compat.v1.train.polynomial_decay instead
-    linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    initial_learning_rate=init_lr,
-    decay_steps=nstep_per_epoch*args.epochs,
-    end_learning_rate=0.0,
-    power=1.0,
-    cycle=False)
+    # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+    # initial_learning_rate=init_lr,
+    # decay_steps=nstep_per_epoch*args.epochs,
+    # end_learning_rate=0.0,
+    # power=1.0,
+    # cycle=False)
 
     #     # define linear warmup schedule
-    warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-    warmup_steps = int(warmup_proportion * num_train_steps)
-    warmup_schedule = LinearWarmup(
-    warmup_learning_rate = 0,
-    after_warmup_lr_sched = linear_decay,
-    warmup_steps = warmup_steps)
+    # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+    # warmup_steps = int(warmup_proportion * num_train_steps)
+    # warmup_schedule = LinearWarmup(
+    # warmup_learning_rate = 0,
+    # after_warmup_lr_sched = linear_decay,
+    # warmup_steps = warmup_steps)
 
     # after_warmup_lr_sched = linear_decay,
 
@@ -470,8 +470,8 @@ def main():
     #     elif args.optimizer == 'SGD':
     #         opt = tf.keras.optimizers.SGD(init_lr)
 
-    opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-
+    # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+    opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
 
     # prevent numeric underflow when using float16
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
