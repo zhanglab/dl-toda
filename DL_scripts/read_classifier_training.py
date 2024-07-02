@@ -468,14 +468,9 @@ def main():
     #     elif args.optimizer == 'SGD':
     #         opt = tf.keras.optimizers.SGD(init_lr)
 
-    opt = AdamWeightDecayOptimizer(
-      learning_rate=init_lr,
-      weight_decay_rate=0.01,
-      beta_1=0.9,
-      beta_2=0.999,
-      epsilon=1e-6,
-      exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
-    
+    opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+
+
     # prevent numeric underflow when using float16
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
