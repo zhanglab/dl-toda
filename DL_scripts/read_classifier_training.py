@@ -439,8 +439,8 @@ def main():
 
     # # define optimizer
     # if args.model_type == 'BERT':
-    #     sys.path.append(args.path_to_lr_schedule)
-    #     from lr_schedule import LinearWarmup
+    sys.path.append(args.path_to_lr_schedule)
+    from lr_schedule import LinearWarmup
 
     #     # define linear decay of the learning rate 
     #     # use tf.compat.v1.train.polynomial_decay instead
