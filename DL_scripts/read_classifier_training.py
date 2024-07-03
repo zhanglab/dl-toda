@@ -543,10 +543,10 @@ def main():
     train_loss_2 = tf.keras.metrics.Mean(name='train_loss_2')
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
     # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
-    # train_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_1')
-    train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
-    # val_accuracy_1 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_1')
-    val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
+    train_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_2')
+    # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
+    val_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_2')
+    # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
     start = datetime.datetime.now()
 
