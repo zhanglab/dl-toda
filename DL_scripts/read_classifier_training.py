@@ -238,7 +238,10 @@ def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_lo
 
     #update training accuracy
     # train_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
-    train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    if model_type == 'BERT':
+        train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    else:
+        train_accuracy_2.update_state(labels, probs)
 
     # train_loss_1.update_state(loss_value_1)
     train_loss_2.update_state(loss_value)
@@ -263,7 +266,10 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2,
         loss_value = loss(labels, probs)
     
     # val_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
-    val_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    if model_type == 'BERT':
+        val_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    else:
+        val_accuracy_2.update_state(labels, probs)
     # loss_value = loss(labels, probs)
     val_loss_1.update_state(loss_value)
     # val_loss_2.update_state(loss_value_2)
