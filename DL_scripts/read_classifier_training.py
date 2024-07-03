@@ -549,7 +549,7 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        # input_ids, input_mask, token_type_ids, labels, is_real_example = data
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
