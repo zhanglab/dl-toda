@@ -65,7 +65,7 @@ def vocab_dict(filename):
     """ Starts index at 1 instead to use 0 as a special padding value.  """
     kmer_to_id = {}
     with open(filename) as infile:
-        for count, line in enumerate(infile, 1):
+        for count, line in enumerate(infile, 0):
             kmer = line.rstrip()
             kmer_to_id[kmer] = count
     return kmer_to_id
