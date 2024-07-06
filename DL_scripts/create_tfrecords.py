@@ -98,7 +98,7 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
     nsp_data[process] = process_nsp_data
     
 
-def create_testing_tfrecords(args, grouped_files):
+def create_tfrecords(args, grouped_files):
     for fq_file in grouped_files:
         """ Converts simulated reads to tfrecord """
         num_lines = 8 if args.pair else 4
@@ -166,7 +166,7 @@ def create_testing_tfrecords(args, grouped_files):
                                         'masked_lm_weights': wrap_weights(r[4]),
                                         'masked_lm_ids': wrap_read(r[5]),
                                         'next_sentence_labels': wrap_label(r[6]),
-                                        'label_ids': wrap_label(r[7]),
+                                        'label_ids': wrap_label(r[7]),`
                                     }
                             elif args.bert_step == 'finetuning':
                                 data = \
@@ -281,16 +281,16 @@ def main():
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
-        if args.bert:
-            # add [PAD] to dictionary
-            args.dict_kmers['[PAD]'] = 0
-            print(args.dict_kmers)
+        # if args.bert:
+        #     # add [PAD] to dictionary
+        #     args.dict_kmers['[PAD]'] = 0
+        #     print(args.dict_kmers)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
         print(args.kmer_vector_length)
 
     if args.bert:
-        create_testing_tfrecords(args, [args.input])
+        create_tfrecords(args, [args.input])
     else:
         chunk_size = math.ceil(len(fq_files)/args.num_proc)
         grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
@@ -298,7 +298,7 @@ def main():
             train_reads = manager.dict()
             val_reads = manager.dict()
             if args.dataset_type == 'sim':
-                processes = [mp.Process(target=create_testing_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+                processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
             elif args.dataset_type == 'meta':
                 processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
             for p in processes:
