@@ -166,7 +166,7 @@ def create_tfrecords(args, grouped_files):
                                         'masked_lm_weights': wrap_weights(r[4]),
                                         'masked_lm_ids': wrap_read(r[5]),
                                         'next_sentence_labels': wrap_label(r[6]),
-                                        'label_ids': wrap_label(r[7]),`
+                                        'label_ids': wrap_label(r[7]),
                                     }
                             elif args.bert_step == 'finetuning':
                                 data = \
