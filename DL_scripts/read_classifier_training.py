@@ -445,39 +445,39 @@ def main():
                                                   scale_fn=lambda x: 1 / (2. ** (x - 1)),
                                                   step_size=2 * nstep_per_epoch)
 
-    # define optimizer
-    if args.model_type == 'BERT':
-        sys.path.append(args.path_to_lr_schedule)
-        from lr_schedule import LinearWarmup
+    # # define optimizer
+    # if args.model_type == 'BERT':
+    #     sys.path.append(args.path_to_lr_schedule)
+    #     from lr_schedule import LinearWarmup
 
-        # define linear decay of the learning rate 
-        # use tf.compat.v1.train.polynomial_decay instead
-        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=init_lr,
-        decay_steps=nstep_per_epoch*args.epochs,
-        end_learning_rate=0.0,
-        power=1.0,
-        cycle=False)
+    #     # define linear decay of the learning rate 
+    #     # use tf.compat.v1.train.polynomial_decay instead
+    #     linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+    #     initial_learning_rate=init_lr,
+    #     decay_steps=nstep_per_epoch*args.epochs,
+    #     end_learning_rate=0.0,
+    #     power=1.0,
+    #     cycle=False)
 
-        # define linear warmup schedule
-        warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-        warmup_steps = int(warmup_proportion * num_train_steps)
-        warmup_schedule = LinearWarmup(
-        warmup_learning_rate = 0,
-        after_warmup_lr_sched = linear_decay,
-        warmup_steps = warmup_steps)
+    #     # define linear warmup schedule
+    #     warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+    #     warmup_steps = int(warmup_proportion * num_train_steps)
+    #     warmup_schedule = LinearWarmup(
+    #     warmup_learning_rate = 0,
+    #     after_warmup_lr_sched = linear_decay,
+    #     warmup_steps = warmup_steps)
 
-        opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-        # exclude variables from weight decay
-        opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
-    else:
-        if args.optimizer == 'Adam':
-            opt = tf.keras.optimizers.Adam(init_lr)
-        elif args.optimizer == 'SGD':
-            opt = tf.keras.optimizers.SGD(init_lr)
+    #     opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+    #     # exclude variables from weight decay
+    #     opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+    # else:
+    #     if args.optimizer == 'Adam':
+    #         opt = tf.keras.optimizers.Adam(init_lr)
+    #     elif args.optimizer == 'SGD':
+    #         opt = tf.keras.optimizers.SGD(init_lr)
 
     # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-    # opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+    opt = tf.keras.optimizers.Adam(learning_rate=init_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
 
     # prevent numeric underflow when using float16
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
@@ -557,7 +557,8 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        # input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        input_ids, input_mask, token_type_ids, labels, is_real_example = data
+        print(input_ids, input_mask, token_type_ids, labels, is_real_example)
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
