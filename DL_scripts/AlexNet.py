@@ -5,7 +5,7 @@ def AlexNet(args, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_
     # define AlexNet model
     read_input = tf.keras.layers.Input(shape=(VECTOR_SIZE), dtype='int32')
     x = read_input
-    x = tf.keras.layers.Embedding(input_dim=VOCAB_SIZE+1, output_dim=EMBEDDING_SIZE, embeddings_initializer=tf.keras.initializers.HeNormal(),
+    x = tf.keras.layers.Embedding(input_dim=VOCAB_SIZE, output_dim=EMBEDDING_SIZE, embeddings_initializer=tf.keras.initializers.HeNormal(),
                                           input_length=VECTOR_SIZE, mask_zero=True, trainable=True, name='embedding')(x)
     x = tf.keras.layers.Reshape((VECTOR_SIZE, EMBEDDING_SIZE, 1))(x)
     x = tf.keras.layers.Conv2D(96, kernel_size=(11, 11), strides=(4, 4), padding='same', kernel_initializer=tf.keras.initializers.HeNormal(), name='conv_1')(x)
