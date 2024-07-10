@@ -272,7 +272,7 @@ def main():
     parser.add_argument('--train_idx_files', type=str, help='path to training dali index files', required=False)
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files', required=False)
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
