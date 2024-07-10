@@ -456,10 +456,10 @@ def main():
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
     val_loss = tf.keras.metrics.Mean(name='val_loss')
-    # train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
-    train_accuracy = tf.keras.metrics.Accuracy(name='train_accuracy')
-    # val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
-    val_accuracy = tf.keras.metrics.Accuracy(name='val_accuracy')
+    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+    # train_accuracy = tf.keras.metrics.Accuracy(name='train_accuracy')
+    val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
+    # val_accuracy = tf.keras.metrics.Accuracy(name='val_accuracy')
 
     # create output directory
     if not os.path.isdir(args.output_dir):
