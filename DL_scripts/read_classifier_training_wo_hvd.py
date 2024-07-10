@@ -552,6 +552,8 @@ def main():
     # for batch, (reads, labels) in enumerate(train_dataset.take(nstep_per_epoch*args.epochs), 1):
     # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        reads, labels = data
+        print(reads, labels)
 
         # get training loss
         loss_value = training_step(args.model_type, data, train_accuracy, loss, opt, model, batch == 1)
@@ -563,6 +565,7 @@ def main():
 
 
         if batch % 1 == 0:
+            break
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
             # write metrics
             with writer.as_default():
