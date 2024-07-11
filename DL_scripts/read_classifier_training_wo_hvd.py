@@ -217,7 +217,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(model_type, data, train_accuracy, loss, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy, loss, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT':
@@ -249,7 +249,7 @@ def training_step(model_type, data, train_accuracy, loss, opt, model, first_batc
 
 
 @tf.function
-def testing_step(model_type, data, loss, val_loss, val_accuracy, model):
+def testing_step(model_type, data, num_labels, loss, val_loss, val_accuracy, model):
     training = False
     if model_type == 'BERT':
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -556,7 +556,7 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         
         # get training loss
-        loss_value = training_step(args.model_type, data, train_accuracy, loss, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
@@ -581,7 +581,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, loss, val_loss, val_accuracy, model)
+                testing_step(args.model_type, data, num_labels, loss, val_loss, val_accuracy, model)
 
             # adjust learning rate
             if epoch % args.lr_decay == 0:
