@@ -418,32 +418,26 @@ def main():
 
     # define optimizer
     if args.model_type == 'BERT':
-        opt = AdamWeightDecayOptimizer(init_lr,
-            weight_decay_rate=0.01,
-            beta_1=0.9,
-            beta_2=0.999,
-            epsilon=1e-6,
-            exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
-    #     sys.path.append(args.path_to_lr_schedule)
-    #     from lr_schedule import LinearWarmup
+        sys.path.append(args.path_to_lr_schedule)
+        from lr_schedule import LinearWarmup
 
-    #     # define learning rate polynomial decay
-    #     linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    #     initial_learning_rate=init_lr,
-    #     end_learning_rate=0,
-    #     decay_steps=nstep_per_epoch*args.epochs)
+        # define learning rate polynomial decay
+        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=init_lr,
+        end_learning_rate=0,
+        decay_steps=nstep_per_epoch*args.epochs)
 
-    #     # define linear warmup schedule
-    #     warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-    #     warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
-    #     warmup_schedule = LinearWarmup(
-    #     warmup_learning_rate = 0,
-    #     after_warmup_lr_sched = linear_decay,
-    #     warmup_steps = warmup_steps)
+        # define linear warmup schedule
+        warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
+        warmup_steps = int(warmup_proportion * nstep_per_epoch * args.epochs)
+        warmup_schedule = LinearWarmup(
+        warmup_learning_rate = 0,
+        after_warmup_lr_sched = linear_decay,
+        warmup_steps = warmup_steps)
 
-    #     opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-    #     # exclude variables from weight decay
-    #     opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
+        opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
+        # exclude variables from weight decay
+        opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
     else:
         if args.optimizer == 'Adam':
             opt = tf.keras.optimizers.Adam(init_lr)
