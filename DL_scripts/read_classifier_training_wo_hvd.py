@@ -532,12 +532,14 @@ def main():
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
         f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
                 f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-                f'Vector size\t{args.vector_size}\nVocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n'
+                f'Vector size\t{args.vector_size}\nEmbedding size\t{args.embedding_size}\n'
                 f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size*len(gpus)}\nNumber of gpus\t{len(gpus)}\n'
                 f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
                 f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                 f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+        if args.model_type != 'BERT':
+                f.write(f'Vocabulary size\t{vocab_size}\n')
         if args.model_type in ["DNA_1", "DNA_2"]:
             f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
                     f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
