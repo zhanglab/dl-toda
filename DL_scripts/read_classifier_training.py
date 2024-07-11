@@ -557,7 +557,6 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        reads, labels = data
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
@@ -577,9 +576,7 @@ def main():
 
         if batch % 10 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_2.result().numpy()*100}')
-            break
         if batch % 1 == 0 and hvd.rank() == 0:
-            print(reads, labels)
             # print(f'epoch: {epoch}\tbatch: {batch}')
             # print(input_ids)
             # write metrics
