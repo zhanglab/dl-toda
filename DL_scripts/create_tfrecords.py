@@ -162,7 +162,7 @@ def create_tfrecords(args, grouped_files):
             #         p.start()
             #     for p in processes:
             #         p.join()
-
+            reads_index = list(range(len(reads)))
             data, nsp_data = get_data_for_bert(args, reads, reads_index)
 
 
