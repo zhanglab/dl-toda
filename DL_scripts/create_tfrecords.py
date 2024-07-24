@@ -65,15 +65,50 @@ def create_meta_tfrecords(args, grouped_files):
 
         outfile.close()
 
-def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
-    process_data = []
-    process_nsp_data = {}
-    for i, r in enumerate(grouped_reads):
+
+# def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_reads_index, process):
+#     process_data = []
+#     process_nsp_data = {}
+#     for i, r in enumerate(grouped_reads):
+#         label = int(r.rstrip().split('\n')[0].split('|')[1])
+#         if args.update_labels:
+#             label = int(args.labels_mapping[str(label)])
+#         # update sequence
+#         segment_1, segment_2, nsp_label = split_read(args, list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i], process)
+#         # parse dna sequences
+#         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
+#         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+#         # prepare input for next sentence prediction task
+#         dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+#         # mask 15% of k-mers in reads
+#         if args.bert_step == 'pretraining':
+#             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+#             process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+#         elif args.bert_step == 'finetuning':
+#             # create input_mask vector indicating padded values
+#             input_mask = [1] * len(dna_list)
+#             process_data.append([dna_list, input_mask, segment_ids, label])
+#             print(dna_list, input_mask, segment_ids, label)
+#         if label not in process_nsp_data:
+#             process_nsp_data[label] = defaultdict(int)
+#             process_nsp_data[label][str(nsp_label)] += 1
+#         else:
+#             process_nsp_data[label][str(nsp_label)] += 1
+
+#     data[process] = process_data
+#     nsp_data[process] = process_nsp_data
+
+
+
+def get_data_for_bert(args, list_reads, reads_index):
+    data = []
+    nsp_data = {}
+    for i, r in enumerate(list_reads):
         label = int(r.rstrip().split('\n')[0].split('|')[1])
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
         # update sequence
-        segment_1, segment_2, nsp_label = split_read(args, list_reads, r.rstrip().split('\n')[1], grouped_reads_index[i], process)
+        segment_1, segment_2, nsp_label = split_read(args, list_reads, r.rstrip().split('\n')[1], i)
         # parse dna sequences
         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
@@ -82,20 +117,20 @@ def get_data_for_bert(args, nsp_data, data, list_reads, grouped_reads, grouped_r
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-            process_data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+            data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
         elif args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values
             input_mask = [1] * len(dna_list)
-            process_data.append([dna_list, input_mask, segment_ids, label])
-            print(dna_list, input_mask, segment_ids, label)
-        if label not in process_nsp_data:
-            process_nsp_data[label] = defaultdict(int)
-            process_nsp_data[label][str(nsp_label)] += 1
+            data.append([dna_list, input_mask, segment_ids, label])
+            print(r, dna_list, input_mask, segment_ids, label)
+        if label not in nsp_data:
+            nsp_data[label] = defaultdict(int)
+            nsp_data[label][str(nsp_label)] += 1
         else:
-            process_nsp_data[label][str(nsp_label)] += 1
+            nsp_data[label][str(nsp_label)] += 1
 
-    data[process] = process_data
-    nsp_data[process] = process_nsp_data
+    return data, nsp_data
+
     
 
 def create_tfrecords(args, grouped_files):
@@ -109,83 +144,91 @@ def create_tfrecords(args, grouped_files):
             with open(fq_file) as handle:
                 content = handle.readlines()
                 reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-                random.shuffle(reads)
+                # random.shuffle(reads)
                 print(f'{fq_file}\t# reads: {len(reads)}')
 
-            # create processes
-            chunk_size = math.ceil(len(reads)/args.num_proc)
-            grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
-            indices = list(range(len(reads)))
-            grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
+            # # create processes
+            # chunk_size = math.ceil(len(reads)/args.num_proc)
+            # grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
+            # indices = list(range(len(reads)))
+            # grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
 
-            with mp.Manager() as manager:
-                data = manager.dict()
-                nsp_data = manager.dict()
-                if args.dataset_type == 'sim':
-                    processes = [mp.Process(target=get_data_for_bert, args=(args, nsp_data, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
-                for p in processes:
-                    p.start()
-                for p in processes:
-                    p.join()
+            # with mp.Manager() as manager:
+            #     data = manager.dict()
+            #     nsp_data = manager.dict()
+            #     if args.dataset_type == 'sim':
+            #         processes = [mp.Process(target=get_data_for_bert, args=(args, nsp_data, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
+            #     for p in processes:
+            #         p.start()
+            #     for p in processes:
+            #         p.join()
 
-                total_reads = 0
-                nsp_1_labels = defaultdict(int)
-                nsp_0_labels = defaultdict(int)
-                for process, nsp_data_process in nsp_data.items():
-                    for label, nsp_count in nsp_data_process.items():
-                        nsp_1_labels[label]+= nsp_count['1']
-                        nsp_0_labels[label]+= nsp_count['0']
-                        total_reads += nsp_count['1'] + nsp_count['0']
-                with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
-                    json.dump(nsp_0_labels, nsp_f)
-                with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
-                    json.dump(nsp_1_labels, nsp_f)
-                print(f'total reads: {total_reads}')
+            data, nsp_data = get_data_for_bert(args, list_reads, reads_index)
 
-                with tf.io.TFRecordWriter(output_tfrec) as writer:
-                    for process, data_process in data.items():
-                        print(process, len(data_process))
-                        for i, r in enumerate(data_process, 0):
-                            """
-                            input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
-                            input_mask: [1]*len(input_ids) - input_mask
-                            segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
-                            masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
-                            masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
-                            masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
-                            next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
-                            label: species label - label
-                            """
-                            if args.bert_step == 'pretraining':
-                                data = \
-                                    {
-                                        'input_ids': wrap_read(r[0]),
-                                        'input_mask': wrap_read(r[1]),
-                                        'segment_ids': wrap_read(r[2]),
-                                        'masked_lm_positions': wrap_read(r[3]),
-                                        'masked_lm_weights': wrap_weights(r[4]),
-                                        'masked_lm_ids': wrap_read(r[5]),
-                                        'next_sentence_labels': wrap_label(r[6]),
-                                        'label_ids': wrap_label(r[7]),
-                                    }
-                            elif args.bert_step == 'finetuning':
-                                data = \
-                                    {
-                                        'input_ids': wrap_read(r[0]),
-                                        'input_mask': wrap_read(r[1]),
-                                        'segment_ids': wrap_read(r[2]),
-                                        'label_ids': wrap_label(r[3]),
-                                        'is_real_example': wrap_label(1)
-                                    }
-                            feature = tf.train.Features(feature=data)
-                            example = tf.train.Example(features=feature)
-                            serialized = example.SerializeToString()
-                            writer.write(serialized)
-                            count += 1
-                            # break
+
+            total_reads = 0
+            nsp_1_labels = defaultdict(int)
+            nsp_0_labels = defaultdict(int)
+            for label, nsp_count in nsp_data.items():
+                nsp_1_labels[label]+= nsp_count['1']
+                nsp_0_labels[label]+= nsp_count['0']
+                total_reads += nsp_count['1'] + nsp_count['0']
+                # for process, nsp_data_process in nsp_data.items():
+                #     for label, nsp_count in nsp_data_process.items():
+                #         nsp_1_labels[label]+= nsp_count['1']
+                #         nsp_0_labels[label]+= nsp_count['0']
+                #         total_reads += nsp_count['1'] + nsp_count['0']
+            with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
+                json.dump(nsp_0_labels, nsp_f)
+            with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
+                json.dump(nsp_1_labels, nsp_f)
+            print(f'total reads: {total_reads}')
+
+            with tf.io.TFRecordWriter(output_tfrec) as writer:
+                    # for process, data_process in data.items():
+                    #     print(process, len(data_process))
+                for i, r in enumerate(data, 0):
+                    print(i, r)
+                    """
+                    input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
+                    input_mask: [1]*len(input_ids) - input_mask
+                    segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
+                    masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
+                    masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
+                    masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
+                    next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
+                    label: species label - label
+                    """
+                    if args.bert_step == 'pretraining':
+                        data = \
+                            {
+                                'input_ids': wrap_read(r[0]),
+                                'input_mask': wrap_read(r[1]),
+                                'segment_ids': wrap_read(r[2]),
+                                'masked_lm_positions': wrap_read(r[3]),
+                                'masked_lm_weights': wrap_weights(r[4]),
+                                'masked_lm_ids': wrap_read(r[5]),
+                                'next_sentence_labels': wrap_label(r[6]),
+                                'label_ids': wrap_label(r[7]),
+                            }
+                    elif args.bert_step == 'finetuning':
+                        data = \
+                            {
+                                'input_ids': wrap_read(r[0]),
+                                'input_mask': wrap_read(r[1]),
+                                'segment_ids': wrap_read(r[2]),
+                                'label_ids': wrap_label(r[3]),
+                                'is_real_example': wrap_label(1)
+                            }
+                    feature = tf.train.Features(feature=data)
+                    example = tf.train.Example(features=feature)
+                    serialized = example.SerializeToString()
+                    writer.write(serialized)
+                    count += 1
+                    # break
                     
-                with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-                    f.write(f'{count}')
+            with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+                f.write(f'{count}')
         else:
             with tf.io.TFRecordWriter(output_tfrec) as writer:
                 with open(fq_file) as handle:
