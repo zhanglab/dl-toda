@@ -163,7 +163,7 @@ def create_tfrecords(args, grouped_files):
             #     for p in processes:
             #         p.join()
 
-            data, nsp_data = get_data_for_bert(args, list_reads, reads_index)
+            data, nsp_data = get_data_for_bert(args, reads, reads_index)
 
 
             total_reads = 0
