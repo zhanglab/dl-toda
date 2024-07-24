@@ -2,7 +2,27 @@ import numpy as np
 import random
 
 
-def split_read(args, reads, read, r_index, process):
+# def split_read(args, reads, read, r_index, process):
+#     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
+#     nsp_choice = random.choice([True, False])
+#     # define first segment
+#     segment_1 = read[:len(read)//2]
+#     if nsp_choice == False or args.bert_step == 'finetuning':
+#         print('nsp not implemented')
+#         nsp_label = 1 # 'IsNext' --> verified with bert code on sample text
+#         segment_2 = read[len(read)//2:]
+#     else:
+#         nsp_label = 0 # 'NotNext' --> verified with bert code on sample text
+#         # randomly select another sequence in the pool of sequences
+#         o_index = random.choice([i for i in range(len(reads)) if i!= r_index])
+#         # split selected sequence in two segments of equal length
+#         o_seq = reads[o_index].rstrip().split('\n')[1]
+#         # randomly select one segment
+#         segment_2 = random.choice([o_seq[:len(o_seq)//2], o_seq[len(o_seq)//2:]])
+    
+#     return segment_1, segment_2, nsp_label
+
+def split_read(args, reads, read, r_index):
     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
     nsp_choice = random.choice([True, False])
     # define first segment
@@ -21,6 +41,8 @@ def split_read(args, reads, read, r_index, process):
         segment_2 = random.choice([o_seq[:len(o_seq)//2], o_seq[len(o_seq)//2:]])
     
     return segment_1, segment_2, nsp_label
+
+    
 
 def get_nsp_input(args, segment_1, segment_2):
 # def get_nsp_input(args, bases_list):
