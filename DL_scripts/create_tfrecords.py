@@ -128,7 +128,7 @@ def get_data_for_bert(args, list_reads, reads_index):
             nsp_data[label][str(nsp_label)] += 1
         else:
             nsp_data[label][str(nsp_label)] += 1
-        break
+        
 
     return data, nsp_data
 
