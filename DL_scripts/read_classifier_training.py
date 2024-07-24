@@ -418,7 +418,7 @@ def main():
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
             f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
                     f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-                    f'Vector size\t{args.vector_size}\nEmbedding size\t{args.embedding_size}\n'
+                    f'Vector size\t{args.vector_size}\n'
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                     f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
@@ -426,7 +426,7 @@ def main():
                     f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
             # \nNumber of classes\t{num_labels}
             if args.model_type != 'BERT':
-                f.write(f'Vocabulary size\t{vocab_size}\n')
+                f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
             if args.model_type in ["DNA_1", "DNA_2"]:
                 f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
                         f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
@@ -557,105 +557,112 @@ def main():
     # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        if args.model_type == "BERT":
+            input_ids, input_mask, token_type_ids, labels, is_real_example = data
+            print(input_ids, input_mask, token_type_ids, labels, is_real_example)
+        else:
+            reads, labels = data
+            print(reads, labels)
+        break
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
-        # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
-        # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
-        # print(loss_value, reads, labels, probs)
-        # create dictionary mapping the species to their occurrence in batches
-        # labels_count = Counter(labels.numpy())
-        # for k, v in labels_count.items():
-        #     labels_dict[str(k)] += v
-        # if batch in (1 ,nstep_per_epoch, (nstep_per_epoch + 1), (2*nstep_per_epoch)):
-        #     print(f'epoch: {epoch}\tbatch: {batch}')
-        #     for i in range(len(input_ids)):
-        #         print(input_ids[i])
-        #     # print(input_ids[0])
+    #     loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+    #     # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
+    #     # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
+    #     # print(loss_value, reads, labels, probs)
+    #     # create dictionary mapping the species to their occurrence in batches
+    #     # labels_count = Counter(labels.numpy())
+    #     # for k, v in labels_count.items():
+    #     #     labels_dict[str(k)] += v
+    #     # if batch in (1 ,nstep_per_epoch, (nstep_per_epoch + 1), (2*nstep_per_epoch)):
+    #     #     print(f'epoch: {epoch}\tbatch: {batch}')
+    #     #     for i in range(len(input_ids)):
+    #     #         print(input_ids[i])
+    #     #     # print(input_ids[0])
 
-        if batch % 10 == 0 and hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_2.result().numpy()*100}')
-        if batch % 1 == 0 and hvd.rank() == 0:
-            # print(f'epoch: {epoch}\tbatch: {batch}')
-            # print(input_ids)
-            # write metrics
-            with writer.as_default():
-                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-                # tf.summary.scalar("train_loss_1", loss_value_1, step=batch)
-                # tf.summary.scalar("train_loss_2", loss_value_2, step=batch)
-                # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
-                tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
-                tf.summary.scalar("train_loss_3", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
-                # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
-                writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_2.result().numpy()}\n')
+    #     if batch % 10 == 0 and hvd.rank() == 0:
+    #         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_2.result().numpy()*100}')
+    #     if batch % 1 == 0 and hvd.rank() == 0:
+    #         # print(f'epoch: {epoch}\tbatch: {batch}')
+    #         # print(input_ids)
+    #         # write metrics
+    #         with writer.as_default():
+    #             tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+    #             # tf.summary.scalar("train_loss_1", loss_value_1, step=batch)
+    #             # tf.summary.scalar("train_loss_2", loss_value_2, step=batch)
+    #             # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
+    #             tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
+    #             tf.summary.scalar("train_loss_3", loss_value, step=batch)
+    #             tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+    #             # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+    #             writer.flush()
+    #         td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_2.result().numpy()}\n')
 
-        # evaluate model at the end of every epoch
-        if batch % nstep_per_epoch == 0:
-            # save dictionary of labels count
-            # with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
-            #     json.dump(labels_dict, labels_outfile)
-            # evaluate model
-            for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
+    #     # evaluate model at the end of every epoch
+    #     if batch % nstep_per_epoch == 0:
+    #         # save dictionary of labels count
+    #         # with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
+    #         #     json.dump(labels_dict, labels_outfile)
+    #         # evaluate model
+    #         for _, data in enumerate(val_input.take(val_steps)):
+    #             testing_step(args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
 
 
-            # adjust learning rate
-            if args.lr_decay:
-                if epoch % args.lr_decay == 0:
-                    current_lr = opt.learning_rate
-                    new_lr = current_lr / 2
-                    opt.learning_rate = new_lr
+    #         # adjust learning rate
+    #         if args.lr_decay:
+    #             if epoch % args.lr_decay == 0:
+    #                 current_lr = opt.learning_rate
+    #                 new_lr = current_lr / 2
+    #                 opt.learning_rate = new_lr
 
-            if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_2.result().numpy()*100}\n')
-                # save weights
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-                with writer.as_default():
-                    tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
-                    # tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
-                    # tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
-                    writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\n')
+    #         if hvd.rank() == 0:
+    #             print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_2.result().numpy()*100}\n')
+    #             # save weights
+    #             checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+    #             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+    #             with writer.as_default():
+    #                 tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
+    #                 # tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
+    #                 tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
+    #                 # tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
+    #                 writer.flush()
+    #             vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\n')
 
-            # reset metrics variables
-            # train_loss_1.reset_states()
-            train_loss_2.reset_states()
-            val_loss_1.reset_states()
-            # val_loss_2.reset_states()
-            # train_accuracy_1.reset_states()
-            train_accuracy_2.reset_states()
-            # val_accuracy_1.reset_states()
-            val_accuracy_2.reset_states()
+    #         # reset metrics variables
+    #         # train_loss_1.reset_states()
+    #         train_loss_2.reset_states()
+    #         val_loss_1.reset_states()
+    #         # val_loss_2.reset_states()
+    #         # train_accuracy_1.reset_states()
+    #         train_accuracy_2.reset_states()
+    #         # val_accuracy_1.reset_states()
+    #         val_accuracy_2.reset_states()
 
-            # define end of current epoch
-            epoch += 1
+    #         # define end of current epoch
+    #         epoch += 1
 
-    if hvd.rank() == 0 and args.model_type != 'BERT':
-        # save final embeddings
-        emb_weights = model.get_layer('embedding').get_weights()[0]
-        out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
-        print(f'# embeddings: {len(emb_weights)}')
-        for i in range(len(emb_weights)):
-            vec = emb_weights[i]
-            out_v.write('\t'.join([str(x) for x in vec]) + "\n")
-        out_v.close()
+    # if hvd.rank() == 0 and args.model_type != 'BERT':
+    #     # save final embeddings
+    #     emb_weights = model.get_layer('embedding').get_weights()[0]
+    #     out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
+    #     print(f'# embeddings: {len(emb_weights)}')
+    #     for i in range(len(emb_weights)):
+    #         vec = emb_weights[i]
+    #         out_v.write('\t'.join([str(x) for x in vec]) + "\n")
+    #     out_v.close()
 
-    end = datetime.datetime.now()
+    # end = datetime.datetime.now()
 
-    if hvd.rank() == 0:
-        total_time = end - start
-        hours, seconds = divmod(total_time.seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        td_writer.close()
-        vd_writer.close()
+    # if hvd.rank() == 0:
+    #     total_time = end - start
+    #     hours, seconds = divmod(total_time.seconds, 3600)
+    #     minutes, seconds = divmod(seconds, 60)
+    #     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+    #         f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    #     print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    #     td_writer.close()
+    #     vd_writer.close()
 
 
 if __name__ == "__main__":
