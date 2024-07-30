@@ -128,7 +128,7 @@ def get_data_for_bert(args, list_reads, reads_index):
             nsp_data[label][str(nsp_label)] += 1
         else:
             nsp_data[label][str(nsp_label)] += 1
-        
+
 
     return data, nsp_data
 
@@ -189,7 +189,6 @@ def create_tfrecords(args, grouped_files):
                     # for process, data_process in data.items():
                     #     print(process, len(data_process))
                 for i, r in enumerate(data, 0):
-                    print(i, r)
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
                     input_mask: [1]*len(input_ids) - input_mask
@@ -304,6 +303,8 @@ def main():
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
+    print(args)
+
     if args.update_labels:
         args.labels_mapping = dict()
         with open(args.mapping_file, 'r') as f:
@@ -321,6 +322,7 @@ def main():
     if not args.DNA_model:
         if args.bert:
             args.kmer_vector_length = args.read_length//2 - args.k_value + 1
+            print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
         else:
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
