@@ -122,7 +122,7 @@ def get_data_for_bert(args, list_reads, reads_index):
             # create input_mask vector indicating padded values
             input_mask = [1] * len(dna_list)
             data.append([dna_list, input_mask, segment_ids, label])
-            print(r, dna_list, input_mask, segment_ids, label)
+            # print(r, dna_list, input_mask, segment_ids, label)
         if label not in nsp_data:
             nsp_data[label] = defaultdict(int)
             nsp_data[label][str(nsp_label)] += 1
