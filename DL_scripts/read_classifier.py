@@ -331,7 +331,7 @@ def main():
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
-    parser.add_argument('--labels', type=int, help='number of labels')
+    # parser.add_argument('--labels', type=int, help='number of labels')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
@@ -504,6 +504,8 @@ def main():
         all_prob_sp = all_prob_sp[0].numpy()
         all_labels = all_labels[0].numpy()
         # all_prob_labels = all_prob_labels[0].numpy()
+        print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
+
 
         # adjust the list of predicted species and read ids if necessary
         if len(all_labels) > num_reads:
@@ -512,6 +514,8 @@ def main():
             all_pred_sp = all_pred_sp[:-num_extra_reads]
             all_prob_sp = all_prob_sp[:-num_extra_reads]
             all_labels = all_labels[:-num_extra_reads]
+            print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
+            print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
 
         if args.data_type == 'meta':
@@ -529,10 +533,10 @@ def main():
             out_filename = os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(gpu_test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(gpu_test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
-                    print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t')
+                    # print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
                     out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t')
                     # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
-                    if len(all_prob_sp[j]) == args.labels:
+                    if len(all_prob_sp[j]) == num_labels:
                         out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
                     else:
                         out_f.write(f'{all_prob_sp[j]}\n')
