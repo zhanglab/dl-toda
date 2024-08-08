@@ -469,7 +469,7 @@ def main():
             else:
                 datatype = 'reads'
 
-            test_input = build_dataset(gpu_test_files[i], args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
+            test_input = build_dataset(gpu_test_files[i], args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=False)
 
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
