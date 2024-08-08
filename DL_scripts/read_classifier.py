@@ -429,7 +429,7 @@ def main():
             config = BertConfig.from_json_file(args.bert_config_file)
             model = BertModel(config=config)
         else:
-            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
+            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
         checkpoint.restore(args.ckpt).expect_partial()
