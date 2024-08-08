@@ -21,7 +21,15 @@ import time
 import math
 import argparse
 
-dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
+
+# set seed
+seed = 42
+os.environ['PYTHONHASHSEED'] = str(seed)
+tf.random.set_seed(seed)
+tf.experimental.numpy.random.seed(seed)
+
+
+dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 # disable eager execution
 # tf.compat.v1.disable_eager_execution()
@@ -34,18 +42,18 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # TensorFlow models with potentially no source code changes
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
-# Initialize Horovod
-hvd.init()
+# # Initialize Horovod
+# hvd.init()
 
-# Pin GPU to be used to process local rank (one GPU per process)
-# use hvd.local_rank() for gpu pinning instead of hvd.rank()
-gpus = tf.config.experimental.list_physical_devices('GPU')
-print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
-# comment next 2 lines if testing large dataset
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-if gpus:
-    tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+# # Pin GPU to be used to process local rank (one GPU per process)
+# # use hvd.local_rank() for gpu pinning instead of hvd.rank()
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+# # comment next 2 lines if testing large dataset
+# for gpu in gpus:
+#     tf.config.experimental.set_memory_growth(gpu, True)
+# if gpus:
+#     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 # define the DALI pipeline
@@ -194,6 +202,66 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 
+def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_training, drop_remainder):
+
+    def load_tfrecords_with_reads(proto_example):
+        data_description = {
+            'read': tf.io.VarLenFeature(tf.int64),
+            # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
+            'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
+        }
+        # load one example
+        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
+        read = parsed_example['read']
+        label = tf.cast(parsed_example['label'], tf.int64)
+        read = tf.sparse.to_dense(read)
+        return read, label
+
+
+    def load_tfrecords_with_sentences(proto_example):
+        name_to_features = {
+          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "label_ids": tf.io.FixedLenFeature([], tf.int64),
+          "is_real_example": tf.io.FixedLenFeature([], tf.int64),
+        }
+        # load one example
+        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
+        input_ids = parsed_example['input_ids']
+        input_mask = parsed_example['input_mask']
+        segment_ids = parsed_example['segment_ids']
+        label_ids = parsed_example['label_ids']
+        is_real_example = parsed_example['is_real_example']
+
+        return  (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+
+    """ Return data in TFRecords """
+    fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
+
+    dataset = tf.data.TFRecordDataset([filenames])
+
+    if is_training:
+        dataset = dataset.repeat()
+        # dataset = dataset.shuffle(buffer_size=100)
+
+    dataset = dataset.map(map_func=fn_load_data[datatype])
+    dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+
+
+    # Load data as shards
+    # dataset = tf.data.Dataset.list_files(tfrecord_path)
+    # dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x), num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                                 # deterministic=False)
+    # dataset = dataset.map(map_func=fn_load_data[datatype], num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    # dataset = dataset.padded_batch(batch_size,
+                                   # padded_shapes=(tf.TensorShape([vector_size]), tf.TensorShape([num_classes])),)
+    # dataset = dataset.cache()
+    # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    return dataset
+
+
+
 # @tf.function
 # def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
 #     print('inside testing_step')
@@ -211,10 +279,10 @@ class DALIPreprocessor(object):
 
 @tf.function
 def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+    training = False
     if model_type == 'BERT':
-        training = False
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
-        probs = model(input_ids, input_mask, token_type_ids, training)
+        probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -242,9 +310,10 @@ def main():
     start = datetime.datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
-    parser.add_argument('--dali_idx', type=str, help='path to dali indexes files', required=True)
+    parser.add_argument('--dali_idx', type=str, help='path to dali indexes files')
     parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
+    parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     # parser.add_argument('--epoch', type=int, help='epoch of checkpoint', default=14)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--DNA_model', action='store_true', default=False)
@@ -258,12 +327,15 @@ def main():
     parser.add_argument('--sw_conv_1', type=int, default=1)
     parser.add_argument('--sh_conv_2', type=int, default=1)
     parser.add_argument('--sw_conv_2', type=int, default=1)
+    parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
+    parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
     parser.add_argument('--labels', type=int, help='number of labels')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
+    parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
@@ -272,24 +344,41 @@ def main():
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
-
     args = parser.parse_args()
+
+    # Initialize Horovod
+    hvd.init()
+    # Map one GPU per process
+    # use hvd.local_rank() for gpu pinning instead of hvd.rank()
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    if gpus:
+        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM, 'BERT': BertModel}
 
-    print(f'1: {datetime.datetime.now()}')
+    # get vocabulary size
+    if args.model_type != 'BERT':
+        with open(args.vocab, 'r') as f:
+            content = f.readlines()
+            vocab_size = len(content)
+
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
         f = open(args.class_mapping)
         class_mapping = json.load(f)
         num_labels = len(class_mapping)
+    else:
+        num_labels = args.num_labels
 
-    # create dtype policy
-    policy = tf.keras.mixed_precision.Policy('mixed_float16')
-    tf.keras.mixed_precision.set_global_policy(policy)
-    print('Compute dtype: %s' % policy.compute_dtype)
-    print('Variable dtype: %s' % policy.variable_dtype)
-    print(f'2: {datetime.datetime.now()}')
+    # # create dtype policy
+    # policy = tf.keras.mixed_precision.Policy('mixed_float16')
+    # tf.keras.mixed_precision.set_global_policy(policy)
+    # print('Compute dtype: %s' % policy.compute_dtype)
+    # print('Variable dtype: %s' % policy.variable_dtype)
+    # print(f'2: {datetime.datetime.now()}')
     
     # define metrics
     if args.data_type == 'sim':
@@ -297,22 +386,47 @@ def main():
         test_loss = tf.keras.metrics.Mean(name='test_loss')
         test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
-    init_lr = 0.0001
-    opt = tf.keras.optimizers.Adam(init_lr)
-    opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
-
     if hvd.rank() == 0:
         # create output directories
         if not os.path.isdir(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
-    print(f'3: {datetime.datetime.now()}')
 
-    if args.model_type == 'BERT':
-        config = BertConfig.from_json_file(args.bert_config_file)
+    # get list of testing tfrecords and number of reads per tfrecords
+    test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
+    num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
+    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
+
+    if args.nvidia_dali:
+        # get nvidia dali indexes
+        test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
+    
+    # split tfrecords between gpus
+    test_files_per_gpu = len(test_files)//hvd.size()
+
+    if hvd.rank() != hvd.size() - 1:
+        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
+
+        if args.nvidia_dali:
+            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+    else:
+        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+
+        if args.nvidia_dali:
+            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+
+    init_lr = args.init_lr
+    opt = tf.keras.optimizers.Adam(init_lr)
+    opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
+
 
     # load model
     if args.ckpt is not None:
         if args.model_type == 'BERT':
+            config = BertConfig.from_json_file(args.bert_config_file)
             model = BertModel(config=config)
         else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_classes, vocab_size, args.dropout_rate)
@@ -328,33 +442,8 @@ def main():
     #        latest_ckpt = tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts'))
     #        print(f'latest ckpt: {latest_ckpt}')
     #        model.load_weights(os.path.join(input_dir, f'run-{run_num}', f'ckpts/ckpts-{epoch}'))
-    print(f'4: {datetime.datetime.now()}')
-    # get list of testing tfrecords and number of reads per tfrecords
-    test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
-    print(f'# test_files: {len(test_files)}')
-    test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
-    num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
-    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
-    print(f'# read_ids_files: {len(read_ids_files)}')
-    # split tfrecords between gpus
-    test_files_per_gpu = len(test_files)//hvd.size()
-    print(f'test_files_per_gpu: {test_files_per_gpu}')
-    print(f'5: {datetime.datetime.now()}')
-
-    if hvd.rank() != hvd.size() - 1:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
-    else:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
 
-    print(gpu_test_files)
-    print(f'6: {datetime.datetime.now()}')
     elapsed_time = []
     num_reads_classified = 0
     for i in range(len(gpu_test_files)):
@@ -364,12 +453,23 @@ def main():
         with open(os.path.join(args.tfrecords, gpu_num_reads_files[i]), 'r') as f:
             num_reads = int(f.readline())
         num_reads_classified += num_reads
+
         # compute number of steps required to iterate over entire test set
         test_steps = math.ceil(num_reads/(args.batch_size))
 
-        test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
+        # load data
+        if args.nvidia_dali:
+            test_preprocessor = DALIPreprocessor(args, gpu_test_files[i], gpu_test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
 
-        test_input = test_preprocessor.get_device_dataset()
+            test_input = test_preprocessor.get_device_dataset()
+        else:
+            if args.model_type == 'BERT':
+                datatype = 'sentences'
+            else:
+                datatype = 'reads'
+
+            test_input = build_dataset(gpu_test_files[i], args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
+
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
         # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
@@ -439,7 +539,6 @@ def main():
             #     # save predictions and labels to file
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
             #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
-        print(f'7: {datetime.datetime.now()}')
         end_time = time.time()
         # elapsed_time = np.append(elapsed_time, end_time - start_time)
         elapsed_time.append(end_time - start_time)
