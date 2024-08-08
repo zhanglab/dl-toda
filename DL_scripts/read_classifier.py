@@ -452,6 +452,7 @@ def main():
         # get number of reads in test file
         with open(os.path.join(args.tfrecords, gpu_num_reads_files[i]), 'r') as f:
             num_reads = int(f.readline())
+        print(f'number of reads to classify: {num_reads}')
         num_reads_classified += num_reads
 
         # compute number of steps required to iterate over entire test set
