@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 import sys
 import pandas as pd
 import glob
@@ -129,9 +130,13 @@ def main():
         else:
             path_dl_toda_tax = args.tax_file
         print(path_dl_toda_tax)
-        with open(path_dl_toda_tax, 'r') as in_f:
-            content = in_f.readlines()
-            args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
+        if path_dl_toda_tax[-4:] == 'json':
+            with open(path_dl_toda_tax, 'r') as in_f:
+                args.dl_toda_tax  = json.load(in_f)
+        else:
+            with open(path_dl_toda_tax, 'r') as in_f:
+                content = in_f.readlines()
+                args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
         if args.mapping_file:
             # parse file to update labels
             args.labels_mapping = dict()
