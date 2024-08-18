@@ -95,7 +95,6 @@ if __name__ == "__main__":
         # join all canonical kmers into a list
         list_can_kmers = []
         for process in range(len(can_kmers)):
-            print(can_kmers[str(process)])
             list_can_kmers += can_kmers[str(process)]
         print(len(list_can_kmers))
         # get unique canonical kmers
