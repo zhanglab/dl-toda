@@ -53,6 +53,7 @@ def get_canonical_kmers(can_kmers, process_id, list_kmers):
         # get reverse complement
         rev_seq = get_reverse_seq(kmer)
         if kmer <= rev_seq: # y comes before in alphabetical order
+            print(f'kmer <= rev_seq')
             process_can_kmers.append(kmer)
     can_kmers[str(process_id)] = process_can_kmers
 
@@ -92,8 +93,9 @@ if __name__ == "__main__":
 
         # join all canonical kmers into a list
         list_can_kmers = []
-        for i in range(len(can_kmers)):
-            list_can_kmers += can_kmers[str(i)]
+        for process in range(len(can_kmers)):
+            print(can_kmers[str(process)])
+            list_can_kmers += can_kmers[str(process)]
         print(len(list_can_kmers))
         # get unique canonical kmers
         list_can_kmers = set(list_can_kmers)
