@@ -98,7 +98,7 @@ if __name__ == "__main__":
             list_can_kmers += can_kmers[str(process)]
         print(len(list_can_kmers))
         # get unique canonical kmers
-        list_can_kmers = set(list_can_kmers)
+        list_can_kmers = set(list_can_kmers).sort()
         print(len(list_can_kmers))
         with open(f'{k_value}mers.txt', 'w') as f:
             if model == 'BERT':
