@@ -105,7 +105,7 @@ if __name__ == "__main__":
                 f.write('[PAD]\n[CLS]\n[SEP]\n[MASK]\n[UNK]\n')
             else:
                 f.write('pad\nunknown\n')
-            for k in can_kmers:
+            for k in list(list_can_kmers):
                 f.write(f'{k}\n')
 
 
