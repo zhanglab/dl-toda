@@ -48,12 +48,13 @@ def get_kmers(k, y=''):
 
 
 def get_canonical_kmers(can_kmers, process_id, list_kmers):
+    print(f'process_id\t{len(list_kmers)}')
     process_can_kmers = []
     for kmer in list_kmers:
         # get reverse complement
         rev_seq = get_reverse_seq(kmer)
         if kmer <= rev_seq: # y comes before in alphabetical order
-            print(f'kmer: {kmer} <= rev_seq: {rev_seq}')
+            # print(f'kmer: {kmer} <= rev_seq: {rev_seq}')
             process_can_kmers.append(kmer)
     can_kmers[str(process_id)] = process_can_kmers
 
