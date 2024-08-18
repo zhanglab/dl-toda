@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
 
     # get canonical k-mers
-    can_kmers = get_canonical_kmers(kmers)
+    # can_kmers = get_canonical_kmers(kmers)
 
     chunk_size = math.ceil(len(kmers)/num_proc)
     grouped_kmers = [kmers[i:i+chunk_size] for i in range(0, len(kmers), chunk_size)]
