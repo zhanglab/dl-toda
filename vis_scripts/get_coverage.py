@@ -95,7 +95,7 @@ def main():
     with mp.Manager() as manager:
         results = manager.dict()
         # processes = [mp.Process(target=get_coverage, args=(list_of_reads, ref_info[ref], ref, results)) for ref, list_of_reads in alignments.items()]
-        processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], ref_info[i][0], results)) for i in range(len(ref_info))]
+        processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], results, i)) for i in range(len(ref_info))]
         for p in processes:
             p.start()
         for p in processes:
