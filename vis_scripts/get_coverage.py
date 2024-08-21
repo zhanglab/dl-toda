@@ -38,7 +38,8 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
             if read_cigar[query_pos] in refmoveset:
                 ref_pos += 1
             query_pos += 1
-
+    print(dict_coverage)
+    print(results)
     results[process_id] = dict_coverage
 
     
