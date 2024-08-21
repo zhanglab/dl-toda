@@ -19,7 +19,7 @@ def extend_cigar(cigar):
             num = ''
     return new_cigar
 
-def get_coverage(list_of_reads, length_ref):
+def get_coverage(list_of_reads, length_ref, ref, results):
     # for each reference in the dictionary, create a new dictionary with the
     # number of matches at each position encountered
     dict_coverage = defaultdict(lambda : 0)
@@ -39,10 +39,9 @@ def get_coverage(list_of_reads, length_ref):
                 ref_pos += 1
             query_pos += 1
 
-    # compute mean coverage
-    mean_cov = round(sum(dict_coverage.values())/length_ref, 3)
+    results[ref] = dict_coverage
 
-    return mean_cov
+    
 
 def get_references(content, alignments):
     ref = {}
@@ -90,20 +89,21 @@ def main():
 
     num_refs = sum([len(i) for i in chunks])
     print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
-    for i in chunks:
-        print(len(i))
 
-    # with mp.Manager() as manager:
-    #     train_reads = manager.dict()
-    #     val_reads = manager.dict()
-    #     if args.dataset_type == 'sim':
-    #         processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-    #     elif args.dataset_type == 'meta':
-    #         processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    with mp.Manager() as manager:
+        results = manager.dict()
+        processes = [mp.Process(target=get_coverage, args=(list_of_reads, ref_info[ref], ref, results)) for ref, list_of_reads in alignments.items()]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+
+        for ref, ref_results in results.items():
+            with open(f'{ref.replace(' ', '-')}-cov.tsv', 'w') as out_f:
+                for k, v in ref_results.items():
+                    out_f.write(f'{k}\t{v}\n')
+            # compute mean coverage
+            mean_cov = round(sum(ref_results.values())/ref_info[ref], 3)
 
     # else:
     #     chunks = None
@@ -118,7 +118,7 @@ def main():
 
     # broadcast info about references to all processes
     # ref_info = comm.bcast(ref_info, root=0)
-    # # get coverage for each reference
+    # get coverage for each reference
     # with open(f'process-{rank}-cov.tsv', 'w') as out_f:
     #    for ref, reads in chunks.items():
     #         if rank == 1:
