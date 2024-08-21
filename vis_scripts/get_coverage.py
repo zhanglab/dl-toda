@@ -99,7 +99,7 @@ def main():
             p.join()
 
         for ref, ref_results in results.items():
-            with open(f'{ref.replace(' ', '-')}-cov.tsv', 'w') as out_f:
+            with open(f'{ref.replace(" ", "-")}-cov.tsv', 'w') as out_f:
                 for k, v in ref_results.items():
                     out_f.write(f'{k}\t{v}\n')
             # compute mean coverage
