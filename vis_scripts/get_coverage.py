@@ -39,8 +39,7 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
             if read_cigar[query_pos] in refmoveset:
                 ref_pos += 1
             query_pos += 1
-    print(dict_coverage)
-    print(results)
+
     results[process_id] = dict_coverage
 
     
@@ -82,7 +81,6 @@ def main():
     chunks = []
     data = {}
     for k, v in alignments.items():
-        print(f'{k}\t{len(v)}\n')
         if len(data) < size:
             data.update({k: v})
         else:
@@ -96,19 +94,18 @@ def main():
 
     with mp.Manager() as manager:
         results = manager.dict()
-        # processes = [mp.Process(target=get_coverage, args=(list_of_reads, ref_info[ref], ref, results)) for ref, list_of_reads in alignments.items()]
         processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], results, i)) for i in range(len(ref_info))]
         for p in processes:
             p.start()
         for p in processes:
             p.join()
 
-        for ref, ref_results in results.items():
-            with open(f'{ref.replace(" ", "-")}-cov.tsv', 'w') as out_f:
+        for process_id, ref_results in results.items():
+            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov.tsv', 'w') as out_f:
                 for k, v in ref_results.items():
                     out_f.write(f'{k}\t{v}\n')
             # compute mean coverage
-            mean_cov = round(sum(ref_results.values())/ref_info[ref], 3)
+            mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
 
     # else:
     #     chunks = None
