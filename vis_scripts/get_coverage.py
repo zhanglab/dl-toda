@@ -69,6 +69,7 @@ def main():
     # if rank == 0:
     # get references
     ref_info, alignments = get_data(samfile)
+    print(ref_info)
     # determine the size of each subtask
     size = math.ceil(len(alignments)/nprocs)
     # determine the references in each subtasks
@@ -78,7 +79,7 @@ def main():
     chunks = []
     data = {}
     for k, v in alignments.items():
-        print(f'{k}\t{v}\n')
+        print(f'{k}\t{len(v)}\n')
         if len(data) < size:
             data.update({k: v})
         else:
@@ -89,7 +90,8 @@ def main():
 
     num_refs = sum([len(i) for i in chunks])
     print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
-    
+    for i in chunks:
+        print(len(i))
 
     # with mp.Manager() as manager:
     #     train_reads = manager.dict()
