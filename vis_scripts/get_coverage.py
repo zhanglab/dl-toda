@@ -101,11 +101,13 @@ def main():
             p.join()
 
         for process_id, ref_results in results.items():
-            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov.tsv', 'w') as out_f:
+            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov-pos.tsv', 'w') as out_f:
                 for k, v in ref_results.items():
                     out_f.write(f'{k}\t{v}\n')
             # compute mean coverage
             mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
+            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov-mean.tsv', 'w') as out_f:
+                out_f.write(f'{k}\t{mean_cov}\n')
 
     # else:
     #     chunks = None
