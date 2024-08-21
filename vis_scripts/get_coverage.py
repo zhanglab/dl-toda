@@ -89,8 +89,7 @@ def main():
 
     num_refs = sum([len(i) for i in chunks])
     print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
-    print(len(chunks[0]))
-    print(chunks[0])
+    
 
     # with mp.Manager() as manager:
     #     train_reads = manager.dict()
