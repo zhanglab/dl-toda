@@ -19,7 +19,7 @@ def extend_cigar(cigar):
             num = ''
     return new_cigar
 
-def get_coverage(list_of_reads, length_ref, ref, results):
+def get_coverage(list_of_reads, length_ref, results, process_id):
     # for each reference in the dictionary, create a new dictionary with the
     # number of matches at each position encountered
     dict_coverage = defaultdict(lambda : 0)
@@ -39,15 +39,17 @@ def get_coverage(list_of_reads, length_ref, ref, results):
                 ref_pos += 1
             query_pos += 1
 
-    results[ref] = dict_coverage
+    results[process_id] = dict_coverage
 
     
 
 def get_references(content, alignments):
     ref = {}
-    for line in content:
+    for i, line in enumerate(content):
+    # for line in content:
         if line.rstrip().split('\t')[0][:3] == '@SQ' and line.rstrip().split('\t')[1].split(':')[1] in alignments:
-            ref[line.rstrip().split('\t')[1].split(':')[1]] = int(line.rstrip().split('\t')[2].split(':')[1])
+            ref[i] = [line.rstrip().split('\t')[1].split(':')[1], int(line.rstrip().split('\t')[2].split(':')[1])]
+            # ref[line.rstrip().split('\t')[1].split(':')[1]] = int(line.rstrip().split('\t')[2].split(':')[1])
     return ref
 
 def get_data(samfile):
@@ -92,7 +94,8 @@ def main():
 
     with mp.Manager() as manager:
         results = manager.dict()
-        processes = [mp.Process(target=get_coverage, args=(list_of_reads, ref_info[ref], ref, results)) for ref, list_of_reads in alignments.items()]
+        # processes = [mp.Process(target=get_coverage, args=(list_of_reads, ref_info[ref], ref, results)) for ref, list_of_reads in alignments.items()]
+        processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], ref_info[i][0], results)) for i in range(len(ref_info))]
         for p in processes:
             p.start()
         for p in processes:
