@@ -23,7 +23,7 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
     # for each reference in the dictionary, create a new dictionary with the
     # number of matches at each position encountered
     # dict_coverage = defaultdict(lambda : 0)
-    dict_coverage = {i: 0 for i in range(1, length_ref, 1)}
+    dict_coverage = {i: 0 for i in range(length_ref)}
 
     for j in range(0, len(list_of_reads)):
         read_start = list_of_reads[j][0] - 1 # read_start = list_of_reads[j][0] - 1
