@@ -1,11 +1,12 @@
 import sys
 from collections import defaultdict
 import math
-from mpi4py import MPI
+import multiprocessing as mp
+# from mpi4py import MPI
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-nprocs = comm.Get_size()
+# comm = MPI.COMM_WORLD
+# rank = comm.Get_rank()
+# nprocs = comm.Get_size()
 
 def extend_cigar(cigar):
     new_cigar = ''
@@ -64,47 +65,66 @@ def get_data(samfile):
 
 def main():
     samfile = sys.argv[1]
-    if rank == 0:
-        # get references
-        ref_info, alignments = get_data(samfile)
-        # determine the size of each subtask
-        size = math.ceil(len(alignments)/nprocs)
-        # determine the references in each subtasks
-        chunks = []
-        data = {}
-        for k, v in alignments.items():
-            if len(data) < size:
-                data.update({k: v})
-            else:
-                chunks.append(data)
-                data = {k: v}
-        if len(chunks) < nprocs:
-            chunks.append(data)
+    nprocs = int(sys.argv[2])
+    # if rank == 0:
+    # get references
+    ref_info, alignments = get_data(samfile)
+    # determine the size of each subtask
+    size = math.ceil(len(alignments)/nprocs)
+    # determine the references in each subtasks
+    # chunk_size = math.ceil(len(fq_files)/nprocs)
+    # grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
 
-        num_refs = sum([len(i) for i in chunks])
-        print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
-        print(len(chunks[0]))
-        print(chunks[0])
-    else:
-        chunks = None
-        ref_info = None
-        alignments = None
+    chunks = []
+    data = {}
+    for k, v in alignments.items():
+        print(f'{k}\t{v}\n')
+        if len(data) < size:
+            data.update({k: v})
+        else:
+            chunks.append(data)
+            data = {k: v}
+    if len(chunks) < nprocs:
+        chunks.append(data)
+
+    num_refs = sum([len(i) for i in chunks])
+    print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
+    print(len(chunks[0]))
+    print(chunks[0])
+
+    # with mp.Manager() as manager:
+    #     train_reads = manager.dict()
+    #     val_reads = manager.dict()
+    #     if args.dataset_type == 'sim':
+    #         processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+    #     elif args.dataset_type == 'meta':
+    #         processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+    #     for p in processes:
+    #         p.start()
+    #     for p in processes:
+    #         p.join()
+
+    # else:
+    #     chunks = None
+    #     ref_info = None
+    #     alignments = None
+    
     # distribute the subtasks to the processes
-    try:
-        chunks = comm.scatter(chunks, root=0)
-    except ValueError:
-        MPI.COMM_WORLD.Abort(1)
+    # try:
+    #     chunks = comm.scatter(chunks, root=0)
+    # except ValueError:
+    #     MPI.COMM_WORLD.Abort(1)
 
     # broadcast info about references to all processes
-    ref_info = comm.bcast(ref_info, root=0)
-    # get coverage for each reference
-    with open(f'process-{rank}-cov.tsv', 'w') as out_f:
-       for ref, reads in chunks.items():
-            if rank == 1:
-                print(f'{ref}\t{len(reads)}\t{ref_info[ref]}')
-            mean_cov = get_coverage(reads, ref_info[ref])
-            out_f.write(f'{ref}\t{ref_info[ref]}\t{len(reads)}\t{mean_cov}\n')
-    print(f'process {rank} received {len(chunks)} references and the reference info dictionary with {len(ref_info)} entries')
+    # ref_info = comm.bcast(ref_info, root=0)
+    # # get coverage for each reference
+    # with open(f'process-{rank}-cov.tsv', 'w') as out_f:
+    #    for ref, reads in chunks.items():
+    #         if rank == 1:
+    #             print(f'{ref}\t{len(reads)}\t{ref_info[ref]}')
+    #         mean_cov = get_coverage(reads, ref_info[ref])
+    #         out_f.write(f'{ref}\t{ref_info[ref]}\t{len(reads)}\t{mean_cov}\n')
+    # print(f'process {rank} received {len(chunks)} references and the reference info dictionary with {len(ref_info)} entries')
 
 
 if __name__ == '__main__':
