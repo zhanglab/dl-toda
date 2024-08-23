@@ -53,10 +53,10 @@ def get_data(samfile):
         with open(samfile, 'r') as f:
             content = f.readlines()
             for i in range(len(content)):
-                read_id = content[i].rstrip().split("\t")[0]
-                start_pos = content[i].rstrip().split("\t")[3]
                 if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
                     alignments[content[i].rstrip().split('\t')[2]].append([int(content[i].rstrip().split('\t')[3]), content[i].rstrip().split('\t')[5]])
+                    read_id = content[i].rstrip().split("\t")[0]
+                    start_pos = content[i].rstrip().split("\t")[3]
                     outfile.write(f'{read_id}\t{start_pos}\n')
     # get references and their length
     ref = get_references(content[1:], alignments)
