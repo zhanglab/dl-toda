@@ -27,7 +27,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 			# check if read mapped to the genome
 			if r in map_info:
 				# get start position where the read maps to the target genome
-				start_pos = map_info[r]
+				start_pos = map_info[r] - 1
 				# get predicted label
 				pred_label = int(test_results[r].rstrip().split('\t')[1])
 				cs = float(test_results[r].rstrip().split('\t')[2])
@@ -37,7 +37,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 						pos_label[i] += 1
 						pos_conf_scores[i] += cs
 					elif pred_label == 0:
-						neg_label += 1
+						neg_label[i] += 1
 						neg_conf_scores[i] += cs
 
 	# get average of cs
