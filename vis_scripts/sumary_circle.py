@@ -75,8 +75,18 @@ def main():
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
 
 	# initialize a single circos sector
-	#sectors = {'genome': len(pos_coverage)}
-	#circos = Circos(sectors=sectors)
+	sectors = {'genome': len(pos_coverage)}
+	circos = Circos(sectors=sectors)
+
+
+	# Plot bar
+	base_positions = range(0,len(pos_coverage),1)
+	print(len(pos_coverage.values))
+	for sector in circos.sectors:
+	    bar_track = sector.add_track((15, 40), r_pad_ratio=0.1)
+	    bar_track.axis()
+	    bar_track.bar(base_positions, pos_coverage)
+	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
 
