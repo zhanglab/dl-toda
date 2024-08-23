@@ -2,6 +2,7 @@ import sys
 import os
 from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+print(sys.path)
 from dataprep_scripts.utils import load_fq_file
 from collections import defaultdict
 
