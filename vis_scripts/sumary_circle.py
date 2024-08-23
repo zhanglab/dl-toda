@@ -42,8 +42,10 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 
 	# get average of cs
 	for i in range(ref_length):
-		pos_conf_scores[i] = round(pos_conf_scores[i]/pos_label[i], 2)
-		neg_conf_scores[i] = round(neg_conf_scores[i]/neg_label[i], 2)
+		if pos_label[i] != 0:
+			pos_conf_scores[i] = round(pos_conf_scores[i]/pos_label[i], 2)
+		if neg_label[i] != 0:
+			neg_conf_scores[i] = round(neg_conf_scores[i]/neg_label[i], 2)
 
 	return pos_label, neg_label, pos_conf_scores, neg_conf_scores
 
