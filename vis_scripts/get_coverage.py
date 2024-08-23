@@ -55,7 +55,7 @@ def get_data(samfile):
             for i in range(len(content)):
                 if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
                     alignments[content[i].rstrip().split('\t')[2]].append([int(content[i].rstrip().split('\t')[3]), content[i].rstrip().split('\t')[5]])
-                    outfile.write(f'{content[i].rstrip().split('\t')[0]}\t{content[i].rstrip().split('\t')[3]}\n')
+                    outfile.write(f'{content[i].rstrip().split("\t")[0]}\t{content[i].rstrip().split("\t")[3]}\n')
     # get references and their length
     ref = get_references(content[1:], alignments)
 
