@@ -2,11 +2,6 @@ import sys
 from collections import defaultdict
 import math
 import multiprocessing as mp
-# from mpi4py import MPI
-
-# comm = MPI.COMM_WORLD
-# rank = comm.Get_rank()
-# nprocs = comm.Get_size()
 
 def extend_cigar(cigar):
     new_cigar = ''
@@ -42,7 +37,6 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
 
     results[process_id] = dict_coverage
 
-    
 
 def get_references(content, alignments):
     ref = {}
@@ -55,11 +49,13 @@ def get_references(content, alignments):
 
 def get_data(samfile):
     alignments = defaultdict(list)
-    with open(samfile, 'r') as f:
-        content = f.readlines()
-        for i in range(len(content)):
-            if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
-                alignments[content[i].rstrip().split('\t')[2]].append([int(content[i].rstrip().split('\t')[3]), content[i].rstrip().split('\t')[5]])
+    with open(f'reads_info.tsv', 'w') as outfile:
+        with open(samfile, 'r') as f:
+            content = f.readlines()
+            for i in range(len(content)):
+                if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
+                    alignments[content[i].rstrip().split('\t')[2]].append([int(content[i].rstrip().split('\t')[3]), content[i].rstrip().split('\t')[5]])
+                    outfile.write(f'{content[i].rstrip().split('\t')[0]}\t{content[i].rstrip().split('\t')[3]}\n')
     # get references and their length
     ref = get_references(content[1:], alignments)
 
@@ -68,16 +64,15 @@ def get_data(samfile):
 def main():
     samfile = sys.argv[1]
     nprocs = int(sys.argv[2])
-    # if rank == 0:
+    
     # get references
     ref_info, alignments = get_data(samfile)
     print(ref_info)
+    
     # determine the size of each subtask
     size = math.ceil(len(alignments)/nprocs)
-    # determine the references in each subtasks
-    # chunk_size = math.ceil(len(fq_files)/nprocs)
-    # grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
 
+    # determine the references in each subtasks
     chunks = []
     data = {}
     for k, v in alignments.items():
@@ -108,28 +103,6 @@ def main():
             mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
             with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov-mean.tsv', 'w') as out_f:
                 out_f.write(f'{k}\t{mean_cov}\n')
-
-    # else:
-    #     chunks = None
-    #     ref_info = None
-    #     alignments = None
-    
-    # distribute the subtasks to the processes
-    # try:
-    #     chunks = comm.scatter(chunks, root=0)
-    # except ValueError:
-    #     MPI.COMM_WORLD.Abort(1)
-
-    # broadcast info about references to all processes
-    # ref_info = comm.bcast(ref_info, root=0)
-    # get coverage for each reference
-    # with open(f'process-{rank}-cov.tsv', 'w') as out_f:
-    #    for ref, reads in chunks.items():
-    #         if rank == 1:
-    #             print(f'{ref}\t{len(reads)}\t{ref_info[ref]}')
-    #         mean_cov = get_coverage(reads, ref_info[ref])
-    #         out_f.write(f'{ref}\t{ref_info[ref]}\t{len(reads)}\t{mean_cov}\n')
-    # print(f'process {rank} received {len(chunks)} references and the reference info dictionary with {len(ref_info)} entries')
 
 
 if __name__ == '__main__':
