@@ -2,7 +2,6 @@ import sys
 import os
 from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-print(sys.path)
 from dataprep_scripts.utils import load_fq_file
 from collections import defaultdict
 
@@ -81,7 +80,7 @@ def main():
 
 	# Plot bar
 	base_positions = range(0,len(pos_coverage),1)
-	print(len(pos_coverage.values()))
+	print(len(pos_coverage))
 	for sector in circos.sectors:
 	    bar_track = sector.add_track((15, 40), r_pad_ratio=0.1)
 	    bar_track.axis()
