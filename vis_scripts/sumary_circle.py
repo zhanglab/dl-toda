@@ -4,7 +4,7 @@ from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
 from collections import defaultdict
-# import random
+import random
 import numpy as np
 
 
@@ -84,14 +84,18 @@ def main():
 	base_positions = list(range(0,len(pos_coverage),1))
 	print(len(pos_coverage))
 	print(pos_coverage[:10], base_positions[:10])
+	x = list(range(1000))
+	# y = np.random.random_sample(size = 1000)
+	y = np.random.randint(0, 100, len(x))
 	for sector in circos.sectors:
+		print(f'sector start: {sector.start}\t end: {sector.end}')
 	    line_track = sector.add_track((75, 100))
 	    line_track.axis()
 	    line_track.xticks_by_interval(100)
 	    # line_track.xticks_by_interval(5000, label_formatter=lambda v: f"{len(pos_coverage) / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 	    # line_track.line(base_positions, pos_coverage)
-	    line_track.line(list(range(1000)), np.random.random_sample(size = 1000))
+	    line_track.line(x, y)
 	    # bar_track.bar(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
