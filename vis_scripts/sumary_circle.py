@@ -76,13 +76,13 @@ def main():
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
 
 	# initialize a single circos sector
-	# sectors = {'genome': len(pos_coverage)}
-	x = list(range(5000000))
+	sectors = {'genome': len(pos_coverage)}
+	# x = list(range(5000000))
 	# y = np.random.random_sample(size = 1000)
-	y = np.random.randint(0, 100, len(x))
+	# y = np.random.randint(0, 100, len(x))
 	# y = [10]*len(x)
 
-	sectors = {'genome': len(x)}
+	# sectors = {'genome': len(x)}
 	circos = Circos(sectors=sectors)
 
 
@@ -94,12 +94,11 @@ def main():
 		print(f'sector start: {sector.start}\t end: {sector.end}')
 		line_track = sector.add_track((75, 100))
 		line_track.axis()
-		line_track.xticks_by_interval(100000)
-	    # line_track.xticks_by_interval(5000, label_formatter=lambda v: f"{len(pos_coverage) / 1000:.0f} Kb")
+	    line_track.xticks_by_interval(500000, label_formatter=lambda v: f"{len(pos_coverage) / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 	    # line_track.line(base_positions, pos_coverage)
-		line_track.line(x, y)
-	    # bar_track.bar(base_positions, pos_coverage)
+		# line_track.line(x, y)
+	    bar_track.line(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
