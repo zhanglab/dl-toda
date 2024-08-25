@@ -98,7 +98,7 @@ def main():
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 	    # line_track.line(base_positions, pos_coverage)
 		# line_track.line(x, y)
-	    bar_track.line(base_positions, pos_coverage)
+		line_track.line(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
