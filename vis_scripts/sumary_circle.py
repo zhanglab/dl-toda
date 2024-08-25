@@ -76,7 +76,11 @@ def main():
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
 
 	# initialize a single circos sector
-	sectors = {'genome': len(pos_coverage)}
+	# sectors = {'genome': len(pos_coverage)}
+	x = list(range(1000))
+	# y = np.random.random_sample(size = 1000)
+	y = np.random.randint(0, 100, len(x))
+	sectors = {'genome': len(x)}
 	circos = Circos(sectors=sectors)
 
 
@@ -84,9 +88,6 @@ def main():
 	base_positions = list(range(0,len(pos_coverage),1))
 	print(len(pos_coverage))
 	print(pos_coverage[:10], base_positions[:10])
-	x = list(range(1000))
-	# y = np.random.random_sample(size = 1000)
-	y = np.random.randint(0, 100, len(x))
 	for sector in circos.sectors:
 		print(f'sector start: {sector.start}\t end: {sector.end}')
 		line_track = sector.add_track((75, 100))
