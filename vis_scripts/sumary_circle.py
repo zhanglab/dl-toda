@@ -81,7 +81,7 @@ def main():
 
 	# Plot bar
 	base_positions = range(0,len(pos_coverage),1)
-	print(len(pos_coverage.values))
+	print(len(pos_coverage.values()))
 	for sector in circos.sectors:
 	    bar_track = sector.add_track((15, 40), r_pad_ratio=0.1)
 	    bar_track.axis()
