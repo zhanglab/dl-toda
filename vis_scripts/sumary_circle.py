@@ -77,7 +77,7 @@ def main():
 
 	# initialize a single circos sector
 	# sectors = {'genome': len(pos_coverage)}
-	x = list(range(1000000))
+	x = list(range(5000000))
 	# y = np.random.random_sample(size = 1000)
 	y = np.random.randint(0, 100, len(x))
 	# y = [10]*len(x)
