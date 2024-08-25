@@ -89,9 +89,9 @@ def main():
 	y = np.random.randint(0, 100, len(x))
 	for sector in circos.sectors:
 		print(f'sector start: {sector.start}\t end: {sector.end}')
-	    line_track = sector.add_track((75, 100))
-	    line_track.axis()
-	    line_track.xticks_by_interval(100)
+		line_track = sector.add_track((75, 100))
+		line_track.axis()
+		line_track.xticks_by_interval(100)
 	    # line_track.xticks_by_interval(5000, label_formatter=lambda v: f"{len(pos_coverage) / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 	    # line_track.line(base_positions, pos_coverage)
