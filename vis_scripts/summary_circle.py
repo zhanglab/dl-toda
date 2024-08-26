@@ -97,6 +97,7 @@ def main():
 		genome_track.axis(fc="lightgrey")
 		genome_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		print(f'added genome track')
 		# add track for coverage
 		cov_track = sector.add_track((70, 95))
 		cov_track.axis()
@@ -104,14 +105,17 @@ def main():
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(base_positions, pos_coverage, color="0")
+		print(f'added coverage track')
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((50, 60))
 		pos_labels_track.axis()
 		pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
+		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((35, 45))
 		pos_cs_track.axis()
 		pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
+		print(f'added pos cs track')
 	
 	circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
 	circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
