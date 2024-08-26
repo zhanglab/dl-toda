@@ -85,19 +85,37 @@ def main():
 	sectors = {'genome': len(pos_coverage)}
 	circos = Circos(sectors=sectors, space=10)
 
+	# define min and max y values
+	cs_min = min(pos_conf_scores+neg_conf_scores)
+	cs_max = max(pos_conf_scores+neg_conf_scores)
+	labels_min = min(pos_label+neg_label)
+	labels_max = max(pos_label+neg_label)
+
 	for sector in circos.sectors:
 		# add outer track
 		genome_track = sector.add_track((98, 100))
 		genome_track.axis(fc="lightgrey")
 		genome_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
-		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
+		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		# add track for coverage
 		cov_track = sector.add_track((70, 95))
 		cov_track.axis()
-		cov_y = list(range(min(pos_coverage), max(pos_coverage)+20, 20))
+		cov_y = list(range(min(pos_coverage), max(pos_coverage)+30, 30))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(base_positions, pos_coverage)
+		cov_track.line(base_positions, pos_coverage, color="0")
+		# add track for labels predicted as positive
+		pos_labels_track = sector.add_track((50, 60))
+		pos_labels_track.axis()
+		pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
+		# add track for the confidence scores assigned to labels predicted as positive
+		pos_cs_track = sector.add_track((35, 45))
+		pos_cs_track.axis()
+		pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
+	
+	circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
+	circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
+
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
