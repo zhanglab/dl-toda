@@ -82,8 +82,8 @@ def plot_circles(base_positions, pos_coverage, pos_conf_scores, neg_conf_scores,
 		# add outer track
 		genome_track = sector.add_track((98, 100))
 		genome_track.axis(fc="lightgrey")
-		genome_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
-		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		genome_track.xticks_by_interval(100000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
+		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 		print(f'added genome track')
 		# add track for coverage
 		cov_track = sector.add_track((85, 95))
