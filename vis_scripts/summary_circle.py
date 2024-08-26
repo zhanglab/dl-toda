@@ -19,7 +19,9 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 		content = f.readlines()
 		map_info = {i.rstrip().split('\t')[0]: int(i.rstrip().split('\t')[1]) for i in content}
 
-	pos_label = [0]*ref_length
+	print(f'# test reads: {len(test_results)}\n # test reads mapped to training genome: {len(map_info)}')
+
+	pos_label = [0]*ref_length # number of reads given the positive label at every position in the genome
 	neg_label = [0]*ref_length
 	pos_conf_scores = [0.0]*ref_length
 	neg_conf_scores = [0.0]*ref_length
@@ -32,6 +34,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 				# get predicted label
 				pred_label = int(test_results[r].rstrip().split('\t')[1])
 				cs = float(test_results[r].rstrip().split('\t')[2])
+				print(f'{r}\t{start_pos}\t{pred_label}\t{cs}\t{start_pos + 250}')
 				# add info
 				for i in range(start_pos, start_pos + 250, 1):
 					if pred_label == 1:
@@ -85,7 +88,7 @@ def main():
 	for sector in circos.sectors:
 		# add outer track
 		genome_track = sector.add_track((98, 100))
-		genome_track.axis(fd="lightgrey")
+		genome_track.axis(fc="lightgrey")
 		genome_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 		# add track for coverage
