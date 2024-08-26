@@ -173,9 +173,9 @@ def main():
 	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
 
 	total = 0
-	for i in range(1, 6, 1):
+	for i in range(6):
 		print(base_pos_subsets[i][0], base_pos_subsets[i][-1])
-		print(len(base_pos_subsets[i]))
+		print(len(base_pos_subsets[i]), len(pos_cov_subsets[i]))
 		total += len(base_pos_subsets[i])
 		plot_circles(base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)
 	print(total)
