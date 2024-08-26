@@ -74,7 +74,7 @@ def main():
 	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
 
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
-
+	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{pos_coverage[:10]}')
 	# Plotting
 	# define x axis
 	base_positions = list(range(0,len(pos_coverage),1))
@@ -83,16 +83,18 @@ def main():
 	circos = Circos(sectors=sectors, space=10)
 
 	for sector in circos.sectors:
-		print(f'sector start: {sector.start}\t end: {sector.end}')
-		cov_track = sector.add_track((75, 100))
+		# add outer track
+		genome_track = sector.add_track((98, 100))
+		genome_track.axis(fd="lightgrey")
+		genome_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
+		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
+		# add track for coverage
+		cov_track = sector.add_track((70, 95))
 		cov_track.axis()
 		cov_y = list(range(min(pos_coverage), max(pos_coverage)+20, 20))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
-	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 		cov_track.line(base_positions, pos_coverage)
-		# line_track.line(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
