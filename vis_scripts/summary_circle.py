@@ -169,7 +169,7 @@ def main():
 	neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
 	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
 	neg_cs_subsets = [neg_conf_scores[i:i+subset_size] for i in range(0, len(neg_conf_scores), subset_size)]
-	pos_cov_subsets = [pos_cov_scores[i:i+subset_size] for i in range(0, len(pos_cov_scores), subset_size)]
+	pos_cov_subsets = [pos_coverage[i:i+subset_size] for i in range(0, len(pos_coverage), subset_size)]
 
 	for i in range(5):
 		print(pos_cov_subsets[i][0], pos_cov_subsets[i][-1])
