@@ -65,9 +65,9 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
 
 
-def plot_circles(pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
+def plot_circles(base_positions, pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
 	# define x axis
-	base_positions = list(range(0,len(pos_coverage),1))
+	# base_positions = list(range(0,len(pos_coverage),1))
 	# initialize a single circos sector
 	sectors = {'genome': len(pos_coverage)}
 	circos = Circos(sectors=sectors, space=10)
@@ -152,7 +152,7 @@ def main():
 	with open(genome_cov, 'r') as f:
 		content = f.readlines()
 		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
-
+		base_positions = list(range(0,len(pos_coverage),1))
 
 	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
 
@@ -170,10 +170,14 @@ def main():
 	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
 	neg_cs_subsets = [neg_conf_scores[i:i+subset_size] for i in range(0, len(neg_conf_scores), subset_size)]
 	pos_cov_subsets = [pos_coverage[i:i+subset_size] for i in range(0, len(pos_coverage), subset_size)]
+	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
 
+	total = 0
 	for i in range(5):
-		print(pos_cov_subsets[i][0], pos_cov_subsets[i][-1])
-		print(len(pos_cov_subsets[i]))
+		print(base_pos_subsets[i][0], base_pos_subsets[i][-1])
+		print(len(base_pos_subsets[i]))
+		total += len(base_pos_subsets[i])
+		print(total)
 		# plot_circles(pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], 5)
 	
 	
