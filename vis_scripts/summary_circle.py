@@ -7,6 +7,7 @@ from collections import defaultdict
 import random
 import numpy as np
 import math
+import multiprocessing as mp
 
 def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length):
 	# get testing results
@@ -172,13 +173,20 @@ def main():
 	pos_cov_subsets = [pos_coverage[i:i+subset_size] for i in range(0, len(pos_coverage), subset_size)]
 	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
 
-	total = 0
-	for i in range(6):
-		print(base_pos_subsets[i][0], base_pos_subsets[i][-1])
-		print(len(base_pos_subsets[i]), len(pos_cov_subsets[i]))
-		total += len(base_pos_subsets[i])
-		plot_circles(base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)
-	print(total)
+	with mp.Manager() as manager:
+        processes = [mp.Process(target=plot_circles, args=(base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(6)]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+
+	# total = 0
+	# for i in range(6):
+	# 	print(base_pos_subsets[i][0], base_pos_subsets[i][-1])
+	# 	print(len(base_pos_subsets[i]), len(pos_cov_subsets[i]))
+	# 	total += len(base_pos_subsets[i])
+	# 	plot_circles(base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)
+	# print(total)
 	
 
 
