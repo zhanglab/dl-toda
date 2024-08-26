@@ -75,30 +75,24 @@ def main():
 
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
 
+	# Plotting
+	# define x axis
+	base_positions = list(range(0,len(pos_coverage),1))
 	# initialize a single circos sector
 	sectors = {'genome': len(pos_coverage)}
-	# x = list(range(5000000))
-	# y = np.random.random_sample(size = 1000)
-	# y = np.random.randint(0, 100, len(x))
-	# y = [10]*len(x)
-
-	# sectors = {'genome': len(x)}
 	circos = Circos(sectors=sectors)
 
-
-	# Plot bar
-	base_positions = list(range(0,len(pos_coverage),1))
-	print(len(pos_coverage))
-	print(pos_coverage[:10], base_positions[:10])
 	for sector in circos.sectors:
 		print(f'sector start: {sector.start}\t end: {sector.end}')
-		line_track = sector.add_track((75, 100))
-		line_track.axis()
-		line_track.xticks_by_interval(500000, label_formatter=lambda v: f"{len(pos_coverage) / 1000:.0f} Kb")
+		cov_track = sector.add_track((90, 100))
+		cov_track.axis()
+		cov_y = list(range(min(pos_coverage), max(pos_coverage)+20, 20))
+		cov_y_labels = list(map(str, y))
+		cov_track.yticks(cov_y, cov_y_labels)
+		cov_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
-	    # line_track.line(base_positions, pos_coverage)
-		# line_track.line(x, y)
-		line_track.line(base_positions, pos_coverage)
+	    cov_track.line(base_positions, pos_coverage)
+		# line_track.line(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
 
