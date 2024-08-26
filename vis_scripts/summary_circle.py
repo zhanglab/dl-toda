@@ -164,7 +164,7 @@ def main():
 	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
 
 	# divide data into 5 subsets and create a circle plot for each subset
-	subset_size = len(pos_coverage)//5
+	subset_size = math.ceil(len(pos_coverage)/5)
 	pos_label_subsets = [pos_label[i:i+subset_size] for i in range(0, len(pos_label), subset_size)]
 	neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
 	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
