@@ -87,7 +87,7 @@ def main():
 		cov_track = sector.add_track((90, 100))
 		cov_track.axis()
 		cov_y = list(range(min(pos_coverage), max(pos_coverage)+20, 20))
-		cov_y_labels = list(map(str, y))
+		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
