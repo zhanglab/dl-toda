@@ -106,7 +106,7 @@ def main():
 		# add track for coverage
 		cov_track = sector.add_track((85, 95))
 		cov_track.axis()
-		cov_y = list(range(min(int(pos_coverage)), max(math.ceil(pos_coverage))+1, 1))
+		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 1))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(base_positions, pos_coverage, color="0")
