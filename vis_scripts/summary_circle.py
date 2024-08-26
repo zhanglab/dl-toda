@@ -65,36 +65,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
 
 
-def main():
-	fq_file = sys.argv[1]
-	testing_output = sys.argv[2]
-	genome_cov = sys.argv[3]
-	alignment_sum = sys.argv[4]
-	label = sys.argv[5]
-	output_dir = sys.argv[6]
-
-	# get reads id
-	num_lines = 4
-	reads = load_fq_file(fq_file, num_lines)
-	reads_id = [r.split("\n")[0][1:] for r in reads]
-	print(f'# reads: {len(reads_id)}\t{len(reads)}\t{reads_id[0]}')
-
-	# get coverage of target genome per position
-	with open(genome_cov, 'r') as f:
-		content = f.readlines()
-		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
-
-
-	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
-
-	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
-	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{pos_coverage[:10]}')
-	print(f'sum positive labels: {sum(pos_label)}\t sum negative labels: {sum(neg_label)}')
-	print(f'labels_min: {min(pos_label)}\tlabels_max: {max(pos_label)}')
-	print(f'labels_min: {min(neg_label)}\tlabels_max: {max(neg_label)}')
-	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
-	
-	# Plotting
+def plot_circles(pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
 	# define x axis
 	base_positions = list(range(0,len(pos_coverage),1))
 	# initialize a single circos sector
@@ -149,7 +120,7 @@ def main():
 		neg_labels_track.line(base_positions, neg_label, color="m")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
-		neg_cs_track = sector.add_track((35, 45))
+		neg_cs_track = sector.add_track((25, 35))
 		neg_cs_track.axis()
 		neg_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
@@ -160,7 +131,52 @@ def main():
 	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
 	# circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
 
-	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
+	circos.savefig(os.path.join(output_dir, f'sum_circos_{number}.png'))
+
+
+def main():
+	fq_file = sys.argv[1]
+	testing_output = sys.argv[2]
+	genome_cov = sys.argv[3]
+	alignment_sum = sys.argv[4]
+	label = sys.argv[5]
+	output_dir = sys.argv[6]
+
+	# get reads id
+	num_lines = 4
+	reads = load_fq_file(fq_file, num_lines)
+	reads_id = [r.split("\n")[0][1:] for r in reads]
+	print(f'# reads: {len(reads_id)}\t{len(reads)}\t{reads_id[0]}')
+
+	# get coverage of target genome per position
+	with open(genome_cov, 'r') as f:
+		content = f.readlines()
+		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
+
+
+	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
+
+	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
+	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{pos_coverage[:10]}')
+	print(f'sum positive labels: {sum(pos_label)}\t sum negative labels: {sum(neg_label)}')
+	print(f'labels_min: {min(pos_label)}\tlabels_max: {max(pos_label)}')
+	print(f'labels_min: {min(neg_label)}\tlabels_max: {max(neg_label)}')
+	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
+
+	# divide data into 5 subsets and create a circle plot for each subset
+	subset_size = len(pos_coverage)//5
+	pos_label_subsets = [pos_label[i:i+subset_size] for i in range(0, len(pos_label), subset_size)]
+	neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
+	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
+	neg_cs_subsets = [neg_conf_scores[i:i+subset_size] for i in range(0, len(neg_conf_scores), subset_size)]
+	pos_cov_subsets = [pos_cov_scores[i:i+subset_size] for i in range(0, len(pos_cov_scores), subset_size)]
+
+	for i in range(5):
+		print(pos_cov_subsets[i][0], pos_cov_subsets[i][-1])
+		print(len(pos_cov_subsets[i]))
+		# plot_circles(pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], 5)
+	
+	
 
 
 
