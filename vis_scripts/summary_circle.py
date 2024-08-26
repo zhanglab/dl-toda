@@ -123,7 +123,7 @@ def main():
 		cov_track.line(base_positions, pos_coverage, color="0")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
-		pos_labels_track = sector.add_track((85, 95))
+		pos_labels_track = sector.add_track((70, 80))
 		pos_labels_track.axis()
 		pos_labels_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
