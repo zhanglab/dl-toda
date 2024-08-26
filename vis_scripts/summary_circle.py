@@ -51,7 +51,14 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 		if neg_label[i] != 0:
 			neg_conf_scores[i] = round(neg_conf_scores[i]/neg_label[i], 2)
 
-	return pos_label, neg_label, pos_conf_scores, neg_conf_scores
+	# get percentages of positive and negative labels
+	pos_label_percent = []
+	neg_label_percent = []
+	for i in range(ref_length):
+		pos_label_percent.append(pos_label[i]/(pos_label[i]+neg_label[i]))
+		neg_label_percent.append(neg_label[i]/(pos_label[i]+neg_label[i]))
+
+	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
 
 
 def main():
@@ -112,9 +119,9 @@ def main():
 		cov_track.line(base_positions, pos_coverage, color="0")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
-		pos_labels_track = sector.add_track((70, 80))
+		pos_labels_track = sector.add_track((85, 95))
 		pos_labels_track.axis()
-		pos_labels_y = list(range(min(pos_label), max(pos_label)+10, 10))
+		pos_labels_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
 		pos_labels_track.line(base_positions, pos_label, color="r")
@@ -126,16 +133,16 @@ def main():
 		pos_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-		pos_cs_track.scatter(base_positions, pos_conf_scores, color="m")
+		pos_cs_track.scatter(base_positions, pos_conf_scores, color="g")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
 		neg_labels_track = sector.add_track((40, 50))
 		neg_labels_track.axis()
-		neg_labels_y = list(range(min(neg_label), max(neg_label)+10, 10))
+		neg_labels_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
-		neg_labels_track.line(base_positions, neg_label, color="r")
+		neg_labels_track.line(base_positions, neg_label, color="m")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((35, 45))
@@ -143,7 +150,7 @@ def main():
 		neg_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
-		neg_cs_track.scatter(base_positions, neg_conf_scores, color="m")
+		neg_cs_track.scatter(base_positions, neg_conf_scores, color="c")
 		print(f'added neg cs track')
 	
 	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
