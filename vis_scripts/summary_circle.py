@@ -114,35 +114,35 @@ def main():
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((70, 80))
 		pos_labels_track.axis()
-		pos_labels = list(range(min(pos_label), max(pos_label)+10, 10))
-		pos_labels_y = list(map(str, pos_labels))
-		pos_labels_track.yticks(pos_labels, pos_labels_y)
+		pos_labels_y = list(range(min(pos_label), max(pos_label)+10, 10))
+		pos_labels_y_labels = list(map(str, pos_labels_y))
+		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
 		pos_labels_track.line(base_positions, pos_label, color="r")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((55, 65))
 		pos_cs_track.axis()
-		pos_cs = [x / 10.0 for x in range(0, 10+3, 3)]
-		pos_cs_y = list(map(str, pos_cs))
-		pos_cs_track.yticks(pos_cs, pos_cs_y)
+		pos_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		pos_cs_y_labels = list(map(str, pos_cs_y))
+		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
 		pos_cs_track.scatter(base_positions, pos_conf_scores, color="m")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
 		neg_labels_track = sector.add_track((40, 50))
 		neg_labels_track.axis()
-		neg_labels = list(range(min(neg_label), max(neg_label)+10, 10))
-		neg_labels_y = list(map(str, neg_labels))
-		neg_labels_track.yticks(pos_labels, neg_labels_y)
+		neg_labels_y = list(range(min(neg_label), max(neg_label)+10, 10))
+		neg_labels_y_labels = list(map(str, neg_labels_y))
+		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
 		neg_labels_track.line(base_positions, neg_label, color="r")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((35, 45))
 		neg_cs_track.axis()
-		neg_cs = [x / 10.0 for x in range(0, 10+2, 2)]
-		neg_cs_y = list(map(str, neg_cs))
-		neg_cs_track.yticks(neg_cs, neg_cs_y)
+		neg_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		neg_cs_y_labels = list(map(str, neg_cs_y))
+		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
 		neg_cs_track.scatter(base_positions, neg_conf_scores, color="m")
 		print(f'added neg cs track')
 	
