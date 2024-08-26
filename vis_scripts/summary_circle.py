@@ -71,7 +71,7 @@ def main():
 	# get coverage of target genome per position
 	with open(genome_cov, 'r') as f:
 		content = f.readlines()
-		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0 for i in content]
+		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
 
 
 	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
@@ -106,7 +106,7 @@ def main():
 		# add track for coverage
 		cov_track = sector.add_track((85, 95))
 		cov_track.axis()
-		cov_y = list(range(min(pos_coverage), max(pos_coverage)+1, 1))
+		cov_y = list(range(min(int(pos_coverage)), max(math.ceil(pos_coverage))+1, 1))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(base_positions, pos_coverage, color="0")
