@@ -6,7 +6,7 @@ from dataprep_scripts.utils import load_fq_file
 from collections import defaultdict
 import random
 import numpy as np
-
+import math
 
 def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length):
 	# get testing results
@@ -71,13 +71,18 @@ def main():
 	# get coverage of target genome per position
 	with open(genome_cov, 'r') as f:
 		content = f.readlines()
-		pos_coverage = [int(i.rstrip().split('\t')[1]) for i in content]
+		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0 for i in content]
 
 
 	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(pos_coverage))
 
 	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
 	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{pos_coverage[:10]}')
+	print(f'sum positive labels: {sum(pos_label)}\t sum negative labels: {sum(neg_label)}')
+	print(f'labels_min: {min(pos_label)}\tlabels_max: {max(pos_label)}')
+	print(f'labels_min: {min(neg_label)}\tlabels_max: {max(neg_label)}')
+	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
+	
 	# Plotting
 	# define x axis
 	base_positions = list(range(0,len(pos_coverage),1))
@@ -99,31 +104,47 @@ def main():
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		print(f'added genome track')
 		# add track for coverage
-		cov_track = sector.add_track((80, 95))
+		cov_track = sector.add_track((85, 95))
 		cov_track.axis()
-		cov_y = list(range(min(pos_coverage), max(pos_coverage)+50, 50))
+		cov_y = list(range(min(pos_coverage), max(pos_coverage)+1, 1))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(base_positions, pos_coverage, color="0")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
-		pos_labels_track = sector.add_track((50, 60))
+		pos_labels_track = sector.add_track((70, 80))
 		pos_labels_track.axis()
-		pos_labels = list(range(min(pos_label), max(pos_label)+30, 30))
+		pos_labels = list(range(min(pos_label), max(pos_label)+10, 10))
 		pos_labels_y = list(map(str, pos_labels))
 		pos_labels_track.yticks(pos_labels, pos_labels_y)
 		pos_labels_track.line(base_positions, pos_label, color="r")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
-		pos_cs_track = sector.add_track((35, 45))
+		pos_cs_track = sector.add_track((55, 65))
 		pos_cs_track.axis()
 		pos_cs = [x / 10.0 for x in range(0, 10+3, 3)]
 		pos_cs_y = list(map(str, pos_cs))
 		pos_cs_track.yticks(pos_cs, pos_cs_y)
-		pos_cs_track.line(base_positions, pos_conf_scores, color="m")
+		pos_cs_track.scatter(base_positions, pos_conf_scores, color="m")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
+		# add track for labels predicted as negative
+		neg_labels_track = sector.add_track((40, 50))
+		neg_labels_track.axis()
+		neg_labels = list(range(min(neg_label), max(neg_label)+10, 10))
+		neg_labels_y = list(map(str, neg_labels))
+		neg_labels_track.yticks(pos_labels, neg_labels_y)
+		neg_labels_track.line(base_positions, neg_label, color="r")
+		print(f'added neg labels track')
+		# add track for the confidence scores assigned to labels predicted as negative
+		neg_cs_track = sector.add_track((35, 45))
+		neg_cs_track.axis()
+		neg_cs = [x / 10.0 for x in range(0, 10+2, 2)]
+		neg_cs_y = list(map(str, neg_cs))
+		neg_cs_track.yticks(neg_cs, neg_cs_y)
+		neg_cs_track.scatter(base_positions, neg_conf_scores, color="m")
+		print(f'added neg cs track')
 	
 	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
 	# circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
