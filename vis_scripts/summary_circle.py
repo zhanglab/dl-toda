@@ -55,8 +55,12 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 	pos_label_percent = []
 	neg_label_percent = []
 	for i in range(ref_length):
-		pos_label_percent.append(pos_label[i]/(pos_label[i]+neg_label[i]))
-		neg_label_percent.append(neg_label[i]/(pos_label[i]+neg_label[i]))
+		if pos_label[i] + neg_label[i] != 0:
+			pos_label_percent.append(pos_label[i]/(pos_label[i]+neg_label[i]))
+			neg_label_percent.append(neg_label[i]/(pos_label[i]+neg_label[i]))
+		else:
+			pos_label_percent.append(0)
+			neg_label_percent.append(0)
 
 	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
 
