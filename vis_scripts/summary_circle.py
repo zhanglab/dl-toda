@@ -80,11 +80,11 @@ def main():
 	base_positions = list(range(0,len(pos_coverage),1))
 	# initialize a single circos sector
 	sectors = {'genome': len(pos_coverage)}
-	circos = Circos(sectors=sectors)
+	circos = Circos(sectors=sectors, space=10)
 
 	for sector in circos.sectors:
 		print(f'sector start: {sector.start}\t end: {sector.end}')
-		cov_track = sector.add_track((90, 100))
+		cov_track = sector.add_track((75, 100))
 		cov_track.axis()
 		cov_y = list(range(min(pos_coverage), max(pos_coverage)+20, 20))
 		cov_y_labels = list(map(str, cov_y))
