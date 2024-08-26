@@ -177,9 +177,8 @@ def main():
 		print(base_pos_subsets[i][0], base_pos_subsets[i][-1])
 		print(len(base_pos_subsets[i]))
 		total += len(base_pos_subsets[i])
-		print(total)
-		# plot_circles(pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], 5)
-	
+		plot_circles(pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], 5)
+	print(total)
 	
 
 
