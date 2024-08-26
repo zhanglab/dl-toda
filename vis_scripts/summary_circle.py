@@ -86,11 +86,11 @@ def main():
 	circos = Circos(sectors=sectors, space=10)
 
 	# define min and max y values
-	# cs_min = min(pos_conf_scores+neg_conf_scores)
-	# cs_max = max(pos_conf_scores+neg_conf_scores)
-	# labels_min = min(pos_label+neg_label)
-	# labels_max = max(pos_label+neg_label)
-
+	cs_min = min(pos_conf_scores+neg_conf_scores)
+	cs_max = max(pos_conf_scores+neg_conf_scores)
+	labels_min = min(pos_label+neg_label)
+	labels_max = max(pos_label+neg_label)
+	print(f'cs_min: {cs_min}\tcs_max: {cs_max}\tlabels_min: {labels_min}\tlabels_max: {labels_max}')
 	for sector in circos.sectors:
 		# add outer track
 		genome_track = sector.add_track((98, 100))
@@ -99,9 +99,9 @@ def main():
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		print(f'added genome track')
 		# add track for coverage
-		cov_track = sector.add_track((70, 95))
+		cov_track = sector.add_track((80, 95))
 		cov_track.axis()
-		cov_y = list(range(min(pos_coverage), max(pos_coverage)+30, 30))
+		cov_y = list(range(min(pos_coverage), max(pos_coverage)+50, 50))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(base_positions, pos_coverage, color="0")
@@ -112,16 +112,16 @@ def main():
 		pos_labels = list(range(min(pos_label), max(pos_label)+30, 30))
 		pos_labels_y = list(map(str, pos_labels))
 		pos_labels_track.yticks(pos_labels, pos_labels_y)
-		pos_labels_track.line(pos_label, pos_coverage, color="r")
+		pos_labels_track.line(base_positions, pos_label, color="r")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((35, 45))
 		pos_cs_track.axis()
-		pos_cs = [x / 10.0 for x in range(0, 10, 1)]
+		pos_cs = [x / 10.0 for x in range(0, 10+3, 3)]
 		pos_cs_y = list(map(str, pos_cs))
 		pos_cs_track.yticks(pos_cs, pos_cs_y)
-		pos_cs_track.line(pos_conf_scores, pos_coverage, color="m")
+		pos_cs_track.line(base_positions, pos_conf_scores, color="m")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 	
