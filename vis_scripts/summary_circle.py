@@ -91,7 +91,7 @@ def main():
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.xticks_by_interval(500000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 	    # line_track.xticks_by_interval(1000, tick_length=1, show_label=False)
-	    cov_track.line(base_positions, pos_coverage)
+		cov_track.line(base_positions, pos_coverage)
 		# line_track.line(base_positions, pos_coverage)
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
