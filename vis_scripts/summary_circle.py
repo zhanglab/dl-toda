@@ -86,10 +86,10 @@ def main():
 	circos = Circos(sectors=sectors, space=10)
 
 	# define min and max y values
-	cs_min = min(pos_conf_scores+neg_conf_scores)
-	cs_max = max(pos_conf_scores+neg_conf_scores)
-	labels_min = min(pos_label+neg_label)
-	labels_max = max(pos_label+neg_label)
+	# cs_min = min(pos_conf_scores+neg_conf_scores)
+	# cs_max = max(pos_conf_scores+neg_conf_scores)
+	# labels_min = min(pos_label+neg_label)
+	# labels_max = max(pos_label+neg_label)
 
 	for sector in circos.sectors:
 		# add outer track
@@ -109,16 +109,24 @@ def main():
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((50, 60))
 		pos_labels_track.axis()
-		pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
+		pos_labels = list(range(min(pos_label), max(pos_label)+30, 30))
+		pos_labels_y = list(map(str, pos_labels))
+		pos_labels_track.yticks(pos_labels, pos_labels_y)
+		pos_labels_track.line(pos_label, pos_coverage, color="r")
+		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((35, 45))
 		pos_cs_track.axis()
-		pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
+		pos_cs = [x / 10.0 for x in range(0, 10, 1)]
+		pos_cs_y = list(map(str, pos_cs))
+		pos_cs_track.yticks(pos_cs, pos_cs_y)
+		pos_cs_track.line(pos_conf_scores, pos_coverage, color="m")
+		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 	
-	circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
-	circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
+	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
+	# circos.colorbar(bounds=(0.35, 0.45, 0.3, 0.01), vmin=cs_min, vmax=cs_max, orientation="horizontal", cmap="plasma")
 
 	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
 
