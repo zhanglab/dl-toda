@@ -46,10 +46,10 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 						neg_label[i] += 1
 						neg_conf_scores[i] += cs
 
-	if sort(list(pos_conf_scores.keys())) == sort(list(pos_label.keys())):
+	if list(pos_conf_scores.keys()).sort() == list(pos_label.keys()).sort():
 		print('both dicts have the same keys')
 
-	if sort(list(neg_conf_scores.keys())) == sort(list(neg_label.keys())):
+	if list(neg_conf_scores.keys()).sort() == list(neg_label.keys()).sort():
 		print('both dicts have the same keys')
 
 
