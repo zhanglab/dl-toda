@@ -105,7 +105,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		pos_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
-		pos_labels_track.line(list(range(0,len(base_positions),1)), pos_label, color="#BF2C34")
+		pos_labels_track.bar(list(range(0,len(base_positions),1)), pos_label, color="#BF2C34")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
@@ -123,7 +123,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		neg_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
-		neg_labels_track.line(list(range(0,len(base_positions),1)), neg_label, color="#BE398D")
+		neg_labels_track.bar(list(range(0,len(base_positions),1)), neg_label, color="#BE398D")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((33, 43))
@@ -170,7 +170,8 @@ def main():
 	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
 
 	# divide data into 5 subsets and create a circle plot for each subset
-	subset_size = math.ceil(len(pos_coverage)/10)
+	num_subsets = 20
+	subset_size = math.ceil(len(pos_coverage)/num_subsets)
 	pos_label_subsets = [pos_label[i:i+subset_size] for i in range(0, len(pos_label), subset_size)]
 	neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
 	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
@@ -180,7 +181,7 @@ def main():
 	print(f'{pos_label_subsets[0][:10]}')
 	print(f'{neg_label_subsets[0][:10]}')
 	with mp.Manager() as manager:
-		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(10)]
+		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(num_subsets)]
 		for p in processes:
 			p.start()
 		for p in processes:
