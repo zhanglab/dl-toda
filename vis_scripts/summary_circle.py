@@ -49,7 +49,6 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 	# get average of cs
 	for k, v in pos_label.items():
 		pos_conf_scores[k] = pos_conf_scores[k]/v
-		print(type(k))
 
 	for k, v in neg_label.items():
 		neg_conf_scores[k] = neg_conf_scores[k]/v
@@ -180,12 +179,13 @@ def main():
 	# load testing results
 	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(base_positions))
 
-	print(f'{len(pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
-	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{pos_coverage[:10]}')
+	print(f'{len(test_pos_coverage)}\t{len(train_pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
+	print(f'{pos_label[:10]}\n{pos_conf_scores[:10]}\n{neg_label[:10]}\n{neg_conf_scores[:10]}\n{test_pos_coverage[:10]}\n{train_pos_coverage[:10]}')
 	print(f'sum positive labels: {sum(pos_label)}\t sum negative labels: {sum(neg_label)}')
 	print(f'labels_min: {min(pos_label)}\tlabels_max: {max(pos_label)}')
 	print(f'labels_min: {min(neg_label)}\tlabels_max: {max(neg_label)}')
-	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
+	print(f'cov_min: {min(test_pos_coverage)}\tcov_max: {max(test_pos_coverage)}')
+	print(f'cov_min: {min(train_pos_coverage)}\tcov_max: {max(train_pos_coverage)}')
 
 	# # divide data into 5 subsets and create a circle plot for each subset
 	# num_subsets = 20
