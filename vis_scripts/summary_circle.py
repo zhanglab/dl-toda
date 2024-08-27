@@ -86,7 +86,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		genome_x = list(range(0,len(base_positions),10000))
 		base_pos_ticks = [base_positions[i] for i in genome_x]
 		genome_x_labels = [str(i) for i in base_pos_ticks]
-		genome_track.xticks(genome_y, genome_y_labels)
+		genome_track.xticks(genome_x, genome_x_labels)
 		# genome_track.xticks_by_interval(100000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 		print(f'added genome track')
