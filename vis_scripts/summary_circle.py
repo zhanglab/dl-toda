@@ -66,7 +66,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
 
 
-def plot_circles(base_positions, pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
+def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
 	print(len(base_positions), len(pos_coverage))
 	# define x axis
 	# base_positions = list(range(0,len(pos_coverage),1))
@@ -175,7 +175,7 @@ def main():
 	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
 
 	with mp.Manager() as manager:
-		processes = [mp.Process(target=plot_circles, args=(base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(6)]
+		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(6)]
 		for p in processes:
 			p.start()
 		for p in processes:
