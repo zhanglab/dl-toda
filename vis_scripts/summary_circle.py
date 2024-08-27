@@ -131,7 +131,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
 		neg_labels_x = sorted(list(neg_label.keys()))
 		neg_labels_x_values = [neg_label[i] for i in neg_labels_x]
-		neg_labels_track.line(neg_labels_x, neg_labels_x_values, color="#00BOBA")
+		neg_labels_track.line(neg_labels_x, neg_labels_x_values, color="#00B0BA")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((32, 42))
