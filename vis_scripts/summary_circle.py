@@ -102,7 +102,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((72, 82))
 		pos_labels_track.axis()
-		pos_labels_y = [x / 10.0 for x in range(0, 10, 3)]
+		pos_labels_y = [0.0, 0.5, 1.0]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
 		pos_labels_track.bar(list(range(0,len(base_positions),1)), pos_label, color="#BF2C34")
@@ -111,16 +111,16 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((59, 69))
 		pos_cs_track.axis()
-		pos_cs_y = [x / 10.0 for x in range(0, 10, 3)]
+		pos_cs_y = [0.0, 0.5, 1.0]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-		pos_cs_track.scatter(list(range(0,len(base_positions),1)), pos_conf_scores, color="#5C62D6")
+		pos_cs_track.bar(list(range(0,len(base_positions),1)), pos_conf_scores, color="#5C62D6")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
 		neg_labels_track = sector.add_track((46, 56))
 		neg_labels_track.axis()
-		neg_labels_y = [x / 10.0 for x in range(0, 10, 3)]
+		neg_labels_y = [0.0, 0.5, 1.0]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
 		neg_labels_track.bar(list(range(0,len(base_positions),1)), neg_label, color="#BE398D")
@@ -128,10 +128,10 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((33, 43))
 		neg_cs_track.axis()
-		neg_cs_y = [x / 10.0 for x in range(0, 10, 3)]
+		neg_cs_y = [0.0, 0.5, 1.0]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
-		neg_cs_track.scatter(list(range(0,len(base_positions),1)), neg_conf_scores, color="#F07857")
+		neg_cs_track.bar(list(range(0,len(base_positions),1)), neg_conf_scores, color="#F07857")
 		print(f'added neg cs track')
 	
 	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
@@ -181,7 +181,7 @@ def main():
 	print(f'{pos_label_subsets[0][:10]}')
 	print(f'{neg_label_subsets[0][:10]}')
 	with mp.Manager() as manager:
-		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(num_subsets)]
+		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], neg_label_subsets[i], i)) for i in range(num_subsets)]
 		for p in processes:
 			p.start()
 		for p in processes:
