@@ -101,7 +101,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		cov_y = list(range(min([int(i) for i in test_pos_coverage]), max([math.ceil(j) for j in test_pos_coverage])+1, 2))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(list(range(0,len(base_positions),1)), test_pos_coverage, color="#CO5780")
+		cov_track.line(list(range(0,len(base_positions),1)), test_pos_coverage, color="#C05780")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((65, 75))
