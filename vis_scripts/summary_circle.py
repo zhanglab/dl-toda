@@ -90,41 +90,41 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		print(len(base_positions), len(pos_coverage))
 		cov_track = sector.add_track((85, 95))
 		cov_track.axis()
-		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 1))
+		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 2))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(base_positions, pos_coverage, color="0")
+		cov_track.line(list(range(0,base_positions,1)), pos_coverage, color="0")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
-		pos_labels_track = sector.add_track((70, 80))
+		pos_labels_track = sector.add_track((72, 82))
 		pos_labels_track.axis()
-		pos_labels_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		pos_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
 		pos_labels_track.line(base_positions, pos_label, color="#BF2C34")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
-		pos_cs_track = sector.add_track((55, 65))
+		pos_cs_track = sector.add_track((59, 69))
 		pos_cs_track.axis()
-		pos_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		pos_cs_y = [x / 10.0 for x in range(0, 10, 3)]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
 		pos_cs_track.scatter(base_positions, pos_conf_scores, color="#5C62D6")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
-		neg_labels_track = sector.add_track((40, 50))
+		neg_labels_track = sector.add_track((46, 56))
 		neg_labels_track.axis()
-		neg_labels_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		neg_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
 		neg_labels_track.line(base_positions, neg_label, color="#BE398D")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
-		neg_cs_track = sector.add_track((25, 35))
+		neg_cs_track = sector.add_track((33, 43))
 		neg_cs_track.axis()
-		neg_cs_y = [x / 10.0 for x in range(0, 10+3, 3)]
+		neg_cs_y = [x / 10.0 for x in range(0, 10, 3)]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
 		neg_cs_track.scatter(base_positions, neg_conf_scores, color="#F07857")
@@ -166,7 +166,7 @@ def main():
 	print(f'cov_min: {min(pos_coverage)}\tcov_max: {max(pos_coverage)}')
 
 	# divide data into 5 subsets and create a circle plot for each subset
-	subset_size = math.ceil(len(pos_coverage)/6)
+	subset_size = math.ceil(len(pos_coverage)/10)
 	pos_label_subsets = [pos_label[i:i+subset_size] for i in range(0, len(pos_label), subset_size)]
 	neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
 	pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
@@ -175,7 +175,7 @@ def main():
 	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
 
 	with mp.Manager() as manager:
-		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(6)]
+		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(10)]
 		for p in processes:
 			p.start()
 		for p in processes:
