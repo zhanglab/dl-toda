@@ -46,26 +46,17 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 						neg_label[i] += 1
 						neg_conf_scores[i] += cs
 
-	if list(pos_conf_scores.keys()).sort() == list(pos_label.keys()).sort():
-		print('both dicts have the same keys')
-
-	if list(neg_conf_scores.keys()).sort() == list(neg_label.keys()).sort():
-		print('both dicts have the same keys')
-
-
-
 	# get average of cs
 	for k, v in pos_label.items():
 		pos_conf_scores[k] = pos_conf_scores[k]/v
-		pos_label_percent[k] = v
 		print(type(k))
 
 	for k, v in neg_label.items():
 		neg_conf_scores[k] = neg_conf_scores[k]/v
 
 	# get percentages of positive and negative labels
-	pos_label_percent = {}
-	neg_label_percent = {}
+	pos_label_percent = defaultdict(float)
+	neg_label_percent = defaultdict(float)
 	for i in range(ref_length):
 		if i in neg_label and i in pos_label:
 			pos_label_percent[i] = pos_label[i]/(pos_label[i]+neg_label[i])
