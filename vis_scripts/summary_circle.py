@@ -177,7 +177,8 @@ def main():
 	neg_cs_subsets = [neg_conf_scores[i:i+subset_size] for i in range(0, len(neg_conf_scores), subset_size)]
 	pos_cov_subsets = [pos_coverage[i:i+subset_size] for i in range(0, len(pos_coverage), subset_size)]
 	base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
-
+	print(f'{pos_label_subsets[0][:10]}')
+	print(f'{neg_label_subsets[0][:10]}')
 	with mp.Manager() as manager:
 		processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], pos_label_subsets[i], i)) for i in range(10)]
 		for p in processes:
