@@ -72,7 +72,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 	# initialize a single circos sector
 	sectors = {'genome': len(base_positions)}
 	circos = Circos(sectors=sectors, space=10)
-
+	print(len(list(range(0,len(base_positions),1))))
 	# define min and max y values
 	cs_min = min(pos_conf_scores+neg_conf_scores)
 	cs_max = max(pos_conf_scores+neg_conf_scores)
@@ -83,7 +83,11 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		# add outer track
 		genome_track = sector.add_track((98, 100))
 		genome_track.axis(fc="lightgrey")
-		genome_track.xticks_by_interval(100000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
+		genome_x = list(range(0,len(base_positions),10000))
+		base_pos_ticks = [base_positions[i] for i in genome_x]
+		genome_x_labels = [str(i) for i in base_pos_ticks]
+		genome_track.xticks(genome_y, genome_y_labels)
+		# genome_track.xticks_by_interval(100000, label_formatter=lambda v: f"{v / 1000:.0f} Kb")
 		genome_track.xticks_by_interval(1000, tick_length=1, show_label=False)
 		print(f'added genome track')
 		# add track for coverage
@@ -101,7 +105,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		pos_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
-		pos_labels_track.line(base_positions, pos_label, color="#BF2C34")
+		pos_labels_track.line(list(range(0,len(base_positions),1)), pos_label, color="#BF2C34")
 		# pos_labels_track.heatmap(pos_label, vmin=labels_min, vmax=labels_max, show_value=False)
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
@@ -110,7 +114,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		pos_cs_y = [x / 10.0 for x in range(0, 10, 3)]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-		pos_cs_track.scatter(base_positions, pos_conf_scores, color="#5C62D6")
+		pos_cs_track.scatter(list(range(0,len(base_positions),1)), pos_conf_scores, color="#5C62D6")
 		# pos_cs_track.heatmap(pos_conf_scores, vmin=cs_min, vmax=cs_max, show_value=False)
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
@@ -119,7 +123,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		neg_labels_y = [x / 10.0 for x in range(0, 10, 3)]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
-		neg_labels_track.line(base_positions, neg_label, color="#BE398D")
+		neg_labels_track.line(list(range(0,len(base_positions),1)), neg_label, color="#BE398D")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((33, 43))
@@ -127,7 +131,7 @@ def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_
 		neg_cs_y = [x / 10.0 for x in range(0, 10, 3)]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
-		neg_cs_track.scatter(base_positions, neg_conf_scores, color="#F07857")
+		neg_cs_track.scatter(list(range(0,len(base_positions),1)), neg_conf_scores, color="#F07857")
 		print(f'added neg cs track')
 	
 	# circos.colorbar(bounds=(0.35, 0.55, 0.3, 0.01), vmin=labels_min, vmax=labels_max, orientation="horizontal", cmap="viridis")
