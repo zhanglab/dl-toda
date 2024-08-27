@@ -109,7 +109,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		pos_labels_y = [0.0, 0.5, 1.0]
 		pos_labels_y_labels = list(map(str, pos_labels_y))
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
-		pos_labels_x = sort(list(pos_label.keys))
+		pos_labels_x = list(pos_label.keys).sort()
 		pos_labels_x_values = [pos_label[i] for i in pos_labels_x]
 		pos_labels_track.line(pos_labels_x, pos_labels_x_values, color="#FF828B")
 		print(f'added pos labels track')
@@ -119,7 +119,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		pos_cs_y = [0.0, 0.5, 1.0]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-		pos_cs_x = sort(list(pos_conf_scores.keys))
+		pos_cs_x = list(pos_conf_scores.keys).sort()
 		pos_cs_x_values = [pos_conf_scores[i] for i in pos_cs_x]
 		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#E7C582")
 		print(f'added pos cs track')
@@ -129,7 +129,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		neg_labels_y = [0.0, 0.5, 1.0]
 		neg_labels_y_labels = list(map(str, neg_labels_y))
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
-		neg_labels_x = sort(list(neg_label.keys))
+		neg_labels_x = list(neg_label.keys).sort()
 		neg_labels_x_values = [neg_label[i] for i in neg_labels_x]
 		neg_labels_track.line(neg_labels_x, neg_labels_x_values, color="#00BOBA")
 		print(f'added neg labels track')
@@ -139,7 +139,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		neg_cs_y = [0.0, 0.5, 1.0]
 		neg_cs_y_labels = list(map(str, neg_cs_y))
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
-		neg_cs_x = sort(list(neg_conf_scores.keys))
+		neg_cs_x = list(neg_conf_scores.keys).sort()
 		neg_cs_x_values = [neg_conf_scores[i] for i in neg_cs_x]
 		neg_cs_track.bar(neg_cs_x, neg_cs_x_values, color="#0065A2")
 		print(f'added neg cs track')
