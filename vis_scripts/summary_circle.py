@@ -67,7 +67,7 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 
 
 def plot_circles(base_positions, pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
-	print(len(base_positions, len(pos_coverage))
+	print(len(base_positions), len(pos_coverage))
 	# define x axis
 	# base_positions = list(range(0,len(pos_coverage),1))
 	# initialize a single circos sector
