@@ -92,7 +92,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		cov_y = list(range(min([int(i) for i in train_pos_coverage]), max([math.ceil(j) for j in train_pos_coverage])+1, 2))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(list(range(0,len(base_positions),1)), train_pos_coverage, color="#CFF800")
+		cov_track.line(list(range(0,len(base_positions),1)), train_pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
 		# add track for coverage of testing reads
 		print(len(base_positions), len(test_pos_coverage))
@@ -101,7 +101,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		cov_y = list(range(min([int(i) for i in test_pos_coverage]), max([math.ceil(j) for j in test_pos_coverage])+1, 2))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(list(range(0,len(base_positions),1)), test_pos_coverage, color="#C05780")
+		cov_track.line(list(range(0,len(base_positions),1)), test_pos_coverage, color="#8DD7BF")
 		print(f'added coverage track')
 		# add track for labels predicted as positive
 		pos_labels_track = sector.add_track((65, 75))
@@ -111,7 +111,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		pos_labels_track.yticks(pos_labels_y, pos_labels_y_labels)
 		pos_labels_x = sorted(list(pos_label.keys()))
 		pos_labels_x_values = [pos_label[i] for i in pos_labels_x]
-		pos_labels_track.line(pos_labels_x, pos_labels_x_values, color="#FF828B")
+		pos_labels_track.line(pos_labels_x, pos_labels_x_values, color="#FF96C5")
 		print(f'added pos labels track')
 		# add track for the confidence scores assigned to labels predicted as positive
 		pos_cs_track = sector.add_track((54, 64))
@@ -121,7 +121,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
 		pos_cs_x = sorted(list(pos_conf_scores.keys()))
 		pos_cs_x_values = [pos_conf_scores[i] for i in pos_cs_x]
-		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#E7C582")
+		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
 		print(f'added pos cs track')
 		# add track for labels predicted as negative
 		neg_labels_track = sector.add_track((43, 53))
@@ -131,7 +131,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		neg_labels_track.yticks(neg_labels_y, neg_labels_y_labels)
 		neg_labels_x = sorted(list(neg_label.keys()))
 		neg_labels_x_values = [neg_label[i] for i in neg_labels_x]
-		neg_labels_track.line(neg_labels_x, neg_labels_x_values, color="#00B0BA")
+		neg_labels_track.line(neg_labels_x, neg_labels_x_values, color="#FF5768")
 		print(f'added neg labels track')
 		# add track for the confidence scores assigned to labels predicted as negative
 		neg_cs_track = sector.add_track((32, 42))
@@ -141,7 +141,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		neg_cs_track.yticks(neg_cs_y, neg_cs_y_labels)
 		neg_cs_x = sorted(list(neg_conf_scores.keys()))
 		neg_cs_x_values = [neg_conf_scores[i] for i in neg_cs_x]
-		neg_cs_track.bar(neg_cs_x, neg_cs_x_values, color="#0065A2")
+		neg_cs_track.scatter(neg_cs_x, neg_cs_x_values, color="#FFBF65")
 		print(f'added neg cs track')
 
 	# circos.savefig(os.path.join(output_dir, f'sum_circos_{number}.png'))
