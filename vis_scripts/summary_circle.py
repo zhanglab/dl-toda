@@ -118,7 +118,7 @@ def prep_test_results(output_dir, testing_output, alignment_sum, reads_id, label
 	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
 
-def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label):
+def plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label):
 	# def plot_circles(output_dir, base_positions, pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label, number):
 
 	# initialize a single circos sector
@@ -195,7 +195,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 		print(f'added neg cs track')
 
 	# circos.savefig(os.path.join(output_dir, f'sum_circos_{number}.png'))
-	circos.savefig(os.path.join(output_dir, f'sum_circos.png'))
+	circos.savefig(os.path.join(output_dir, f'sum_circos_{label}.png'))
 
 
 def get_coverage(filename):
@@ -235,7 +235,7 @@ def main():
 	
 	# create plots
 	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent)
-	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent)
+	plot_circles('other', output_dir, base_positions, test_pos_coverage, train_pos_coverage, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent)
 
 
 
