@@ -10,7 +10,7 @@ import math
 import multiprocessing as mp
 
 
-def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores):
+def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores, ref_length):
 	# get average of cs
 	with open(os.path.join(output_dir, f'{label}_pos_cs_mapped.tsv'), 'w') as f:
 		for k, v in mapped_pos_label.items():
@@ -112,8 +112,8 @@ def prep_test_results(output_dir, testing_output, alignment_sum, reads_id, label
 						o_mapped_neg_conf_scores[i] += cs
 			l_all_conf_scores[pred_label].append(cs)
 
-	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent = sum_data(output_dir, label, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores)
-	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = sum_data(output_dir, 'other', l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores)
+	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent = sum_data(output_dir, label, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores, ref_length)
+	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = sum_data(output_dir, 'other', l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores, ref_length)
 
 	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
