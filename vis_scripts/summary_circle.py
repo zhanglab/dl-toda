@@ -50,7 +50,7 @@ def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, 
 	return mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_pos_label_percent, mapped_neg_label_percent
 
 
-def prep_test_results(label, output_dir, testing_output, alignment_sum, reads_id, label, ref_length):
+def prep_test_results(output_dir, testing_output, alignment_sum, reads_id, label, ref_length):
 	# get testing results
 	with open(testing_output, 'r') as f:
 		content = f.readlines()
@@ -227,7 +227,9 @@ def main():
 	# load coverage of testing reads to training genome
 	test_pos_coverage, _ = get_coverage(test_reads_genome_cov) 
 	# load testing results
-	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = prep_test_results(testing_output, alignment_sum, reads_id, label, len(base_positions))
+	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, \
+	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = prep_test_results(output_dir, testing_output, \
+		alignment_sum, reads_id, label, len(base_positions))
 
 	print(f'{len(test_pos_coverage)}\t{len(train_pos_coverage)}')
 	
