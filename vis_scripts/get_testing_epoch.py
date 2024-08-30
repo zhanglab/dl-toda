@@ -1,9 +1,11 @@
 import sys
+import os
 import numpy as np
 
 
 def main():
 	val_data = sys.argv[1]
+	output_dir = sys.argv[2]
 
 	with open(val_data, 'r') as f:
 		content = f.readlines()
@@ -17,6 +19,8 @@ def main():
 			epoch_min_value = i
 	
 	print(min_value, epoch_min_value)
+	with open(os.path.join(output_dir, 'testing_epoch.tsv'), 'a') as f:
+		f.write(f'{epoch_min_value}\t{min_value}\n')
 
 
 if __name__ == "__main__":
