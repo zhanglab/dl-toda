@@ -234,8 +234,8 @@ def main():
 	print(f'{len(test_pos_coverage)}\t{len(train_pos_coverage)}')
 	
 	# create plots
-	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label, l_mapped_neg_label)
-	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label, o_mapped_neg_label)
+	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent)
+	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent)
 
 
 
