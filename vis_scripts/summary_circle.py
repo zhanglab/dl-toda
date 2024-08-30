@@ -9,7 +9,48 @@ import numpy as np
 import math
 import multiprocessing as mp
 
-def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length):
+
+def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores):
+	# get average of cs
+	with open(os.path.join(output_dir, f'{label}_pos_cs_mapped.tsv'), 'w') as f:
+		for k, v in mapped_pos_label.items():
+			mapped_pos_conf_scores[k] = mapped_pos_conf_scores[k]/v
+			f.write(f'{k}\t{mapped_pos_conf_scores[k]}\n')
+
+	with open(os.path.join(output_dir, f'{label}_neg_cs_mapped.tsv'), 'w') as f:
+		for k, v in mapped_neg_label.items():
+			mapped_neg_conf_scores[k] = mapped_neg_conf_scores[k]/v
+			f.write(f'{k}\t{mapped_neg_conf_scores[k]}\n')
+
+	# get percentages of positive and negative labels
+	mapped_pos_label_percent = defaultdict(float)
+	mapped_neg_label_percent = defaultdict(float)
+	for i in range(ref_length):
+		if i in mapped_neg_label and i in mapped_pos_label:
+			mapped_pos_label_percent[i] = mapped_pos_label[i]/(mapped_pos_label[i]+mapped_neg_label[i])
+			mapped_neg_label_percent[i] = mapped_neg_label[i]/(mapped_pos_label[i]+mapped_neg_label[i])
+		if i in mapped_neg_label and i not in mapped_pos_label:
+			mapped_neg_label_percent[i] = 1.0
+		if i not in mapped_neg_label and i in mapped_pos_label:
+			mapped_pos_label_percent[i] = 1.0
+
+	outf_pos = open(os.path.join(output_dir, f'{label}_pos_label_mapped.tsv'), 'w')
+	for k, v in mapped_pos_label_percent.items():
+		outf_pos.write(f'{k}\t{v}\n')
+
+	outf_neg = open(os.path.join(output_dir, f'{label}_neg_label_mapped.tsv'), 'w')
+	for k, v in mapped_neg_label_percent.items():
+		outf_neg.write(f'{k}\t{v}\n')
+
+	with open(os.path.join(output_dir, f'{label}_all_conf_scores.tsv'), 'w') as f:
+		for k, v in all_conf_scores.items():
+			for i in range(len(v)):
+				f.write(f'{k}\t{v[i]}\n')
+
+	return mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_pos_label_percent, mapped_neg_label_percent
+
+
+def prep_test_results(label, output_dir, testing_output, alignment_sum, reads_id, label, ref_length):
 	# get testing results
 	with open(testing_output, 'r') as f:
 		content = f.readlines()
@@ -22,50 +63,59 @@ def prep_test_results(testing_output, alignment_sum, reads_id, label, ref_length
 
 	print(f'# test reads: {len(test_results)}\n # test reads mapped to training genome: {len(map_info)}')
 
-	pos_label = defaultdict(int)
-	neg_label = defaultdict(int)
-	pos_conf_scores = defaultdict(float)
-	neg_conf_scores = defaultdict(float)
+	# initialize data structures to store info about reads from label of interest
+	l_mapped_pos_label = defaultdict(int)
+	l_mapped_neg_label = defaultdict(int)
+	l_mapped_pos_conf_scores = defaultdict(float)
+	l_mapped_neg_conf_scores = defaultdict(float)
+	l_all_conf_scores = defaultdict(list)
+
+	# initialize data structures to store info about reads from other labels
+	o_mapped_pos_label = defaultdict(int)
+	o_mapped_neg_label = defaultdict(int)
+	o_mapped_pos_conf_scores = defaultdict(float)
+	o_mapped_neg_conf_scores = defaultdict(float)
+	o_all_conf_scores = defaultdict(list)
 
 	for r in reads_id:
+		# get predicted label and confidence score
+		pred_label = int(test_results[r].rstrip().split('\t')[1])
+		cs = float(test_results[r].rstrip().split('\t')[2])
 		if r.split('|')[1] == label:
 			# check if read mapped to the genome
 			if r in map_info:
 				# get start position where the read maps to the target genome
 				start_pos = map_info[r] - 1
-				# get predicted label
-				pred_label = int(test_results[r].rstrip().split('\t')[1])
-				cs = float(test_results[r].rstrip().split('\t')[2])
 				print(f'{r}\t{start_pos}\t{pred_label}\t{cs}\t{start_pos + 250}')
 				# add info
 				for i in range(start_pos, start_pos + 250, 1):
 					if pred_label == 1:
-						pos_label[i] += 1
-						pos_conf_scores[i] += cs
+						l_mapped_pos_label[i] += 1
+						l_mapped_pos_conf_scores[i] += cs
 					elif pred_label == 0:
-						neg_label[i] += 1
-						neg_conf_scores[i] += cs
+						l_mapped_neg_label[i] += 1
+						l_mapped_neg_conf_scores[i] += cs
+			l_all_conf_scores[pred_label].append(cs)
+		else:
+			# check if read mapped to the genome
+			if r in map_info:
+				# get start position where the read maps to the target genome
+				start_pos = map_info[r] - 1
+				print(f'{r}\t{start_pos}\t{pred_label}\t{cs}\t{start_pos + 250}')
+				# add info
+				for i in range(start_pos, start_pos + 250, 1):
+					if pred_label == 1:
+						o_mapped_pos_label[i] += 1
+						o_mapped_pos_conf_scores[i] += cs
+					elif pred_label == 0:
+						o_mapped_neg_label[i] += 1
+						o_mapped_neg_conf_scores[i] += cs
+			l_all_conf_scores[pred_label].append(cs)
 
-	# get average of cs
-	for k, v in pos_label.items():
-		pos_conf_scores[k] = pos_conf_scores[k]/v
+	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent = sum_data(output_dir, label, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores):
+	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = sum_data(output_dir, 'other', l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores):
 
-	for k, v in neg_label.items():
-		neg_conf_scores[k] = neg_conf_scores[k]/v
-
-	# get percentages of positive and negative labels
-	pos_label_percent = defaultdict(float)
-	neg_label_percent = defaultdict(float)
-	for i in range(ref_length):
-		if i in neg_label and i in pos_label:
-			pos_label_percent[i] = pos_label[i]/(pos_label[i]+neg_label[i])
-			neg_label_percent[i] = neg_label[i]/(pos_label[i]+neg_label[i])
-		if i in neg_label and i not in pos_label:
-			neg_label_percent[i] = 1.0
-		if i not in neg_label and i in pos_label:
-			pos_label_percent[i] = 1.0
-
-	return pos_label_percent, neg_label_percent, pos_conf_scores, neg_conf_scores
+	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
 
 def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label):
@@ -73,7 +123,7 @@ def plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_covera
 
 	# initialize a single circos sector
 	sectors = {'genome': len(base_positions)}
-	circos = Circos(sectors=sectors, space=10)
+	circos = Circos(sectors=sectors, space=12)
 
 	for sector in circos.sectors:
 		# add outer track
@@ -177,29 +227,15 @@ def main():
 	# load coverage of testing reads to training genome
 	test_pos_coverage, _ = get_coverage(test_reads_genome_cov) 
 	# load testing results
-	pos_label, neg_label, pos_conf_scores, neg_conf_scores = prep_test_results(testing_output, alignment_sum, reads_id, label, len(base_positions))
+	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = prep_test_results(testing_output, alignment_sum, reads_id, label, len(base_positions))
 
-	print(f'{len(test_pos_coverage)}\t{len(train_pos_coverage)}\t{len(pos_label)}\t{len(neg_label)}\t{len(pos_conf_scores)}\t{len(neg_conf_scores)}')
+	print(f'{len(test_pos_coverage)}\t{len(train_pos_coverage)}')
 	
-	# # divide data into 5 subsets and create a circle plot for each subset
-	# num_subsets = 20
-	# subset_size = math.ceil(len(pos_coverage)/num_subsets)
-	# pos_label_subsets = [pos_label[i:i+subset_size] for i in range(0, len(pos_label), subset_size)]
-	# neg_label_subsets = [neg_label[i:i+subset_size] for i in range(0, len(neg_label), subset_size)]
-	# pos_cs_subsets = [pos_conf_scores[i:i+subset_size] for i in range(0, len(pos_conf_scores), subset_size)]
-	# neg_cs_subsets = [neg_conf_scores[i:i+subset_size] for i in range(0, len(neg_conf_scores), subset_size)]
-	# pos_cov_subsets = [pos_coverage[i:i+subset_size] for i in range(0, len(pos_coverage), subset_size)]
-	# base_pos_subsets = [base_positions[i:i+subset_size] for i in range(0, len(base_positions), subset_size)]
-	# with mp.Manager() as manager:
-	# 	processes = [mp.Process(target=plot_circles, args=(output_dir, base_pos_subsets[i], pos_cov_subsets[i], pos_cs_subsets[i], neg_cs_subsets[i], pos_label_subsets[i], neg_label_subsets[i], i)) for i in range(num_subsets)]
-	# 	for p in processes:
-	# 		p.start()
-	# 	for p in processes:
-	# 		p.join()
+	# create plots
+	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label, l_mapped_neg_label)
+	plot_circles(label, output_dir, base_positions, test_pos_coverage, train_pos_coverage, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label, o_mapped_neg_label)
 
-	plot_circles(output_dir, base_positions, test_pos_coverage, train_pos_coverage, pos_conf_scores, neg_conf_scores, pos_label, neg_label)
 
-	
 
 
 
