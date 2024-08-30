@@ -7,7 +7,7 @@ def main():
 
 	with open(val_data, 'r') as f:
 		content = f.readlines()
-		loss = [i.rstrip().split('\t')[2] for i in content]
+		loss = [float(i.rstrip().split('\t')[2]) for i in content]
 
 	min_value = np.inf
 	epoch_min_value = 1
