@@ -112,8 +112,8 @@ def prep_test_results(label, output_dir, testing_output, alignment_sum, reads_id
 						o_mapped_neg_conf_scores[i] += cs
 			l_all_conf_scores[pred_label].append(cs)
 
-	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent = sum_data(output_dir, label, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores):
-	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = sum_data(output_dir, 'other', l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores):
+	l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent = sum_data(output_dir, label, l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores)
+	o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent = sum_data(output_dir, 'other', l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_neg_label, l_mapped_pos_label, l_all_conf_scores)
 
 	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
