@@ -7,7 +7,7 @@ def main():
 	val_data = sys.argv[1]
 	output_dir = sys.argv[2]
 
-	with open(val_data, 'r') as f:
+	with open(os.path.join(val_data, 'validation_data_rnd_1.tsv'), 'r') as f:
 		content = f.readlines()
 		loss = [float(i.rstrip().split('\t')[2]) for i in content]
 
