@@ -1131,7 +1131,7 @@ class BertModelPretraining(tf.keras.Model):
         # probs = self.softmax_act(logits) # [batch_size, num_labels]
 
         (masked_lm_loss,
-            masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = get_masked_lm_output(
+            masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = GetMaskedLMOutput(
          bert_config, sequence_output, embedding_table,
          masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
