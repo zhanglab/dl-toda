@@ -929,19 +929,19 @@ def gather_indexes(sequence_tensor, positions):
 #                 name="output_bias", trainable=True) 
 
 
-def GetMaskedLMOutput(config, input_tensor, output_weights, positions,
+def GetMaskedLMOutput(vocab_size, hidden_size, initializer_range, input_tensor, output_weights, positions,
                          label_ids, label_weights):
     # def call(self, bert_config, input_tensor, output_weights, positions,
     #                      label_ids, label_weights):
         """ log probs for the masked language modeling task """
         input_tensor = gather_indexes(input_tensor, positions)
         # apply a non-linear transformation before the output layer
-        x = tf.keras.layers.Dense(config.hidden_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))(input_tensor)
+        x = tf.keras.layers.Dense(hidden_size, activation="gelu", kernel_initializer=create_initializer(initializer_range))(input_tensor)
         x = tf.keras.layers.LayerNormalization()(x)
 
         logits = tf.linalg.matmul(x, output_weights, transpose_b=True) # [batch_size, vocab_size]
         bias_initializer = tf.zeros_initializer()
-        output_bias = tf.Variable(initial_value=bias_initializer(shape=[config.vocab_size], dtype='float32'), name="output_bias", trainable=True) 
+        output_bias = tf.Variable(initial_value=bias_initializer(shape=[vocab_size], dtype='float32'), name="output_bias", trainable=True) 
         logits = tf.nn.bias_add(logits, output_bias) # [batch_size, vocab_size]
         probs = tf.nn.softmax(logits, axis=-1)
         log_probs = tf.nn.log_softmax(logits)  # [batch_size, vocab_size]
@@ -950,7 +950,7 @@ def GetMaskedLMOutput(config, input_tensor, output_weights, positions,
         label_weights = tf.reshape(label_weights, [-1])
 
         one_hot_labels = tf.one_hot(
-            label_ids, depth=bert_config.vocab_size, dtype=tf.float32)
+            label_ids, depth=config.vocab_size, dtype=tf.float32)
 
         per_example_loss = -tf.reduce_sum(log_probs * one_hot_labels, axis=[-1])
         numerator = tf.reduce_sum(label_weights * per_example_loss)
@@ -995,6 +995,7 @@ class BertModelPretraining(tf.keras.Model):
     def __init__(self, config):
         super().__init__()
         self.seq_length = config.seq_length
+        self.vocab_size = config.vocab_size
         self.width = config.hidden_size
         self.dropout_prob = config.hidden_dropout_prob
         self.num_layers = config.num_hidden_layers
@@ -1048,7 +1049,7 @@ class BertModelPretraining(tf.keras.Model):
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label], outputs=self.call(input_ids, input_mask, token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, False))
 
       
-    def call(self, bert_config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training=False):
+    def call(self, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
@@ -1135,7 +1136,7 @@ class BertModelPretraining(tf.keras.Model):
 
         (masked_lm_loss,
             masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = GetMaskedLMOutput(
-         bert_config, sequence_output, embedding_table,
+         self.vocab_size, self.hidden_size, self.initializer_range, sequence_output, embedding_table,
          masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
         # (next_sentence_loss, next_sentence_example_loss,
