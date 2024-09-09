@@ -189,8 +189,8 @@ def create_tfrecords(args, grouped_files):
                     # for process, data_process in data.items():
                     #     print(process, len(data_process))
                 for i, r in enumerate(data, 0):
-                    print(f'input_ids: {len(r[0])}\t{r[0]}\ninput_mask: {len(r[1])}\t{r[1]}\nsegment_ids: {len(r[2])}\t{r[2]}\nmasked_lm_positions: {len(r[3])}\t{r[3]}')
-                    print(f'masked_lm_weights: {len(r[4])}\t{r[4]}\nmasked_lm_ids: {len(r[5])}\t{r[5]}\nnext_sentence_labels: {len(r[6])}\t{r[6]}\nlabel_ids: {len(r[7])}\t{r[7]}')
+                    print(f'input_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
+                    print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}\tlabel_ids: {r[7]}')
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
                     input_mask: [1]*len(input_ids) - input_mask
