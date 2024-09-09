@@ -267,7 +267,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, los
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        train_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
+        train_accuracy_2.update_state(masked_lm_ids, mlm_probs)
     else:
         train_accuracy_2.update_state(labels, probs)
 
@@ -299,7 +299,7 @@ def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_
     if model_type == 'BERT' and bert_step == "finetuning":
         val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        val_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
+        val_accuracy_2.update_state(masked_lm_ids, mlm_probs)
     else:
         val_accuracy_2.update_state(labels, probs)
     # loss_value = loss(labels, probs)
