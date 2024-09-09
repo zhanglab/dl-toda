@@ -211,7 +211,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
             # loss_value = loss(labels, probs)
         elif model_type == 'BERT' and args.bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
-            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training)
+            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -267,7 +267,7 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2,
         # loss_value_2 = loss(labels, probs)
     elif model_type == 'BERT' and args.pretraining:
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
-        loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training)
+        loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
     else:
         reads, labels = data
         probs = model(reads, training=training)
