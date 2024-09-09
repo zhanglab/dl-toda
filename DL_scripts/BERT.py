@@ -1026,8 +1026,8 @@ class BertModelPretraining(tf.keras.Model):
         # self.output_weights = tf.Variable(
         #     initial_value=self.weights_initializer(shape=[config.num_labels, config.hidden_size], dtype='float32'),
         #     name="output_weights", trainable=True)
-        self.bias_initializer = tf.zeros_initializer()
-        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[config.vocab_size], dtype='float32'),
+        self.mlm_bias_initializer = tf.zeros_initializer()
+        self.mlm_output_bias = tf.Variable(initial_value=self.mlm_bias_initializer(shape=[config.vocab_size], dtype='float32'),
                 name="mlm_output_bias", trainable=True) 
 
     def create_model(self):
