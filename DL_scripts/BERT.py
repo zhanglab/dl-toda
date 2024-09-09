@@ -1038,13 +1038,13 @@ class BertModelPretraining(tf.keras.Model):
         # self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
 
     def create_model(self):
-        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_ids')
-        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_mask')
-        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='token_type_ids')
-        masked_lm_positions = tf.keras.layers.Input(shape=(37), dtype=tf.int32, name='masked_lm_positions')
+        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int64, name='input_ids')
+        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int64, name='input_mask')
+        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int64, name='token_type_ids')
+        masked_lm_positions = tf.keras.layers.Input(shape=(37), dtype=tf.int64, name='masked_lm_positions')
         masked_lm_weights = tf.keras.layers.Input(shape=(37), dtype=tf.float32, name='masked_lm_weights')
-        masked_lm_ids = tf.keras.layers.Input(shape=(37), dtype=tf.int32, name='masked_lm_ids')
-        nsp_label = tf.keras.layers.Input(shape=(1), dtype=tf.int32, name='nsp_label')
+        masked_lm_ids = tf.keras.layers.Input(shape=(37), dtype=tf.int64, name='masked_lm_ids')
+        nsp_label = tf.keras.layers.Input(shape=(1), dtype=tf.int64, name='nsp_label')
 
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label], outputs=self.call(input_ids, input_mask, token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, False))
 
