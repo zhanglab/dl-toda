@@ -196,10 +196,10 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
+def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
-        if model_type == 'BERT':
+        if model_type == 'BERT' and args.finetuning:
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
             probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
@@ -209,6 +209,9 @@ def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_lo
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
             loss_value = tf.reduce_mean(per_example_loss)
             # loss_value = loss(labels, probs)
+        elif model_type == 'BERT' and args.pretraining:
+            input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
+            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -237,10 +240,11 @@ def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_lo
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy
-    # train_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
-    if model_type == 'BERT':
+    if model_type == 'BERT' and args.finetuning:
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
+    elif model_type == 'BERT' and args.pretraining:
+        train_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         train_accuracy_2.update_state(labels, probs)
 
@@ -261,15 +265,18 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2,
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
         # loss_value_2 = loss(labels, probs)
+    elif model_type == 'BERT' and args.pretraining:
+        input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
+        loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training)
     else:
         reads, labels = data
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
     
-    # val_accuracy_1.update_state(labels, probs, sample_weight=is_real_example)
-    if model_type == 'BERT':
-        # val_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
+    if model_type == 'BERT' and args.finetuning:
         val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
+    elif model_type == 'BERT' and args.pretraining:
+        val_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         val_accuracy_2.update_state(labels, probs)
     # loss_value = loss(labels, probs)
@@ -285,6 +292,8 @@ def main():
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
+    parser.add_argument('--pretraining', action='store_true', default=False, required=('BERT' in sys.argv))
+    parser.add_argument('--finetuning', action='store_true', default=False, required=('BERT' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--n_rows', type=int, default=50)
@@ -484,8 +493,8 @@ def main():
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    if args.model_type == 'BERT':
-        model = BertModel(config=config)
+    if args.model_type == 'BERT' and args.finetuning:
+        model = BertModelFinetuning(config=config)
         # define a forward pass
         # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
         # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
@@ -504,7 +513,7 @@ def main():
         print(f'# non trainable parameters: {non_trainable_params}')
         print(f'# variables: {len(model.trainable_weights)}')
         total_params = 0
-        with open(os.path.join(args.output_dir, f'model_trainable_variables.txt'), 'w') as f:
+        with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
             for var in model.trainable_weights:
                 count = 1
                 for dim in var.shape:
@@ -517,6 +526,32 @@ def main():
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
+    elif args.model_type == 'BERT' and args.pretraining:
+        model = BertModelPretraining(config=config)
+        print(f'summary: {model.create_model().summary()}')
+        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        
+        # print(model.summary())
+        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        print(f'number of parameters: {model.create_model().count_params()}')
+        trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+        non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+        print(f'# trainable parameters: {trainable_params}')
+        print(f'# non trainable parameters: {non_trainable_params}')
+        print(f'# variables: {len(model.trainable_weights)}')
+        total_params = 0
+        with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
+            for var in model.trainable_weights:
+                count = 1
+                for dim in var.shape:
+                    count *= dim
+                total_params += count
+                f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+                print(f'name = {var.name}, shape = {var.shape}\t {count}')
+            f.write(f'Total params: {total_params}')
+            print(f'Total params: {total_params}')
+
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -567,7 +602,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args, args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
