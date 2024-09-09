@@ -219,7 +219,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT' and args.bert_step == "finetuning":
@@ -234,7 +234,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
             # loss_value = loss(labels, probs)
         elif model_type == 'BERT' and args.bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
-            loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -627,7 +627,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args, args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
