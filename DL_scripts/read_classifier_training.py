@@ -219,7 +219,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT' and bert_step == "finetuning":
@@ -234,7 +234,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, los
             # loss_value = loss(labels, probs)
         elif model_type == 'BERT' and bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+            loss_value, masked_lm_probs, accuracy, predictions, equal_values  = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -267,7 +267,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, los
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        train_accuracy_2.update_state(masked_lm_ids, mlm_probs)
+        train_accuracy_3.update_state(accuracy)
     else:
         train_accuracy_2.update_state(labels, probs)
 
@@ -275,7 +275,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, los
     train_loss_2.update_state(loss_value)
 
     # return loss_value, input_ids, input_mask
-    return loss_value
+    return loss_value, masked_lm_probs, accuracy, predictions, equal_values
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
@@ -607,6 +607,7 @@ def main():
     val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
     # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
     train_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_2')
+    train_accuracy_3 = tf.keras.metrics.Mean(name='train_accuracy_3')
     # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
     val_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_2')
     # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
@@ -627,10 +628,8 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
-        # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
-        # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
-        # print(loss_value, reads, labels, probs)
+        loss_value, masked_lm_probs, accuracy, predictions, equal_values= training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
+        print(loss_value, masked_lm_probs, accuracy, predictions, equal_values)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
