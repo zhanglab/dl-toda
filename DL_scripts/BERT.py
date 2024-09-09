@@ -919,27 +919,30 @@ def gather_indexes(sequence_tensor, positions):
     return output_tensor
 
 
-class GetMaskedLMOutput(tf.keras.layers.Layer):
-    def __init__(self, config):
-        super().__init__()
-        self.pre_output_layer = tf.keras.layers.Dense(config.hidden_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
-        self.layer_norm = tf.keras.layers.LayerNormalization()
-        self.bias_initializer = tf.zeros_initializer()
-        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[config.vocab_size], dtype='float32'),
-                name="output_bias", trainable=True) 
+# class GetMaskedLMOutput(tf.keras.layers.Layer):
+#     def __init__(self, config):
+#         super().__init__()
+#         self.pre_output_layer = tf.keras.layers.Dense(config.hidden_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
+#         self.layer_norm = tf.keras.layers.LayerNormalization()
+#         self.bias_initializer = tf.zeros_initializer()
+#         self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[config.vocab_size], dtype='float32'),
+#                 name="output_bias", trainable=True) 
 
 
-    def call(self, bert_config, input_tensor, output_weights, positions,
+def GetMaskedLMOutput(config, input_tensor, output_weights, positions,
                          label_ids, label_weights):
+    # def call(self, bert_config, input_tensor, output_weights, positions,
+    #                      label_ids, label_weights):
         """ log probs for the masked language modeling task """
         input_tensor = gather_indexes(input_tensor, positions)
         # apply a non-linear transformation before the output layer
-        
-        x = self.pre_output_layer(input_tensor)
-        x = self.layer_norm(x)
+        x = tf.keras.layers.Dense(config.hidden_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))(input_tensor)
+        x = tf.keras.layers.LayerNormalization()(x)
 
         logits = tf.linalg.matmul(x, output_weights, transpose_b=True) # [batch_size, vocab_size]
-        logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, vocab_size]
+        bias_initializer = tf.zeros_initializer()
+        output_bias = tf.Variable(initial_value=bias_initializer(shape=[config.vocab_size], dtype='float32'), name="output_bias", trainable=True) 
+        logits = tf.nn.bias_add(logits, output_bias) # [batch_size, vocab_size]
         probs = tf.nn.softmax(logits, axis=-1)
         log_probs = tf.nn.log_softmax(logits)  # [batch_size, vocab_size]
 
@@ -958,32 +961,32 @@ class GetMaskedLMOutput(tf.keras.layers.Layer):
 
 
 
-class GetNextSentenceOutput(tf.keras.layers.Layer):
-    def __init__(self, config):
-        super().__init__()
-        self.weights_initializer = create_initializer(config.initializer_range)
-        self.output_weights = tf.Variable(
-            initial_value=self.weights_initializer(shape=[2, config.hidden_size], dtype='float32'),
-            name="output_weights", trainable=True)
-        self.bias_initializer = tf.zeros_initializer()
-        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[2], dtype='float32'),
-                name="output_bias", trainable=True) 
+# class GetNextSentenceOutput(tf.keras.layers.Layer):
+#     def __init__(self, config):
+#         super().__init__()
+#         self.weights_initializer = create_initializer(config.initializer_range)
+#         self.output_weights = tf.Variable(
+#             initial_value=self.weights_initializer(shape=[2, config.hidden_size], dtype='float32'),
+#             name="output_weights", trainable=True)
+#         self.bias_initializer = tf.zeros_initializer()
+#         self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[2], dtype='float32'),
+#                 name="output_bias", trainable=True) 
 
 
-    def call(self, bert_config, input_tensor, labels):
-        """ Get loss and log probs for the next sentence prediction task"""
-        # Simple binary classification. Label 0 = "next sentence" and Label 1 = "random sentence". 
-        # This weight matrix is not used after pre-training.
-        logits = tf.matmul(input_tensor, self.output_weights, transpose_b=True)
-        logits = tf.nn.bias_add(logits, self.output_bias)
-        probs = tf.nn.softmax(logits, axis=-1)
-        log_probs = tf.nn.log_softmax(logits, axis=-1)
-        labels = tf.reshape(labels, [-1])
-        one_hot_labels = tf.one_hot(labels, depth=2, dtype=tf.float32)
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss = tf.reduce_mean(per_example_loss)
+#     def call(self, bert_config, input_tensor, labels):
+#         """ Get loss and log probs for the next sentence prediction task"""
+#         # Simple binary classification. Label 0 = "next sentence" and Label 1 = "random sentence". 
+#         # This weight matrix is not used after pre-training.
+#         logits = tf.matmul(input_tensor, self.output_weights, transpose_b=True)
+#         logits = tf.nn.bias_add(logits, self.output_bias)
+#         probs = tf.nn.softmax(logits, axis=-1)
+#         log_probs = tf.nn.log_softmax(logits, axis=-1)
+#         labels = tf.reshape(labels, [-1])
+#         one_hot_labels = tf.one_hot(labels, depth=2, dtype=tf.float32)
+#         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+#         loss = tf.reduce_mean(per_example_loss)
 
-        return (loss, per_example_loss, log_probs, probs)
+#         return (loss, per_example_loss, log_probs, probs)
 
 
 
@@ -1045,7 +1048,7 @@ class BertModelPretraining(tf.keras.Model):
         return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label], outputs=self.call(input_ids, input_mask, token_type_ids,masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, False))
 
       
-    def call(self, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training=False):
+    def call(self, bert_config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training=False):
         input_shape = get_shape_list(input_ids, expected_rank=2)
         batch_size = input_shape[0]
 
