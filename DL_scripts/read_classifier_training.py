@@ -408,7 +408,7 @@ def main():
 
     else:
         if args.model_type == 'BERT':
-            if args_bert_step == 'finetuning':
+            if args.bert_step == 'finetuning':
                 datatype = 'finetuning'
             else:
                 datatype = 'pretraining'
