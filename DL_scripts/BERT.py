@@ -1110,11 +1110,11 @@ class BertModelPretraining(tf.keras.Model):
         label_weights = tf.reshape(masked_lm_weights, [-1])
 
         one_hot_labels = tf.one_hot(
-            masked_lm_ids, depth=self.vocab_size, dtype=tf.float32)
+            label_ids, depth=self.vocab_size, dtype=tf.float32)
 
         per_example_loss = -tf.reduce_sum(masked_lm_log_probs * one_hot_labels, axis=[-1])
-        numerator = tf.reduce_sum(masked_lm_weights* per_example_loss)
-        denominator = tf.reduce_sum(masked_lm_weights) + 1e-5
+        numerator = tf.reduce_sum(label_weights * per_example_loss)
+        denominator = tf.reduce_sum(label_weights) + 1e-5
         masked_lm_loss = numerator / denominator
 
         predictions = tf.math.argmax(masked_lm_probs, axis=1)
