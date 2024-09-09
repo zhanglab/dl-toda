@@ -629,7 +629,7 @@ def main():
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         loss_value, masked_lm_probs, accuracy, predictions, equal_values= training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        print(loss_value, masked_lm_probs, accuracy, predictions, equal_values)
+        # print(loss_value, masked_lm_probs, accuracy, predictions, equal_values)
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
