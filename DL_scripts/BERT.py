@@ -1136,7 +1136,7 @@ class BertModelPretraining(tf.keras.Model):
 
         (masked_lm_loss,
             masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = GetMaskedLMOutput(
-         self.vocab_size, self.hidden_size, self.initializer_range, sequence_output, embedding_table,
+         self.vocab_size, self.width, self.initializer_range, sequence_output, embedding_table,
          masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
         # (next_sentence_loss, next_sentence_example_loss,
