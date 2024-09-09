@@ -911,7 +911,7 @@ def gather_indexes(sequence_tensor, positions):
     width = sequence_shape[2]
 
     flat_offsets = tf.reshape(
-      tf.range(0, batch_size, dtype=tf.int32) * seq_length, [-1, 1])
+      tf.range(0, batch_size, dtype=tf.int64) * seq_length, [-1, 1])
     flat_positions = tf.reshape(positions + flat_offsets, [-1])
     flat_sequence_tensor = tf.reshape(sequence_tensor,
                                     [batch_size * seq_length, width])
@@ -1054,10 +1054,10 @@ class BertModelPretraining(tf.keras.Model):
         batch_size = input_shape[0]
 
         if input_mask is None:
-            input_mask = tf.ones(shape=[batch_size, self.seq_length], dtype=tf.int32)
+            input_mask = tf.ones(shape=[batch_size, self.seq_length], dtype=tf.int64)
 
         if token_type_ids is None:
-            token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
+            token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int64)
         
         # x = self.embedding(input_ids)
         x, embedding_table = self.token_embedding(input_ids)
