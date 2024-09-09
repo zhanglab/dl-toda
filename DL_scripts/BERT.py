@@ -957,7 +957,11 @@ def GetMaskedLMOutput(vocab_size, hidden_size, initializer_range, input_tensor, 
         denominator = tf.reduce_sum(label_weights) + 1e-5
         loss = numerator / denominator
 
-        return (loss, per_example_loss, log_probs, probs)
+        predictions = tf.math.argmax(probs, axis=1)
+        equal_values = tf.math.equal(predictions, label_ids)
+        accuracy = tf.math.reduce_mean(tf.cast(equal_values, tf.float32))
+
+        return (loss, per_example_loss, log_probs, probs, accuracy, predictions, equal_values)
 
 
 
@@ -1134,8 +1138,7 @@ class BertModelPretraining(tf.keras.Model):
         # log_probs = tf.nn.log_softmax(logits)  # [batch_size, num_labels]
         # probs = self.softmax_act(logits) # [batch_size, num_labels]
 
-        (masked_lm_loss,
-            masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = GetMaskedLMOutput(
+        (masked_lm_loss, masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs, accuracy, predictions, equal_values) = GetMaskedLMOutput(
          self.vocab_size, self.width, self.initializer_range, sequence_output, embedding_table,
          masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
@@ -1148,7 +1151,7 @@ class BertModelPretraining(tf.keras.Model):
 
 
 
-        return total_loss, masked_lm_probs
+        return total_loss, masked_lm_probs, accuracy, predictions, equal_values
 
 
 
