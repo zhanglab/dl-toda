@@ -211,7 +211,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
             # loss_value = loss(labels, probs)
         elif model_type == 'BERT' and args.bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
-            loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+            loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -240,10 +240,10 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy
-    if model_type == 'BERT' and args.finetuning:
+    if model_type == 'BERT' and args.bert_step == "finetuning":
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
-    elif model_type == 'BERT' and args.pretraining:
+    elif model_type == 'BERT' and args.bert_step == "pretraining":
         train_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         train_accuracy_2.update_state(labels, probs)
@@ -255,7 +255,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
     return loss_value
 
 @tf.function
-def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
+def testing_step(args, model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
     training = False
     if model_type == 'BERT':
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -267,15 +267,15 @@ def testing_step(model_type, data, num_labels, loss, val_loss_1, val_accuracy_2,
         # loss_value_2 = loss(labels, probs)
     elif model_type == 'BERT' and args.pretraining:
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
-        loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+        loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
     else:
         reads, labels = data
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
     
-    if model_type == 'BERT' and args.finetuning:
+    if model_type == 'BERT' and args.bert_step == "finetuning":
         val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
-    elif model_type == 'BERT' and args.pretraining:
+    elif model_type == 'BERT' and args.bert_step == "pretraining":
         val_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         val_accuracy_2.update_state(labels, probs)
@@ -401,7 +401,7 @@ def main():
 
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
-        config = BertConfig.from_json_file(args.bert_config_file)
+        args.config = BertConfig.from_json_file(args.bert_config_file)
 
     if hvd.rank() == 0:
         # create output directory
@@ -493,7 +493,7 @@ def main():
 
     # define model
     if args.model_type == 'BERT' and args.bert_step == "finetuning":
-        model = BertModelFinetuning(config=config)
+        model = BertModelFinetuning(config=args.config)
         # define a forward pass
         # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
         # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
@@ -526,7 +526,7 @@ def main():
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
     elif args.model_type == 'BERT' and args.bert_step == "pretraining":
-        model = BertModelPretraining(config=config)
+        model = BertModelPretraining(config=args.config)
         print(f'summary: {model.create_model().summary()}')
         tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
         
