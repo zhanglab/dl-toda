@@ -105,8 +105,8 @@ def get_mlm_input(args, input_array):
     mask_lm_positions = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
     # mask bases
     input_ids = get_masked_array(args, mask_lm_positions, input_array)
-    # prepare sample_weights parameter to loss function
-    masked_lm_weights = [1] * n_mask # only compute loss for masked k-mers
+    # Prepare sample_weights parameter to loss function. The weights have a value of 1.0 for eve
+    masked_lm_weights = [1.0] * n_mask # only compute loss for masked k-mers
     # create input_mask vector indicating padded values
     input_mask = [1] * len(input_ids)
 
