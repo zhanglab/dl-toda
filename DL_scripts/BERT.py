@@ -950,7 +950,7 @@ def GetMaskedLMOutput(vocab_size, hidden_size, initializer_range, input_tensor, 
         label_weights = tf.reshape(label_weights, [-1])
 
         one_hot_labels = tf.one_hot(
-            label_ids, depth=config.vocab_size, dtype=tf.float32)
+            label_ids, depth=vocab_size, dtype=tf.float32)
 
         per_example_loss = -tf.reduce_sum(log_probs * one_hot_labels, axis=[-1])
         numerator = tf.reduce_sum(label_weights * per_example_loss)
