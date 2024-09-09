@@ -22,7 +22,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
-from BERT import BertConfig, BertModel
+from BERT import BertConfig, BertModelFinetuning, BertModelPretraining
 from optimizers import AdamWeightDecayOptimizer
 import argparse
 
