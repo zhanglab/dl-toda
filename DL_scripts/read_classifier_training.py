@@ -171,13 +171,13 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int32),
-          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int32),
-          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int32),
-          "masked_lm_positions": tf.io.FixedLenFeature([37], tf.int32),
+          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "masked_lm_positions": tf.io.FixedLenFeature([37], tf.int64),
           "masked_lm_weights": tf.io.FixedLenFeature([37], tf.float32),
-          "masked_lm_ids": tf.io.FixedLenFeature([37], tf.int32),
-          "next_sentence_labels": tf.io.FixedLenFeature([], tf.int32),
+          "masked_lm_ids": tf.io.FixedLenFeature([37], tf.int64),
+          "next_sentence_labels": tf.io.FixedLenFeature([], tf.int64),
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
