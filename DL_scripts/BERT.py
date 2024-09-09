@@ -217,6 +217,7 @@ class TokenTypeEncoding(tf.keras.layers.Layer):
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     return tf.keras.initializers.TruncatedNormal(stddev=initializer_range)
+    # return tf.initializers.truncated_normal(stddev=initializer_range)
 
 
 def create_attention_mask_from_input_mask(from_tensor, to_mask):
@@ -761,7 +762,7 @@ class Encoder(tf.keras.layers.Layer):
 #             return final_output
 
 
-class BertModel(tf.keras.Model):
+class BertModelFinetuning(tf.keras.Model):
 
     def __init__(self, config):
         super().__init__()
@@ -863,6 +864,7 @@ class BertModel(tf.keras.Model):
 
         # x = self.enc_layers(x, training)
 
+        # take the last layer of the encoder output
         x = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
  
         # We "pool" the model by simply taking the hidden state corresponding
@@ -871,11 +873,9 @@ class BertModel(tf.keras.Model):
 
         #Last layer hidden-state of the first token of the sequence (classification token) 
         #further processed by a Linear layer and a Tanh activation function.
-        x = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
+        output_layer = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
 
- #       # output_layer = model(input_ids, input_mask, token_type_ids)
-
- #       # hidden_size = output_layer.shape[-1]
+        # hidden_size = output_layer.shape[-1]
 
         # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
 
@@ -888,9 +888,9 @@ class BertModel(tf.keras.Model):
         #    name="output_bias", dtype='float32')
 
         if training:
-            tf.nn.dropout(x, rate=self.dropout_prob)
+            tf.nn.dropout(output_layer, rate=self.dropout_prob)
 
-        logits = tf.linalg.matmul(x, self.output_weights, transpose_b=True) # [batch_size, num_labels]
+        logits = tf.linalg.matmul(output_layer, self.output_weights, transpose_b=True) # [batch_size, num_labels]
         logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, num_labels]
         probs = tf.nn.softmax(logits, axis=-1)
         # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
@@ -901,4 +901,246 @@ class BertModel(tf.keras.Model):
         return probs, log_probs, logits
         # return probs, attention_mask
         # return log_probs, probs, logits
+
+
+def gather_indexes(sequence_tensor, positions):
+    """Gathers the vectors at the masked positions """
+    sequence_shape = modeling.get_shape_list(sequence_tensor, expected_rank=3)
+    batch_size = sequence_shape[0]
+    seq_length = sequence_shape[1]
+    width = sequence_shape[2]
+
+    flat_offsets = tf.reshape(
+      tf.range(0, batch_size, dtype=tf.int32) * seq_length, [-1, 1])
+    flat_positions = tf.reshape(positions + flat_offsets, [-1])
+    flat_sequence_tensor = tf.reshape(sequence_tensor,
+                                    [batch_size * seq_length, width])
+    output_tensor = tf.gather(flat_sequence_tensor, flat_positions)
+    return output_tensor
+
+
+class GetMaskedLMOutput(tf.keras.layers.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.pre_output_layer = tf.keras.layers.Dense(config.hidden_size, activation="gelu", kernel_initializer=create_initializer(config.initializer_range))
+        self.layer_norm = tf.keras.layers.LayerNormalization()
+        self.bias_initializer = tf.zeros_initializer()
+        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[config.vocab_size], dtype='float32'),
+                name="output_bias", trainable=True) 
+
+
+    def call(self, bert_config, input_tensor, output_weights, positions,
+                         label_ids, label_weights):
+        """ log probs for the masked language modeling task """
+        input_tensor = gather_indexes(input_tensor, positions)
+        # apply a non-linear transformation before the output layer
+        
+        x = self.pre_output_layer(input_tensor)
+        x = self.layer_norm(x)
+
+        logits = tf.linalg.matmul(x, output_weights, transpose_b=True) # [batch_size, vocab_size]
+        logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, vocab_size]
+        probs = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits)  # [batch_size, vocab_size]
+
+        label_ids = tf.reshape(label_ids, [-1])
+        label_weights = tf.reshape(label_weights, [-1])
+
+        one_hot_labels = tf.one_hot(
+            label_ids, depth=bert_config.vocab_size, dtype=tf.float32)
+
+        per_example_loss = -tf.reduce_sum(log_probs * one_hot_labels, axis=[-1])
+        numerator = tf.reduce_sum(label_weights * per_example_loss)
+        denominator = tf.reduce_sum(label_weights) + 1e-5
+        loss = numerator / denominator
+
+        return (loss, per_example_loss, log_probs, probs)
+
+
+
+class GetNextSentenceOutput(tf.keras.layers.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.weights_initializer = create_initializer(config.initializer_range)
+        self.output_weights = tf.Variable(
+            initial_value=self.weights_initializer(shape=[2, config.hidden_size], dtype='float32'),
+            name="output_weights", trainable=True)
+        self.bias_initializer = tf.zeros_initializer()
+        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[2], dtype='float32'),
+                name="output_bias", trainable=True) 
+
+
+    def call(self, bert_config, input_tensor, labels):
+        """ Get loss and log probs for the next sentence prediction task"""
+        # Simple binary classification. Label 0 = "next sentence" and Label 1 = "random sentence". 
+        # This weight matrix is not used after pre-training.
+        logits = tf.matmul(input_tensor, self.output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, self.output_bias)
+        probs = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+        labels = tf.reshape(labels, [-1])
+        one_hot_labels = tf.one_hot(labels, depth=2, dtype=tf.float32)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss = tf.reduce_mean(per_example_loss)
+
+        return (loss, per_example_loss, log_probs, probs)
+
+
+
+class BertModelPretraining(tf.keras.Model):
+
+    def __init__(self, config):
+        super().__init__()
+        self.seq_length = config.seq_length
+        self.width = config.hidden_size
+        self.dropout_prob = config.hidden_dropout_prob
+        self.num_layers = config.num_hidden_layers
+        self.initializer_range = config.initializer_range
+        self.max_position_embeddings = config.max_position_embeddings
+    
+        # create embedding layer
+        # self.embedding = tf.keras.layers.Embedding(config.vocab_size, config.hidden_size, embeddings_initializer=create_initializer(config.initializer_range),
+        #                          mask_zero=True, trainable=True, name='token_embeddings')
+        self.token_embedding = TokenEmbedding(config=config)
+        # create token type embeddings
+        self.token_type_encoding = TokenTypeEncoding(config=config)
+        # create positional embeddings
+        self.pos_encoding = PositionalEncoding(config=config)
+        # add normalization layer
+        self.norm_layer = tf.keras.layers.LayerNormalization(axis=-1) # normalize across the last dimension corresponding to the features
+        # create encoder
+        self.enc_layers = Encoder(config=config)
+        # The "pooler" converts the encoded sequence tensor of shape
+        # [batch_size, seq_length, hidden_size] to a tensor of shape
+        # [batch_size, hidden_size]. This is necessary for segment-level
+        # (or segment-pair-level) classification tasks where we need a fixed
+        # dimensional representation of the segment.
+        # self.pooled_output = tf.keras.layers.Dense(config.hidden_size,activation=tf.tanh,
+                            # kernel_initializer=create_initializer(config.initializer_range))
+        # get sequence output = final hidden layer of encoder
+
+
+        # self.last_dense = tf.keras.layers.Dense(2, kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02))
+
+        self.weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+        self.output_weights = tf.Variable(
+            initial_value=self.weights_initializer(shape=[config.num_labels, config.hidden_size], dtype='float32'),
+            name="output_weights", trainable=True)
+        self.bias_initializer = tf.zeros_initializer()
+        self.output_bias = tf.Variable(initial_value=self.bias_initializer(shape=[config.num_labels], dtype='float32'),
+                name="output_bias", trainable=True) 
+
+        # self.softmax_act = tf.keras.layers.Activation('softmax', dtype='float32')
+        # self.log_softmax_act = tf.keras.layers.Activation('log_softmax', dtype='float32')
+
+    def create_model(self):
+        input_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_ids')
+        input_mask = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='input_mask')
+        token_type_ids = tf.keras.layers.Input(shape=(self.seq_length), dtype=tf.int32, name='token_type_ids')
+
+        return tf.keras.models.Model(inputs=[input_ids,input_mask,token_type_ids], outputs=self.call(input_ids, input_mask, token_type_ids, False))
+
+      
+    def call(self, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training=False):
+        input_shape = get_shape_list(input_ids, expected_rank=2)
+        batch_size = input_shape[0]
+
+        if input_mask is None:
+            input_mask = tf.ones(shape=[batch_size, self.seq_length], dtype=tf.int32)
+
+        if token_type_ids is None:
+            token_type_ids = tf.zeros(shape=[batch_size, self.seq_length], dtype=tf.int32)
+        
+        # x = self.embedding(input_ids)
+        x, embedding_table = self.token_embedding(input_ids)
+        token_type_embeddings = self.token_type_encoding(token_type_ids)
+        x = x + token_type_embeddings
+
+        # position_embeddings = self.pos_encoding.get_emb() # test this again 
+        # position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+        #                                  [config.seq_length, -1])
+        # print(f'before position_embeddings: {position_embeddings}')
+        # Only the last two dimensions are relevant (`seq_length` and `width`), so
+        # we broadcast among the first dimensions, which is typically just
+        # the batch size.
+        # position_broadcast_shape = []
+        # num_dims = 3
+        # for _ in range(num_dims - 2):
+        #     position_broadcast_shape.append(1)
+        # position_broadcast_shape.extend([self.seq_length, self.width])
+        # print(f'position_broadcast_shape: {position_broadcast_shape}')
+        # position_embeddings = tf.reshape(position_embeddings,
+        #                                  position_broadcast_shape)
+        # print(f'after position_embeddings: {position_embeddings}')
+        # print(f'shape of position_embeddings: {tf.shape(position_embeddings)}')
+        # print(f'shape of x: {tf.shape(x)}')
+
+        x = self.pos_encoding(x)
+
+        x = self.norm_layer(x)
+
+        if training:
+            tf.nn.dropout(x, rate=self.dropout_prob)
+
+        # This converts a 2D mask of shape [batch_size, seq_length] to a 3D
+        # mask of shape [batch_size, seq_length, seq_length] which is used
+        # for the attention scores.
+        attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
+        
+        encoder_output = self.enc_layers(x, attention_mask, True, True, training)
+
+        # x = self.enc_layers(x, training)
+
+        # take the last layer of the encoder output
+        sequence_output = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
+ 
+        # We "pool" the model by simply taking the hidden state corresponding
+        # to the first token. We assume that this has been pre-trained
+        # first_token_tensor = tf.squeeze(x[:, 0:1, :], axis=1)
+
+        #Last layer hidden-state of the first token of the sequence (classification token) 
+        #further processed by a Linear layer and a Tanh activation function.
+        # output_layer = self.pooled_output(first_token_tensor) # [batch_size, hidden_size]
+
+        # hidden_size = output_layer.shape[-1]
+
+        # weights_initializer = tf.keras.initializers.TruncatedNormal(stddev=0.02)
+
+        # output_weights = tf.Variable(initial_value=weights_initializer(shape=[num_labels, self.width]), trainable=True,
+        #        name="output_weights", dtype='float32')
+
+        # bias_initializer = tf.zeros_initializer()
+
+        # output_bias = tf.Variable(initial_value=bias_initializer(shape=[num_labels]), trainable=True,
+        #    name="output_bias", dtype='float32')
+
+        # if training:
+        #     tf.nn.dropout(output_layer, rate=self.dropout_prob)
+
+        # logits = tf.linalg.matmul(output_layer, self.output_weights, transpose_b=True) # [batch_size, num_labels]
+        # logits = tf.nn.bias_add(logits, self.output_bias) # [batch_size, num_labels]
+        # probs = tf.nn.softmax(logits, axis=-1)
+        # log_probs_1 = tf.nn.log_softmax(logits_1, axis=-1) # [batch_size, hidden_size]
+        # log_probs_2 = tf.nn.log_softmax(logits_2, axis=-1) # [batch_size, num_labels]
+        # logits = self.last_dense(x) # [batch_size, num_labels]
+        # log_probs = tf.nn.log_softmax(logits)  # [batch_size, num_labels]
+        # probs = self.softmax_act(logits) # [batch_size, num_labels]
+
+        (masked_lm_loss,
+            masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs) = get_masked_lm_output(
+         bert_config, sequence_output, embedding_table,
+         masked_lm_positions, masked_lm_ids, masked_lm_weights)
+
+        # (next_sentence_loss, next_sentence_example_loss,
+        #     next_sentence_log_probs, next_sentence_probs) = get_next_sentence_output(
+        #  bert_config, model.get_pooled_output(), next_sentence_labels)
+
+        # total_loss = masked_lm_loss + next_sentence_loss
+        total_loss = masked_lm_loss
+
+
+
+        return total_loss, masked_lm_probs
+
+
 
