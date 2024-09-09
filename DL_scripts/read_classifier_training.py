@@ -288,7 +288,7 @@ def testing_step(args, model_type, data, num_labels, loss, val_loss_1, val_accur
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
         # loss_value_2 = loss(labels, probs)
-    elif model_type == 'BERT' args.bert_step == "pretraining":
+    elif model_type == 'BERT' and args.bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
         loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
     else:
