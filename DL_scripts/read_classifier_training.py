@@ -219,10 +219,10 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
 
 @tf.function
-def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
-        if model_type == 'BERT' and args.bert_step == "finetuning":
+        if model_type == 'BERT' and bert_step == "finetuning":
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
             probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
@@ -232,7 +232,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
             loss_value = tf.reduce_mean(per_example_loss)
             # loss_value = loss(labels, probs)
-        elif model_type == 'BERT' and args.bert_step == "pretraining":
+        elif model_type == 'BERT' and bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
             loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
@@ -263,10 +263,10 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy
-    if model_type == 'BERT' and args.bert_step == "finetuning":
+    if model_type == 'BERT' and bert_step == "finetuning":
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
-    elif model_type == 'BERT' and args.bert_step == "pretraining":
+    elif model_type == 'BERT' and bert_step == "pretraining":
         train_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         train_accuracy_2.update_state(labels, probs)
@@ -278,9 +278,9 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
     return loss_value
 
 @tf.function
-def testing_step(args, model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
+def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
     training = False
-    if model_type == 'BERT' and args.bert_step == "finetuning":
+    if model_type == 'BERT' and bert_step == "finetuning":
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
         probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -288,7 +288,7 @@ def testing_step(args, model_type, data, num_labels, loss, val_loss_1, val_accur
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss_value = tf.reduce_mean(per_example_loss)
         # loss_value_2 = loss(labels, probs)
-    elif model_type == 'BERT' and args.bert_step == "pretraining":
+    elif model_type == 'BERT' and bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
         loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
     else:
@@ -296,9 +296,9 @@ def testing_step(args, model_type, data, num_labels, loss, val_loss_1, val_accur
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
     
-    if model_type == 'BERT' and args.bert_step == "finetuning":
+    if model_type == 'BERT' and bert_step == "finetuning":
         val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
-    elif model_type == 'BERT' and args.bert_step == "pretraining":
+    elif model_type == 'BERT' and bert_step == "pretraining":
         val_accuracy_2.update_state(masked_lm_ids, mlm_probs, sample_weight=is_real_example)
     else:
         val_accuracy_2.update_state(labels, probs)
@@ -627,7 +627,7 @@ def main():
         # get training loss
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        loss_value = training_step(args, args.model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
+        loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, batch == 1)
         # print(f'input_mask: {input_mask}\tinput_ids: {input_ids}')
         # print(f'input_mask: {tf.shape(input_mask)}\tinput_ids: {tf.shape(input_ids)}')
         # print(loss_value, reads, labels, probs)
@@ -666,7 +666,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args, args.model_type, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
+                testing_step(args.model_type, args.bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
 
 
             # adjust learning rate
