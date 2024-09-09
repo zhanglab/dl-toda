@@ -150,7 +150,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
         return read, label
 
 
-    def load_tfrecords_with_sentences(proto_example):
+    def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
           "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
@@ -168,8 +168,31 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
         return  (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
+
+    def load_tfrecords_for_pretraining(proto_example):
+        name_to_features = {
+          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "masked_lm_positions": tf.io.FixedLenFeature([37], tf.int64),
+          "masked_lm_weights": tf.io.FixedLenFeature([37], tf.float32),
+          "masked_lm_ids": tf.io.FixedLenFeature([37], tf.int64),
+          "next_sentence_labels": tf.io.FixedLenFeature([], tf.int64),
+        }
+        # load one example
+        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
+        input_ids = parsed_example['input_ids']
+        input_mask = parsed_example['input_mask']
+        segment_ids = parsed_example['segment_ids']
+        masked_lm_positions = parsed_example['masked_lm_positions']
+        masked_lm_weights = parsed_example['masked_lm_weights']
+        masked_lm_ids = parsed_example['masked_lm_ids']
+        next_sentence_labels = parsed_example['next_sentence_labels']
+
+        return  (input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, next_sentence_labels)
+
     """ Return data in TFRecords """
-    fn_load_data = {'reads': load_tfrecords_with_reads, 'sentences': load_tfrecords_with_sentences}
+    fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
 
     dataset = tf.data.TFRecordDataset([filenames])
 
@@ -385,7 +408,10 @@ def main():
 
     else:
         if args.model_type == 'BERT':
-            datatype = 'sentences'
+            if args_bert_step == 'finetuning':
+                datatype = 'finetuning'
+            else:
+                datatype = 'pretraining'
         else:
             datatype = 'reads'
 
