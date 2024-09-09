@@ -199,7 +199,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, train_loss_2, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
-        if model_type == 'BERT' and args.finetuning:
+        if model_type == 'BERT' and args.bert_step == "finetuning":
             input_ids, input_mask, token_type_ids, labels, is_real_example = data
             # x, embedding_table, flat_input_ids, input_shape, output_1 = model(input_ids, input_mask, token_type_ids, training)
             probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
@@ -209,7 +209,7 @@ def training_step(args, model_type, data, num_labels, train_accuracy_2, loss, tr
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
             loss_value = tf.reduce_mean(per_example_loss)
             # loss_value = loss(labels, probs)
-        elif model_type == 'BERT' and args.pretraining:
+        elif model_type == 'BERT' and args.bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label = data
             loss_value, mlm_probs = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label, training)
         else:
@@ -292,8 +292,7 @@ def main():
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--pretraining', action='store_true', default=False, required=('BERT' in sys.argv))
-    parser.add_argument('--finetuning', action='store_true', default=False, required=('BERT' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--n_rows', type=int, default=50)
@@ -493,7 +492,7 @@ def main():
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    if args.model_type == 'BERT' and args.finetuning:
+    if args.model_type == 'BERT' and args.bert_step == "finetuning":
         model = BertModelFinetuning(config=config)
         # define a forward pass
         # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
@@ -526,7 +525,7 @@ def main():
 
         # print(model.trainable_weights)
         # print(len(model.trainable_weights))
-    elif args.model_type == 'BERT' and args.pretraining:
+    elif args.model_type == 'BERT' and args.bert_step == "pretraining":
         model = BertModelPretraining(config=config)
         print(f'summary: {model.create_model().summary()}')
         tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
