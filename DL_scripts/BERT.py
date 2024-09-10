@@ -1100,6 +1100,8 @@ class BertModelPretraining(tf.keras.Model):
         x = self.mlm_dense(x)
         x = self.mlm_norm_layer(x)
 
+        # The output weights are the same as the input embeddings, but there is
+        # an output-only bias for each token.
         logits = tf.linalg.matmul(x, embedding_table, transpose_b=True) # [batch_size, vocab_size]
 
         logits = tf.nn.bias_add(logits, self.mlm_output_bias) # [batch_size, vocab_size]
@@ -1135,7 +1137,7 @@ class BertModelPretraining(tf.keras.Model):
 
 
 
-        return total_loss, masked_lm_probs, accuracy, predictions, equal_values
+        return total_loss, masked_lm_probs, accuracy, predictions, equal_values, embedding_table
 
 
 
