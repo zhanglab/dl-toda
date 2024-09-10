@@ -1094,7 +1094,7 @@ class BertModelPretraining(tf.keras.Model):
 
         # take the last layer of the encoder output
         sequence_output = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
-        # gather vectors of masked positions
+        # gather vectors of masked positions and flatten the vectors within one batch
         output_layer = gather_indexes(sequence_output, masked_lm_positions) # shape = [batch_size*len(masked_lm_ids), hidden_size]
         # apply a non-linear transformation before the output layer
         x = self.mlm_dense(output_layer) # shape = [batch_size*len(masked_lm_ids), hidden_size]
@@ -1104,9 +1104,9 @@ class BertModelPretraining(tf.keras.Model):
         # an output-only bias for each token.
         logits = tf.linalg.matmul(x, embedding_table, transpose_b=True) # shape = [batch_size*len(masked_lm_ids), vocab_size]
 
-        logits = tf.nn.bias_add(logits, self.mlm_output_bias) # [batch_size*, vocab_size]
+        logits = tf.nn.bias_add(logits, self.mlm_output_bias) # shape = [batch_size*len(masked_lm_ids), vocab_size]
         masked_lm_probs = tf.nn.softmax(logits, axis=-1)
-        masked_lm_log_probs = tf.nn.log_softmax(logits)  # [batch_size, vocab_size]
+        masked_lm_log_probs = tf.nn.log_softmax(logits)  # shape = [batch_size*len(masked_lm_ids), vocab_size]
 
         label_ids = tf.reshape(masked_lm_ids, [-1])
         label_weights = tf.reshape(masked_lm_weights, [-1])
