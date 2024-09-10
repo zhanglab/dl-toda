@@ -1095,7 +1095,7 @@ class BertModelPretraining(tf.keras.Model):
         # take the last layer of the encoder output
         sequence_output = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
  
-        output_layer = gather_indexes(sequence_output, masked_lm_positions)
+        output_layer = gather_indexes(sequence_output, masked_lm_positions) # shape = [, hidden_size]
         # apply a non-linear transformation before the output layer
         x = self.mlm_dense(output_layer)
         x = self.mlm_norm_layer(x)
@@ -1137,7 +1137,7 @@ class BertModelPretraining(tf.keras.Model):
 
 
 
-        return total_loss, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer
+        return total_loss, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
 
 
 
