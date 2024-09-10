@@ -234,7 +234,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
             # loss_value = loss(labels, probs)
         elif model_type == 'BERT' and bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-            loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer  = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+            loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x  = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -275,7 +275,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
     train_loss_2.update_state(loss_value)
 
     # return loss_value, input_ids, input_mask
-    return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer
+    return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
@@ -629,8 +629,8 @@ def main():
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        print('values for batch', batch, ':', loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer)
+        loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
+        print('values for batch', batch, ':', loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x)
         print(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label)
         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
         # create dictionary mapping the species to their occurrence in batches
