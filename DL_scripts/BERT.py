@@ -1094,17 +1094,17 @@ class BertModelPretraining(tf.keras.Model):
 
         # take the last layer of the encoder output
         sequence_output = encoder_output[-1] # `sequence_output` shape = [batch_size, seq_length, hidden_size]
- 
-        output_layer = gather_indexes(sequence_output, masked_lm_positions) # shape = [, hidden_size]
+        # gather vectors of masked positions
+        output_layer = gather_indexes(sequence_output, masked_lm_positions) # shape = [batch_size*len(masked_lm_ids), hidden_size]
         # apply a non-linear transformation before the output layer
-        x = self.mlm_dense(output_layer)
-        x = self.mlm_norm_layer(x)
+        x = self.mlm_dense(output_layer) # shape = [batch_size*len(masked_lm_ids), hidden_size]
+        x = self.mlm_norm_layer(x) # shape = [batch_size*len(masked_lm_ids), hidden_size]
 
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
-        logits = tf.linalg.matmul(x, embedding_table, transpose_b=True) # [batch_size, vocab_size]
+        logits = tf.linalg.matmul(x, embedding_table, transpose_b=True) # shape = [batch_size*len(masked_lm_ids), vocab_size]
 
-        logits = tf.nn.bias_add(logits, self.mlm_output_bias) # [batch_size, vocab_size]
+        logits = tf.nn.bias_add(logits, self.mlm_output_bias) # [batch_size*, vocab_size]
         masked_lm_probs = tf.nn.softmax(logits, axis=-1)
         masked_lm_log_probs = tf.nn.log_softmax(logits)  # [batch_size, vocab_size]
 
