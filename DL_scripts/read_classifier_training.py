@@ -630,8 +630,9 @@ def main():
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        print('values for batch', batch, ':', loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x)
-        print(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label)
+        # print('values for batch', batch, ':', loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x)
+        # print(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label)
+        print(masked_lm_positions[0], sequence_output[0], output_layer[0])
         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
@@ -644,9 +645,10 @@ def main():
         #     # print(input_ids[0])
 
         if batch % 10 == 0 and hvd.rank() == 0:
-            break
+            # break
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_2.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
+            break
             # print(f'epoch: {epoch}\tbatch: {batch}')
             # print(input_ids)
             # write metrics
