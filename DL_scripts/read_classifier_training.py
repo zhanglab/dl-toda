@@ -278,7 +278,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
     return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model):
+def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
     training = False
     if model_type == 'BERT' and bert_step == "finetuning":
         input_ids, input_mask, token_type_ids, labels, is_real_example = data
@@ -290,7 +290,7 @@ def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_
         # loss_value_2 = loss(labels, probs)
     elif model_type == 'BERT' and bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        loss_value, mlm_probs = model(args.config, input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+        loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x  = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -299,7 +299,7 @@ def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_
     if model_type == 'BERT' and bert_step == "finetuning":
         val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        val_accuracy_2.update_state(masked_lm_ids, mlm_probs)
+        val_accuracy_3.update_state(accuracy)
     else:
         val_accuracy_2.update_state(labels, probs)
     # loss_value = loss(labels, probs)
@@ -610,6 +610,7 @@ def main():
     train_accuracy_3 = tf.keras.metrics.Mean(name='train_accuracy_3')
     # train_accuracy_2 = tf.keras.metrics.Accuracy(name='train_accuracy_2')
     val_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_2')
+    val_accuracy_3 = tf.keras.metrics.Mean(name='val_accuracy_3')
     # val_accuracy_2 = tf.keras.metrics.Accuracy(name='val_accuracy_2')
 
     start = datetime.datetime.now()
@@ -671,7 +672,7 @@ def main():
             #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, args.bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, model)
+                testing_step(args.model_type, args.bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model)
 
 
             # adjust learning rate
