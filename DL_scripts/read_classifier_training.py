@@ -660,10 +660,10 @@ def main():
                 # tf.summary.scalar("train_loss_1", train_loss_1.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
                 tf.summary.scalar("train_loss_3", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
+                tf.summary.scalar("train_accuracy_3", train_accuracy_3.result().numpy(), step=batch)
                 # tf.summary.scalar("train_accuracy_2", train_accuracy_2.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_2.result().numpy()}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_3.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
@@ -683,17 +683,17 @@ def main():
                     opt.learning_rate = new_lr
 
             if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_2.result().numpy()*100}\n')
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()} - Validation accuracy: {val_accuracy_3.result().numpy()*100}\n')
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
                 with writer.as_default():
                     tf.summary.scalar("val_loss_1", val_loss_1.result().numpy(), step=epoch)
                     # tf.summary.scalar("val_loss_2", val_loss_2.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy_2", val_accuracy_3.result().numpy(), step=epoch)
                     # tf.summary.scalar("val_accuracy_2", val_accuracy_2.result().numpy(), step=epoch)
                     writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_2.result().numpy()}\n')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_3.result().numpy()}\n')
 
             # reset metrics variables
             # train_loss_1.reset_states()
