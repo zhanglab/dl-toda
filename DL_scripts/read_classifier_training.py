@@ -275,7 +275,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
         train_loss_2.update_state(loss_value)
     elif model_type == 'BERT' and bert_step == "pretraining":
         train_accuracy_3.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
-        train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
+        train_loss_2.update_state(masked_lm_example_loss)
     else:
         train_accuracy_2.update_state(labels, probs)
         # train_loss_1.update_state(loss_value_1)
@@ -644,7 +644,19 @@ def main():
         # input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss  = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
         print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss)
-        
+        # masked_lm_loss = loss_value = loss_value_1 != train_loss_2.result().numpy()
+        # train_loss_2.result().numpy() --> tf.keras.metrics.Mean, train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
+        # masked_lm_loss --> per_example_loss = -tf.reduce_sum(masked_lm_log_probs * one_hot_labels, axis=[-1])
+            # numerator = tf.reduce_sum(label_weights * per_example_loss)
+            # denominator = tf.reduce_sum(label_weights) + 1e-5
+            # masked_lm_loss = numerator / denominator
+            # label_weights = tf.reshape(masked_lm_weights, [-1])
+        # loss_value --> loss(masked_lm_ids, masked_lm_probs) with loss = tf.losses.SparseCategoricalCrossentropy()
+        # loss_value_1 --> tf.reduce_mean(masked_lm_example_loss)
+        # difference between tf.reduce_mean and tf.keras.metrics.Mean
+            # tf.reduce_mean --> Computes the mean of elements across dimensions of a tensor.
+            # tf.keras.metrics.Mean --> Compute the (weighted) mean of the given values.
+
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
