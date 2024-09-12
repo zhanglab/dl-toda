@@ -117,7 +117,7 @@ def get_data_for_bert(args, list_reads, reads_index):
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-            data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, label])
+            data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label])
         elif args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values
             input_mask = [1] * len(dna_list)
@@ -189,10 +189,10 @@ def create_tfrecords(args, grouped_files):
                     # for process, data_process in data.items():
                     #     print(process, len(data_process))
                 for i, r in enumerate(data, 0):
-                    # print(f'input_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
-                    # print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}\tlabel_ids: {r[7]}')
-                    # print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
-                    # print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
+                    print(f'input_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
+                    print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}\tlabel_ids: {r[7]}')
+                    print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
+                    print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
                     input_mask: [1]*len(input_ids) - input_mask
@@ -213,7 +213,6 @@ def create_tfrecords(args, grouped_files):
                                 'masked_lm_weights': wrap_weights(r[4]),
                                 'masked_lm_ids': wrap_read(r[5]),
                                 'next_sentence_labels': wrap_label(r[6]),
-                                'label_ids': wrap_label(r[7]),
                             }
                     elif args.bert_step == 'finetuning':
                         data = \
