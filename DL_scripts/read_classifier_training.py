@@ -239,6 +239,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
             masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
             masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
             masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
+            loss_value_2 = tf.reduce_mean(masked_lm_example_loss)
+            loss_value = tf.keras.metrics.Mean(masked_lm_example_loss, sample_weight=masked_lm_weights)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -266,14 +268,14 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
         hvd.broadcast_variables(model.variables, root_rank=0)
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
-    #update training accuracy
+    #update training accuracy and loss
     if model_type == 'BERT' and bert_step == "finetuning":
         # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
         train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
         train_loss_2.update_state(loss_value)
     elif model_type == 'BERT' and bert_step == "pretraining":
         train_accuracy_3.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
-        train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
+        train_loss_2.update_state(loss_value)
     else:
         train_accuracy_2.update_state(labels, probs)
         # train_loss_1.update_state(loss_value_1)
@@ -282,7 +284,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
     # return loss_value, input_ids, input_mask
     # return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
 
-    return logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss
+    return loss_value, loss_value_2, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
@@ -298,6 +300,7 @@ def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_
     elif model_type == 'BERT' and bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x  = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+        
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -639,9 +642,9 @@ def main():
         # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         # input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss  = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        print(logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss)
-        break
+        loss_value, loss_value_2, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss  = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
+        print(loss_value, loss_value_2, train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss)
+        
         # create dictionary mapping the species to their occurrence in batches
         # labels_count = Counter(labels.numpy())
         # for k, v in labels_count.items():
@@ -653,7 +656,7 @@ def main():
         #     # print(input_ids[0])
 
         if batch % 10 == 0 and hvd.rank() == 0:
-            # break
+            break
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
         if batch % 1 == 0 and hvd.rank() == 0:
             # break
