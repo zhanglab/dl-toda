@@ -274,7 +274,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
         train_loss_2.update_state(loss_value)
     elif model_type == 'BERT' and bert_step == "pretraining":
         train_accuracy_3.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
-        train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
+        # train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
+        train_loss_2.update_state(masked_lm_example_loss)
     else:
         train_accuracy_2.update_state(labels, probs)
         # train_loss_1.update_state(loss_value_1)
