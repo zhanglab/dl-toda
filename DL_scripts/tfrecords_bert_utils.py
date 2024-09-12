@@ -24,7 +24,8 @@ import random
 
 def split_read(args, reads, read, r_index):
     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
-    nsp_choice = random.choice([True, False])
+    #nsp_choice = random.choice([True, False])
+    nsp_choice = False
     # define first segment
     segment_1 = read[:len(read)//2]
     if nsp_choice == False or args.bert_step == 'finetuning':
@@ -60,10 +61,13 @@ def get_nsp_input(args, segment_1, segment_2):
     # else:
     #     nsp_label = 1 # 'IsNext'
 
-    # concatenate segments and add CLS and SEP tokens
-    concatenate_segments = [args.dict_kmers['[CLS]']] + segment_1 + [args.dict_kmers['[SEP]']] + segment_2 + [args.dict_kmers['[SEP]']]
-    # create list of segment ids
-    segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
+    ## concatenate segments and add CLS and SEP tokens
+    #concatenate_segments = [args.dict_kmers['[CLS]']] + segment_1 + [args.dict_kmers['[SEP]']] + segment_2 + [args.dict_kmers['[SEP]']]
+    # NSP is not implemented yet
+    concatenate_segments = [args.dict_kmers['[CLS]']] + segment_1 + segment_2 
+    ## create list of segment ids
+    #segment_ids = [0]*(2+len(segment_1)) + [1]*(1+len(segment_2))
+    segment_ids = [0]*(1+len(segment_1)) + [0]*len(segment_2)
 
     return np.array(concatenate_segments), np.array(segment_ids)
 
