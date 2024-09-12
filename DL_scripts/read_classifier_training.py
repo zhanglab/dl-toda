@@ -284,7 +284,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
     # return loss_value, input_ids, input_mask
     # return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
 
-    return loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions
+    return loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, masked_lm_predictions
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
