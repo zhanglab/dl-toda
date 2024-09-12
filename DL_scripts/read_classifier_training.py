@@ -343,7 +343,7 @@ def main():
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
-    parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('BERT' in sys.argv))
+    parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('BERT' in sys.argv), default=0.15)
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
