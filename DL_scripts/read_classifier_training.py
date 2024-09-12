@@ -652,8 +652,6 @@ def main():
         # print(x, embedding_table, flat_input_ids, input_shape, output_1)
         # input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions  = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions)
-        print(f"calculate per example loss: {masked_lm_log_probs}\t{one_hot_labels}\t{masked_lm_log_probs * one_hot_labels}\n")
         # masked_lm_loss = loss_value = loss_value_1 != train_loss_2.result().numpy()
         # train_loss_2.result().numpy() --> tf.keras.metrics.Mean, train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
         # masked_lm_loss --> per_example_loss = -tf.reduce_sum(masked_lm_log_probs * one_hot_labels, axis=[-1])
@@ -677,9 +675,10 @@ def main():
         #         print(input_ids[i])
         #     # print(input_ids[0])
 
-        if batch % 10 == 0 and hvd.rank() == 0:
-            # break
+        if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
+            print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions)
+            print(f"calculate per example loss: {masked_lm_log_probs}\t{one_hot_labels}\t{masked_lm_log_probs * one_hot_labels}\n")
         if batch % 1 == 0 and hvd.rank() == 0:
             # break
             # print(f'epoch: {epoch}\tbatch: {batch}')
