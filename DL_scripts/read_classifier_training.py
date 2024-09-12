@@ -134,7 +134,7 @@ class DALIPreprocessor(object):
 
 
 
-def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_training, drop_remainder):
+def build_dataset(args, filenames, num_classes, datatype, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
@@ -152,9 +152,9 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
     def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
-          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
-          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "label_ids": tf.io.FixedLenFeature([], tf.int64),
           "is_real_example": tf.io.FixedLenFeature([], tf.int64),
         }
@@ -171,12 +171,12 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
-          "input_mask": tf.io.FixedLenFeature([vector_size], tf.int64),
-          "segment_ids": tf.io.FixedLenFeature([vector_size], tf.int64),
-          "masked_lm_positions": tf.io.FixedLenFeature([37], tf.int64),
-          "masked_lm_weights": tf.io.FixedLenFeature([37], tf.float32),
-          "masked_lm_ids": tf.io.FixedLenFeature([37], tf.int64),
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "segment_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "masked_lm_positions": tf.io.FixedLenFeature([args.num_masked], tf.int64),
+          "masked_lm_weights": tf.io.FixedLenFeature([args.num_masked], tf.float32),
+          "masked_lm_ids": tf.io.FixedLenFeature([args.num_masked], tf.int64),
           "next_sentence_labels": tf.io.FixedLenFeature([], tf.int64),
         }
         # load one example
@@ -201,7 +201,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
         # dataset = dataset.shuffle(buffer_size=100)
 
     dataset = dataset.map(map_func=fn_load_data[datatype])
-    dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+    dataset = dataset.batch(args.batch_size, drop_remainder=drop_remainder)
 
 
     # Load data as shards
@@ -343,6 +343,7 @@ def main():
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
+    parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('BERT' in sys.argv))
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
@@ -412,11 +413,12 @@ def main():
                 datatype = 'finetuning'
             else:
                 datatype = 'pretraining'
+                args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
         else:
             datatype = 'reads'
 
-        train_input = build_dataset(train_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=True, drop_remainder=True)
-        val_input = build_dataset(val_files, args.batch_size, args.vector_size, num_labels, datatype, is_training=False, drop_remainder=True)
+        train_input = build_dataset(args, train_files, num_labels, datatype, is_training=True, drop_remainder=True)
+        val_input = build_dataset(args, val_files, num_labels, datatype, is_training=False, drop_remainder=True)
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
