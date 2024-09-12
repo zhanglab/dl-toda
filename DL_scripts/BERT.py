@@ -1119,9 +1119,14 @@ class BertModelPretraining(tf.keras.Model):
         denominator = tf.reduce_sum(label_weights) + 1e-5
         masked_lm_loss = numerator / denominator
 
-        predictions = tf.math.argmax(masked_lm_probs, axis=1)
-        equal_values = tf.math.equal(predictions, label_ids)
-        accuracy = tf.math.reduce_mean(tf.cast(equal_values, tf.float32))
+
+        # return masked_lm_loss, per_example_loss, masked_lm_log_probs
+
+        # predictions = tf.math.argmax(masked_lm_probs, axis=1)
+        # equal_values = tf.math.equal(predictions, label_ids)
+        # accuracy = tf.math.reduce_mean(tf.cast(equal_values, tf.float32))
+
+
 
 
         # (masked_lm_loss, masked_lm_example_loss, masked_lm_log_probs, masked_lm_probs, accuracy, predictions, equal_values) = GetMaskedLMOutput(
@@ -1133,11 +1138,11 @@ class BertModelPretraining(tf.keras.Model):
         #  bert_config, model.get_pooled_output(), next_sentence_labels)
 
         # total_loss = masked_lm_loss + next_sentence_loss
-        total_loss = masked_lm_loss
+        # total_loss = masked_lm_loss
 
 
 
-        return total_loss, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
+        return logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, per_example_loss, numerator, denominator, masked_lm_loss
 
 
 
