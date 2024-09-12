@@ -93,8 +93,9 @@ def get_masked_array(args, mask_lm_positions, input_array):
 
 def get_mlm_input(args, input_array):
     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
-    n_mask = int(args.masked_lm_prob * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
-    
+    # n_mask = int(args.masked_lm_prob * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
+    # compute number of bases to mask (take into account 'CLS') --> without nsp
+    n_mask = int(args.masked_lm_prob * (len(input_array)-1))
     # if args.contiguous:
     #     # mask contiguous bases
     #     # choose index of first base to mask
