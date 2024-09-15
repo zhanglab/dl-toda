@@ -107,7 +107,7 @@ def get_mlm_input(args, input_array):
     # get indexes of SEP, CLS and UNK tokens
     # sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[SEP]'],args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]']]]
     # get indexes of CLS and UNK tokens ()without NSP task
-    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]']]]
+    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]'],args.dict_kmers['[SEP]']]]
     # get list of indices of tokens to mask
     mask_lm_positions = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
     # mask bases
