@@ -206,22 +206,22 @@ def create_tfrecords(args, grouped_files):
                     if args.bert_step == 'pretraining':
                         data = \
                             {
-                                'input_ids': wrap_read(r[0]),
+                                'input_word_ids': wrap_read(r[0]),
                                 'input_mask': wrap_read(r[1]),
-                                'segment_ids': wrap_read(r[2]),
+                                'input_type_ids': wrap_read(r[2]),
                                 'masked_lm_positions': wrap_read(r[3]),
                                 'masked_lm_weights': wrap_weights(r[4]),
-                                'masked_lm_ids': wrap_read(r[5]),
-                                'next_sentence_labels': wrap_label(r[6]),
+                                'masked_lm_ids': wrap_read(r[5])
+                                # 'next_sentence_labels': wrap_label(r[6]),
                             }
                     elif args.bert_step == 'finetuning':
                         data = \
                             {
-                                'input_ids': wrap_read(r[0]),
+                                'input_word_ids': wrap_read(r[0]),
                                 'input_mask': wrap_read(r[1]),
-                                'segment_ids': wrap_read(r[2]),
-                                'label_ids': wrap_label(r[3]),
-                                'is_real_example': wrap_label(1)
+                                'input_type_ids': wrap_read(r[2]),
+                                'labels': wrap_label(r[3])
+                                # 'is_real_example': wrap_label(1)
                             }
                     feature = tf.train.Features(feature=data)
                     example = tf.train.Example(features=feature)
