@@ -196,7 +196,7 @@ def create_tfrecords(args, grouped_files):
                         print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
                     if i == 0 and args.bert_step == 'finetuning':
                         print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tlabels: {r[3]}\n')
-                        print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tlabels: {len(r[3])}\n')
+                        print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\n')
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
                     input_mask: [1]*len(input_ids) - input_mask
