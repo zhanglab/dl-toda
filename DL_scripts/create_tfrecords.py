@@ -189,11 +189,14 @@ def create_tfrecords(args, grouped_files):
                     # for process, data_process in data.items():
                     #     print(process, len(data_process))
                 for i, r in enumerate(data, 0):
-                    if i == 0:
+                    if i == 0 and args.bert_step == 'pretraining':
                         print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
                         print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}')
                         print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
                         print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
+                    if i == 0 and args.bert_step == 'finetuning':
+                        print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tlabels: {r[3]}\n')
+                        print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tlabels: {len(r[3])}\n')
                     """
                     input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
                     input_mask: [1]*len(input_ids) - input_mask
@@ -325,8 +328,9 @@ def main():
 
     if not args.DNA_model:
         if args.bert:
-            args.kmer_vector_length = args.read_length//2 - args.k_value + 1
-            print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 1}')
+            # compute size of output data for input_word_ids (CLS and SEP tokens are added with SEP at the end)
+            args.kmer_vector_length = args.read_length//2 - args.k_value + 2
+            print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
             # print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
         else:
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
