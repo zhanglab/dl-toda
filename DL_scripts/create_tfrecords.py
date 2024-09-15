@@ -329,7 +329,7 @@ def main():
     if not args.DNA_model:
         if args.bert:
             # compute size of output data for input_word_ids (CLS and SEP tokens are added with SEP at the end)
-            args.kmer_vector_length = args.read_length//2 - args.k_value + 2
+            args.kmer_vector_length = args.read_length//2 - args.k_value + 1
             print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
             # print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
         else:
