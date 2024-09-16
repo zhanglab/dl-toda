@@ -273,16 +273,14 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value, loss_value_1
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
+def testing_step(model_type, bert_step, data, num_labels, val_accuracy, loss, model):
     training = False
     if model_type == 'BERT' and bert_step == "finetuning":
-        input_ids, input_mask, token_type_ids, labels, is_real_example = data
-        probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
+        input_data, labels = data
+        logits = model(input_data, training=True)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        loss_value = tf.reduce_mean(per_example_loss)
-        # loss_value_2 = loss(labels, probs)
+        probs = tf.nn.softmax(logits, axis=-1)
+        loss_value = loss(labels, probs)
     elif model_type == 'BERT' and bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
@@ -301,15 +299,14 @@ def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_
         loss_value = loss(labels, probs)
     
     if model_type == 'BERT' and bert_step == "finetuning":
-        val_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
+        val_accuracy.update_state(labels, probs)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        val_accuracy_3.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
+        val_accuracy.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
     else:
-        val_accuracy_2.update_state(labels, probs)
+        val_accuracy.update_state(labels, probs)
     
-    val_loss_1.update_state(loss_value)
+    val_loss.update_state(loss_value)
 
-    return loss_value_1
 
 def main():
     parser = argparse.ArgumentParser()
@@ -652,31 +649,22 @@ def main():
 
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
-            # print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions)
-            # print(f"calculate per example loss: {masked_lm_log_probs}\t{one_hot_labels}\t{masked_lm_log_probs * one_hot_labels}\n")
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         # if batch % 1 == 0 and hvd.rank() == 0:
         if batch % 1 == 0:
-            # break
-            # print(f'epoch: {epoch}\tbatch: {batch}')
-            # print(input_ids)
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-                tf.summary.scalar("train_loss_2", train_loss_2.result().numpy(), step=batch)
-                tf.summary.scalar("train_loss_3", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy", train_accuracy_3.result().numpy(), step=batch)
+                tf.summary.scalar("train_loss", loss_value, step=batch)
+                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy_3.result().numpy()}\n')
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
-            # save dictionary of labels count
-            # with open(os.path.join(args.output_dir, f'{hvd.rank()}-{epoch}-labels.json'), 'w') as labels_outfile:
-            #     json.dump(labels_dict, labels_outfile)
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                loss_value_1 = testing_step(args.model_type, args.bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model)
+                testing_step(args.model_type, args.bert_step, data, num_labels, val_loss, val_accuracy, model)
 
 
             # adjust learning rate
@@ -687,25 +675,20 @@ def main():
                     opt.learning_rate = new_lr
 
             # if hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()}\t{loss_value_1} - Validation accuracy: {val_accuracy_3.result().numpy()*100}\n')
+            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
             # save weights
             checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
             with writer.as_default():
-                tf.summary.scalar("val_loss", val_loss_1.result().numpy(), step=epoch)
-                tf.summary.scalar("val_accuracy", val_accuracy_3.result().numpy(), step=epoch)
+                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
                 writer.flush()
-            vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_3.result().numpy()}\n')
+            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
             # reset metrics variables
-            # train_loss_1.reset_states()
-            train_loss_2.reset_states()
-            val_loss_1.reset_states()
-            # val_loss_2.reset_states()
-            # train_accuracy_1.reset_states()
-            train_accuracy_2.reset_states()
-            # val_accuracy_1.reset_states()
-            val_accuracy_2.reset_states()
+            val_loss.reset_states()
+            train_accuracy.reset_states()
+            val_accuracy.reset_states()
 
             # define end of current epoch
             epoch += 1
