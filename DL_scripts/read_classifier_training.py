@@ -270,7 +270,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-        return loss_value, loss_value_1
+    return loss_value, loss_value_1
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
