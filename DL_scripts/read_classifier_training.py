@@ -2,14 +2,14 @@ import tensorflow as tf
 # import tensorflow_addons as tfa
 import tensorflow_models as tfm
 import tensorflow_hub as hub
-import horovod.tensorflow as hvd
+# import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from keras import backend as K
 from collections import Counter, defaultdict
-from nvidia.dali.pipeline import pipeline_def
-import nvidia.dali.fn as fn
-import nvidia.dali.tfrecord as tfrec
-import nvidia.dali.plugin.tf as dali_tf
+# from nvidia.dali.pipeline import pipeline_def
+# import nvidia.dali.fn as fn
+# import nvidia.dali.tfrecord as tfrec
+# import nvidia.dali.plugin.tf as dali_tf
 import os
 import sys
 import json
@@ -52,87 +52,87 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
-# define the DALI pipeline
-@pipeline_def
-def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-    # prefetch_queue_depth = 100
-    # read_ahead = True
-    stick_to_shard = True
-    inputs = fn.readers.tfrecord(path=tfrec_filenames,
-                                 index_path=tfrec_idx_filenames,
-                                 random_shuffle=training,
-                                 shard_id=shard_id,
-                                 num_shards=num_gpus,
-                                 initial_fill=initial_fill,
-                                 # prefetch_queue_depth=prefetch_queue_depth,
-                                 # read_ahead=read_ahead,
-                                 stick_to_shard=stick_to_shard,
-                                 features={
-                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-    # retrieve reads and labels and copy them to the gpus
-    reads = inputs["read"].gpu()
-    labels = inputs["label"].gpu()
-    return (reads, labels)
+# # define the DALI pipeline
+# @pipeline_def
+# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+#     # prefetch_queue_depth = 100
+#     # read_ahead = True
+#     stick_to_shard = True
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=shard_id,
+#                                  num_shards=num_gpus,
+#                                  initial_fill=initial_fill,
+#                                  # prefetch_queue_depth=prefetch_queue_depth,
+#                                  # read_ahead=read_ahead,
+#                                  stick_to_shard=stick_to_shard,
+#                                  features={
+#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     reads = inputs["read"].gpu()
+#     labels = inputs["label"].gpu()
+#     return (reads, labels)
 
 
-# define the BERT DALI pipeline
-@pipeline_def
-def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-    inputs = fn.readers.tfrecord(path=tfrec_filenames,
-                                 index_path=tfrec_idx_filenames,
-                                 random_shuffle=training,
-                                 shard_id=0,
-                                 num_shards=1,
-                                 stick_to_shard=False,
-                                 initial_fill=initial_fill,
-                                 features={
-                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-    # retrieve reads and labels and copy them to the gpus
-    input_ids = inputs["input_ids"].gpu()
-    input_mask = inputs["input_mask"].gpu()
-    segment_ids = inputs["segment_ids"].gpu()
-    label_ids = inputs['label_ids'].gpu()
-    is_real_example = inputs['is_real_example'].gpu()
+# # define the BERT DALI pipeline
+# @pipeline_def
+# def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=0,
+#                                  num_shards=1,
+#                                  stick_to_shard=False,
+#                                  initial_fill=initial_fill,
+#                                  features={
+#                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+#                                      "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     input_ids = inputs["input_ids"].gpu()
+#     input_mask = inputs["input_mask"].gpu()
+#     segment_ids = inputs["segment_ids"].gpu()
+#     label_ids = inputs['label_ids'].gpu()
+#     is_real_example = inputs['is_real_example'].gpu()
 
-    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+#     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
 
 
-class DALIPreprocessor(object):
-    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
-               deterministic=False, training=False):
+# class DALIPreprocessor(object):
+#     def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+#                deterministic=False, training=False):
 
-        device_id = hvd.local_rank()
-        shard_id = hvd.rank()
-        num_gpus = hvd.size()
+#         device_id = hvd.local_rank()
+#         shard_id = hvd.rank()
+#         num_gpus = hvd.size()
         
-        self.batch_size = batch_size
-        self.device_id = device_id
+#         self.batch_size = batch_size
+#         self.device_id = device_id
 
-        if args.model_type == "BERT":
-            self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+#         if args.model_type == "BERT":
+#             self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
-            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
-        else:
-            self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#                 output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+#         else:
+#             self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
    
-            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#                 output_shapes=((batch_size, vector_size), (batch_size)),
+#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
-    def get_device_dataset(self):
-        return self.dalidataset
+#     def get_device_dataset(self):
+#         return self.dalidataset
 
 
 
@@ -243,7 +243,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         # scaled_loss = opt.get_scaled_loss(loss_value)
     # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
     # combine gradient values before applying gradients to model weights
-    tape = hvd.DistributedGradientTape(tape)
+    # tape = hvd.DistributedGradientTape(tape)
     # get the scaled gradients
     # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
     # get the unscaled gradients
@@ -256,10 +256,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # training is started with random weights or restored from a checkpoint.
     # Note: broadcast should be done after the first gradient step to ensure optimizer
     # initialization.
-    if first_batch:
-        print(f'First_batch: {first_batch}')
-        hvd.broadcast_variables(model.variables, root_rank=0)
-        hvd.broadcast_variables(opt.variables(), root_rank=0)
+    # if first_batch:
+    #     print(f'First_batch: {first_batch}')
+    #     hvd.broadcast_variables(model.variables, root_rank=0)
+    #     hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy and loss
     if model_type == 'BERT' and bert_step == "finetuning":
@@ -362,15 +362,16 @@ def main():
     args = parser.parse_args()
 
     # Initialize Horovod
-    hvd.init()
+    # hvd.init()
     # Map one GPU per process
     # use hvd.local_rank() for gpu pinning instead of hvd.rank()
     gpus = tf.config.experimental.list_physical_devices('GPU')
-    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    # print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     if gpus:
-        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+        tf.config.experimental.set_visible_devices(gpus, 'GPU')
+        # tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
@@ -426,54 +427,62 @@ def main():
         val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
 
     # compute number of steps/batches per epoch
-    nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
+    nstep_per_epoch = int(args.train_reads_per_epoch/args.batch_size)
+    num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    val_steps = int(args.val_reads_per_epoch/args.batch_size)
+    num_val_steps = int(args.val_reads_per_epoch/args.batch_size)
+
+    # # compute number of steps/batches per epoch
+    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
+    # num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
+    # # compute number of steps/batches to iterate over entire validation set
+    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    # num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
 
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
         args.config = BertConfig.from_json_file(args.bert_config_file)
         print(f'BERT config: {args.config}')
 
-    if hvd.rank() == 0:
-        # create output directory
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
+    # if hvd.rank() == 0:
+    # create output directory
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
 
-        # create directory for storing checkpoints
-        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-        if not os.path.isdir(ckpt_dir):
-            os.makedirs(ckpt_dir)
+    # create directory for storing checkpoints
+    ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
+    if not os.path.isdir(ckpt_dir):
+        os.makedirs(ckpt_dir)
 
-        # create directory for storing logs
-        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
-        if not os.path.exists(tensorboard_dir):
-            os.makedirs(tensorboard_dir)
+    # create directory for storing logs
+    tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
+    if not os.path.exists(tensorboard_dir):
+        os.makedirs(tensorboard_dir)
 
-        writer = tf.summary.create_file_writer(tensorboard_dir)
-        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+    writer = tf.summary.create_file_writer(tensorboard_dir)
+    td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+    vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
 
-        # create summary file
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
-            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-                    f'Vector size\t{args.vector_size}\n'
-                    f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-                    f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                    f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                    f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-            # \nNumber of classes\t{num_labels}
-            if args.model_type != 'BERT':
-                f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
-            if args.model_type in ["DNA_1", "DNA_2"]:
-                f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
-                        f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
-                        f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
-                        f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
+    # create summary file
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
+        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
+                f'Vector size\t{args.vector_size}\n'
+                f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+                f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
+                # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
+                f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+        # \nNumber of classes\t{num_labels}
+        if args.model_type != 'BERT':
+            f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
+        if args.model_type in ["DNA_1", "DNA_2"]:
+            f.write(f'n_rows\t{args.n_rows}\nn_cols\t{args.n_cols}\nkh_conv_1\t{args.kh_conv_1}\n'
+                    f'kh_conv_2\t{args.kh_conv_2}\nkw_conv_1\t{args.kw_conv_1}\n'
+                    f'kw_conv_2\t{args.kw_conv_2}\nsh_conv_1\t{args.sh_conv_1}\nsh_conv_2\t{args.sh_conv_2}\n'
+                    f'sw_conv_1\t{args.sw_conv_1}\nsw_conv_2\t{args.sw_conv_2}\n')
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
@@ -623,9 +632,9 @@ def main():
             # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
 
-    if hvd.rank() == 0:
-        # create checkpoint object to save model
-        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # if hvd.rank() == 0:
+    # create checkpoint object to save model
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -638,11 +647,13 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
-        if batch % 100 == 0 and hvd.rank() == 0:
+        # if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 100 == 0
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
             # print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions)
             # print(f"calculate per example loss: {masked_lm_log_probs}\t{one_hot_labels}\t{masked_lm_log_probs * one_hot_labels}\n")
-        if batch % 1 == 0 and hvd.rank() == 0:
+        # if batch % 1 == 0 and hvd.rank() == 0:
+        if batch % 1 == 0:
             # break
             # print(f'epoch: {epoch}\tbatch: {batch}')
             # print(input_ids)
@@ -672,16 +683,16 @@ def main():
                     new_lr = current_lr / 2
                     opt.learning_rate = new_lr
 
-            if hvd.rank() == 0:
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()}\t{loss_value_1} - Validation accuracy: {val_accuracy_3.result().numpy()*100}\n')
-                # save weights
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-                with writer.as_default():
-                    tf.summary.scalar("val_loss", val_loss_1.result().numpy(), step=epoch)
-                    tf.summary.scalar("val_accuracy", val_accuracy_3.result().numpy(), step=epoch)
-                    writer.flush()
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_3.result().numpy()}\n')
+            # if hvd.rank() == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss_1.result().numpy()}\t{loss_value_1} - Validation accuracy: {val_accuracy_3.result().numpy()*100}\n')
+            # save weights
+            checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+            with writer.as_default():
+                tf.summary.scalar("val_loss", val_loss_1.result().numpy(), step=epoch)
+                tf.summary.scalar("val_accuracy", val_accuracy_3.result().numpy(), step=epoch)
+                writer.flush()
+            vd_writer.write(f'{epoch}\t{batch}\t{val_loss_1.result().numpy()}\t{val_accuracy_3.result().numpy()}\n')
 
             # reset metrics variables
             # train_loss_1.reset_states()
@@ -696,7 +707,8 @@ def main():
             # define end of current epoch
             epoch += 1
 
-    if hvd.rank() == 0 and args.model_type != 'BERT':
+    # if hvd.rank() == 0 and args.model_type != 'BERT':
+    if args.model_type != 'BERT':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
@@ -708,15 +720,15 @@ def main():
 
     end = datetime.datetime.now()
 
-    if hvd.rank() == 0:
-        total_time = end - start
-        hours, seconds = divmod(total_time.seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        td_writer.close()
-        vd_writer.close()
+    # if hvd.rank() == 0:
+    total_time = end - start
+    hours, seconds = divmod(total_time.seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    td_writer.close()
+    vd_writer.close()
 
 
 if __name__ == "__main__":
