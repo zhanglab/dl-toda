@@ -443,8 +443,9 @@ def main():
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
         args.config = BertConfig.from_json_file(args.bert_config_file)
-        args.config_dict = BertConfig.to_dict(args.bert_config_file)
-        print(f'BERT config: {args.config_cixt}')
+        with open(args.bert_config_file, "r") as f:
+            args.config_dict = json.load(f)
+        print(f'BERT config: {args.config_dict}')
 
     # if hvd.rank() == 0:
     # create output directory
@@ -555,7 +556,7 @@ def main():
     if args.model_type == 'BERT' and args.bert_step == "finetuning":
         encoder_config = tfm.nlp.encoders.EncoderConfig({
             'type':'bert',
-            'bert': config_dict
+            'bert': args.config_dict
         })
         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
         model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
