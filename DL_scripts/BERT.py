@@ -89,12 +89,10 @@ class BertConfig(object):
           text = reader.read()
       return cls.from_dict(json.loads(text))
 
-  def to_dict(self, json_file):
+  def to_dict(self):
       """Serializes this instance to a Python dictionary."""
-      with open(json_file, "r") as f:
-        out_dict = json.load(f)
-      # output = copy.deepcopy(self.__dict__)
-      return out_dict
+      output = copy.deepcopy(self.__dict__)
+      return output
 
   def to_json_string(self):
       """Serializes this instance to a JSON string."""
