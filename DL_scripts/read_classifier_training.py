@@ -218,6 +218,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             logits = model(input_data, training=True)
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
+            log_probs = tf.nn.log_softmax(logits, axis=-1)
             one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
             loss_value_1 = tf.reduce_mean(per_example_loss)
