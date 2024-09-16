@@ -1,5 +1,7 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
+import tensorflow_models as tfm
+import tensorflow_hub as hub
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from keras import backend as K
@@ -134,15 +136,13 @@ class DALIPreprocessor(object):
 
 
 
-def build_dataset(args, filenames, num_classes, datatype, is_training, drop_remainder):
+def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
             'read': tf.io.VarLenFeature(tf.int64),
-            # 'read': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True),
             'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
         }
-        # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
         read = parsed_example['read']
         label = tf.cast(parsed_example['label'], tf.int64)
@@ -152,44 +152,35 @@ def build_dataset(args, filenames, num_classes, datatype, is_training, drop_rema
 
     def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_word_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "segment_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "label_ids": tf.io.FixedLenFeature([], tf.int64),
-          "is_real_example": tf.io.FixedLenFeature([], tf.int64),
+          "input_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "labels": tf.io.FixedLenFeature([], tf.int64)
         }
-        # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-        input_ids = parsed_example['input_ids']
-        input_mask = parsed_example['input_mask']
-        segment_ids = parsed_example['segment_ids']
-        label_ids = parsed_example['label_ids']
-        is_real_example = parsed_example['is_real_example']
 
-        return  (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+        return {"input_word_ids": parsed_example['input_word_ids'], "input_mask": parsed_example['input_mask'], "input_type_ids": parsed_example['input_type_ids']}, parsed_example['labels']
 
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_word_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "segment_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "masked_lm_positions": tf.io.FixedLenFeature([args.num_masked], tf.int64),
           "masked_lm_weights": tf.io.FixedLenFeature([args.num_masked], tf.float32),
-          "masked_lm_ids": tf.io.FixedLenFeature([args.num_masked], tf.int64),
-          "next_sentence_labels": tf.io.FixedLenFeature([], tf.int64),
+          "masked_lm_ids": tf.io.FixedLenFeature([args.num_masked], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-        input_ids = parsed_example['input_ids']
+        input_word_ids = parsed_example['input_word_ids']
         input_mask = parsed_example['input_mask']
-        segment_ids = parsed_example['segment_ids']
+        input_type_ids = parsed_example['input_type_ids']
         masked_lm_positions = parsed_example['masked_lm_positions']
         masked_lm_weights = parsed_example['masked_lm_weights']
         masked_lm_ids = parsed_example['masked_lm_ids']
-        next_sentence_labels = parsed_example['next_sentence_labels']
 
-        return  (input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, next_sentence_labels)
+        return  (input_word_ids, input_mask, input_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids)
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
@@ -219,16 +210,18 @@ def build_dataset(args, filenames, num_classes, datatype, is_training, drop_rema
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, first_batch):
+def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
         if model_type == 'BERT' and bert_step == "finetuning":
-            input_ids, input_mask, token_type_ids, labels, is_real_example = data
-            probs, log_probs, logits = model(input_ids, input_mask, token_type_ids, training)
+            input_data, labels = data
+            logits = model(input_data, training=True)
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            probs = tf.nn.softmax(logits, axis=-1)
             one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
             per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-            loss_value = tf.reduce_mean(per_example_loss)
+            loss_value_1 = tf.reduce_mean(per_example_loss)
+            loss_value = loss(labels, probs)
         elif model_type == 'BERT' and bert_step == "pretraining":
             input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
             logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
@@ -270,21 +263,13 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy_2, tra
 
     #update training accuracy and loss
     if model_type == 'BERT' and bert_step == "finetuning":
-        # train_accuracy_2.update_state(labels, predictions, sample_weight=is_real_example)
-        train_accuracy_2.update_state(labels, probs, sample_weight=is_real_example)
-        train_loss_2.update_state(loss_value)
+        train_accuracy.update_state(labels, probs)
     elif model_type == 'BERT' and bert_step == "pretraining":
-        train_accuracy_3.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
-        train_loss_2.update_state(masked_lm_example_loss)
+        train_accuracy.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
     else:
-        train_accuracy_2.update_state(labels, probs)
-        # train_loss_1.update_state(loss_value_1)
-        train_loss_2.update_state(loss_value)
+        train_accuracy.update_state(labels, probs)
 
-    # return loss_value, input_ids, input_mask
-    # return loss_value, masked_lm_probs, accuracy, predictions, equal_values, embedding_table, sequence_output, output_layer, logits, x
-
-    return loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, masked_lm_predictions
+        return loss_value, loss_value_1
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, loss, val_loss_1, val_accuracy_2, val_accuracy_3, model):
@@ -429,15 +414,16 @@ def main():
     else:
         if args.model_type == 'BERT':
             if args.bert_step == 'finetuning':
-                datatype = 'finetuning'
+                args.datatype = 'finetuning'
             else:
-                datatype = 'pretraining'
+                args.datatype = 'pretraining'
                 args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
         else:
             datatype = 'reads'
 
-        train_input = build_dataset(args, train_files, num_labels, datatype, is_training=True, drop_remainder=True)
-        val_input = build_dataset(args, val_files, num_labels, datatype, is_training=False, drop_remainder=True)
+        # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
+        train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
+        val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
@@ -449,6 +435,7 @@ def main():
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
         args.config = BertConfig.from_json_file(args.bert_config_file)
+        print(f'BERT config: {args.config}')
 
     if hvd.rank() == 0:
         # create output directory
@@ -500,10 +487,16 @@ def main():
                                                   scale_fn=lambda x: 1 / (2. ** (x - 1)),
                                                   step_size=2 * nstep_per_epoch)
 
-    # define optimizer
+    # set up the optimizer
     if args.model_type == 'BERT':
-        # sys.path.append(args.path_to_lr_schedule)
-        # from lr_schedule import LinearWarmup
+        # define linear decay of the learning rate 
+        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+            initial_learning_rate=init_lr,
+            end_learning_rate=0,
+            decay_steps=num_train_steps)
+
+        sys.path.append(args.path_to_lr_schedule)
+        from lr_schedule import LinearWarmup
 
         # # define linear decay of the learning rate 
         # # use tf.compat.v1.train.polynomial_decay instead
@@ -515,8 +508,18 @@ def main():
         # cycle=False)
 
         # # define linear warmup schedule
+        warmup_proportion = 0.1
+        warmup_steps = int(warmup_proportion * num_train_steps)
+        warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
+             warmup_learning_rate = 0,
+            after_warmup_lr_sched = linear_decay,
+            warmup_steps = warmup_steps)
+
+        optimizer = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
+
         # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
         # warmup_steps = int(warmup_proportion * num_train_steps)
+        # warmup_steps = int(0.1 * num_train_steps)
         # warmup_schedule = LinearWarmup(
         # warmup_learning_rate = 0,
         # after_warmup_lr_sched = linear_decay,
@@ -525,7 +528,7 @@ def main():
         # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
         # exclude variables from weight decay
         # opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
-        opt = tf.keras.optimizers.Adam(learning_rate=init_lr)
+        # opt = tf.keras.optimizers.Adam(learning_rate=init_lr)
     else:
         if args.optimizer == 'Adam':
             opt = tf.keras.optimizers.Adam(init_lr)
@@ -540,38 +543,44 @@ def main():
 
     # define model
     if args.model_type == 'BERT' and args.bert_step == "finetuning":
-        model = BertModelFinetuning(config=args.config)
-        # define a forward pass
-        # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # _ = model(input_ids, input_mask, token_type_ids, False)
-        print(f'summary: {model.create_model().summary()}')
-        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        encoder_config = tfm.nlp.encoders.EncoderConfig({
+            'type':'bert',
+            'bert': config_dict
+        })
+        bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+        model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
+        # model = BertModelFinetuning(config=args.config)
+        # # define a forward pass
+        # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+        # # _ = model(input_ids, input_mask, token_type_ids, False)
+        # print(f'summary: {model.create_model().summary()}')
+        # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
         
-        # print(model.summary())
-        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-        print(f'number of parameters: {model.create_model().count_params()}')
-        trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-        non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-        print(f'# trainable parameters: {trainable_params}')
-        print(f'# non trainable parameters: {non_trainable_params}')
-        print(f'# variables: {len(model.trainable_weights)}')
-        total_params = 0
-        with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
-            for var in model.trainable_weights:
-                count = 1
-                for dim in var.shape:
-                    count *= dim
-                total_params += count
-                f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-                print(f'name = {var.name}, shape = {var.shape}\t {count}')
-            f.write(f'Total params: {total_params}')
-            print(f'Total params: {total_params}')
+        # # print(model.summary())
+        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+        #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        # print(f'number of parameters: {model.create_model().count_params()}')
+        # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+        # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+        # print(f'# trainable parameters: {trainable_params}')
+        # print(f'# non trainable parameters: {non_trainable_params}')
+        # print(f'# variables: {len(model.trainable_weights)}')
+        # total_params = 0
+        # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
+        #     for var in model.trainable_weights:
+        #         count = 1
+        #         for dim in var.shape:
+        #             count *= dim
+        #         total_params += count
+        #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+        #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+        #     f.write(f'Total params: {total_params}')
+        #     print(f'Total params: {total_params}')
 
-        # print(model.trainable_weights)
-        # print(len(model.trainable_weights))
+        # # print(model.trainable_weights)
+        # # print(len(model.trainable_weights))
     elif args.model_type == 'BERT' and args.bert_step == "pretraining":
         model = BertModelPretraining(config=args.config)
         print(f'summary: {model.create_model().summary()}')
@@ -602,78 +611,32 @@ def main():
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
     if args.resume:
-        # load model in SavedModel format
-        #model = tf.keras.models.load_model(args.model)
-        # load model saved with checkpoints
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(args.ckpt).expect_partial()
-        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+        if args.model_type == 'BERT' and args.bert_step == "finetuning":
+            checkpoint = tf.train.Checkpoint(encoder=model)
+            checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
+        else:
+            # load model in SavedModel format
+            #model = tf.keras.models.load_model(args.model)
+            # load model saved with checkpoints
+            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+            checkpoint.restore(args.ckpt).expect_partial()
+            # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
 
     if hvd.rank() == 0:
         # create checkpoint object to save model
         checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
-
-    # # define metrics
-    # loss = tf.losses.SparseCategoricalCrossentropy()
-    # val_loss = tf.keras.metrics.Mean(name='val_loss')
-    # train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
-    # val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
-
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
-    # train_loss_1 = tf.keras.metrics.Mean(name='train_loss_1')
-    train_loss_2 = tf.keras.metrics.Mean(name='train_loss_2')
-    val_loss_1 = tf.keras.metrics.Mean(name='val_loss_1')
-    # val_loss_2 = tf.keras.metrics.Mean(name='val_loss_2')
-    train_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_2')
-    # train_accuracy_3 = tf.keras.metrics.Mean(name='train_accuracy_3')
-    train_accuracy_3 = tf.keras.metrics.Accuracy(name='train_accuracy_3')
-    val_accuracy_2 = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy_2')
-    # val_accuracy_3 = tf.keras.metrics.Mean(name='val_accuracy_3')
-    val_accuracy_3 = tf.keras.metrics.Accuracy(name='val_accuracy_3')
+    val_loss = tf.keras.metrics.Mean(name='val_loss')
+    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+    val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
     start = datetime.datetime.now()
 
-    # create empty dictionary to store the labels
-    # labels_dict = defaultdict(int)
-    # for batch, (reads, labels) in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
-    # for batch, data in enumerate(train_input.take(nstep_per_epoch*args.epochs), 1):
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        # if args.model_type == "BERT":
-        #     input_ids, input_mask, token_type_ids, labels, is_real_example = data
-        #     print(input_ids, input_mask, token_type_ids, labels, is_real_example)
-        # else:
-        #     reads, labels = data
-        #     print(reads, labels)
-        # get training loss
-        # x, embedding_table, flat_input_ids, input_shape, output_1 = training_step(args.model_type, data, train_accuracy, loss, opt, model, num_labels, batch == 1)
-        # print(x, embedding_table, flat_input_ids, input_shape, output_1)
-        # input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        loss_value, loss_value_1, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions  = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy_2, train_accuracy_3, loss, train_loss_2, opt, model, batch == 1)
-        # masked_lm_loss = loss_value = loss_value_1 != train_loss_2.result().numpy()
-        # train_loss_2.result().numpy() --> tf.keras.metrics.Mean, train_loss_2.update_state(masked_lm_example_loss, sample_weight=masked_lm_weights)
-        # masked_lm_loss --> per_example_loss = -tf.reduce_sum(masked_lm_log_probs * one_hot_labels, axis=[-1])
-            # numerator = tf.reduce_sum(label_weights * per_example_loss)
-            # denominator = tf.reduce_sum(label_weights) + 1e-5
-            # masked_lm_loss = numerator / denominator
-            # label_weights = tf.reshape(masked_lm_weights, [-1])
-        # loss_value --> loss(masked_lm_ids, masked_lm_probs) with loss = tf.losses.SparseCategoricalCrossentropy()
-        # loss_value_1 --> tf.reduce_mean(masked_lm_example_loss)
-        # difference between tf.reduce_mean and tf.keras.metrics.Mean
-            # tf.reduce_mean --> Computes the mean of elements across dimensions of a tensor.
-            # tf.keras.metrics.Mean --> Compute the (weighted) mean of the given values.
-
-        # create dictionary mapping the species to their occurrence in batches
-        # labels_count = Counter(labels.numpy())
-        # for k, v in labels_count.items():
-        #     labels_dict[str(k)] += v
-        # if batch in (1 ,nstep_per_epoch, (nstep_per_epoch + 1), (2*nstep_per_epoch)):
-        #     print(f'epoch: {epoch}\tbatch: {batch}')
-        #     for i in range(len(input_ids)):
-        #         print(input_ids[i])
-        #     # print(input_ids[0])
+        loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
         if batch % 100 == 0 and hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
