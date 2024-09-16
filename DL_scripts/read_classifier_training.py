@@ -443,7 +443,8 @@ def main():
     if args.model_type == 'BERT':
         print(f'dataset for bert: {args.model_type}')
         args.config = BertConfig.from_json_file(args.bert_config_file)
-        print(f'BERT config: {args.config}')
+        args.config_dict = BertConfig.to_dict(args.bert_config_file)
+        print(f'BERT config: {args.config_cixt}')
 
     # if hvd.rank() == 0:
     # create output directory
