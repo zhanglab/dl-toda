@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 import tensorflow_models as tfm
 import tensorflow_hub as hub
 import horovod.tensorflow as hvd
@@ -481,11 +481,11 @@ def main():
     # init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
 
     # define cyclical learning rate
-    if args.clr:
-        init_lr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=args.init_lr,
-                                                  maximal_learning_rate=args.max_lr,
-                                                  scale_fn=lambda x: 1 / (2. ** (x - 1)),
-                                                  step_size=2 * nstep_per_epoch)
+    # if args.clr:
+    #     init_lr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=args.init_lr,
+    #                                               maximal_learning_rate=args.max_lr,
+    #                                               scale_fn=lambda x: 1 / (2. ** (x - 1)),
+    #                                               step_size=2 * nstep_per_epoch)
 
     # set up the optimizer
     if args.model_type == 'BERT':
