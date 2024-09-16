@@ -648,7 +648,7 @@ def main():
         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
         # if batch % 100 == 0 and hvd.rank() == 0:
-        if batch % 100 == 0
+        if batch % 100 == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_3.result().numpy()*100}')
             # print(loss_value, loss_value_1, train_loss_2.result().numpy(), train_accuracy_3.result().numpy()*100, logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss, predictions)
             # print(f"calculate per example loss: {masked_lm_log_probs}\t{one_hot_labels}\t{masked_lm_log_probs * one_hot_labels}\n")
