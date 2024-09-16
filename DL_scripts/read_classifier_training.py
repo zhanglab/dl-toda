@@ -526,7 +526,7 @@ def main():
             after_warmup_lr_sched = linear_decay,
             warmup_steps = warmup_steps)
 
-        optimizer = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
+        opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
 
         # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
         # warmup_steps = int(warmup_proportion * num_train_steps)
