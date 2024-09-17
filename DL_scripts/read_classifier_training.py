@@ -135,7 +135,6 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #         return self.dalidataset
 
 
-
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
@@ -654,30 +653,24 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
-        # # if batch % 100 == 0 and hvd.rank() == 0:
-        # if batch % 100 == 0:
-        #     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        # # if batch % 1 == 0 and hvd.rank() == 0:
-        # if batch % 1 == 0:
-        #     # write metrics
-        #     with writer.as_default():
-        #         tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-        #         tf.summary.scalar("train_loss", loss_value, step=batch)
-        #         tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-        #         writer.flush()
-        #     td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+        # if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 100 == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # if batch % 1 == 0 and hvd.rank() == 0:
+        if batch % 1 == 0:
+            # write metrics
+            with writer.as_default():
+                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+                tf.summary.scalar("train_loss", loss_value, step=batch)
+                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                writer.flush()
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
-        # if batch % nstep_per_epoch == 0:
-        if batch % 1 == 0:
+        if batch % nstep_per_epoch == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                input_data, labels = data
-                print(input_data)
-                print('labels')
-                print(labels)
                 testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
-                break
 
             # adjust learning rate
             if args.lr_decay:
