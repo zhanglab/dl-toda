@@ -308,6 +308,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, loss, mo
     val_loss.update_state(loss_value)
 
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tfrecords', type=str, help='path to training tfrecords', required=True)
@@ -591,30 +592,36 @@ def main():
         # # print(model.trainable_weights)
         # # print(len(model.trainable_weights))
     elif args.model_type == 'BERT' and args.bert_step == "pretraining":
-        model = BertModelPretraining(config=args.config)
-        print(f'summary: {model.create_model().summary()}')
-        tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+        encoder_config = tfm.nlp.encoders.EncoderConfig({
+            'type':'bert',
+            'bert': args.config_dict
+        })
+        bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+        model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
+        # model = BertModelPretraining(config=args.config)
+        # print(f'summary: {model.create_model().summary()}')
+        # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
         
-        # print(model.summary())
-        with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-        print(f'number of parameters: {model.create_model().count_params()}')
-        trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-        non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-        print(f'# trainable parameters: {trainable_params}')
-        print(f'# non trainable parameters: {non_trainable_params}')
-        print(f'# variables: {len(model.trainable_weights)}')
-        total_params = 0
-        with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
-            for var in model.trainable_weights:
-                count = 1
-                for dim in var.shape:
-                    count *= dim
-                total_params += count
-                f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-                print(f'name = {var.name}, shape = {var.shape}\t {count}')
-            f.write(f'Total params: {total_params}')
-            print(f'Total params: {total_params}')
+        # # print(model.summary())
+        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+        #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+        # print(f'number of parameters: {model.create_model().count_params()}')
+        # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+        # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+        # print(f'# trainable parameters: {trainable_params}')
+        # print(f'# non trainable parameters: {non_trainable_params}')
+        # print(f'# variables: {len(model.trainable_weights)}')
+        # total_params = 0
+        # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
+        #     for var in model.trainable_weights:
+        #         count = 1
+        #         for dim in var.shape:
+        #             count *= dim
+        #         total_params += count
+        #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+        #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+        #     f.write(f'Total params: {total_params}')
+        #     print(f'Total params: {total_params}')
 
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
@@ -647,25 +654,30 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
-        # if batch % 100 == 0 and hvd.rank() == 0:
-        if batch % 100 == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        # if batch % 1 == 0 and hvd.rank() == 0:
-        if batch % 1 == 0:
-            # write metrics
-            with writer.as_default():
-                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-                tf.summary.scalar("train_loss", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-                writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+        # # if batch % 100 == 0 and hvd.rank() == 0:
+        # if batch % 100 == 0:
+        #     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # # if batch % 1 == 0 and hvd.rank() == 0:
+        # if batch % 1 == 0:
+        #     # write metrics
+        #     with writer.as_default():
+        #         tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+        #         tf.summary.scalar("train_loss", loss_value, step=batch)
+        #         tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+        #         writer.flush()
+        #     td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
-        if batch % nstep_per_epoch == 0:
+        # if batch % nstep_per_epoch == 0:
+        if batch % 1 == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
+                input_data, labels = data
+                print(input_data)
+                print('labels')
+                print(labels)
                 testing_step(args.model_type, args.bert_step, data, num_labels, val_loss, val_accuracy, model)
-
+                break
 
             # adjust learning rate
             if args.lr_decay:
