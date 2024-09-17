@@ -273,7 +273,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value, loss_value_1
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, loss, model):
+def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
     training = False
     if model_type == 'BERT' and bert_step == "finetuning":
         input_data, labels = data
@@ -676,7 +676,7 @@ def main():
                 print(input_data)
                 print('labels')
                 print(labels)
-                testing_step(args.model_type, args.bert_step, data, num_labels, val_loss, val_accuracy, model)
+                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
                 break
 
             # adjust learning rate
