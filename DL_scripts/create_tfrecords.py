@@ -99,12 +99,15 @@ def create_meta_tfrecords(args, grouped_files):
 #     nsp_data[process] = process_nsp_data
 
 
-
 def get_data_for_bert(args, list_reads, reads_index):
     data = []
     nsp_data = {}
     for i, r in enumerate(list_reads):
-        label = int(r.rstrip().split('\n')[0].split('|')[1])
+        if args.dnabert:
+            label = args.label
+        else:
+            label = int(r.rstrip().split('\n')[0].split('|')[1])
+
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
         # update sequence
@@ -134,158 +137,163 @@ def get_data_for_bert(args, list_reads, reads_index):
 
     
 
-def create_tfrecords(args, grouped_files):
-    for fq_file in grouped_files:
-        """ Converts simulated reads to tfrecord """
-        num_lines = 8 if args.pair else 4
-        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
-        output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
-        count = 0
-        if args.bert:
+def create_tfrecords(args, data):
+    # for fq_file in grouped_files:
+    """ Converts dna sequences to tfrecord """
+    num_lines = 8 if args.pair else 4
+    output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+    count = 0
+
+    if args.dnabert:
+        reads = data
+    else:
+        # data = fastq file
+        with open(data) as handle:
+            content = handle.readlines()
+            reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+            # random.shuffle(reads)
+            print(f'{fq_file}\t# reads: {len(reads)}')
+
+    if args.bert:
+        # # create processes
+        # chunk_size = math.ceil(len(reads)/args.num_proc)
+        # grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
+        # indices = list(range(len(reads)))
+        # grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
+
+        # with mp.Manager() as manager:
+        #     data = manager.dict()
+        #     nsp_data = manager.dict()
+        #     if args.dataset_type == 'sim':
+        #         processes = [mp.Process(target=get_data_for_bert, args=(args, nsp_data, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
+        #     for p in processes:
+        #         p.start()
+        #     for p in processes:
+        #         p.join()
+        reads_index = list(range(len(reads)))
+        data, nsp_data = get_data_for_bert(args, reads, reads_index)
+
+        total_reads = 0
+        nsp_1_labels = defaultdict(int)
+        nsp_0_labels = defaultdict(int)
+        for label, nsp_count in nsp_data.items():
+            nsp_1_labels[label]+= nsp_count['1']
+            nsp_0_labels[label]+= nsp_count['0']
+            total_reads += nsp_count['1'] + nsp_count['0']
+            # for process, nsp_data_process in nsp_data.items():
+            #     for label, nsp_count in nsp_data_process.items():
+            #         nsp_1_labels[label]+= nsp_count['1']
+            #         nsp_0_labels[label]+= nsp_count['0']
+            #         total_reads += nsp_count['1'] + nsp_count['0']
+        with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
+            json.dump(nsp_0_labels, nsp_f)
+        with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
+            json.dump(nsp_1_labels, nsp_f)
+        print(f'total reads: {total_reads}')
+
+        with tf.io.TFRecordWriter(output_tfrec) as writer:
+                # for process, data_process in data.items():
+                #     print(process, len(data_process))
+            for i, r in enumerate(data, 0):
+                if i == 0 and args.bert_step == 'pretraining':
+                    print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
+                    print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}')
+                    print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
+                    print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
+                if i == 0 and args.bert_step == 'finetuning':
+                    print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tlabels: {r[3]}\n')
+                    print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\n')
+                """
+                input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
+                input_mask: [1]*len(input_ids) - input_mask
+                segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
+                masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
+                masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
+                masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
+                next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
+                label: species label - label
+                """
+                if args.bert_step == 'pretraining':
+                    data = \
+                        {
+                            'input_word_ids': wrap_read(r[0]),
+                            'input_mask': wrap_read(r[1]),
+                            'input_type_ids': wrap_read(r[2]),
+                            'masked_lm_positions': wrap_read(r[3]),
+                            'masked_lm_weights': wrap_weights(r[4]),
+                            'masked_lm_ids': wrap_read(r[5])
+                            # 'next_sentence_labels': wrap_label(r[6]),
+                        }
+                elif args.bert_step == 'finetuning':
+                    data = \
+                        {
+                            'input_word_ids': wrap_read(r[0]),
+                            'input_mask': wrap_read(r[1]),
+                            'input_type_ids': wrap_read(r[2]),
+                            'labels': wrap_label(r[3])
+                            # 'is_real_example': wrap_label(1)
+                        }
+                feature = tf.train.Features(feature=data)
+                example = tf.train.Example(features=feature)
+                serialized = example.SerializeToString()
+                writer.write(serialized)
+                count += 1
+                # break
+                
+        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+            f.write(f'{count}')
+    
+    else:
+        with tf.io.TFRecordWriter(output_tfrec) as writer:
             with open(fq_file) as handle:
-                content = handle.readlines()
-                reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-                # random.shuffle(reads)
-                print(f'{fq_file}\t# reads: {len(reads)}')
+                rec = ''
+                n_line = 0
+                for line in handle:
+                    rec += line
+                    n_line += 1
+                    if n_line == num_lines:
+                # content = handle.readlines()
+                # reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+                # print(f'{args.input_fastq}\t# reads: {len(reads)}')
+                # for count, rec in enumerate(reads, 1):
+                # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
+                #     read = str(rec.seq)
+                #     read_id = rec.id
+                    # label = int(read_id.split('|')[1])
+                        read_id = rec.split('\n')[0].rstrip()
+                        dna_list, label  = prepare_input_data(args, rec, read_id)              
+                        # create TFrecords
+                        if args.no_label:
+                            data = \
+                                {
+                                    # 'read': wrap_read(np.array(dna_array)),
+                                    'read': wrap_read(dna_array),
+                                }
+                        else:
+                            # record_bytes = tf.train.Example(features=tf.train.Features(feature={
+                            #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
+                            #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
+                            # })).SerializeToString()
+                            # writer.write(record_bytes)
 
-            # # create processes
-            # chunk_size = math.ceil(len(reads)/args.num_proc)
-            # grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
-            # indices = list(range(len(reads)))
-            # grouped_reads_index = [indices[i:i+chunk_size] for i in range(0, len(indices), chunk_size)]
+                            data = \
+                                {
+                                    # 'read': wrap_read(np.array(dna_array)),
+                                    'read': wrap_read(dna_list),
+                                    'label': wrap_label(label),
+                                }
+                        feature = tf.train.Features(feature=data)
+                        example = tf.train.Example(features=feature)
+                        serialized = example.SerializeToString()
+                        writer.write(serialized)
+                        count += 1
+                        # initialize variables again
+                        n_line = 0
+                        rec = ''
 
-            # with mp.Manager() as manager:
-            #     data = manager.dict()
-            #     nsp_data = manager.dict()
-            #     if args.dataset_type == 'sim':
-            #         processes = [mp.Process(target=get_data_for_bert, args=(args, nsp_data, data, reads, grouped_reads[i], grouped_reads_index[i], i)) for i in range(len(grouped_reads))]
-            #     for p in processes:
-            #         p.start()
-            #     for p in processes:
-            #         p.join()
-            reads_index = list(range(len(reads)))
-            data, nsp_data = get_data_for_bert(args, reads, reads_index)
-
-
-            total_reads = 0
-            nsp_1_labels = defaultdict(int)
-            nsp_0_labels = defaultdict(int)
-            for label, nsp_count in nsp_data.items():
-                nsp_1_labels[label]+= nsp_count['1']
-                nsp_0_labels[label]+= nsp_count['0']
-                total_reads += nsp_count['1'] + nsp_count['0']
-                # for process, nsp_data_process in nsp_data.items():
-                #     for label, nsp_count in nsp_data_process.items():
-                #         nsp_1_labels[label]+= nsp_count['1']
-                #         nsp_0_labels[label]+= nsp_count['0']
-                #         total_reads += nsp_count['1'] + nsp_count['0']
-            with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
-                json.dump(nsp_0_labels, nsp_f)
-            with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
-                json.dump(nsp_1_labels, nsp_f)
-            print(f'total reads: {total_reads}')
-
-            with tf.io.TFRecordWriter(output_tfrec) as writer:
-                    # for process, data_process in data.items():
-                    #     print(process, len(data_process))
-                for i, r in enumerate(data, 0):
-                    if i == 0 and args.bert_step == 'pretraining':
-                        print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
-                        print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}')
-                        print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
-                        print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
-                    if i == 0 and args.bert_step == 'finetuning':
-                        print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tlabels: {r[3]}\n')
-                        print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\n')
-                    """
-                    input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
-                    input_mask: [1]*len(input_ids) - input_mask
-                    segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
-                    masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
-                    masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
-                    masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
-                    next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
-                    label: species label - label
-                    """
-                    if args.bert_step == 'pretraining':
-                        data = \
-                            {
-                                'input_word_ids': wrap_read(r[0]),
-                                'input_mask': wrap_read(r[1]),
-                                'input_type_ids': wrap_read(r[2]),
-                                'masked_lm_positions': wrap_read(r[3]),
-                                'masked_lm_weights': wrap_weights(r[4]),
-                                'masked_lm_ids': wrap_read(r[5])
-                                # 'next_sentence_labels': wrap_label(r[6]),
-                            }
-                    elif args.bert_step == 'finetuning':
-                        data = \
-                            {
-                                'input_word_ids': wrap_read(r[0]),
-                                'input_mask': wrap_read(r[1]),
-                                'input_type_ids': wrap_read(r[2]),
-                                'labels': wrap_label(r[3])
-                                # 'is_real_example': wrap_label(1)
-                            }
-                    feature = tf.train.Features(feature=data)
-                    example = tf.train.Example(features=feature)
-                    serialized = example.SerializeToString()
-                    writer.write(serialized)
-                    count += 1
-                    # break
-                    
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
-        else:
-            with tf.io.TFRecordWriter(output_tfrec) as writer:
-                with open(fq_file) as handle:
-                    rec = ''
-                    n_line = 0
-                    for line in handle:
-                        rec += line
-                        n_line += 1
-                        if n_line == num_lines:
-                    # content = handle.readlines()
-                    # reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-                    # print(f'{args.input_fastq}\t# reads: {len(reads)}')
-                    # for count, rec in enumerate(reads, 1):
-                    # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-                    #     read = str(rec.seq)
-                    #     read_id = rec.id
-                        # label = int(read_id.split('|')[1])
-                            read_id = rec.split('\n')[0].rstrip()
-                            dna_list, label  = prepare_input_data(args, rec, read_id)              
-                            # create TFrecords
-                            if args.no_label:
-                                data = \
-                                    {
-                                        # 'read': wrap_read(np.array(dna_array)),
-                                        'read': wrap_read(dna_array),
-                                    }
-                            else:
-                                # record_bytes = tf.train.Example(features=tf.train.Features(feature={
-                                #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
-                                #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
-                                # })).SerializeToString()
-                                # writer.write(record_bytes)
-
-                                data = \
-                                    {
-                                        # 'read': wrap_read(np.array(dna_array)),
-                                        'read': wrap_read(dna_list),
-                                        'label': wrap_label(label),
-                                    }
-                            feature = tf.train.Features(feature=data)
-                            example = tf.train.Example(features=feature)
-                            serialized = example.SerializeToString()
-                            writer.write(serialized)
-                            count += 1
-                            # initialize variables again
-                            n_line = 0
-                            rec = ''
-
-                with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-                    f.write(f'{count}')
 
 
 def main():
@@ -299,6 +307,8 @@ def main():
     parser.add_argument('--no_label', action='store_true', default=False, help="do not add labels to tfrecords")
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
+    parser.add_argument('--dnabert', action='store_true', default=False, help="process dnabert data")
+    parser.add_argument('--label', type=int, help='label of dnabert data', required=('--dnabert' in sys.argv))
     parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
     parser.add_argument('--num_proc', default=1, type=int, help="number of processes")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
@@ -343,6 +353,9 @@ def main():
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
         print(args.kmer_vector_length)
+
+    if args.dnabert:
+        dna_sequences = load_dnabert_seq(args)
 
     if args.bert:
         create_tfrecords(args, [args.input])
