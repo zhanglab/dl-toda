@@ -2,6 +2,13 @@ import numpy as np
 import random
 
 
+def load_dnabert_seq(args):
+    with open(args.input, 'r') as f:
+        content = f.readlines()
+        dna_sequences = [s.replace(" ", "") for s in content]
+
+    return dna_sequences
+
 # def split_read(args, reads, read, r_index, process):
 #     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
 #     nsp_choice = random.choice([True, False])
