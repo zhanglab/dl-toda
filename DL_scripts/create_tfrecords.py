@@ -145,7 +145,7 @@ def get_data_for_bert_2(args, dna_sequences, labels):
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
         # parse dna sequences
-        dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
+        dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * args.max_read_length
         if args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
@@ -387,7 +387,6 @@ def main():
         #     print(args.dict_kmers)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
-        print(args.kmer_vector_length)
 
     if args.dnabert:
         dna_sequences, labels = load_dnabert_seq(args)
