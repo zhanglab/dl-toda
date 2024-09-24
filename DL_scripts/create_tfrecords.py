@@ -99,19 +99,19 @@ def create_meta_tfrecords(args, grouped_files):
 #     nsp_data[process] = process_nsp_data
 
 
-def get_data_for_bert(args, list_reads, reads_index):
+def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
+    """ process data obtained with ART read simulator"""
     data = []
     nsp_data = {}
-    for i, r in enumerate(list_reads):
-        if args.dnabert:
-            label = args.label
-        else:
-            label = int(r.rstrip().split('\n')[0].split('|')[1])
+    for i in range(len(dna_sequences)):
+        label = labels[i]
 
         if args.update_labels:
             label = int(args.labels_mapping[str(label)])
-        # update sequence
-        segment_1, segment_2, nsp_label = split_read(args, list_reads, r.rstrip().split('\n')[1], i)
+ 
+        # get input for nsp task
+        segment_1, segment_2, nsp_label = split_read(args, dna_sequences, dna_sequences[i], i)
+ 
         # parse dna sequences
         segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
         segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
@@ -122,7 +122,8 @@ def get_data_for_bert(args, list_reads, reads_index):
             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
             data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label])
         elif args.bert_step == 'finetuning':
-            # create input_mask vector indicating padded values
+            # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
+            # performing attention on them.
             input_mask = [1] * len(dna_list)
             data.append([dna_list, input_mask, segment_ids, label])
             # print(r, dna_list, input_mask, segment_ids, label)
@@ -135,27 +136,56 @@ def get_data_for_bert(args, list_reads, reads_index):
 
     return data, nsp_data
 
-    
+
+def get_data_for_bert_2(args, dna_sequences, labels):
+    """ process data obtained from DNABERT """
+    data = []
+    for i in range(len(dna_sequences)):
+        label = labels[i]
+        if args.update_labels:
+            label = int(args.labels_mapping[str(label)])
+        # parse dna sequences
+        dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
+        segment_ids = [0] * args.max_read_length
+        if args.bert_step == 'finetuning':
+            # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
+            # performing attention on them.
+            input_mask = [1] * (len(dna_sequences[i])+2) + [0] * (args.max_read_length-(len(dna_sequences[i])+2) )
+            data.append([dna_list, input_mask, segment_ids, label])
+            # print(r, dna_list, input_mask, segment_ids, label)
+        if i == 0:
+            print(dna_sequences[i])
+            print(label)
+            print(dna_list)
+            print(segment_ids)
+            print(input_mask)
+
+    return data
+
+
+
 
 def create_tfrecords(args, data):
     # for fq_file in grouped_files:
     """ Converts dna sequences to tfrecord """
     num_lines = 8 if args.pair else 4
-    output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+    output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-1])
     output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
     count = 0
 
     if args.dnabert:
-        reads = data
+        dna_sequences, labels = data
     else:
         # data = fastq file
         with open(data) as handle:
             content = handle.readlines()
             reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
+            dna_sequences = [r.rstrip().split('\n')[1] for r in reads]
+            labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
             # random.shuffle(reads)
-            print(f'{fq_file}\t# reads: {len(reads)}')
+            print(f'{fq_file}\t# reads: {len(reads)}\t{len(dna_sequences)}')
 
-    if args.bert:
+    if args.bert or args.dnabert:
         # # create processes
         # chunk_size = math.ceil(len(reads)/args.num_proc)
         # grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
@@ -171,26 +201,31 @@ def create_tfrecords(args, data):
         #         p.start()
         #     for p in processes:
         #         p.join()
-        reads_index = list(range(len(reads)))
-        data, nsp_data = get_data_for_bert(args, reads, reads_index)
+        
+        if args.bert:
+            reads_index = list(range(len(reads)))
+            data, nsp_data = get_data_for_bert_1(args, dna_sequences, labels, reads_index)
 
-        total_reads = 0
-        nsp_1_labels = defaultdict(int)
-        nsp_0_labels = defaultdict(int)
-        for label, nsp_count in nsp_data.items():
-            nsp_1_labels[label]+= nsp_count['1']
-            nsp_0_labels[label]+= nsp_count['0']
-            total_reads += nsp_count['1'] + nsp_count['0']
-            # for process, nsp_data_process in nsp_data.items():
-            #     for label, nsp_count in nsp_data_process.items():
-            #         nsp_1_labels[label]+= nsp_count['1']
-            #         nsp_0_labels[label]+= nsp_count['0']
-            #         total_reads += nsp_count['1'] + nsp_count['0']
-        with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
-            json.dump(nsp_0_labels, nsp_f)
-        with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
-            json.dump(nsp_1_labels, nsp_f)
-        print(f'total reads: {total_reads}')
+            total_reads = 0
+            nsp_1_labels = defaultdict(int)
+            nsp_0_labels = defaultdict(int)
+            for label, nsp_count in nsp_data.items():
+                nsp_1_labels[label]+= nsp_count['1']
+                nsp_0_labels[label]+= nsp_count['0']
+                total_reads += nsp_count['1'] + nsp_count['0']
+                # for process, nsp_data_process in nsp_data.items():
+                #     for label, nsp_count in nsp_data_process.items():
+                #         nsp_1_labels[label]+= nsp_count['1']
+                #         nsp_0_labels[label]+= nsp_count['0']
+                #         total_reads += nsp_count['1'] + nsp_count['0']
+            with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
+                json.dump(nsp_0_labels, nsp_f)
+            with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
+                json.dump(nsp_1_labels, nsp_f)
+            print(f'total reads: {total_reads}')
+
+        elif args.dnabert:
+            data = get_data_for_bert_2(args, dna_sequences, labels)
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
@@ -317,6 +352,7 @@ def main():
     parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
+    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--dnabert' in sys.argv))
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
@@ -355,10 +391,10 @@ def main():
         print(args.kmer_vector_length)
 
     if args.dnabert:
-        dna_sequences = load_dnabert_seq(args)
-
-    if args.bert:
-        create_tfrecords(args, [args.input])
+        dna_sequences, labels = load_dnabert_seq(args)
+        create_tfrecords(args, (dna_sequences, labels))
+    elif args.bert:
+        create_tfrecords(args, args.input)
     else:
         chunk_size = math.ceil(len(fq_files)/args.num_proc)
         grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
