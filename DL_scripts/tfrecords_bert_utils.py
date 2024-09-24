@@ -5,9 +5,11 @@ import random
 def load_dnabert_seq(args):
     with open(args.input, 'r') as f:
         content = f.readlines()
-        dna_sequences = [s.replace(" ", "") for s in content]
+        labels = [s.rstrip().split('\t')[0] for s in content]
+        dna_sequences = [s.rstrip().split('\t')[1].split(" ") for s in content]
+        random.shuffle(dna_sequences)
 
-    return dna_sequences
+    return dna_sequences, labels
 
 # def split_read(args, reads, read, r_index, process):
 #     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
