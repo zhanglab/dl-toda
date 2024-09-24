@@ -343,7 +343,6 @@ def main():
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--dnabert', action='store_true', default=False, help="process dnabert data")
-    parser.add_argument('--label', type=int, help='label of dnabert data', required=('--dnabert' in sys.argv))
     parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
     parser.add_argument('--num_proc', default=1, type=int, help="number of processes")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
