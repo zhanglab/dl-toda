@@ -7,7 +7,7 @@ def load_dnabert_seq(args):
         content = f.readlines()
         labels = [s.rstrip().split('\t')[0] for s in content]
         dna_sequences = [s.rstrip().split('\t')[1].split(" ") for s in content]
-        random.shuffle(dna_sequences)
+        # random.shuffle(dna_sequences)
 
     return dna_sequences, labels
 
