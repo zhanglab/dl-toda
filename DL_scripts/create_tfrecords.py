@@ -148,9 +148,15 @@ def get_data_for_bert_2(args, dna_sequences, labels):
         dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * args.max_read_length
         if args.bert_step == 'finetuning':
-            # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
-            # performing attention on them.
-            input_mask = [1] * (len(dna_sequences[i])+2) + [0] * (args.max_read_length-(len(dna_sequences[i])+2) )
+            # pad input ids vector if necessary
+            if len(dna_list) < args.max_read_length:
+                num_padded_values = args.max_read_length-len(dna_list)
+                dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
+                # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
+                # performing attention on them.
+                input_mask = [1] * len(dna_list) + [0] * num_padded_values
+            else:
+                input_mask = [1] * args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
             # print(r, dna_list, input_mask, segment_ids, label)
         if i == 0:
@@ -377,6 +383,8 @@ def main():
             args.kmer_vector_length = args.read_length//2 - args.k_value + 1
             print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
             # print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
+        elif args.dnabert:
+            args.kmer_vector_length = args.max_read_length 
         else:
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
