@@ -140,6 +140,7 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
 def get_data_for_bert_2(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
     data = []
+    dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
         label = labels[i]
         if args.update_labels:
@@ -158,15 +159,11 @@ def get_data_for_bert_2(args, dna_sequences, labels):
             else:
                 input_mask = [1]*args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
+            dict_labels[label] += 1
             # print(r, dna_list, input_mask, segment_ids, label)
-        if i == 0:
-            print(dna_sequences[i])
-            print(label)
-            print(dna_list)
-            print(segment_ids)
-            print(input_mask)
 
-    return data
+
+    return data, dict_labels
 
 
 def create_tfrecords(args, data):
@@ -229,8 +226,8 @@ def create_tfrecords(args, data):
             print(f'total reads: {total_reads}')
 
         elif args.dnabert:
-            data = get_data_for_bert_2(args, dna_sequences, labels)
-
+            data, dict_labels = get_data_for_bert_2(args, dna_sequences, labels)
+            print(f'dict_labels: {dict_labels}')
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
                 #     print(process, len(data_process))
