@@ -342,7 +342,7 @@ def main():
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
-    parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
+    # parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'bert_huggingface' in sys.argv))
@@ -376,10 +376,10 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # get vocabulary size
-    if args.model_type != 'BERT':
-        with open(args.vocab, 'r') as f:
-            content = f.readlines()
-            vocab_size = len(content)
+    # if args.model_type != 'BERT':
+    #     with open(args.vocab, 'r') as f:
+    #         content = f.readlines()
+    #         vocab_size = len(content)
 
     # load class_mapping file mapping label IDs to labels and get number of labels
     if args.class_mapping:
