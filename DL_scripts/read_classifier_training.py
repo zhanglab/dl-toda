@@ -396,8 +396,8 @@ def main():
     # print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
-    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'train*.tfrec')))
-    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'val*.tfrec')))
+    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
+    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
 
     if args.nvidia_dali:
         # get nvidia dali indexes
@@ -425,7 +425,6 @@ def main():
         # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
         train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
         val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
-        print(train_input)
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = int(args.train_reads_per_epoch/args.batch_size)
