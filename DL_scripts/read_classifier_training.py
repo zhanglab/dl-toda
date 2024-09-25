@@ -435,7 +435,7 @@ def main():
             datatype = 'reads'
 
         # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
-        train_input = build_dataset(args, train_files, num_labels, is_training=False, drop_remainder=False)
+        train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
         val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
 
     # compute number of steps/batches per epoch
