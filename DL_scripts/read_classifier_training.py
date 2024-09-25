@@ -433,6 +433,8 @@ def main():
     val_steps = int(args.val_reads_per_epoch/args.batch_size)
     num_val_steps = int(args.val_reads_per_epoch/args.batch_size)
 
+    print(f'num_train_steps: {num_train_steps}\tnstep_per_epoch: {nstep_per_epoch}')
+
     # # compute number of steps/batches per epoch
     # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
     # num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
@@ -710,7 +712,7 @@ def main():
                 epoch += 1
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
-    if args.model_type != 'BERT':
+    if args.model_type != 'BERT' and not args.bert_huggingface:
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
