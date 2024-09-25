@@ -670,9 +670,7 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         loss_value, labels, predictions, probs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'labels: {labels}')
-        print(f'predictions: {predictions}')
-        print(f'probs: {probs}')
+        print(f'batch: {batch}\tlabels: {labels}')
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
