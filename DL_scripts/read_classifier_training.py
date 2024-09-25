@@ -665,9 +665,9 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         # print(f'batch: {batch}\tdata: {data}')
-        print(f'data: {data[0]["input_ids"]}')
-        for k in data[0]['input_ids']:
-            print(k)
+        print(f'data: {data[0]}')
+        # for k in data[0]['input_ids']:
+        #     print(k)
         # break
         # print(f'labels: {data[1]}')
         if args.bert_huggingface:
