@@ -247,7 +247,6 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
             labels = data["labels"]
-            loss_value_1 = tf.reduce_mean(per_example_loss)
             loss_value = loss(labels, probs)
         else:
             reads, labels = data
@@ -284,7 +283,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_value_1
+    return loss_value, labels, predictions, probs
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -670,11 +669,13 @@ def main():
     start = datetime.datetime.now()
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-
+        loss_value, labels, predictions, probs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(f'labels: {labels}')
+        print(f'predictions: {predictions}')
+        print(f'probs: {probs}')
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1} - Training accuracy: {train_accuracy.result().numpy()*100}')
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         # if batch % 1 == 0 and hvd.rank() == 0:
         if batch % 1 == 0:
             # write metrics
