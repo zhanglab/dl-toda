@@ -423,7 +423,7 @@ def main():
             datatype = 'reads'
 
         # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
-        train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
+        train_input = build_dataset(args, train_files, num_labels, is_training=False, drop_remainder=False)
         val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
 
     # compute number of steps/batches per epoch
@@ -664,12 +664,15 @@ def main():
     # print(logits)
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        print(f'batch: {batch}\tdata: {data}')
-        print(f'data: {data[0]}')
-        print(f'labels: {data[1]}')
-        if args.bert_huggingface:
-            logits = model(**data[0]).logits
-            print(logits)
+        # print(f'batch: {batch}\tdata: {data}')
+        print(f'data: {data[0]['input_ids']}')
+        for k in data[0]['input_ids']:
+            print(k)
+        break
+        # print(f'labels: {data[1]}')
+        # if args.bert_huggingface:
+        #     logits = model(**data[0]).logits
+        #     print(logits)
     #     else:
     #         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     #         # if batch % 100 == 0 and hvd.rank() == 0:
