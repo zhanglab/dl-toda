@@ -659,11 +659,12 @@ def main():
     val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
     start = datetime.datetime.now()
-
+    print('start training')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        print(batch, data)
+        print(f'batch: {batch}\tdata: {data}')
         if args.bert_huggingface:
             logits = model(**data).logits
+            print(logits)
         else:
             loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
             # if batch % 100 == 0 and hvd.rank() == 0:
