@@ -628,8 +628,8 @@ def main():
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
         # create BERT config obkect
-        bert_config = BertConfig(seq_length=args.vector_size, num_labels=num_labels, vocab_size=args.config_dict["vocab_size"])
-
+        # bert_config = BertConfig(seq_length=args.vector_size, num_labels=num_labels, vocab_size=args.config_dict["vocab_size"])
+        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification(bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
