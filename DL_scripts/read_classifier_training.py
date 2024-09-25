@@ -660,7 +660,7 @@ def main():
 
     start = datetime.datetime.now()
     print('start training')
-    logits = model(**train_input).logits
+    logits = model(train_input).logits
     print(logits)
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
