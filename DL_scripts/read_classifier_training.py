@@ -344,7 +344,7 @@ def main():
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'bert_huggingface' in sys.argv))
     parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('pretraining' in sys.argv), default=0.15)
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
