@@ -244,7 +244,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
             logits = model(**data).logits
             loss_value = model(**data).loss
-            predictions = int(tf.math.argmax(logits, axis=-1)[0])
+            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
             labels = data["labels"]
         else:
@@ -710,7 +710,7 @@ def main():
             epoch += 1
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
-    if args.model_type != 'BERT' and not args.bert_huggingface:
+    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
