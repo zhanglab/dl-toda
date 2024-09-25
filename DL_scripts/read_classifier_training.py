@@ -152,10 +152,10 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([], tf.int64)
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int32),
+          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int32),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int32),
+          "labels": tf.io.FixedLenFeature([], tf.int32)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
