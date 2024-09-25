@@ -25,7 +25,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
-from BERT import BertConfig, BertModelFinetuning, BertModelPretraining
+# from BERT import BertConfig, BertModelFinetuning, BertModelPretraining
 from optimizers import AdamWeightDecayOptimizer
 import argparse
 
@@ -628,9 +628,7 @@ def main():
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
         # create BERT config obkect
-        # bert_config = BertConfig(seq_length=args.vector_size, num_labels=num_labels, vocab_size=args.config_dict["vocab_size"])
-        # bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-        config = BertConfig(vocab_size=260)
+        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification(config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
