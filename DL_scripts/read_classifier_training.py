@@ -667,8 +667,9 @@ def main():
         print(f'batch: {batch}\tdata: {data}')
         print(f'data: {data[0]}')
         print(f'labels: {data[1]}')
-    #     if args.bert_huggingface:
-    #         logits = model(**data).logits
+        if args.bert_huggingface:
+            logits = model(**data[0]).logits
+            print(logits)
     #     else:
     #         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     #         # if batch % 100 == 0 and hvd.rank() == 0:
