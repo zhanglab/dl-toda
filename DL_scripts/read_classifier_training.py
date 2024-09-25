@@ -665,6 +665,8 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         print(f'batch: {batch}\tdata: {data}')
+        print(f'data: {data[0]}')
+        print(f'labels: {data[1]}')
     #     if args.bert_huggingface:
     #         logits = model(**data).logits
     #     else:
