@@ -154,9 +154,9 @@ def get_data_for_bert_2(args, dna_sequences, labels):
                 dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                 # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
                 # performing attention on them.
-                input_mask = [1] * len(dna_list) + [0] * num_padded_values
+                input_mask = [1]*(args.max_read_length-num_padded_values) + [0]*num_padded_values
             else:
-                input_mask = [1] * args.max_read_length
+                input_mask = [1]*args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
             # print(r, dna_list, input_mask, segment_ids, label)
         if i == 0:
