@@ -18,7 +18,7 @@ import tensorflow as tf
 
 
 
-class BertConfig(object):
+class BertConfiguration(object):
   """Configuration for `BertModel`."""
 
   def __init__(self,
