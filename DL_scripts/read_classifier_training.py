@@ -668,11 +668,11 @@ def main():
         print(f'data: {data[0]["input_ids"]}')
         for k in data[0]['input_ids']:
             print(k)
-        break
+        # break
         # print(f'labels: {data[1]}')
-        # if args.bert_huggingface:
-        #     logits = model(**data[0]).logits
-        #     print(logits)
+        if args.bert_huggingface:
+            logits = model(**data[0]).logits
+            print(logits)
     #     else:
     #         loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
     #         # if batch % 100 == 0 and hvd.rank() == 0:
