@@ -169,8 +169,6 @@ def get_data_for_bert_2(args, dna_sequences, labels):
     return data
 
 
-
-
 def create_tfrecords(args, data):
     # for fq_file in grouped_files:
     """ Converts dna sequences to tfrecord """
