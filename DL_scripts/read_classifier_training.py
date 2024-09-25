@@ -207,9 +207,9 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
     return dataset
 
     
-logits = model(**data[0]).logits
-            predicted_class_id = int(tf.math.argmax(logits, axis=-1)[0])
-            print(predicted_class_id)
+# logits = model(**data[0]).logits
+#             predicted_class_id = int(tf.math.argmax(logits, axis=-1)[0])
+#             print(predicted_class_id)
 
 
 @tf.function
