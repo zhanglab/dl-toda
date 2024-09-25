@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 # import nvidia.dali.fn as fn
 # import nvidia.dali.tfrecord as tfrec
 # import nvidia.dali.plugin.tf as dali_tf
+from transformers import TFBertForSequenceClassification, BertConfig
 import os
 import sys
 import json
@@ -151,14 +152,14 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
-          "input_word_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_word_ids": parsed_example['input_word_ids'], "input_mask": parsed_example['input_mask'], "input_type_ids": parsed_example['input_type_ids']}, parsed_example['labels']
+        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask']}, parsed_example['labels']
 
 
     def load_tfrecords_for_pretraining(proto_example):
@@ -344,12 +345,13 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'], required=True)
-    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'bert_huggingface' in sys.argv))
     parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('pretraining' in sys.argv), default=0.15)
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
     parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
+    parser.add_argument('--bert_huggingface', action='store_true', default=False)
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--paired_reads', action='store_true', default=False)
@@ -411,7 +413,7 @@ def main():
         val_input = val_preprocessor.get_device_dataset()
 
     else:
-        if args.model_type == 'BERT':
+        if args.model_type == 'BERT' or args.bert_huggingface:
             if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
             else:
@@ -437,13 +439,6 @@ def main():
     # # compute number of steps/batches to iterate over entire validation set
     # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
     # num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-
-    if args.model_type == 'BERT':
-        print(f'dataset for bert: {args.model_type}')
-        args.config = BertConfig.from_json_file(args.bert_config_file)
-        with open(args.bert_config_file, "r") as f:
-            args.config_dict = json.load(f)
-        print(f'BERT config: {args.config_dict}')
 
     # if hvd.rank() == 0:
     # create output directory
@@ -538,6 +533,7 @@ def main():
         # exclude variables from weight decay
         # opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
         # opt = tf.keras.optimizers.Adam(learning_rate=init_lr)
+
     else:
         if args.optimizer == 'Adam':
             opt = tf.keras.optimizers.Adam(init_lr)
@@ -551,77 +547,94 @@ def main():
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    if args.model_type == 'BERT' and args.bert_step == "finetuning":
-        encoder_config = tfm.nlp.encoders.EncoderConfig({
-            'type':'bert',
-            'bert': args.config_dict
-        })
-        bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-        model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
-        # model = BertModelFinetuning(config=args.config)
-        # # define a forward pass
-        # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-        # # _ = model(input_ids, input_mask, token_type_ids, False)
-        # print(f'summary: {model.create_model().summary()}')
-        # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-        
-        # # print(model.summary())
-        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-        #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-        # print(f'number of parameters: {model.create_model().count_params()}')
-        # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-        # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-        # print(f'# trainable parameters: {trainable_params}')
-        # print(f'# non trainable parameters: {non_trainable_params}')
-        # print(f'# variables: {len(model.trainable_weights)}')
-        # total_params = 0
-        # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
-        #     for var in model.trainable_weights:
-        #         count = 1
-        #         for dim in var.shape:
-        #             count *= dim
-        #         total_params += count
-        #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-        #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-        #     f.write(f'Total params: {total_params}')
-        #     print(f'Total params: {total_params}')
+    if args.model_type == 'BERT':
+        args.config = BertConfig.from_json_file(args.bert_config_file)
+        with open(args.bert_config_file, "r") as f:
+            args.config_dict = json.load(f)
+        print(f'BERT config: {args.config_dict}')
 
-        # # print(model.trainable_weights)
-        # # print(len(model.trainable_weights))
-    elif args.model_type == 'BERT' and args.bert_step == "pretraining":
-        encoder_config = tfm.nlp.encoders.EncoderConfig({
-            'type':'bert',
-            'bert': args.config_dict
-        })
-        bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-        model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
-        # model = BertModelPretraining(config=args.config)
-        # print(f'summary: {model.create_model().summary()}')
-        # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-        
-        # # print(model.summary())
-        # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-        #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-        # print(f'number of parameters: {model.create_model().count_params()}')
-        # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-        # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-        # print(f'# trainable parameters: {trainable_params}')
-        # print(f'# non trainable parameters: {non_trainable_params}')
-        # print(f'# variables: {len(model.trainable_weights)}')
-        # total_params = 0
-        # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
-        #     for var in model.trainable_weights:
-        #         count = 1
-        #         for dim in var.shape:
-        #             count *= dim
-        #         total_params += count
-        #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-        #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-        #     f.write(f'Total params: {total_params}')
-        #     print(f'Total params: {total_params}')
+        if args.bert_step == "finetuning":
+            encoder_config = tfm.nlp.encoders.EncoderConfig({
+                'type':'bert',
+                'bert': args.config_dict
+            })
+            bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+            model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
+            # model = BertModelFinetuning(config=args.config)
+            # # define a forward pass
+            # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+            # # _ = model(input_ids, input_mask, token_type_ids, False)
+            # print(f'summary: {model.create_model().summary()}')
+            # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+            
+            # # print(model.summary())
+            # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+            # print(f'number of parameters: {model.create_model().count_params()}')
+            # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+            # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+            # print(f'# trainable parameters: {trainable_params}')
+            # print(f'# non trainable parameters: {non_trainable_params}')
+            # print(f'# variables: {len(model.trainable_weights)}')
+            # total_params = 0
+            # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
+            #     for var in model.trainable_weights:
+            #         count = 1
+            #         for dim in var.shape:
+            #             count *= dim
+            #         total_params += count
+            #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+            #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+            #     f.write(f'Total params: {total_params}')
+            #     print(f'Total params: {total_params}')
 
+            # # print(model.trainable_weights)
+            # # print(len(model.trainable_weights))
+        elif args.bert_step == "pretraining":
+            encoder_config = tfm.nlp.encoders.EncoderConfig({
+                'type':'bert',
+                'bert': args.config_dict
+            })
+            bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+            model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
+            # model = BertModelPretraining(config=args.config)
+            # print(f'summary: {model.create_model().summary()}')
+            # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+            
+            # # print(model.summary())
+            # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+            #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+            # print(f'number of parameters: {model.create_model().count_params()}')
+            # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+            # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+            # print(f'# trainable parameters: {trainable_params}')
+            # print(f'# non trainable parameters: {non_trainable_params}')
+            # print(f'# variables: {len(model.trainable_weights)}')
+            # total_params = 0
+            # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
+            #     for var in model.trainable_weights:
+            #         count = 1
+            #         for dim in var.shape:
+            #             count *= dim
+            #         total_params += count
+            #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+            #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+            #     f.write(f'Total params: {total_params}')
+            #     print(f'Total params: {total_params}')
+
+    elif args.bert_huggingface:
+        with open(args.bert_config_file, "r") as f:
+            args.config_dict = json.load(f)
+        # create BERT config obkect
+        bert_config = BertConfig("attention_probs_dropout_prob": 0.1, "classifier_dropout": null, 
+                "hidden_act": "gelu", "hidden_dropout_prob": 0.1, "hidden_size": 768, "initializer_range": 0.02,
+                "intermediate_size": 3072, "layer_norm_eps": 1e-12, "max_position_embeddings": 512, "model_type": "bert",
+                "num_attention_heads": 12, "num_hidden_layers": 12, "pad_token_id": 0, "position_embedding_type": "absolute",
+                "transformers_version": "4.44.2", "type_vocab_size": 2, "use_cache": true, "vocab_size": args.config_dict["vocab_size"])
+
+        model = TFBertForSequenceClassification(bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -651,52 +664,55 @@ def main():
     start = datetime.datetime.now()
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(batch, data)
+        if args.bert_huggingface:
+            logits = model(**data).logits
+        else:
+            loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+            # if batch % 100 == 0 and hvd.rank() == 0:
+            if batch % 100 == 0:
+                print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+            # if batch % 1 == 0 and hvd.rank() == 0:
+            if batch % 1 == 0:
+                # write metrics
+                with writer.as_default():
+                    tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+                    tf.summary.scalar("train_loss", loss_value, step=batch)
+                    tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                    writer.flush()
+                td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-        # if batch % 100 == 0 and hvd.rank() == 0:
-        if batch % 100 == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        # if batch % 1 == 0 and hvd.rank() == 0:
-        if batch % 1 == 0:
-            # write metrics
-            with writer.as_default():
-                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-                tf.summary.scalar("train_loss", loss_value, step=batch)
-                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-                writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+            # evaluate model at the end of every epoch
+            if batch % nstep_per_epoch == 0:
+                # evaluate model
+                for _, data in enumerate(val_input.take(val_steps)):
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
-        # evaluate model at the end of every epoch
-        if batch % nstep_per_epoch == 0:
-            # evaluate model
-            for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+                # adjust learning rate
+                if args.lr_decay:
+                    if epoch % args.lr_decay == 0:
+                        current_lr = opt.learning_rate
+                        new_lr = current_lr / 2
+                        opt.learning_rate = new_lr
 
-            # adjust learning rate
-            if args.lr_decay:
-                if epoch % args.lr_decay == 0:
-                    current_lr = opt.learning_rate
-                    new_lr = current_lr / 2
-                    opt.learning_rate = new_lr
+                # if hvd.rank() == 0:
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+                # save weights
+                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                with writer.as_default():
+                    tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                    writer.flush()
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
-            # if hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
-            # save weights
-            checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-            with writer.as_default():
-                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-                writer.flush()
-            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+                # reset metrics variables
+                val_loss.reset_states()
+                train_accuracy.reset_states()
+                val_accuracy.reset_states()
 
-            # reset metrics variables
-            val_loss.reset_states()
-            train_accuracy.reset_states()
-            val_accuracy.reset_states()
-
-            # define end of current epoch
-            epoch += 1
+                # define end of current epoch
+                epoch += 1
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
     if args.model_type != 'BERT':
