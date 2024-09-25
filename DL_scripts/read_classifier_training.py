@@ -282,17 +282,19 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    return loss_value, predictions, labels, probs
+    return loss_value
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
     training = False
+    
     if model_type == 'BERT' and bert_step == "finetuning":
         input_data, labels = data
         logits = model(input_data, training=True)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         probs = tf.nn.softmax(logits, axis=-1)
         loss_value = loss(labels, probs)
+
     elif model_type == 'BERT' and bert_step == "pretraining":
         input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
         logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
@@ -305,6 +307,13 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
         loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
         loss_value = loss(masked_lm_ids, masked_lm_probs)
+
+    elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+        logits = model(**data).logits
+        loss_value = model(**data).loss
+        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        probs = tf.nn.softmax(logits, axis=-1)
+        labels = data["labels"]
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -658,12 +667,8 @@ def main():
     start = datetime.datetime.now()
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        loss_value, predictions, labels, probs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'loss value: {loss_value}')
-        print(f'predictions: {predictions}')
-        print(f'labels: {labels}')
-        print(f'probs: {probs}')
-        break
+        loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
