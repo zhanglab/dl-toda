@@ -190,7 +190,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     if is_training:
         dataset = dataset.repeat()
-        # dataset = dataset.shuffle(buffer_size=100)
+        dataset = dataset.shuffle(buffer_size=100)
 
     dataset = dataset.map(map_func=fn_load_data[args.datatype])
     dataset = dataset.batch(args.batch_size, drop_remainder=drop_remainder)
