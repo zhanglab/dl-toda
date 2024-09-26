@@ -734,7 +734,7 @@ def main():
 
     d_labels = defaultdict(int)
     for i in range(len(all_labels)):
-        d_labels[i] += 1
+        d_labels[all_labels[i]] += 1
 
     print(d_labels)
     
