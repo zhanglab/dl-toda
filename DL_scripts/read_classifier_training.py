@@ -440,11 +440,14 @@ def main():
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = int(args.train_reads_per_epoch/args.batch_size)
-    num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    num_train_steps = math.ceil(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
     val_steps = int(args.val_reads_per_epoch/args.batch_size)
     num_val_steps = int(args.val_reads_per_epoch/args.batch_size)
 
+    print(f'number of train steps: {num_train_steps}')
 
     # # compute number of steps/batches per epoch with horovod imported
     # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
@@ -722,6 +725,7 @@ def main():
             epoch += 1
 
     all_labels = all_labels[0].numpy()
+    print(all_labels)
     print(f'number of reads: {len(all_labels)}')
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
