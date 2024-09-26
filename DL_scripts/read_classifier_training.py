@@ -727,10 +727,11 @@ def main():
 
     all_labels = all_labels[0].numpy()
     print(f'number of reads: {len(all_labels)}')
-    num_extra_reads = num_train_steps - args.train_reads_per_epoch
+    num_extra_reads = num_train_steps*args.batch_size - args.train_reads_per_epoch
     print(f'number of extra reads: {num_extra_reads}')
     all_labels = all_labels[:-num_extra_reads]
     print(f'number of reads: {len(all_labels)}')
+    print(f'number of reads in set: {args.train_reads_per_epoch}')
 
     d_labels = defaultdict(int)
     for i in range(len(all_labels)):
