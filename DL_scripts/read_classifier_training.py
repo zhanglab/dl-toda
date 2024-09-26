@@ -674,7 +674,7 @@ def main():
         loss_value, labels, predictions, probs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         if batch == 1:
             all_labels = [labels]
-         else:
+        else:
             all_labels = tf.concat([all_labels, [labels]], 1)
         # # if batch % 100 == 0 and hvd.rank() == 0:
         # if batch % 100 == 0:
