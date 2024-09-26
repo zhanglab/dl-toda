@@ -409,8 +409,8 @@ def main():
     # print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
-    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
-    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
+    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords)))
+    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords)))
 
     if args.nvidia_dali:
         # get nvidia dali indexes
