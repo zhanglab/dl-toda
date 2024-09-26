@@ -726,8 +726,18 @@ def main():
             epoch += 1
 
     all_labels = all_labels[0].numpy()
-    print(all_labels)
     print(f'number of reads: {len(all_labels)}')
+    num_extra_reads = num_train_steps - args.train_reads_per_epoch
+    print(f'number of extra reads: {num_extra_reads}')
+    all_labels = all_labels[:-num_extra_reads]
+    print(f'number of reads: {len(all_labels)}')
+
+    d_labels = defaultdict(int)
+    for i in range(len(all_labels)):
+        d_labels[i] += 1
+
+    print(d_labels)
+    
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
     if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
