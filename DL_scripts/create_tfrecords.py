@@ -182,11 +182,14 @@ def create_tfrecords(args, data):
             content = handle.readlines()
             reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
             dna_sequences = [r.rstrip().split('\n')[1] for r in reads]
-            labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
+            if args.update_labels:
+                labels = [int(args.labels_mapping[r.rstrip().split('\n')[0].split('|')[1]]) for r in reads]
+            else:
+                labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
             # random.shuffle(reads)
             print(f'{fq_file}\t# reads: {len(reads)}\t{len(dna_sequences)}')
 
-    if args.bert or args.dnabert:
+    if args.bert:
         # # create processes
         # chunk_size = math.ceil(len(reads)/args.num_proc)
         # grouped_reads = [reads[i:i+chunk_size] for i in range(0, len(reads), chunk_size)]
@@ -203,7 +206,7 @@ def create_tfrecords(args, data):
         #     for p in processes:
         #         p.join()
         
-        if args.bert:
+        if not args.dnabert:
             reads_index = list(range(len(reads)))
             data, nsp_data = get_data_for_bert_1(args, dna_sequences, labels, reads_index)
 
@@ -228,6 +231,7 @@ def create_tfrecords(args, data):
         elif args.dnabert:
             data, dict_labels = get_data_for_bert_2(args, dna_sequences, labels)
             print(f'dict_labels: {dict_labels}')
+
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
                 #     print(process, len(data_process))
@@ -251,7 +255,7 @@ def create_tfrecords(args, data):
                 label: species label - label
                 """
                 if args.bert_step == 'pretraining':
-                    data = \
+                    tfrecord_data = \
                         {
                             'input_ids': wrap_read(r[0]),
                             'attention_mask': wrap_read(r[1]),
@@ -262,7 +266,7 @@ def create_tfrecords(args, data):
                             # 'next_sentence_label': wrap_label(r[6]),
                         }
                 elif args.bert_step == 'finetuning':
-                    data = \
+                    tfrecord_data = \
                         {
                             'input_ids': wrap_read(r[0]),
                             'attention_mask': wrap_read(r[1]),
@@ -270,63 +274,40 @@ def create_tfrecords(args, data):
                             'labels': wrap_label(r[3])
                             # 'is_real_example': wrap_label(1)
                         }
-                feature = tf.train.Features(feature=data)
+                feature = tf.train.Features(feature=tfrecord_data)
                 example = tf.train.Example(features=feature)
                 serialized = example.SerializeToString()
                 writer.write(serialized)
                 count += 1
-                # break
                 
         with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
             f.write(f'{count}')
     
     else:
         with tf.io.TFRecordWriter(output_tfrec) as writer:
-            with open(fq_file) as handle:
-                rec = ''
-                n_line = 0
-                for line in handle:
-                    rec += line
-                    n_line += 1
-                    if n_line == num_lines:
-                # content = handle.readlines()
-                # reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-                # print(f'{args.input_fastq}\t# reads: {len(reads)}')
-                # for count, rec in enumerate(reads, 1):
-                # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-                #     read = str(rec.seq)
-                #     read_id = rec.id
-                    # label = int(read_id.split('|')[1])
-                        read_id = rec.split('\n')[0].rstrip()
-                        dna_list, label  = prepare_input_data(args, rec, read_id)              
-                        # create TFrecords
-                        if args.no_label:
-                            data = \
-                                {
-                                    # 'read': wrap_read(np.array(dna_array)),
-                                    'read': wrap_read(dna_array),
-                                }
-                        else:
-                            # record_bytes = tf.train.Example(features=tf.train.Features(feature={
-                            #     "read": tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(dna_array))),
-                            #     "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label])),
-                            # })).SerializeToString()
-                            # writer.write(record_bytes)
-
-                            data = \
-                                {
-                                    # 'read': wrap_read(np.array(dna_array)),
-                                    'read': wrap_read(dna_list),
-                                    'label': wrap_label(label),
-                                }
-                        feature = tf.train.Features(feature=data)
-                        example = tf.train.Example(features=feature)
-                        serialized = example.SerializeToString()
-                        writer.write(serialized)
-                        count += 1
-                        # initialize variables again
-                        n_line = 0
-                        rec = ''
+            for i, r in enumerate(dna_sequences, 0):
+                label = labels[i]
+                if args.dnabert:
+                    dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
+                else:
+                    dna_list  = prepare_input_data(args, dna_sequences[i])              
+                # create TFrecords
+                if args.no_label:
+                    tfrecord_data = \
+                        {
+                            'read': wrap_read(dna_list),
+                        }
+                else:
+                    tfrecord_data = \
+                        {
+                            'read': wrap_read(dna_list),
+                            'label': wrap_label(label),
+                        }
+                feature = tf.train.Features(feature=tfrecord_data)
+                example = tf.train.Example(features=feature)
+                serialized = example.SerializeToString()
+                writer.write(serialized)
+                count += 1
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
