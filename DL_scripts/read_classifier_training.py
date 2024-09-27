@@ -161,7 +161,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
         return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-
+        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
@@ -424,7 +424,6 @@ def main():
                                             deterministic=False, training=True)
         train_input = train_preprocessor.get_device_dataset()
         val_input = val_preprocessor.get_device_dataset()
-
     else:
         if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
             if args.bert_step == 'finetuning':
@@ -475,22 +474,6 @@ def main():
     writer = tf.summary.create_file_writer(tensorboard_dir)
     td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
     vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
-
-    # create summary file
-    # with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'w') as f:
-    #     f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-    #             f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-    #             f'Vector size\t{args.vector_size}\n'
-    #             f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-    #             f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
-    #             # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-    #             f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
-    #             f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-    #             f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
-    #     # \nNumber of classes\t{num_labels}
-    #     if args.model_type != 'BERT':
-    #         f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
-
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
@@ -636,7 +619,6 @@ def main():
             #     print(f'Total params: {total_params}')
 
     elif args.model_type == 'BERT_HUGGINGFACE':
-        
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
         
@@ -760,7 +742,21 @@ def main():
     total_time = end - start
     hours, seconds = divmod(total_time.seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
+    # create summary file
+    #     if args.model_type != 'BERT':
+    #         f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
+
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
+                f'Vector size\t{args.vector_size}\n'
+                f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+                f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
+                # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
+                f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+        # \nNumber of classes\t{num_labels}
         f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
     print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
     td_writer.close()
