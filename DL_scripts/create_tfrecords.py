@@ -143,8 +143,6 @@ def get_data_for_bert_2(args, dna_sequences, labels):
     dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
         label = labels[i]
-        if args.update_labels:
-            label = int(args.labels_mapping[str(label)])
         # parse dna sequences
         dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * args.max_read_length
