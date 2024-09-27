@@ -291,7 +291,8 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
     training = False
 
     if model_type == 'BERT' and bert_step == "finetuning":
-        input_data, labels = data
+        input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
+        labels = data["labels"]
         logits = model(input_data, training=True)
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         probs = tf.nn.softmax(logits, axis=-1)
