@@ -5,10 +5,12 @@ import random
 def load_dnabert_seq(args):
     with open(args.input, 'r') as f:
         content = f.readlines()
-        labels = [s.rstrip().split('\t')[0] for s in content]
+        if args.update_labels:
+            labels = [int(args.labels_mapping[s.rstrip().split('\t')[0]]) for s in content]
+        else:
+            labels = [s.rstrip().split('\t')[0] for s in content]
         dna_sequences = [s.rstrip().split('\t')[1].split(" ") for s in content]
-        # random.shuffle(dna_sequences)
-
+        
     return dna_sequences, labels
 
 # def split_read(args, reads, read, r_index, process):
