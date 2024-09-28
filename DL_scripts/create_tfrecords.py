@@ -116,6 +116,8 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
         # prepare input for next sentence prediction task
         # dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
         dna_list = get_kmer_arr(args, dna_sequences[i], args.max_read_length, args.kmer_vector_length)
+        # add CLS and SEP tokens
+        dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * args.max_read_length
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
