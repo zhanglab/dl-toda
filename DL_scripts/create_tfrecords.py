@@ -106,17 +106,17 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
     for i in range(len(dna_sequences)):
         label = labels[i]
 
-        if args.update_labels:
-            label = int(args.labels_mapping[str(label)])
+        # # get input for nsp task
+        # segment_1, segment_2, nsp_label = split_read(args, dna_sequences, dna_sequences[i], i)
  
-        # get input for nsp task
-        segment_1, segment_2, nsp_label = split_read(args, dna_sequences, dna_sequences[i], i)
- 
-        # parse dna sequences
-        segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
-        segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+        # # parse dna sequences
+        # segment_1_list = get_kmer_arr(args, segment_1, args.read_length//2, args.kmer_vector_length)
+        # segment_2_list = get_kmer_arr(args, segment_2, args.read_length//2, args.kmer_vector_length)
+
         # prepare input for next sentence prediction task
-        dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+        # dna_list, segment_ids = get_nsp_input(args, segment_1_list, segment_2_list)
+        dna_list = get_kmer_arr(args, dna_sequences[i], args.max_read_length, args.kmer_vector_length)
+        segment_ids = [0] * args.max_read_length
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
@@ -124,7 +124,7 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
         elif args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
             # performing attention on them.
-            input_mask = [1] * len(dna_list)
+            input_mask = [1] * args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
             # print(r, dna_list, input_mask, segment_ids, label)
         if label not in nsp_data:
@@ -132,7 +132,6 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
             nsp_data[label][str(nsp_label)] += 1
         else:
             nsp_data[label][str(nsp_label)] += 1
-
 
     return data, nsp_data
 
@@ -158,8 +157,6 @@ def get_data_for_bert_2(args, dna_sequences, labels):
                 input_mask = [1]*args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
             dict_labels[label] += 1
-            print(dna_sequences[i], dna_list, input_mask, segment_ids, label)
-
 
     return data, dict_labels
 
@@ -184,7 +181,6 @@ def create_tfrecords(args, data):
                 labels = [int(args.labels_mapping[r.rstrip().split('\n')[0].split('|')[1]]) for r in reads]
             else:
                 labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
-            # random.shuffle(reads)
             print(f'{fq_file}\t# reads: {len(reads)}\t{len(dna_sequences)}')
 
     if args.bert:
@@ -354,11 +350,11 @@ def main():
     if not args.DNA_model:
         if args.bert:
             # compute size of output data for input_word_ids (CLS and SEP tokens are added with SEP at the end)
-            args.kmer_vector_length = args.read_length//2 - args.k_value + 1
-            print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
+            # args.kmer_vector_length = args.read_length//2 - args.k_value + 1
+            # print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
             # print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
-        elif args.dnabert:
-            args.kmer_vector_length = args.max_read_length 
+        # elif args.dnabert:
+            args.kmer_vector_length = (args.max_read_length - args.k_value + 1)
         else:
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
