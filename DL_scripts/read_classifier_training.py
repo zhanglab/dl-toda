@@ -655,14 +655,14 @@ def main():
 
     start = datetime.datetime.now()
 
-    all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         loss_value, labels, predictions, probs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        if batch == 1:
-            all_labels = [labels]
-        else:
-            all_labels = tf.concat([all_labels, [labels]], 1)
+        # if batch == 1:
+        #     all_labels = [labels]
+        # else:
+        #     all_labels = tf.concat([all_labels, [labels]], 1)
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
             print(f'labels: {labels}')
@@ -711,19 +711,19 @@ def main():
             # define end of current epoch
             epoch += 1
 
-    all_labels = all_labels[0].numpy()
-    print(f'number of reads: {len(all_labels)}')
-    num_extra_reads = num_train_steps*args.batch_size - args.train_reads_per_epoch
-    print(f'number of extra reads: {num_extra_reads}')
-    all_labels = all_labels[:-num_extra_reads]
-    print(f'number of reads: {len(all_labels)}')
-    print(f'number of reads in set: {args.train_reads_per_epoch}')
+    # all_labels = all_labels[0].numpy()
+    # print(f'number of reads: {len(all_labels)}')
+    # num_extra_reads = num_train_steps*args.batch_size - args.train_reads_per_epoch
+    # print(f'number of extra reads: {num_extra_reads}')
+    # all_labels = all_labels[:-num_extra_reads]
+    # print(f'number of reads: {len(all_labels)}')
+    # print(f'number of reads in set: {args.train_reads_per_epoch}')
 
-    d_labels = defaultdict(int)
-    for i in range(len(all_labels)):
-        d_labels[all_labels[i]] += 1
+    # d_labels = defaultdict(int)
+    # for i in range(len(all_labels)):
+    #     d_labels[all_labels[i]] += 1
 
-    print(d_labels)
+    # print(d_labels)
     
 
     # if hvd.rank() == 0 and args.model_type != 'BERT':
