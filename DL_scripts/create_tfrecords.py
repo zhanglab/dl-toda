@@ -158,7 +158,7 @@ def get_data_for_bert_2(args, dna_sequences, labels):
                 input_mask = [1]*args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
             dict_labels[label] += 1
-            # print(r, dna_list, input_mask, segment_ids, label)
+            print(dna_sequences[i], dna_list, input_mask, segment_ids, label)
 
 
     return data, dict_labels
