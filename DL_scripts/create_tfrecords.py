@@ -102,7 +102,7 @@ def create_meta_tfrecords(args, grouped_files):
 def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
     """ process data obtained with ART read simulator"""
     data = []
-    nsp_data = {}
+    dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
         label = labels[i]
 
@@ -128,14 +128,9 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
             # performing attention on them.
             input_mask = [1] * args.max_read_length
             data.append([dna_list, input_mask, segment_ids, label])
-            # print(r, dna_list, input_mask, segment_ids, label)
-        if label not in nsp_data:
-            nsp_data[label] = defaultdict(int)
-            nsp_data[label][str(nsp_label)] += 1
-        else:
-            nsp_data[label][str(nsp_label)] += 1
+        dict_labels[label] += 1
 
-    return data, nsp_data
+    return data, dict_labels
 
 
 def get_data_for_bert_2(args, dna_sequences, labels):
@@ -204,29 +199,13 @@ def create_tfrecords(args, data):
         
         if not args.dnabert:
             reads_index = list(range(len(reads)))
-            data, nsp_data = get_data_for_bert_1(args, dna_sequences, labels, reads_index)
-
-            total_reads = 0
-            nsp_1_labels = defaultdict(int)
-            nsp_0_labels = defaultdict(int)
-            for label, nsp_count in nsp_data.items():
-                nsp_1_labels[label]+= nsp_count['1']
-                nsp_0_labels[label]+= nsp_count['0']
-                total_reads += nsp_count['1'] + nsp_count['0']
-                # for process, nsp_data_process in nsp_data.items():
-                #     for label, nsp_count in nsp_data_process.items():
-                #         nsp_1_labels[label]+= nsp_count['1']
-                #         nsp_0_labels[label]+= nsp_count['0']
-                #         total_reads += nsp_count['1'] + nsp_count['0']
-            with open(os.path.join(args.output_dir, 'nsp_0_data_info.json'), 'w') as nsp_f:    
-                json.dump(nsp_0_labels, nsp_f)
-            with open(os.path.join(args.output_dir, 'nsp_1_data_info.json'), 'w') as nsp_f:    
-                json.dump(nsp_1_labels, nsp_f)
-            print(f'total reads: {total_reads}')
+            data, dict_labels = get_data_for_bert_1(args, dna_sequences, labels, reads_index)
 
         elif args.dnabert:
+            # process data obtained from DNABERT
             data, dict_labels = get_data_for_bert_2(args, dna_sequences, labels)
-            print(f'dict_labels: {dict_labels}')
+        
+        print(f'dict_labels: {dict_labels}')
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
