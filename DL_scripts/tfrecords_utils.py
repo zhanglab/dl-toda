@@ -70,11 +70,14 @@ def get_kmer_index(args, kmer, dict_kmers):
     """Convert kmers into their corresponding index"""
     if kmer in dict_kmers:
         idx = dict_kmers[kmer]
-    elif get_reverse_seq(kmer) in dict_kmers:
-        idx = dict_kmers[get_reverse_seq(kmer)]
     else:
-        idx = dict_kmers['[UNK]'] if args.bert else dict_kmers['unknown']
-
+        if args.dnabert:
+            idx = dict_kmers['[UNK]']
+        else:
+            if get_reverse_seq(kmer) in dict_kmers:
+                idx = dict_kmers[get_reverse_seq(kmer)]
+            else:
+                idx = dict_kmers['[UNK]']
     return idx
 
 def get_flipped_reads(args, records):
