@@ -118,7 +118,7 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
         dna_list = get_kmer_arr(args, dna_sequences[i], args.max_read_length, args.kmer_vector_length)
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
-        segment_ids = [0] * args.max_read_length
+        segment_ids = [0] * (args.kmer_vector_length+2)
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
             input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
@@ -126,7 +126,7 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
         elif args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
             # performing attention on them.
-            input_mask = [1] * args.max_read_length
+            input_mask = [1] * (args.kmer_vector_length+2)
             data.append([dna_list, input_mask, segment_ids, label])
         dict_labels[label] += 1
 
