@@ -183,7 +183,7 @@ def create_tfrecords(args, data):
                 labels = [int(args.labels_mapping[r.rstrip().split('\n')[0].split('|')[1]]) for r in reads]
             else:
                 labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
-            print(f'{fq_file}\t# reads: {len(reads)}\t{len(dna_sequences)}')
+            print(f'# reads: {len(reads)}\t{len(dna_sequences)}\n{reads[0]}\t{labels[0]}')
 
     if args.bert:
         # # create processes
