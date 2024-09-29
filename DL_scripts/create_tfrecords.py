@@ -265,7 +265,8 @@ def create_tfrecords(args, data):
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
                 else:
-                    dna_list  = prepare_input_data(args, dna_sequences[i])              
+                    dna_list  = prepare_input_data(args, dna_sequences[i])      
+                print(f'label: {label}\tdna_list: {dna_list}\tdna_sequences: {dna_sequences[i]}')        
                 # create TFrecords
                 if args.no_label:
                     tfrecord_data = \
@@ -320,14 +321,6 @@ def main():
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
-    if not args.bert:
-        if os.path.isdir(args.input):
-            # get list of fastq files
-            fq_files = glob.glob(os.path.join(args.input, "*.fq"))
-        else:
-            fq_files = [args.input]
-            args.num_proc = 1
-
     if not args.DNA_model:
         if args.bert:
             # compute size of output data for input_word_ids (CLS and SEP tokens are added with SEP at the end)
@@ -340,32 +333,27 @@ def main():
             args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
-        # if args.bert:
-        #     # add [PAD] to dictionary
-        #     args.dict_kmers['[PAD]'] = 0
-        #     print(args.dict_kmers)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
 
     if args.dnabert:
         dna_sequences, labels = load_dnabert_seq(args)
         create_tfrecords(args, (dna_sequences, labels))
-    elif args.bert:
-        create_tfrecords(args, args.input)
     else:
-        chunk_size = math.ceil(len(fq_files)/args.num_proc)
-        grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
-        with mp.Manager() as manager:
-            train_reads = manager.dict()
-            val_reads = manager.dict()
-            if args.dataset_type == 'sim':
-                processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-            elif args.dataset_type == 'meta':
-                processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
+        create_tfrecords(args, args.input)
+        # chunk_size = math.ceil(len(fq_files)/args.num_proc)
+        # grouped_files = [fq_files[i:i+chunk_size] for i in range(0, len(fq_files), chunk_size)]
+        # with mp.Manager() as manager:
+        #     train_reads = manager.dict()
+        #     val_reads = manager.dict()
+        #     if args.dataset_type == 'sim':
+        #         processes = [mp.Process(target=create_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+        #     elif args.dataset_type == 'meta':
+        #         processes = [mp.Process(target=create_meta_tfrecords, args=(args, grouped_files[i])) for i in range(len(grouped_files))]
+        #     for p in processes:
+        #         p.start()
+        #     for p in processes:
+        #         p.join()
 
 
 if __name__ == "__main__":
