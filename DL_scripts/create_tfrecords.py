@@ -264,6 +264,9 @@ def create_tfrecords(args, data):
                 label = labels[i]
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
+                    if len(dna_list) < args.max_read_length:
+                        num_padded_values = args.max_read_length-len(dna_list)
+                        dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
                 print(f'label: {label}\tdna_list: {dna_list}\tdna_sequences: {dna_sequences[i]}')        
@@ -309,7 +312,7 @@ def main():
     parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
-    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--dnabert' in sys.argv and 'bert' in sys.argv))
+    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--dnabert' in sys.argv))
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
