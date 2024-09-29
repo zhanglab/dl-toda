@@ -433,7 +433,7 @@ def main():
                 args.datatype = 'pretraining'
                 args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
         else:
-            datatype = 'reads'
+            args.datatype = 'reads'
 
         # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
         train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
@@ -478,7 +478,6 @@ def main():
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
-    init_lr = args.init_lr
     # init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
 
     # define cyclical learning rate
@@ -489,7 +488,7 @@ def main():
     #                                               step_size=2 * nstep_per_epoch)
 
     # set up the optimizer
-    if args.model_type == 'BERT':
+    if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
         # define linear decay of the learning rate 
         linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
             initial_learning_rate=init_lr,
@@ -518,24 +517,13 @@ def main():
 
         opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
 
-        # warmup_proportion = 0.1  # Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training
-        # warmup_steps = int(warmup_proportion * num_train_steps)
-        # warmup_steps = int(0.1 * num_train_steps)
-        # warmup_schedule = LinearWarmup(
-        # warmup_learning_rate = 0,
-        # after_warmup_lr_sched = linear_decay,
-        # warmup_steps = warmup_steps)
-
-        # opt = tf.keras.optimizers.Adam(learning_rate=warmup_schedule, beta_1=0.9, beta_2=0.999, epsilon=1e-6, weight_decay=0.01)
-        # exclude variables from weight decay
-        # opt.exclude_from_weight_decay(var_names=["LayerNorm", "layer_norm", "bias"])
-        # opt = tf.keras.optimizers.Adam(learning_rate=init_lr)
+        # opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
 
     else:
         if args.optimizer == 'Adam':
-            opt = tf.keras.optimizers.Adam(init_lr)
+            opt = tf.keras.optimizers.Adam(args.init_lr)
         elif args.optimizer == 'SGD':
-            opt = tf.keras.optimizers.SGD(init_lr)
+            opt = tf.keras.optimizers.SGD(args.init_lr)
 
     # prevent numeric underflow when using float16
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
@@ -665,9 +653,6 @@ def main():
         #     all_labels = tf.concat([all_labels, [labels]], 1)
         # if batch % 100 == 0 and hvd.rank() == 0:
         if batch % 100 == 0:
-            print(f'labels: {labels}')
-            print(f'predictions: {predictions}')
-            print(f'probs: {probs}')
             print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         # if batch % 1 == 0 and hvd.rank() == 0:
         if batch % 1 == 0:
@@ -756,7 +741,7 @@ def main():
                 # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                 f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
                 f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                f'Initial learning rate\t{args.init_lr}\nLearning rate decay\t{args.lr_decay}\n')
+                f'Initial learning rate\t{args.init_lr}\n')
         # \nNumber of classes\t{num_labels}
         f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
     print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
