@@ -490,34 +490,34 @@ def main():
     # set up the optimizer
     if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
         # define linear decay of the learning rate 
-        linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-            initial_learning_rate=init_lr,
-            end_learning_rate=0,
-            decay_steps=num_train_steps)
-
-        sys.path.append(args.path_to_lr_schedule)
-        from lr_schedule import LinearWarmup
-
-        # # define linear decay of the learning rate 
-        # # use tf.compat.v1.train.polynomial_decay instead
         # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        # initial_learning_rate=init_lr,
-        # decay_steps=nstep_per_epoch*args.epochs,
-        # end_learning_rate=0.0,
-        # power=1.0,
-        # cycle=False)
+        #     initial_learning_rate=init_lr,
+        #     end_learning_rate=0,
+        #     decay_steps=num_train_steps)
 
-        # # define linear warmup schedule
-        warmup_proportion = 0.1
-        warmup_steps = int(warmup_proportion * num_train_steps)
-        warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-             warmup_learning_rate = 0,
-            after_warmup_lr_sched = linear_decay,
-            warmup_steps = warmup_steps)
+        # sys.path.append(args.path_to_lr_schedule)
+        # from lr_schedule import LinearWarmup
 
-        opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
+        # # # define linear decay of the learning rate 
+        # # # use tf.compat.v1.train.polynomial_decay instead
+        # # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        # # initial_learning_rate=init_lr,
+        # # decay_steps=nstep_per_epoch*args.epochs,
+        # # end_learning_rate=0.0,
+        # # power=1.0,
+        # # cycle=False)
 
-        # opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
+        # # # define linear warmup schedule
+        # warmup_proportion = 0.1
+        # warmup_steps = int(warmup_proportion * num_train_steps)
+        # warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
+        #      warmup_learning_rate = 0,
+        #     after_warmup_lr_sched = linear_decay,
+        #     warmup_steps = warmup_steps)
+
+        # opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
+
+        opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
 
     else:
         if args.optimizer == 'Adam':
