@@ -390,10 +390,10 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # get vocabulary size
-    # if args.model_type != 'BERT':
-    #     with open(args.vocab, 'r') as f:
-    #         content = f.readlines()
-    #         vocab_size = len(content)
+    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+        with open(args.vocab, 'r') as f:
+            content = f.readlines()
+            vocab_size = len(content)
 
     # load class_mapping file mapping label IDs to labels and get number of labels
     if args.class_mapping:
