@@ -312,7 +312,7 @@ def main():
     parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
-    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--dnabert' in sys.argv))
+    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--bert' in sys.argv))
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
