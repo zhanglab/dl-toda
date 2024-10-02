@@ -290,7 +290,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
     if model_type == 'BERT' and bert_step == "finetuning":
         input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
@@ -526,7 +526,7 @@ def main():
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, data, model, loss, test_loss, test_accuracy)
+                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
