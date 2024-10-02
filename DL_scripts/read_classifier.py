@@ -575,7 +575,7 @@ def main():
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
                     # print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-                    if args.model_type != 'BERT':
+                    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
                         out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
                     else:
                         out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
