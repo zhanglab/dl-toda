@@ -250,7 +250,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
-    print(f'datatype: {args.datatype}')
+
     dataset = tf.data.TFRecordDataset([filenames])
 
     if is_training:
@@ -519,7 +519,6 @@ def main():
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
-            print(data)
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
                 batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
