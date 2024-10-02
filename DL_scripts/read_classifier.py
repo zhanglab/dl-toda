@@ -597,8 +597,10 @@ def main():
     hours, seconds = divmod(total_time.seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
 
-    with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
-        outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
+    # with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
+    with open(os.path.join(args.output_dir, f'testing-summary.tsv'), 'w') as outfile:
+        outfile.write(f'{args.batch_size}\t{len(test_files)}\t{num_reads_classified}\t')
+        # outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
         if args.data_type == 'sim':
             outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
