@@ -291,7 +291,7 @@ def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_
 @tf.function
 def testing_step(data_type, model_type, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
-    if model_type == 'BERT' and bert_step == "finetuning"::
+    if model_type == 'BERT' and bert_step == "finetuning":
         input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
         labels = data["labels"]
         logits = model(input_data, training=True)
