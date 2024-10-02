@@ -202,9 +202,8 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
-
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
-
+    
     def load_tfrecords_with_reads(proto_example):
         data_description = {
             'read': tf.io.VarLenFeature(tf.int64),
@@ -251,7 +250,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
-
+    print(f'datatype: {args.datatype}')
     dataset = tf.data.TFRecordDataset([filenames])
 
     if is_training:
@@ -292,6 +291,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
+    
     if model_type == 'BERT' and bert_step == "finetuning":
         input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
         labels = data["labels"]
@@ -510,7 +510,7 @@ def main():
                     args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
             else:
                 args.datatype = 'reads'
-
+            print(args)
             test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
