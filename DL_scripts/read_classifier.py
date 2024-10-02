@@ -121,85 +121,85 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #         return self.dalidataset
 
 
-# define the DALI pipeline
-@pipeline_def
-def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-    # prefetch_queue_depth = 100
-    # read_ahead = True
-    stick_to_shard = True
-    inputs = fn.readers.tfrecord(path=tfrec_filenames,
-                                 index_path=tfrec_idx_filenames,
-                                 random_shuffle=training,
-                                 shard_id=shard_id,
-                                 num_shards=num_gpus,
-                                 initial_fill=initial_fill,
-                                 # prefetch_queue_depth=prefetch_queue_depth,
-                                 # read_ahead=read_ahead,
-                                 stick_to_shard=stick_to_shard,
-                                 features={
-                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-    # retrieve reads and labels and copy them to the gpus
-    reads = inputs["read"].gpu()
-    labels = inputs["label"].gpu()
-    return (reads, labels)
+# # define the DALI pipeline
+# @pipeline_def
+# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+#     # prefetch_queue_depth = 100
+#     # read_ahead = True
+#     stick_to_shard = True
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=shard_id,
+#                                  num_shards=num_gpus,
+#                                  initial_fill=initial_fill,
+#                                  # prefetch_queue_depth=prefetch_queue_depth,
+#                                  # read_ahead=read_ahead,
+#                                  stick_to_shard=stick_to_shard,
+#                                  features={
+#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     reads = inputs["read"].gpu()
+#     labels = inputs["label"].gpu()
+#     return (reads, labels)
 
 
-# define the BERT DALI pipeline
-@pipeline_def
-def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-    inputs = fn.readers.tfrecord(path=tfrec_filenames,
-                                 index_path=tfrec_idx_filenames,
-                                 random_shuffle=training,
-                                 shard_id=0,
-                                 num_shards=1,
-                                 stick_to_shard=False,
-                                 initial_fill=initial_fill,
-                                 features={
-                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-                                     "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-    # retrieve reads and labels and copy them to the gpus
-    input_ids = inputs["input_ids"].gpu()
-    input_mask = inputs["input_mask"].gpu()
-    segment_ids = inputs["segment_ids"].gpu()
-    label_ids = inputs['label_ids'].gpu()
-    is_real_example = inputs['is_real_example'].gpu()
+# # define the BERT DALI pipeline
+# @pipeline_def
+# def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
+#                                  index_path=tfrec_idx_filenames,
+#                                  random_shuffle=training,
+#                                  shard_id=0,
+#                                  num_shards=1,
+#                                  stick_to_shard=False,
+#                                  initial_fill=initial_fill,
+#                                  features={
+#                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+#                                      "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
+#                                      "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+#     # retrieve reads and labels and copy them to the gpus
+#     input_ids = inputs["input_ids"].gpu()
+#     input_mask = inputs["input_mask"].gpu()
+#     segment_ids = inputs["segment_ids"].gpu()
+#     label_ids = inputs['label_ids'].gpu()
+#     is_real_example = inputs['is_real_example'].gpu()
 
-    return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+#     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
 
 
-class DALIPreprocessor(object):
-    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
+# class DALIPreprocessor(object):
+#     def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
 
-        device_id = hvd.local_rank()
-        shard_id = hvd.rank()
-        num_gpus = hvd.size()
+#         device_id = hvd.local_rank()
+#         shard_id = hvd.rank()
+#         num_gpus = hvd.size()
         
-        self.batch_size = batch_size
-        self.device_id = device_id
+#         self.batch_size = batch_size
+#         self.device_id = device_id
 
-        if args.model_type == "BERT":
-            self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+#         if args.model_type == "BERT":
+#             self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
-            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
-        else:
-            self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#                 output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
+#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+#         else:
+#             self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
    
-            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+#                 output_shapes=((batch_size, vector_size), (batch_size)),
+#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
-    def get_device_dataset(self):
-        return self.dalidataset
+#     def get_device_dataset(self):
+#         return self.dalidataset
 
 
 def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_training, drop_remainder):
