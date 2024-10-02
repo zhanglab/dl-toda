@@ -203,7 +203,7 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #         return self.dalidataset
 
 
-def build_dataset(filenames, batch_size, vector_size, num_classes, datatype, is_training, drop_remainder):
+def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
