@@ -502,9 +502,13 @@ def main():
             test_input = test_preprocessor.get_device_dataset()
         else:
             if args.model_type == 'BERT':
-                datatype = 'sentences'
+                if args.bert_step == 'finetuning':
+                    args.datatype = 'finetuning'
+                else:
+                    args.datatype = 'pretraining'
+                    args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
             else:
-                datatype = 'reads'
+                args.datatype = 'reads'
 
             test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
 
