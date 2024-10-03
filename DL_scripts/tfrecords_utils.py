@@ -29,7 +29,7 @@ def prepare_input_data(args, read_seq, rec=None, read_id=None):
                 # pad list of bases with 0s to the right
                 dna_list = dna_list + [0] * (args.read_length - len(dna_list))
         else:
-            dna_list = get_kmer_arr(args, read_seq, args.read_length, args.kmer_vector_length)
+            dna_list = get_kmer_arr(args, read_seq, args.max_read_length, args.kmer_vector_length)
 
     return dna_list
 
@@ -71,13 +71,11 @@ def get_kmer_index(args, kmer, dict_kmers):
     if kmer in dict_kmers:
         idx = dict_kmers[kmer]
     else:
-        if args.dnabert:
-            idx = dict_kmers['[UNK]']
-        else:
+        if args.canonical_kmers:
             if get_reverse_seq(kmer) in dict_kmers:
                 idx = dict_kmers[get_reverse_seq(kmer)]
-            else:
-                idx = dict_kmers['[UNK]']
+        else:
+            idx = dict_kmers['[UNK]']
     return idx
 
 def get_flipped_reads(args, records):
@@ -113,9 +111,5 @@ def get_kmer_arr(args, read, max_length, vector_length):
         kmer = read[i:i + args.k_value]
         idx = get_kmer_index(args, kmer, args.dict_kmers)
         list_kmers.append(idx)
-
-    if len(list_kmers) < vector_length:
-        # pad list of kmers with 0s to the right
-        list_kmers = list_kmers + [0] * (vector_length - len(list_kmers))
 
     return list_kmers
