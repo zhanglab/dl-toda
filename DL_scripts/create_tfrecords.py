@@ -99,7 +99,7 @@ def create_meta_tfrecords(args, grouped_files):
 #     nsp_data[process] = process_nsp_data
 
 
-def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
+def process_art_data(args, dna_sequences, labels, reads_index):
     """ process data obtained with ART read simulator"""
     data = []
     dict_labels = defaultdict(int)
@@ -118,6 +118,9 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
         dna_list = get_kmer_arr(args, dna_sequences[i], args.max_read_length, args.kmer_vector_length)
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
+        if len(dna_list) < (args.kmer_vector_length+2):
+            # pad list of kmers with 0s to the right
+            dna_list = dna_list + [0] * (args.kmer_vector_length+2 - len(dna_list))
         segment_ids = [0] * (args.kmer_vector_length+2)
         # mask 15% of k-mers in reads
         if args.bert_step == 'pretraining':
@@ -133,25 +136,26 @@ def get_data_for_bert_1(args, dna_sequences, labels, reads_index):
     return data, dict_labels
 
 
-def get_data_for_bert_2(args, dna_sequences, labels):
+def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
+    max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
         label = labels[i]
         # parse dna sequences
         dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
-        segment_ids = [0] * args.max_read_length
+        segment_ids = [0] * max_position_embeddings
         if args.bert_step == 'finetuning':
             # pad input ids vector if necessary
-            if len(dna_list) < args.max_read_length:
-                num_padded_values = args.max_read_length-len(dna_list)
+            if len(dna_list) < max_position_embeddings:
+                num_padded_values = max_position_embeddings - len(dna_list)
                 dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                 # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
                 # performing attention on them.
-                input_mask = [1]*(args.max_read_length-num_padded_values) + [0]*num_padded_values
+                input_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
             else:
-                input_mask = [1]*args.max_read_length
+                input_mask = [1]*max_position_embeddings
             data.append([dna_list, input_mask, segment_ids, label])
             dict_labels[label] += 1
 
@@ -199,11 +203,11 @@ def create_tfrecords(args, data):
         
         if not args.dnabert:
             reads_index = list(range(len(reads)))
-            data, dict_labels = get_data_for_bert_1(args, dna_sequences, labels, reads_index)
+            data, dict_labels = process_art_data(args, dna_sequences, labels, reads_index)
 
         elif args.dnabert:
             # process data obtained from DNABERT
-            data, dict_labels = get_data_for_bert_2(args, dna_sequences, labels)
+            data, dict_labels = process_dnabert_data(args, dna_sequences, labels)
         
         print(f'dict_labels: {dict_labels}')
 
@@ -304,6 +308,7 @@ def main():
     parser.add_argument('--insert_size', action='store_true', default=False, help="add insert size info")
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--dnabert', action='store_true', default=False, help="process dnabert data")
+    parser.add_argument('--canonical_kmers', action='store_true', default=False, help="use a vocabulary made of canonical kmers")
     parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
     parser.add_argument('--num_proc', default=1, type=int, help="number of processes")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
@@ -311,8 +316,7 @@ def main():
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
     parser.add_argument('--contiguous', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
-    parser.add_argument('--read_length', default=250, type=int, help="The length of simulated reads")
-    parser.add_argument('--max_read_length', default=510, type=int, help="maximum length of dna sequences", required=('--bert' in sys.argv))
+    parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads", required=True)
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
     args = parser.parse_args()
 
@@ -325,15 +329,7 @@ def main():
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
     if not args.DNA_model:
-        if args.bert:
-            # compute size of output data for input_word_ids (CLS and SEP tokens are added with SEP at the end)
-            # args.kmer_vector_length = args.read_length//2 - args.k_value + 1
-            # print(f'final input vector length (without NSP task): {args.kmer_vector_length*2 + 2}')
-            # print(f'final input vector length: {args.kmer_vector_length*2 + 3}')
-        # elif args.dnabert:
-            args.kmer_vector_length = (args.max_read_length - args.k_value + 1)
-        else:
-            args.kmer_vector_length = args.read_length - args.k_value + 1 if args.step == 1 else args.read_length // args.k_value
+            args.kmer_vector_length = args.max_read_length - args.k_value + 1 if args.step == 1 else args.max_read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
