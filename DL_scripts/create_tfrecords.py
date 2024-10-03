@@ -329,7 +329,7 @@ def main():
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
     if not args.DNA_model:
-            args.kmer_vector_length = args.max_read_length - args.k_value + 1 if args.step == 1 else args.max_read_length // args.k_value
+        args.kmer_vector_length = args.max_read_length - args.k_value + 1 if args.step == 1 else args.max_read_length // args.k_value
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(args.vocab)
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
