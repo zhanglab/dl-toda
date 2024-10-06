@@ -268,12 +268,11 @@ def create_tfrecords(args, data):
                 label = labels[i]
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
-                    if len(dna_list) < args.max_read_length:
-                        num_padded_values = args.max_read_length-len(dna_list)
+                    if len(dna_list) < args.kmer_vector_length:
+                        num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
-                print(f'label: {label}\tdna_list: {dna_list}\tdna_sequences: {dna_sequences[i]}')        
                 # create TFrecords
                 if args.no_label:
                     tfrecord_data = \
