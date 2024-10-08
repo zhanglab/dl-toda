@@ -322,6 +322,9 @@ def main():
 
     print(args)
 
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     if args.update_labels:
         args.labels_mapping = dict()
         with open(args.mapping_file, 'r') as f:
