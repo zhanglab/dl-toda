@@ -363,8 +363,6 @@ def main():
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('pretraining' in sys.argv), default=0.15)
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
-    parser.add_argument('--train_reads_per_epoch', type=int, help='number of training reads per epoch', required=True)
-    parser.add_argument('--val_reads_per_epoch', type=int, help='number of validation reads per epoch', required=True)
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--DNA_model', action='store_true', default=False)
@@ -410,8 +408,8 @@ def main():
     # print('Variable dtype: %s' % policy.variable_dtype)
 
     # Get training and validation tfrecords
-    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords)))
-    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords)))
+    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
+    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
 
     if args.nvidia_dali:
         # get nvidia dali indexes
@@ -439,14 +437,22 @@ def main():
         train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
         val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
 
+
+    # get number of reads in training and validation datasets
+    with open(os.path.join(args.train_tfrecords, '*-read_count'), 'r') as infile:
+        train_reads_per_epoch = int(infile.readline())
+
+    with open(os.path.join(args.val_tfrecords, '*-read_count'), 'r') as infile:
+        val_reads_per_epoch = int(infile.readline())
+
     # compute number of steps/batches per epoch
-    nstep_per_epoch = int(args.train_reads_per_epoch/args.batch_size)
+    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
     # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
-    num_train_steps = math.ceil(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    num_train_steps = math.ceil(train_reads_per_epoch/args.batch_size*args.epochs)
     # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(args.val_reads_per_epoch/args.batch_size)
-    num_val_steps = int(args.val_reads_per_epoch/args.batch_size)
+    val_steps = int(val_reads_per_epoch/args.batch_size)
+    num_val_steps = int(val_reads_per_epoch/args.batch_size)
 
     print(f'number of train steps: {num_train_steps}')
 
@@ -739,7 +745,7 @@ def main():
                 f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
                 # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                f'Training set size\t{args.train_reads_per_epoch}\nValidation set size\t{args.val_reads_per_epoch}\n'
+                f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
                 f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
                 f'Initial learning rate\t{args.init_lr}\n')
         # \nNumber of classes\t{num_labels}
