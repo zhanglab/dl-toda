@@ -423,9 +423,9 @@ def main():
         os.makedirs(os.path.join(args.output_dir))
 
     # get list of testing tfrecords and number of reads per tfrecords
-    test_files = sorted(glob.glob(os.path.join(args.tfrecords)))
-    num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords[:-6] + '-read_count')))
-    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords[:-6] + '-read_ids.tsv'))) if args.data_type == 'meta' else []
+    test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
+    num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
+    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
 
     if args.nvidia_dali:
         # get nvidia dali indexes
