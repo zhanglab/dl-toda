@@ -410,7 +410,9 @@ def main():
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
-
+    train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
+    val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
+   
     if args.nvidia_dali:
         # get nvidia dali indexes
         train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
@@ -439,10 +441,10 @@ def main():
 
 
     # get number of reads in training and validation datasets
-    with open(os.path.join(args.train_tfrecords, '*-read_count'), 'r') as infile:
+    with open(train_num_reads[0], 'r') as infile:
         train_reads_per_epoch = int(infile.readline())
 
-    with open(os.path.join(args.val_tfrecords, '*-read_count'), 'r') as infile:
+    with open(val_num_reads[0], 'r') as infile:
         val_reads_per_epoch = int(infile.readline())
 
     # compute number of steps/batches per epoch
