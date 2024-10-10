@@ -182,7 +182,7 @@ def create_tfrecords(args, data):
                 labels = [int(args.labels_mapping[r.rstrip().split('\n')[0].split('|')[1]]) for r in reads]
             else:
                 labels = [int(r.rstrip().split('\n')[0].split('|')[1]) for r in reads]
-            print(f'# reads: {len(reads)}\t{len(dna_sequences)}\n{reads[0]}\t{labels[0]}')
+            # print(f'# reads: {len(reads)}\t{len(dna_sequences)}\n{reads[0]}\t{labels[0]}')
 
     if args.bert:
         # # create processes
@@ -209,7 +209,7 @@ def create_tfrecords(args, data):
             # process data obtained from DNABERT
             data, dict_labels = process_dnabert_data(args, dna_sequences, labels)
         
-        print(f'dict_labels: {dict_labels}')
+        # print(f'dict_labels: {dict_labels}')
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
