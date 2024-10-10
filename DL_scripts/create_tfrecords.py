@@ -327,7 +327,7 @@ def main():
 
     if args.update_labels:
         args.labels_mapping = dict()
-        with open(args.mapping_file, 'r') as f:
+        with open(os.path.join(args.mapping_file, 'mapping_labels.tsv'), 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
