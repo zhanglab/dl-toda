@@ -173,11 +173,11 @@ def create_tfrecords(args, data):
     if args.dnabert:
         dna_sequences, labels = data
     else:
-        # data = fastq file
+        # data = tsv file
         with open(data) as handle:
-            content = handle.readlines()
-            reads = [''.join(content[j:j + num_lines]) for j in range(0, len(content), num_lines)]
-            dna_sequences = [r.rstrip().split('\n')[1] for r in reads]
+            reads = handle.readlines()
+            dna_sequences = [r.rstrip().split('\t')[1] for r in reads]
+            labels = [r.rstrip().split('\t')[0].split('|')[1] for r in reads]
             if args.update_labels:
                 labels = [int(args.labels_mapping[r.rstrip().split('\n')[0].split('|')[1]]) for r in reads]
             else:
