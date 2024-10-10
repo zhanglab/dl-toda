@@ -389,7 +389,7 @@ def main():
 
     # get vocabulary size
     if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
-        with open(args.vocab, 'r') as f:
+        with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
 
