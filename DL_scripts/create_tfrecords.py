@@ -17,7 +17,7 @@ from tfrecords_bert_utils import *
 
 
 def wrap_read(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 
 def wrap_label(value):
@@ -268,13 +268,13 @@ def create_tfrecords(args, data):
                 label = labels[i]
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
-                    print(f'before: {len(dna_list)}')
                     if len(dna_list) < args.kmer_vector_length:
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                    print(f'after: {len(dna_list)}')
+                    print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
+                    print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
                 # create TFrecords
                 if args.no_label:
                     tfrecord_data = \
