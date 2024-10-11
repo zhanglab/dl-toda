@@ -100,6 +100,7 @@ def create_meta_tfrecords(args, grouped_files):
 
 
 def process_art_data(args, dna_sequences, labels, reads_index):
+    max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     """ process data obtained with ART read simulator"""
     data = []
     dict_labels = defaultdict(int)
@@ -118,18 +119,22 @@ def process_art_data(args, dna_sequences, labels, reads_index):
         dna_list = get_kmer_arr(args, dna_sequences[i], args.max_read_length, args.kmer_vector_length)
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
-        if len(dna_list) < (args.kmer_vector_length+2):
+        if len(dna_list) < max_position_embeddings:
             # pad list of kmers with 0s to the right
-            dna_list = dna_list + [0] * (args.kmer_vector_length+2 - len(dna_list))
-        segment_ids = [0] * (args.kmer_vector_length+2)
+            num_padded_values = max_position_embeddings - len(dna_list)
+            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
+            input_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
+        else:
+            input_mask = [1]*max_position_embeddings
+        
+        segment_ids = [0] * max_position_embeddings
         # mask 15% of k-mers in reads
-        if args.bert_step == 'pretraining':
-            input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
-            data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label])
-        elif args.bert_step == 'finetuning':
+        # if args.bert_step == 'pretraining':
+        #     input_ids, input_mask, masked_lm_weights, masked_lm_positions, masked_lm_ids = get_mlm_input(args, dna_list)
+        #     data.append([input_ids, input_mask, segment_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label])
+        if args.bert_step == 'finetuning':
             # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
             # performing attention on them.
-            input_mask = [1] * (args.kmer_vector_length+2)
             data.append([dna_list, input_mask, segment_ids, label])
         dict_labels[label] += 1
 
