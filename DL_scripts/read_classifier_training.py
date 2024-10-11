@@ -151,7 +151,8 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         read = parsed_example['read']
         label = tf.cast(parsed_example['label'], tf.int64)
         read = tf.sparse.to_dense(read)
-        return read, label
+        # return read, label
+        return read
 
 
     def load_tfrecords_for_finetuning(proto_example):
