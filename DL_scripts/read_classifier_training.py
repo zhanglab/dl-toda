@@ -412,64 +412,6 @@ def main():
     # print('Compute dtype: %s' % policy.compute_dtype)
     # print('Variable dtype: %s' % policy.variable_dtype)
 
-    # Get training and validation tfrecords
-    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
-    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
-    train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
-    val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
-   
-    if args.nvidia_dali:
-        # get nvidia dali indexes
-        train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
-        val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
-
-        # load data
-        train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
-                                               deterministic=False, training=True)
-        val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
-                                            deterministic=False, training=True)
-        train_input = train_preprocessor.get_device_dataset()
-        val_input = val_preprocessor.get_device_dataset()
-    else:
-        if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
-            if args.bert_step == 'finetuning':
-                args.datatype = 'finetuning'
-            else:
-                args.datatype = 'pretraining'
-                args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
-        else:
-            args.datatype = 'reads'
-
-        # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
-        train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
-        val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
-
-
-    # get number of reads in training and validation datasets
-    with open(train_num_reads[0], 'r') as infile:
-        train_reads_per_epoch = int(infile.readline())
-
-    with open(val_num_reads[0], 'r') as infile:
-        val_reads_per_epoch = int(infile.readline())
-
-    # compute number of steps/batches per epoch
-    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
-    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
-    num_train_steps = math.ceil(train_reads_per_epoch/args.batch_size*args.epochs)
-    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
-    # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(val_reads_per_epoch/args.batch_size)
-    num_val_steps = int(val_reads_per_epoch/args.batch_size)
-
-    print(f'number of train steps: {num_train_steps}')
-
-    # # compute number of steps/batches per epoch with horovod imported
-    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
-    # num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
-    # # compute number of steps/batches to iterate over entire validation set
-    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-    # num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-
     # if hvd.rank() == 0:
     # create output directory
     if not os.path.isdir(args.output_dir):
@@ -543,11 +485,12 @@ def main():
 
     # define model
     if args.model_type == 'BERT':
-        
         # load BERT configuration
         args.config = BertConfiguration.from_json_file(args.bert_config_file)
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
+        # update input vector size
+        args.vector_size = args.config_dict['max_position_embeddings']
 
         if args.bert_step == "finetuning":
             encoder_config = tfm.nlp.encoders.EncoderConfig({
@@ -623,7 +566,8 @@ def main():
     elif args.model_type == 'BERT_HUGGINGFACE':
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
-        
+        # update input vector size
+        args.vector_size = args.config_dict['max_position_embeddings']
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification(config=bert_config)
@@ -642,6 +586,64 @@ def main():
             checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
             checkpoint.restore(args.ckpt).expect_partial()
             # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+
+    # Get training and validation tfrecords
+    train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
+    val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
+    train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
+    val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
+   
+    if args.nvidia_dali:
+        # get nvidia dali indexes
+        train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
+        val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
+
+        # load data
+        train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                               deterministic=False, training=True)
+        val_preprocessor = DALIPreprocessor(args, val_files, val_idx_files, args.batch_size, args.vector_size, args.initial_fill,
+                                            deterministic=False, training=True)
+        train_input = train_preprocessor.get_device_dataset()
+        val_input = val_preprocessor.get_device_dataset()
+    else:
+        if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
+            if args.bert_step == 'finetuning':
+                args.datatype = 'finetuning'
+            else:
+                args.datatype = 'pretraining'
+                args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
+        else:
+            args.datatype = 'reads'
+
+        # drop_remainder set to True prevents smaller batches from being produced (before it what set to True and it worked)
+        train_input = build_dataset(args, train_files, num_labels, is_training=True, drop_remainder=False)
+        val_input = build_dataset(args, val_files, num_labels, is_training=False, drop_remainder=False)
+
+
+    # get number of reads in training and validation datasets
+    with open(train_num_reads[0], 'r') as infile:
+        train_reads_per_epoch = int(infile.readline())
+
+    with open(val_num_reads[0], 'r') as infile:
+        val_reads_per_epoch = int(infile.readline())
+
+    # compute number of steps/batches per epoch
+    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
+    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    num_train_steps = math.ceil(train_reads_per_epoch/args.batch_size*args.epochs)
+    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    # compute number of steps/batches to iterate over entire validation set
+    val_steps = int(val_reads_per_epoch/args.batch_size)
+    num_val_steps = int(val_reads_per_epoch/args.batch_size)
+
+    print(f'number of train steps: {num_train_steps}')
+
+    # # compute number of steps/batches per epoch with horovod imported
+    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
+    # num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
+    # # compute number of steps/batches to iterate over entire validation set
+    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    # num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
 
 
     # if hvd.rank() == 0:
