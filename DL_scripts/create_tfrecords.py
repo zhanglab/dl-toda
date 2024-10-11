@@ -271,7 +271,8 @@ def create_tfrecords(args, data):
                     if len(dna_list) < args.kmer_vector_length:
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                    print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
+                    if len(dna_list) == 508:
+                        print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
                     print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
