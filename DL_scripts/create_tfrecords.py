@@ -17,7 +17,7 @@ from tfrecords_bert_utils import *
 
 
 def wrap_read(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
 def wrap_label(value):
