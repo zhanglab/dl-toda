@@ -682,8 +682,8 @@ def main():
         # # evaluate model at the end of every epoch
         # if batch % nstep_per_epoch == 0:
         #     # evaluate model
-    for _, data in enumerate(val_input.take(val_steps)):
-        print(len(data.numpy()[0]), data.numpy()[0])
+    for batch, data in enumerate(val_input.take(val_steps)):
+        print(batch, len(data.numpy()[0]), data.numpy()[0])
         # break
 
                 # testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
@@ -728,7 +728,8 @@ def main():
 
     # print(d_labels)
     
-
+    print(f'number of train steps: {num_train_steps}')
+    print(f'number of val steps: {num_val_steps}')
     # if hvd.rank() == 0 and args.model_type != 'BERT':
     if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
         # save final embeddings
