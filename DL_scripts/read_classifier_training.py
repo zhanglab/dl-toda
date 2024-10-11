@@ -712,7 +712,7 @@ def main():
             # val_accuracy.reset_states()
 
             # define end of current epoch
-            epoch += 1
+            # epoch += 1
 
     # all_labels = all_labels[0].numpy()
     # print(f'number of reads: {len(all_labels)}')
