@@ -681,7 +681,7 @@ def main():
         if batch % nstep_per_epoch == 0:
             # evaluate model
             for batch, data in enumerate(val_input.take(val_steps)):
-                # testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
             # adjust learning rate
             if args.lr_decay:
