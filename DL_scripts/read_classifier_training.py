@@ -684,7 +684,7 @@ def main():
         #     # evaluate model
     for _, data in enumerate(val_input.take(val_steps)):
         print(len(data.numpy()[0]), data.numpy()[0])
-        break
+        # break
 
                 # testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
