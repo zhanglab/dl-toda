@@ -658,61 +658,56 @@ def main():
 
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
-    # for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        # print(len(data.numpy()[0]), data.numpy()[0])
-        
-        # loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        # # if batch == 1:
-        # #     all_labels = [labels]
-        # # else:
-        # #     all_labels = tf.concat([all_labels, [labels]], 1)
-        # # if batch % 100 == 0 and hvd.rank() == 0:
-        # if batch % 100 == 0:
-        #     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        # # if batch % 1 == 0 and hvd.rank() == 0:
-        # if batch % 1 == 0:
-        #     # write metrics
-        #     with writer.as_default():
-        #         tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-        #         tf.summary.scalar("train_loss", loss_value, step=batch)
-        #         tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-        #         writer.flush()
-        #     td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+    for batch, data in enumerate(train_input.take(num_train_steps), 1):        
+        loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        # if batch == 1:
+        #     all_labels = [labels]
+        # else:
+        #     all_labels = tf.concat([all_labels, [labels]], 1)
+        # if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 100 == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # if batch % 1 == 0 and hvd.rank() == 0:
+        if batch % 1 == 0:
+            # write metrics
+            with writer.as_default():
+                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+                tf.summary.scalar("train_loss", loss_value, step=batch)
+                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                writer.flush()
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-        # # evaluate model at the end of every epoch
-        # if batch % nstep_per_epoch == 0:
-        #     # evaluate model
-    for batch, data in enumerate(val_input.take(val_steps)):
-        print(batch, len(data.numpy()[0]), data.numpy()[0])
-        # break
-
+        # evaluate model at the end of every epoch
+        if batch % nstep_per_epoch == 0:
+            # evaluate model
+            for batch, data in enumerate(val_input.take(val_steps)):
                 # testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
-            # # adjust learning rate
-            # if args.lr_decay:
-            #     if epoch % args.lr_decay == 0:
-            #         current_lr = opt.learning_rate
-            #         new_lr = current_lr / 2
-            #         opt.learning_rate = new_lr
+            # adjust learning rate
+            if args.lr_decay:
+                if epoch % args.lr_decay == 0:
+                    current_lr = opt.learning_rate
+                    new_lr = current_lr / 2
+                    opt.learning_rate = new_lr
 
-            # # if hvd.rank() == 0:
-            # print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
-            # # save weights
-            # checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-            # model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-            # with writer.as_default():
-            #     tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-            #     tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-            #     writer.flush()
-            # vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+            # if hvd.rank() == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+            # save weights
+            checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+            with writer.as_default():
+                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                writer.flush()
+            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
-            # # reset metrics variables
-            # val_loss.reset_states()
-            # train_accuracy.reset_states()
-            # val_accuracy.reset_states()
+            # reset metrics variables
+            val_loss.reset_states()
+            train_accuracy.reset_states()
+            val_accuracy.reset_states()
 
-            # define end of current epoch
-            # epoch += 1
+            define end of current epoch
+            epoch += 1
 
     # all_labels = all_labels[0].numpy()
     # print(f'number of reads: {len(all_labels)}')
@@ -728,8 +723,6 @@ def main():
 
     # print(d_labels)
     
-    print(f'number of train steps: {num_train_steps}')
-    print(f'number of val steps: {num_val_steps}')
     # if hvd.rank() == 0 and args.model_type != 'BERT':
     if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
         # save final embeddings
