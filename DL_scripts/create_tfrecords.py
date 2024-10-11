@@ -144,7 +144,12 @@ def process_dnabert_data(args, dna_sequences, labels):
     for i in range(len(dna_sequences)):
         label = labels[i]
         # parse dna sequences
-        dna_list = [args.dict_kmers['[CLS]']] + [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]] + [args.dict_kmers['[SEP]']]
+        dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
+        # adjust size for sequences longer than the max read length (dnabert data generates sequences of size 511 when specifying a size of 510!! je ne sais pas pourquoi)
+        if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+            dna_list = dna_list[:-1]
+        # add CLS and SEP tokens
+        dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * max_position_embeddings
         if args.bert_step == 'finetuning':
             # pad input ids vector if necessary
@@ -272,12 +277,7 @@ def create_tfrecords(args, data):
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                     if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-                        print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
                         dna_list = dna_list[:-1] # remove the last kmer == information about the last nucleotide
-                        original_seq = ''.join([dna_sequences[i][0]] + [s[-1] for s in dna_sequences[i][1:]])
-                        print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
-                        break 
-                        
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
                     print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
