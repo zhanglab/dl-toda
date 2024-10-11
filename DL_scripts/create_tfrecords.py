@@ -269,16 +269,14 @@ def create_tfrecords(args, data):
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
                     if len(dna_list) < args.kmer_vector_length:
-                        original_seq = ''.join([dna_sequences[i][0]] + [s[-1] for s in dna_sequences[i][1:]])
-                        print(f'{len(dna_sequences[i])}\t{len(dna_list)}\t{dna_sequences[i]}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
-                        print(dna_sequences[i])
-                        print(len(original_seq))
-                        print(original_seq)
-                        break # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                    if len(dna_list) > args.kmer_vector_length:
+                    if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+                        print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
                         dna_list = dna_list[:-1] # remove the last kmer == information about the last nucleotide
+                        original_seq = ''.join([dna_sequences[i][0]] + [s[-1] for s in dna_sequences[i][1:]])
+                        print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
+                        break 
                         
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
