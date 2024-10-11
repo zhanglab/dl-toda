@@ -658,8 +658,8 @@ def main():
 
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
-    for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        print(len(data.numpy()[0]), data.numpy()[0])
+    # for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        # print(len(data.numpy()[0]), data.numpy()[0])
         
         # loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         # # if batch == 1:
@@ -682,8 +682,10 @@ def main():
         # # evaluate model at the end of every epoch
         # if batch % nstep_per_epoch == 0:
         #     # evaluate model
-        for _, data in enumerate(val_input.take(val_steps)):
-            print(len(data.numpy()[0]), data.numpy()[0])
+    for _, data in enumerate(val_input.take(val_steps)):
+        print(len(data.numpy()[0]), data.numpy()[0])
+        break
+
                 # testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
             # # adjust learning rate
