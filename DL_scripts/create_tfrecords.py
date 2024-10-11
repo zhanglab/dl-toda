@@ -268,10 +268,11 @@ def create_tfrecords(args, data):
                 label = labels[i]
                 if args.dnabert:
                     dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
+                    print(f'before: {len(dna_list)}')
                     if len(dna_list) < args.kmer_vector_length:
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                    # print(f'{dna_sequences[i]}\t{dna_list}\t{len(dna_list)}')
+                    print(f'after: {len(dna_list)}')
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
                 # create TFrecords
@@ -333,6 +334,7 @@ def main():
 
     if not args.DNA_model:
         args.kmer_vector_length = args.max_read_length - args.k_value + 1 if args.step == 1 else args.max_read_length // args.k_value
+        print(f'max read length: {args.max_read_length}\tvector size: {args.kmer_vector_length}\t{args.k_value}')
         # get dictionary mapping kmers to indexes
         args.dict_kmers = vocab_dict(f'{args.vocab}/{args.k_value}mers.txt')
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
