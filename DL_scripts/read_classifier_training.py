@@ -658,6 +658,8 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        print(len(data.numpy()[0]), data.numpy()[0])
+        break
         loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         # if batch == 1:
         #     all_labels = [labels]
