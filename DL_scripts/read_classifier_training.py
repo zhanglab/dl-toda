@@ -375,6 +375,8 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
 
+    print(args)
+
     # Initialize Horovod
     # hvd.init()
     # Map one GPU per process
