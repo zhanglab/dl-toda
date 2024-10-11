@@ -355,7 +355,6 @@ def main():
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=512)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
-    parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
@@ -375,7 +374,7 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
 
-    print(args)
+    print(f'VECTOR SIZE: {args.vector_size}')
 
     # Initialize Horovod
     # hvd.init()
