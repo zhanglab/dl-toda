@@ -141,15 +141,16 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
-            # 'read': tf.io.VarLenFeature(tf.int64),
-            'read': tf.io.FixedLenFeature([args.vector_size], tf.int64),
+            'read': tf.io.VarLenFeature(tf.int64),
+            # 'read': tf.io.FixedLenFeature([args.vector_size], tf.int64),
+            # 'read': tf.io.FixedLenSequenceFeature([args.vector_size], tf.int64, allow_missing=True),
             'label': tf.io.FixedLenFeature([1], tf.int64)
             # 'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
         read = parsed_example['read']
         label = tf.cast(parsed_example['label'], tf.int64)
-        # read = tf.sparse.to_dense(read)
+        read = tf.sparse.to_dense(read)
         return read, label
 
 
