@@ -706,7 +706,7 @@ def main():
             train_accuracy.reset_states()
             val_accuracy.reset_states()
 
-            define end of current epoch
+            # define end of current epoch
             epoch += 1
 
     # all_labels = all_labels[0].numpy()
