@@ -115,8 +115,6 @@ def main():
     if args.species:
         args.ranks = {'species': 0}
 
-    print(args)
-
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
 
