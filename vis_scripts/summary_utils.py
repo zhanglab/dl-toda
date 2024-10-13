@@ -8,7 +8,7 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
     print(predictions[0])
     ground_truth_taxa = [ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))]
     predictions_taxa = [predictions[i].split(';')[r_index] for i in range(len(predictions))]
-    predictions_taxa.add('unclassified')
+    predictions_taxa.append('unclassified')
     ground_truth_taxa.sort()
     predictions_taxa.sort()
     print(ground_truth[0])
