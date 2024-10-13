@@ -117,7 +117,7 @@ def main():
 
     print(args)
 
-    args.output_dir = args.output_dir + '/summary'
+    args.output_dir = args.output_dir + '/testing_summary'
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
 
@@ -156,7 +156,7 @@ def main():
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
     if args.confusion_matrix or args.false_positives:
-        args.output_dir = args.output_dir + '/summary/confusion-matrix'
+        args.output_dir = args.output_dir + '/confusion_matrix'
         if not os.path.isdir(args.output_dir):
             os.makedirs(args.output_dir)
         parse_results(args)
