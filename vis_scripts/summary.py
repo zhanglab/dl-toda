@@ -43,6 +43,8 @@ def parse_results(args):
         print(len(predictions), len(ground_truth), len(confidence_scores))
         
         if args.confusion_matrix:
+            if not os.path.isdir(os.path.join(args.output_dir, 'confusion_matrix')):
+                os.makedirs(os.path.join(args.output_dir, 'confusion_matrix'))
             # create confusion matrix
             if args.tool == 'dl-toda' or args.tool == 'bert':
                 for r_name, r_index in args.ranks.items():
@@ -115,6 +117,10 @@ def main():
 
     print(args)
 
+    args.output_dir = args.output_dir + '/summary'
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
     # update ranks to look into if added to command line
     if args.tool == 'bertax':
         # only analyze bertax results at the genus level
@@ -150,6 +156,9 @@ def main():
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
     if args.confusion_matrix or args.false_positives:
+        args.output_dir = args.output_dir + '/summary/confusion-matrix'
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(args.output_dir)
         parse_results(args)
 
     if args.combine:
