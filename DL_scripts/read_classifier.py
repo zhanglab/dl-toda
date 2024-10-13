@@ -352,7 +352,6 @@ def main():
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
-    # parser.add_argument('--epoch', type=int, help='epoch of checkpoint', default=14)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--n_rows', type=int, default=50)
@@ -361,7 +360,6 @@ def main():
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
     parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
-    # parser.add_argument('--labels', type=int, help='number of labels')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
@@ -370,7 +368,7 @@ def main():
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
-    parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file', required=('--epoch' in sys.argv))
+    parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
@@ -411,16 +409,53 @@ def main():
     # print('Variable dtype: %s' % policy.variable_dtype)
     # print(f'2: {datetime.datetime.now()}')
     
-    # define metrics
-    if args.data_type == 'sim':
-        loss = tf.losses.SparseCategoricalCrossentropy()
-        test_loss = tf.keras.metrics.Mean(name='test_loss')
-        test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # if hvd.rank() == 0:
     # create output directories
     if not os.path.isdir(args.output_dir):
         os.makedirs(os.path.join(args.output_dir))
+
+
+    init_lr = args.init_lr
+    opt = tf.keras.optimizers.Adam(init_lr)
+    # opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
+
+
+    # load model
+    if args.ckpt is not None:
+        if args.model_type == 'BERT':
+            config = BertConfig.from_json_file(args.bert_config_file)
+            model = BertModel(config=config)
+            # update input vector size
+            args.vector_size = args.config_dict['max_position_embeddings']
+        elif args.model_type == 'BERT_HUGGINGFACE':
+            with open(args.bert_config_file, "r") as f:
+                args.config_dict = json.load(f)
+            # create BERT config object + model
+            bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+            model = TFBertForSequenceClassification(config=bert_config)
+            # update input vector size
+            args.vector_size = args.config_dict['max_position_embeddings']
+        else:
+            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
+        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{testing_epoch}')).expect_partial()
+    elif args.model is not None:
+        model = tf.keras.models.load_model(args.model, 'model')
+            # restore the last checkpointed values to the model
+    #        checkpoint = tf.train.Checkpoint(model)
+    #        checkpoint.restore(tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts')))
+    #        ckpt_path = os.path.join(input_dir, f'run-{run_num}', 'ckpts/ckpts')
+    #        latest_ckpt = tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts'))
+    #        print(f'latest ckpt: {latest_ckpt}')
+    #        model.load_weights(os.path.join(input_dir, f'run-{run_num}', f'ckpts/ckpts-{epoch}'))
+
+    # define metrics
+    if args.data_type == 'sim':
+        loss = tf.losses.SparseCategoricalCrossentropy()
+        test_loss = tf.keras.metrics.Mean(name='test_loss')
+        test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # get list of testing tfrecords and number of reads per tfrecords
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
@@ -448,39 +483,6 @@ def main():
 
     #     if args.nvidia_dali:
     #         gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-
-    init_lr = args.init_lr
-    opt = tf.keras.optimizers.Adam(init_lr)
-    # opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
-
-
-    # load model
-    if args.ckpt is not None:
-        if args.model_type == 'BERT':
-            config = BertConfig.from_json_file(args.bert_config_file)
-            model = BertModel(config=config)
-        elif args.model_type == 'BERT_HUGGINGFACE':
-            with open(args.bert_config_file, "r") as f:
-                args.config_dict = json.load(f)
-            
-            # create BERT config object + model
-            bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-            model = TFBertForSequenceClassification(config=bert_config)
-        else:
-            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
-        checkpoint.restore(args.ckpt).expect_partial()
-    elif args.model is not None:
-        model = tf.keras.models.load_model(args.model, 'model')
-            # restore the last checkpointed values to the model
-    #        checkpoint = tf.train.Checkpoint(model)
-    #        checkpoint.restore(tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts')))
-    #        ckpt_path = os.path.join(input_dir, f'run-{run_num}', 'ckpts/ckpts')
-    #        latest_ckpt = tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts'))
-    #        print(f'latest ckpt: {latest_ckpt}')
-    #        model.load_weights(os.path.join(input_dir, f'run-{run_num}', f'ckpts/ckpts-{epoch}'))
-
 
     elapsed_time = []
     num_reads_classified = 0
