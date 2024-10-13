@@ -7,6 +7,8 @@ def main():
 	val_data = sys.argv[1]
 	output_dir = sys.argv[2]
 
+	print(f'TESTING THIS MERDE')
+
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
 
