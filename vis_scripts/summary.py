@@ -49,12 +49,13 @@ def parse_results(args):
             if args.tool == 'dl-toda' or args.tool == 'bert':
                 for r_name, r_index in args.ranks.items():
                     cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
-                    if args.output_prefix:
-                        output_file = os.path.join(args.output_dir,
-                                                     f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
-                    else:
-                        output_file = os.path.join(args.output_dir,
-                                                     f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    # if args.output_prefix:
+                    #     output_file = os.path.join(args.output_dir,
+                    #                                  f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    # else:
+                    #     output_file = os.path.join(args.output_dir,
+                    #                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    output_file = os.path.join(args.output_dir, 'confusion_matrix', 'cm.xlsx')
                     # store confusion matrices in excel file
                     with pd.ExcelWriter(output_file) as writer:
                         cm.to_excel(writer, sheet_name=f'{r_name}')
@@ -153,9 +154,6 @@ def main():
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
     if args.confusion_matrix or args.false_positives:
-        args.output_dir = args.output_dir + '/confusion_matrix'
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
         parse_results(args)
 
     if args.combine:
