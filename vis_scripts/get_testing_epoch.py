@@ -7,6 +7,9 @@ def main():
 	val_data = sys.argv[1]
 	output_dir = sys.argv[2]
 
+	if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
+
 	with open(val_data, 'r') as f:
 		content = f.readlines()
 		loss = [float(i.rstrip().split('\t')[2]) for i in content]
