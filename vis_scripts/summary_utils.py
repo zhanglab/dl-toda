@@ -6,9 +6,13 @@ import pandas as pd
 def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
     print(ground_truth[0])
     print(predictions[0])
-    ground_truth_taxa = set([ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))])
-    predictions_taxa = set([predictions[i].split(';')[r_index] for i in range(len(predictions))])
+    ground_truth_taxa = [ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))]
+    predictions_taxa = [predictions[i].split(';')[r_index] for i in range(len(predictions))]
     predictions_taxa.add('unclassified')
+    ground_truth_taxa.sort()
+    predictions_taxa.sort()
+    print(ground_truth[0])
+    print(predictions[0])
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
     cm = pd.DataFrame(columns=list(ground_truth_taxa), index=list(predictions_taxa))
     # fill out table with zeros
@@ -29,7 +33,8 @@ def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
 
 def get_metrics(args, cm, r_name, r_index):
     print(r_name)
-    taxa_in_dl_toda = set([v.split(';')[r_index] for v in args.dl_toda_tax.values()])
+    taxa_in_dl_toda = [v.split(';')[r_index] for v in args.dl_toda_tax.values()]
+    taxa_in_dl_toda.sort()
     outfile_1 = os.path.join(args.output_dir, f'{r_name}-metrics-per-taxon')
     outfile_2 = os.path.join(args.output_dir, f'{r_name}-metrics-reads-info')
     outfile_3 = os.path.join(args.output_dir, f'{r_name}-metrics-all')
