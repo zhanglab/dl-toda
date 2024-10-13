@@ -34,9 +34,13 @@ def get_metrics(args, cm, r_name, r_index):
     outfile_2 = os.path.join(args.output_dir, f'{r_name}-metrics-reads-info')
     outfile_3 = os.path.join(args.output_dir, f'{r_name}-metrics-all')
     if args.zeros:
-        outfilename += '-wzeros.tsv'
+        outfile_1 += '-wzeros.tsv'
+        outfile_2 += '-wzeros.tsv'
+        outfile_3 += '-wzeros.tsv'
     else:
-        outfilename += '-wozeros.tsv'
+        outfile_1 += '-wozeros.tsv'
+        outfile_2 += '-wozeros.tsv'
+        outfile_3 += '-wozeros.tsv'
     outf_1 = open(outfile_1, 'w')
     outf_2 = open(outfile_2, 'w')
     outf_3 = open(outfile_3, 'w')
