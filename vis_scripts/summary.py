@@ -117,7 +117,6 @@ def main():
 
     print(args)
 
-    args.output_dir = args.output_dir + '/testing_summary'
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
 
