@@ -152,6 +152,8 @@ min_pred_class = 0
 min_epoch = 0
 
 def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+    global wait
+    global found_min
     # Early stopping
     val_loss = test_loss.result()
     val_accuracy = test_accuracy.result()
@@ -162,6 +164,12 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
         early_stopping(val_loss, optimizer)
 
 def model_checkpoint(val_loss, val_accuracy, model, epoch):
+    global best
+    global best_val_accuracy
+    global lowest_val_loss
+    global best_weights
+    global wait
+    global min_epoch
     # ModelCheckpoint
     if val_loss < best:
         best = val_loss
@@ -174,6 +182,9 @@ def model_checkpoint(val_loss, val_accuracy, model, epoch):
         wait += 1
 
 def early_stopping(val_loss, optimizer):
+    global val_loss_before
+    global patience
+    global stop_training
     # Calculate percent difference
     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
         patience += 1
