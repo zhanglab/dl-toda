@@ -136,6 +136,57 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
+val_loss_before = -1
+best_val_accuracy = np.Inf
+lowest_val_loss = 1
+patience = 0
+wait = 0
+best_weights = None
+stopped_epoch = 0
+best = np.Inf
+stop_training = False
+found_min = False
+min_true_class = 0
+min_pred_class = 0
+min_epoch = 0
+
+def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+    # Early stopping
+    val_loss = test_loss.result()
+    val_accuracy = test_accuracy.result()
+    if wait < 5:
+        model_checkpoint(val_loss, val_accuracy, model, epoch)
+    else:
+        found_min = True
+        early_stopping(val_loss, optimizer)
+
+def model_checkpoint(val_loss, val_accuracy, model, epoch):
+    # ModelCheckpoint
+    if val_loss < best:
+        best = val_loss
+        best_val_accuracy = val_accuracy
+        lowest_val_loss = val_loss
+        best_weights = model.get_weights()
+        wait = 0
+        min_epoch = epoch
+    else:
+        wait += 1
+
+def early_stopping(val_loss, optimizer):
+    # Calculate percent difference
+    if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
+        patience += 1
+        if patience == 5:
+            if optimizer.learning_rate == 0.00002:
+                optimizer.learning_rate = 0.000002
+                patience = 0
+            else:
+                stop_training = True
+    else:
+        patience = 0
+
+    val_loss_before = val_loss
+
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
@@ -694,6 +745,7 @@ def main():
 
             # if hvd.rank() == 0:
             print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+            
             # save weights
             checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
@@ -703,7 +755,20 @@ def main():
                 writer.flush()
             vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
-            # reset metrics variables
+            # assess end of training
+            on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
+
+            if epoch == args.epochs or stop_training:
+                if found_min:
+                    model.set_weights(best_weights)
+                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                    best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                    best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
+                    with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
+                        f.write(f'{min_epoch}\t{lowest_val_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                break
+
+            # reset metrics variables at the end of epoch
             val_loss.reset_states()
             train_accuracy.reset_states()
             val_accuracy.reset_states()
