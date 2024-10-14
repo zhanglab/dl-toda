@@ -770,6 +770,20 @@ def main():
             # assess end of training
             on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
+            print(val_loss_before)
+            print(best_val_accuracy)
+            print(lowest_val_loss)
+            print(patience)
+            print(wait)
+            print(best_weights)
+            print(stopped_epoch)
+            print(best)
+            print(stop_training)
+            print(found_min)
+            print(min_true_class)
+            print(min_pred_class)
+            print(min_epoch)
+
             if epoch == args.epochs or stop_training:
                 if found_min:
                     model.set_weights(best_weights)
