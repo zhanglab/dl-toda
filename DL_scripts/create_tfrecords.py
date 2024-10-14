@@ -338,6 +338,7 @@ def main():
     args = parser.parse_args()
 
     print(args)
+    print(args.input)
 
     if args.output_dir is None:
         if args.dnabert:
