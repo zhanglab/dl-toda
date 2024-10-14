@@ -143,12 +143,9 @@ lowest_val_loss = 1
 patience = 0
 wait = 0
 best_weights = None
-stopped_epoch = 0
 best = np.Inf
 stop_training = False
 found_min = False
-min_true_class = 0
-min_pred_class = 0
 min_epoch = 0
 
 def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
@@ -771,17 +768,13 @@ def main():
             on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
             print(val_loss_before)
-            print(best_val_accuracy)
-            print(lowest_val_loss)
+            print(best_val_accuracy.numpy())
+            print(lowest_val_loss.numpy())
             print(patience)
             print(wait)
-            print(best_weights)
-            print(stopped_epoch)
             print(best)
             print(stop_training)
             print(found_min)
-            print(min_true_class)
-            print(min_pred_class)
             print(min_epoch)
 
             if epoch == args.epochs or stop_training:
