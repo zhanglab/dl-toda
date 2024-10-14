@@ -346,7 +346,7 @@ def main():
             label = args.input.split('/')[-1].split('_')[1][1:]
             dataset = args.input.split('/')[-1].split('_')[2]
             output_dir = '/'.join(args.input.split('/')[:-2])
-        else:
+        elif not args.dnabert:
             # create name of output directory from input filename
             label = args.input.split('/')[-2]
             dataset = args.input.split('/')[-1].split('.')[0]
