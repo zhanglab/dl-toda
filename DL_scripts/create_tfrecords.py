@@ -346,7 +346,7 @@ def main():
             label = args.input.split('/')[-1].split('_')[1][1:]
             dataset = args.input.split('/')[-1].split('_')[2]
             output_dir = '/'.join(args.input.split('/')[:-2])
-        elif not args.dnabert:
+        else:
             # create name of output directory from input filename
             label = args.input.split('/')[-2]
             dataset = args.input.split('/')[-1].split('.')[0]
@@ -364,7 +364,10 @@ def main():
             filename = args.mapping_file
         else:
             # get the label from the input filename
-            label = args.input.split('/')[-1].split('_')[1][1:]
+            if args.dnabert:
+                label = args.input.split('/')[-1].split('_')[1][1:]
+            else:
+                label = args.input.split('/')[-2]
             filename = os.path.join(args.mapping_file, label, 'mapping_labels.tsv')
         
         args.labels_mapping = dict()
