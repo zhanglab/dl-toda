@@ -152,7 +152,7 @@ def process_dnabert_data(args, dna_sequences, labels):
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         # adjust size for sequences longer than the max read length (dnabert data generates sequences of size 511 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-            dna_list = dna_list[:-1]
+            dna_list = dna_list[:args.kmer_vector_length]
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
         segment_ids = [0] * max_position_embeddings
@@ -179,6 +179,7 @@ def create_tfrecords(args, data):
     output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-1])
     output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
     count = 0
+    vector_size = set()
 
     if args.dnabert:
         dna_sequences, labels = data
@@ -225,6 +226,7 @@ def create_tfrecords(args, data):
                 # for process, data_process in data.items():
                 #     print(process, len(data_process))
             for i, r in enumerate(data, 0):
+                vector_size.add(len(r[0]))
                 if i == 0 and args.bert_step == 'pretraining':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
                     print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}')
@@ -268,9 +270,6 @@ def create_tfrecords(args, data):
                 serialized = example.SerializeToString()
                 writer.write(serialized)
                 count += 1
-                
-        with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-            f.write(f'{count}')
     
     else:
         with tf.io.TFRecordWriter(output_tfrec) as writer:
@@ -282,10 +281,10 @@ def create_tfrecords(args, data):
                         num_padded_values = args.kmer_vector_length-len(dna_list)
                         dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                     if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-                        dna_list = dna_list[:-1] # remove the last kmer == information about the last nucleotide
+                        dna_list = dna_list[:args.kmer_vector_length] # remove the last kmer == information about the last nucleotide
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])      
-                    print(f'{len(dna_list)}\t{dna_list}\t{args.kmer_vector_length}\t{args.max_read_length}\n')
+                vector_size.add(len(dna_list))
                 # create TFrecords
                 if args.no_label:
                     tfrecord_data = \
@@ -304,14 +303,20 @@ def create_tfrecords(args, data):
                 writer.write(serialized)
                 count += 1
 
-            with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
-                f.write(f'{count}')
+    with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+        f.write(f'{count}')
+
+    with open(os.path.join(args.output_dir, output_prefix + '-vector_size'), 'w') as f:
+        for vs in list(vector_size):
+            f.write(f'vector size: {vs}\n')
+        f.write(f'required vector size: {args.kmer_vector_length}\n')
+        f.write(f'max read length: {args.max_read_length}\n')
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
-    parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
+    parser.add_argument('--output_dir', help="Path to the output directory")
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--bert', action='store_true', default=False, help="process reads for transformer")
@@ -321,7 +326,7 @@ def main():
     parser.add_argument('--pair', action='store_true', default=False, help="represent reads as pairs")
     parser.add_argument('--dnabert', action='store_true', default=False, help="process dnabert data")
     parser.add_argument('--canonical_kmers', action='store_true', default=False, help="use a vocabulary made of canonical kmers")
-    parser.add_argument('--k_value', default=1, type=int, help="Size of k-mers")
+    parser.add_argument('--k_value', type=int, help="Size of k-mers", required=True)
     parser.add_argument('--num_proc', default=1, type=int, help="number of processes")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
@@ -334,12 +339,35 @@ def main():
 
     print(args)
 
+    if args.output_dir is None:
+        if args.dnabert:
+            # create name of output directory from input filename
+            label = args.input.split('/')[-1].split('_')[1][1:]
+            dataset = args.input.split('/')[-1].split('_')[2]
+            output_dir = '/'.join(args.input.split('/')[:-2])
+        else:
+            # create name of output directory from input filename
+            label = args.input.split('/')[-2]
+            dataset = args.input.split('/')[-1].split('.')[0]
+            output_dir = '/'.join(args.input.split('/')[:-2])
+        if args.bert:
+            args.output_dir = f'{output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+        else:
+            args.output_dir = f'{output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
+
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
     if args.update_labels:
+        if os.path.isfile(args.mapping_file):
+            filename = args.mapping_file
+        else:
+            # get the label from the input filename
+            label = args.input.split('/')[-1].split('_')[1][1:]
+            filename = os.path.join(args.mapping_file, label, 'mapping_labels.tsv')
+        
         args.labels_mapping = dict()
-        with open(os.path.join(args.mapping_file, 'mapping_labels.tsv'), 'r') as f:
+        with open(filename, 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
