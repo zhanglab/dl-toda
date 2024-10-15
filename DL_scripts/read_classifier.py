@@ -445,7 +445,7 @@ def main():
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
-        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{testing_epoch}')).expect_partial()
+        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     elif args.model is not None:
         model = tf.keras.models.load_model(args.model, 'model')
             # restore the last checkpointed values to the model
