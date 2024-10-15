@@ -208,7 +208,7 @@ def early_stopping(val_loss, optimizer):
 
     if abs(100 * (val_loss - best_loss) / best_loss) > 5:
         overfitting_patience += 1
-        if overfitting_patience == 10:
+        if overfitting_patience == 20:
             stop_training = True
     else:
         overfitting_patience = 0
