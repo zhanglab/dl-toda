@@ -187,7 +187,7 @@ def early_stopping(val_loss, optimizer):
     """ If the difference in the validation loss between 2 consecutive epochs is 
     less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
     changed after the next 5 epochs we stop the training. """
-    # global val_loss_before
+    global val_loss_before
     global best_loss
     global patience
     global stop_training
