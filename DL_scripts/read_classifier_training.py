@@ -179,10 +179,14 @@ def model_checkpoint(val_loss, val_accuracy, model, epoch):
         wait += 1
 
 def early_stopping(val_loss, optimizer):
+    """ function to assess whether the model is converging or not """
+    """ """
     global val_loss_before
     global patience
     global stop_training
     # Calculate percent difference
+    print(f'val diff: {abs(100 * (val_loss - val_loss_before) / val_loss_before)}')
+    print(f'patience value: {patience}')
     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
         patience += 1
         if patience == 5:
@@ -756,8 +760,8 @@ def main():
             print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
             
             # save weights
-            checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+            # checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+            # model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
             with writer.as_default():
                 tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
                 tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
