@@ -161,6 +161,7 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
         early_stopping(val_loss, optimizer)
 
 def model_checkpoint(val_loss, val_accuracy, model, epoch):
+    """ """
     global best
     global best_val_accuracy
     global lowest_val_loss
@@ -179,8 +180,10 @@ def model_checkpoint(val_loss, val_accuracy, model, epoch):
         wait += 1
 
 def early_stopping(val_loss, optimizer):
-    """ function to assess whether the model is converging or not """
-    """ """
+    """ Function to assess whether the model is converging or not """
+    """ If the difference in the validation loss between 2 consecutive epochs is 
+    less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
+    changed after the next 5 epochs we stop the training. """
     global val_loss_before
     global patience
     global stop_training
@@ -771,15 +774,15 @@ def main():
             # assess end of training
             on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
-            print(val_loss_before)
-            print(best_val_accuracy.numpy())
-            print(lowest_val_loss.numpy())
-            print(patience)
-            print(wait)
-            print(best)
-            print(stop_training)
-            print(found_min)
-            print(min_epoch)
+            print(f'val_loss_before: {val_loss_before}')
+            print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
+            print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
+            print(f'patience: {patience}')
+            print(f'wait: {wait}')
+            print(f'best: {best}')
+            print(f'stop training: {stop_training}')
+            print(f'found min: {found_min}')
+            print(f'min epoch: {min_epoch}')
 
             if epoch == args.epochs or stop_training:
                 if found_min:
