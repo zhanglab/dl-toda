@@ -141,9 +141,10 @@ val_loss_before = -1
 best_val_accuracy = np.Inf
 lowest_val_loss = 1
 patience = 0
+overfitting_patience = 0
 wait = 0
 best_weights = None
-best = np.Inf
+best_loss = np.Inf
 stop_training = False
 found_min = False
 min_epoch = 0
@@ -161,35 +162,37 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
         early_stopping(val_loss, optimizer)
 
 def model_checkpoint(val_loss, val_accuracy, model, epoch):
-    """ """
-    global best
+    """ If the validation loss is not lower than the lowest validation loss recorded
+    so far for 5 consecutive epochs, we evaluate the possibility of stopping the training
+    by calling early_stopping. If the difference in the validation loss between 2 consecutive epochs
+    is above 5% """
+    global best_loss
     global best_val_accuracy
     global lowest_val_loss
     global best_weights
     global wait
     global min_epoch
-    # ModelCheckpoint
-    if val_loss < best:
-        best = val_loss
+    if val_loss < best_loss:
+        best_loss = val_loss
         best_val_accuracy = val_accuracy
         lowest_val_loss = val_loss
         best_weights = model.get_weights()
-        wait = 0
+        wait = 0 # Reset wait counter
         min_epoch = epoch
     else:
         wait += 1
 
 def early_stopping(val_loss, optimizer):
-    """ Function to assess whether the model is converging or not """
+    """ Function to assess whether the model is converging or overfitting the training data. """
     """ If the difference in the validation loss between 2 consecutive epochs is 
     less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
     changed after the next 5 epochs we stop the training. """
-    global val_loss_before
+    # global val_loss_before
+    global best_loss
     global patience
     global stop_training
-    # Calculate percent difference
-    print(f'val diff: {abs(100 * (val_loss - val_loss_before) / val_loss_before)}')
-    print(f'patience value: {patience}')
+    global overfitting_patience
+    # Calculate percent difference between current and previous val loss
     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
         patience += 1
         if patience == 5:
@@ -200,8 +203,15 @@ def early_stopping(val_loss, optimizer):
                 stop_training = True
     else:
         patience = 0
-
+    
     val_loss_before = val_loss
+
+    if abs(100 * (val_loss - best_loss) / best_loss) > 5:
+        overfitting_patience += 1
+        if overfitting_patience == 10:
+            stop_training = True
+    else:
+        overfitting_patience = 0
 
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
@@ -778,8 +788,9 @@ def main():
             print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
             print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
             print(f'patience: {patience}')
+            print(f'patience overfitting: {overfitting_patience}')
             print(f'wait: {wait}')
-            print(f'best: {best}')
+            print(f'best val loss: {best_loss}')
             print(f'stop training: {stop_training}')
             print(f'found min: {found_min}')
             print(f'min epoch: {min_epoch}')
