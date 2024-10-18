@@ -155,6 +155,8 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
     global best_val_accuracy
     global min_epoch
     global found_min
+    global stop_training
+    global best_weights
 
     val_loss = test_loss.result()
     val_accuracy = test_accuracy.result()
