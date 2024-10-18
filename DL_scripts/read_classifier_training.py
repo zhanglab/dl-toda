@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 # import nvidia.dali.fn as fn
 # import nvidia.dali.tfrecord as tfrec
 # import nvidia.dali.plugin.tf as dali_tf
-from transformers import TFBertForSequenceClassification, BertConfig
+from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining
 import os
 import sys
 import json
@@ -137,12 +137,12 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #     def get_device_dataset(self):
 #         return self.dalidataset
 
-val_loss_before = -1
+# val_loss_before = -1
 best_val_accuracy = np.Inf
-lowest_val_loss = 1
+# lowest_val_loss = 1
 patience = 0
-overfitting_patience = 0
-wait = 0
+# overfitting_patience = 0
+# wait = 0
 best_weights = None
 best_loss = np.Inf
 stop_training = False
@@ -150,68 +150,96 @@ found_min = False
 min_epoch = 0
 
 def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
-    global wait
-    global found_min
-    # Early stopping
-    val_loss = test_loss.result()
-    val_accuracy = test_accuracy.result()
-    if wait < 5:
-        model_checkpoint(val_loss, val_accuracy, model, epoch)
-    else:
-        found_min = True
-        early_stopping(val_loss, optimizer)
-
-def model_checkpoint(val_loss, val_accuracy, model, epoch):
-    """ If the validation loss is not lower than the lowest validation loss recorded
-    so far for 5 consecutive epochs, we evaluate the possibility of stopping the training
-    by calling early_stopping. If the difference in the validation loss between 2 consecutive epochs
-    is above 5% """
+    global patience
     global best_loss
     global best_val_accuracy
-    global lowest_val_loss
-    global best_weights
-    global wait
     global min_epoch
-    if val_loss < best_loss:
-        best_loss = val_loss
-        best_val_accuracy = val_accuracy
-        lowest_val_loss = val_loss
-        best_weights = model.get_weights()
-        wait = 0 # Reset wait counter
-        min_epoch = epoch
-    else:
-        wait += 1
+    global found_min
 
-def early_stopping(val_loss, optimizer):
-    """ Function to assess whether the model is converging or overfitting the training data. """
-    """ If the difference in the validation loss between 2 consecutive epochs is 
-    less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
-    changed after the next 5 epochs we stop the training. """
-    global val_loss_before
-    global best_loss
-    global patience
-    global stop_training
-    global overfitting_patience
-    # Calculate percent difference between current and previous val loss
-    if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
-        patience += 1
-        if patience == 5:
-            if optimizer.learning_rate == 0.00002:
-                optimizer.learning_rate = 0.000002
-                patience = 0
-            else:
-                stop_training = True
-    else:
-        patience = 0
-    
-    val_loss_before = val_loss
+    val_loss = test_loss.result()
+    val_accuracy = test_accuracy.result()
 
-    if abs(100 * (val_loss - best_loss) / best_loss) > 5:
-        overfitting_patience += 1
-        if overfitting_patience == 10:
+    if patience == 10:
+        if optimizer.learning_rate == 0.00002:
+            optimizer.learning_rate = 0.000002
+            patience = 0
+        else:
             stop_training = True
     else:
-        overfitting_patience = 0
+        if val_loss < best_loss:
+            best_loss = val_loss
+            best_val_accuracy = val_accuracy
+            best_weights = model.get_weights()
+            patience = 0 # Reset wait counter
+            min_epoch = epoch
+            found_min = True
+        else:
+            patience += 1
+
+
+# def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+#     global wait
+#     global found_min
+#     # Early stopping
+#     val_loss = test_loss.result()
+#     val_accuracy = test_accuracy.result()
+#     if wait < 5:
+#         model_checkpoint(val_loss, val_accuracy, model, epoch)
+#     else:
+#         found_min = True
+#         early_stopping(val_loss, optimizer)
+
+# def model_checkpoint(val_loss, val_accuracy, model, epoch):
+#     """ If the validation loss is not lower than the lowest validation loss recorded
+#     so far for 5 consecutive epochs, we evaluate the possibility of stopping the training
+#     by calling early_stopping. If the difference in the validation loss between 2 consecutive epochs
+#     is above 5% """
+#     global best_loss
+#     global best_val_accuracy
+#     global lowest_val_loss
+#     global best_weights
+#     global wait
+#     global min_epoch
+#     if val_loss < best_loss:
+#         best_loss = val_loss
+#         best_val_accuracy = val_accuracy
+#         lowest_val_loss = val_loss
+#         best_weights = model.get_weights()
+#         wait = 0 # Reset wait counter
+#         min_epoch = epoch
+#     else:
+#         wait += 1
+
+# def early_stopping(val_loss, optimizer):
+#     """ Function to assess whether the model is converging or overfitting the training data. """
+#     """ If the difference in the validation loss between 2 consecutive epochs is 
+#     less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
+#     changed after the next 5 epochs we stop the training. """
+#     global val_loss_before
+#     global best_loss
+#     global patience
+#     global stop_training
+#     global overfitting_patience
+#     # Calculate percent difference between current and previous val loss
+#     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
+#         patience += 1
+#         if patience == 5:
+#             if optimizer.learning_rate == 0.00002:
+#                 optimizer.learning_rate = 0.000002
+#                 patience = 0
+#             else:
+#                 stop_training = True
+#     else:
+#         patience = 0
+    
+#     val_loss_before = val_loss
+
+#     if abs(100 * (val_loss - best_loss) / best_loss) > 5:
+#         overfitting_patience += 1
+#         if overfitting_patience == 10:
+#             stop_training = True
+#     else:
+#         overfitting_patience = 0
 
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
@@ -651,8 +679,7 @@ def main():
         if args.bert_step == "finetuning":
             model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
-            model = TFBertForMaskedLM(config=bert_config)
-    
+            model = TFBertForPreTraining(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -787,24 +814,25 @@ def main():
                 # assess end of training
                 on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
-                print(f'val_loss_before: {val_loss_before}')
+                # print(f'val_loss_before: {val_loss_before}')
                 print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
-                print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
+                # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
                 print(f'patience: {patience}')
-                print(f'patience overfitting: {overfitting_patience}')
-                print(f'wait: {wait}')
+                # print(f'patience overfitting: {overfitting_patience}')
+                # print(f'wait: {wait}')
                 print(f'best val loss: {best_loss}')
                 print(f'stop training: {stop_training}')
                 print(f'found min: {found_min}')
                 print(f'min epoch: {min_epoch}')
-                if epoch == args.epochs or stop_training:
+
+                if stop_training:
                     if found_min:
                         model.set_weights(best_weights)
                         model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
                         best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
                         best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
-                            f.write(f'{min_epoch}\t{lowest_val_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                            f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
             else:
                 # save weights
