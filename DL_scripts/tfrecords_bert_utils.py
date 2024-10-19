@@ -5,13 +5,16 @@ import random
 def load_dnabert_seq(args):
     with open(args.input, 'r') as f:
         content = f.readlines()
-        if args.update_labels:
-            labels = [int(args.labels_mapping[s.rstrip().split('\t')[0]]) for s in content]
-        else:
-            labels = [s.rstrip().split('\t')[0] for s in content]
         dna_sequences = [s.rstrip().split('\t')[1].split(" ") for s in content]
-        
-    return dna_sequences, labels
+        if args.bert and args.bert_step == "pretraining":
+            return dna_sequences
+        else:
+            if args.update_labels:
+                labels = [int(args.labels_mapping[s.rstrip().split('\t')[0]]) for s in content]
+            else:
+                labels = [s.rstrip().split('\t')[0] for s in content]
+            return dna_sequences, labels
+            
 
 # def split_read(args, reads, read, r_index, process):
 #     # randomly choose whether to have segment 2 not coming after segment 1 (True) or keeping the read unchanged (False)
@@ -83,14 +86,14 @@ def get_nsp_input(args, segment_1, segment_2):
     return np.array(concatenate_segments), np.array(segment_ids)
 
 
-def get_masked_array(args, mask_lm_positions, input_array):
+def get_masked_array(args, mlm_positions, input_array):
     output = input_array.copy()
     # replace each chosen base by the MASK token number 80% of the time, a random base 10% of the time
     # or the unchanged base 10% of the time
     replacements = ["masked", "random", "same"]
     weights = [0.8, 0.1, 0.1]
     for i in range(len(output)):
-        if i in mask_lm_positions:
+        if i in mlm_positions:
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             if r_type[0] == 'masked':
@@ -102,30 +105,30 @@ def get_masked_array(args, mask_lm_positions, input_array):
 
     return output
 
-def get_mlm_input(args, input_array):
-    # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
-    # n_mask = int(args.masked_lm_prob * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
-    # compute number of bases to mask (take into account 'CLS') --> without nsp
-    n_mask = int(args.masked_lm_prob * (len(input_array)-1))
-    # if args.contiguous:
-    #     # mask contiguous bases
-    #     # choose index of first base to mask
-    #     start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
-    #     mask_indexes = list(range(start_mask_idx,start_mask_idx+n_mask))
-    #     # select bases to mask
-    #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
-    # else:
-    # get indexes of SEP, CLS and UNK tokens
-    # sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[SEP]'],args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]']]]
-    # get indexes of CLS and UNK tokens ()without NSP task
-    sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]'],args.dict_kmers['[SEP]']]]
-    # get list of indices of tokens to mask
-    mask_lm_positions = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
-    # mask bases
-    input_ids = get_masked_array(args, mask_lm_positions, input_array)
-    # Prepare sample_weights parameter to loss function. The weights have a value of 1.0 for eve
-    masked_lm_weights = [1.0] * n_mask # only compute loss for masked k-mers
-    # create input_mask vector indicating padded values
-    input_mask = [1] * len(input_ids)
+# def get_mlm_input(args, input_array):
+#     # compute number of bases to mask (take into account 2*'SEP' and 'CLS')
+#     # n_mask = int(args.masked_lm_prob * (len(input_array)-3)) # --> could be updated to mask predictions per sequence
+#     # compute number of bases to mask (take into account 'CLS') --> without nsp
+#     n_mask = int(args.masked_lm_prob * (len(input_array)-1))
+#     # if args.contiguous:
+#     #     # mask contiguous bases
+#     #     # choose index of first base to mask
+#     #     start_mask_idx = random.choice(range(0, args.kmer_vector_length - n_mask))
+#     #     mask_indexes = list(range(start_mask_idx,start_mask_idx+n_mask))
+#     #     # select bases to mask
+#     #     bases_masked = [False if i not in range(start_mask_idx,start_mask_idx+n_mask) else True for i in range(args.kmer_vector_length)]
+#     # else:
+#     # get indexes of SEP, CLS and UNK tokens
+#     # sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[SEP]'],args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]']]]
+#     # get indexes of CLS and UNK tokens ()without NSP task
+#     sep_indices = [i for i in range(len(input_array)) if input_array[i] in [args.dict_kmers['[CLS]'],args.dict_kmers['[UNK]'],args.dict_kmers['[SEP]']]]
+#     # get list of indices of tokens to mask
+#     mask_lm_positions = random.sample(list(set(range(len(input_array))) - set(sep_indices)), n_mask)
+#     # mask bases
+#     input_ids = get_masked_array(args, mask_lm_positions, input_array)
+#     # Prepare sample_weights parameter to loss function. The weights have a value of 1.0 for eve
+#     masked_lm_weights = [1.0] * n_mask # only compute loss for masked k-mers
+#     # create input_mask vector indicating padded values
+#     input_mask = [1] * len(input_ids)
 
-    return input_ids, input_mask, masked_lm_weights, mask_lm_positions, [input_array[i] for i in mask_lm_positions]
+#     return input_ids, input_mask, masked_lm_weights, mask_lm_positions, [input_array[i] for i in mask_lm_positions]
