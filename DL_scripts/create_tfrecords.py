@@ -16,7 +16,7 @@ from tfrecords_utils import vocab_dict, get_kmer_arr, prepare_input_data
 from tfrecords_bert_utils import *
 
 
-def wrap_read(value):
+def wrap_vector(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 
@@ -141,33 +141,61 @@ def process_art_data(args, dna_sequences, labels, reads_index):
     return data, dict_labels
 
 
-def process_dnabert_data(args, dna_sequences, labels):
+def process_dnabert_data(args, dna_sequences, labels=None):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
-        label = labels[i]
-        # parse dna sequences
+        if args.bert_step == "finetuning":
+            label = labels[i]
+        
+        # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
+        
         # adjust size for sequences longer than the max read length (dnabert data generates sequences of size 511 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
             dna_list = dna_list[:args.kmer_vector_length]
+        
+        if arg.bert_step == 'pretraining':
+            # compute the number of tokens to mask
+            n_mlm = int(args.masked_lm_prob * len(dna_list))
+            # get list of indices of tokens to mask
+            mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+            # mask tokens
+            mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
+            print(f'before masking: {dna_list}\nafter masking: {mlm_dna_list}\nmasked positions: {mlm_positions}')
+            dna_list = mlm_dna_list
+            # define NSP label - NSP is not implemented here
+            next_sentence_label = 1
+            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
+            labels = []
+
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
-        segment_ids = [0] * max_position_embeddings
-        if args.bert_step == 'finetuning':
-            # pad input ids vector if necessary
-            if len(dna_list) < max_position_embeddings:
-                num_padded_values = max_position_embeddings - len(dna_list)
-                dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                # create input_mask vector indicating padded values. Padding token indices are masked (0) to avoid
-                # performing attention on them.
-                input_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
-            else:
-                input_mask = [1]*max_position_embeddings
-            data.append([dna_list, input_mask, segment_ids, label])
-            dict_labels[label] += 1
+
+        # define the first and second part of the sequence - NSP is not implemented here
+        token_type_ids = [0] * max_position_embeddings
+        
+        # if args.bert_step == 'finetuning':
+
+        # pad input vectors if necessary
+        if len(dna_list) < max_position_embeddings:
+            num_padded_values = max_position_embeddings - len(dna_list)
+            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
+            # create attention_mask vector indicating padded values. Padding token indices are masked (0) to avoid
+            # performing attention on them.
+            attention_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
+        else:
+            attention_mask = [1]*max_position_embeddings
+
+        if args.bert_step == 'pretraining':
+            if len(labels) < max_position_embeddings:
+
+                data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+        else:
+            data.append([dna_list, attention_mask, token_type_ids, label])
+        dict_labels[label] += 1
 
     return data, dict_labels
 
@@ -182,7 +210,10 @@ def create_tfrecords(args, data):
     vector_size = set()
 
     if args.dnabert:
-        dna_sequences, labels = data
+        if args.bert and args.bert_step == "pretraining":
+            dna_sequences = data
+        else:
+            dna_sequences, labels = data
     else:
         # data = tsv file
         with open(data) as handle:
@@ -220,50 +251,44 @@ def create_tfrecords(args, data):
             # process data obtained from DNABERT
             data, dict_labels = process_dnabert_data(args, dna_sequences, labels)
         
-        # print(f'dict_labels: {dict_labels}')
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
                 # for process, data_process in data.items():
                 #     print(process, len(data_process))
             for i, r in enumerate(data, 0):
+                print(r[0], len(r[0]))
                 vector_size.add(len(r[0]))
                 if i == 0 and args.bert_step == 'pretraining':
-                    print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tmasked_lm_positions: {r[3]}\n')
-                    print(f'masked_lm_weights: {r[4]}\tmasked_lm_ids: {r[5]}\tnext_sentence_labels: {r[6]}')
-                    print(f'input_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\tmasked_lm_positions: {len(r[3])}\n')
-                    print(f'masked_lm_weights: {len(r[4])}\tmasked_lm_ids: {len(r[5])}')
+                    print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\nnext_sentence_label: {r[4]}')
                 if i == 0 and args.bert_step == 'finetuning':
-                    print(f'{len(r)}\tinput_ids: {r[0]}\tinput_mask: {r[1]}\tsegment_ids: {r[2]}\tlabels: {r[3]}\n')
-                    print(f'{len(r)}\tinput_ids: {len(r[0])}\tinput_mask: {len(r[1])}\tsegment_ids: {len(r[2])}\n')
+                    print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\n')
+                    print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
                 """
-                input_ids: vector with ids by tokens (includes masked tokens: MASK, original, random) - input_ids
-                input_mask: [1]*len(input_ids) - input_mask
-                segment_ids: vector indicating the first (0) from the second (1) part of the sequence - segment_ids
-                masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
-                masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
-                masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
-                next_sentence_labels: 0 for "is not next" and 1 for "is next" - nsp_label
-                label: species label - label
+                input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
+                attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
+                token_type_ids: vector indicating the first (0) from the second (1) part of the sequence - length: 512
+                # masked_lm_positions: positions of masked tokens (0 for padded values) - masked_lm_positions
+                # masked_lm_ids: original ids of masked tokens (0 for padded values) - masked_lm_ids
+                # masked_lm_weights: [1.0]*len(masked_lm_ids) (0.0 for padded values) - masked_lm_weights
+                next_sentence_label: 0 for "is not next" and 1 for "is next" - nsp_label
+                labels: labels for computing the MLM loss (indices of tokens for masked tokens and -100 for unmasked tokens)  - length: 512
                 """
                 if args.bert_step == 'pretraining':
                     tfrecord_data = \
                         {
-                            'input_ids': wrap_read(r[0]),
-                            'attention_mask': wrap_read(r[1]),
-                            'token_type_ids': wrap_read(r[2]),
-                            'masked_lm_positions': wrap_read(r[3]),
-                            'masked_lm_weights': wrap_weights(r[4]),
-                            'masked_lm_ids': wrap_read(r[5])
-                            # 'next_sentence_label': wrap_label(r[6]),
+                            'input_ids': wrap_vector(r[0]),
+                            'attention_mask': wrap_vector(r[1]),
+                            'token_type_ids': wrap_vector(r[2]),
+                            'labels': wrap_vector(r[3]),
+                            'next_sentence_label': wrap_label(r[4])
                         }
                 elif args.bert_step == 'finetuning':
                     tfrecord_data = \
                         {
-                            'input_ids': wrap_read(r[0]),
-                            'attention_mask': wrap_read(r[1]),
-                            'token_type_ids': wrap_read(r[2]),
+                            'input_ids': wrap_vector(r[0]),
+                            'attention_mask': wrap_vector(r[1]),
+                            'token_type_ids': wrap_vector(r[2]),
                             'labels': wrap_label(r[3])
-                            # 'is_real_example': wrap_label(1)
                         }
                 feature = tf.train.Features(feature=tfrecord_data)
                 example = tf.train.Example(features=feature)
@@ -289,12 +314,12 @@ def create_tfrecords(args, data):
                 if args.no_label:
                     tfrecord_data = \
                         {
-                            'read': wrap_read(dna_list),
+                            'read': wrap_vector(dna_list),
                         }
                 else:
                     tfrecord_data = \
                         {
-                            'read': wrap_read(dna_list),
+                            'read': wrap_vector(dna_list),
                             'label': wrap_label(label),
                         }
                 feature = tf.train.Features(feature=tfrecord_data)
@@ -342,17 +367,21 @@ def main():
 
     if args.output_dir is None:
         if args.dnabert:
-            # create name of output directory from input filename
-            label = args.input.split('/')[-1].split('_')[1][1:]
-            dataset = args.input.split('/')[-1].split('_')[2]
-            output_dir = '/'.join(args.input.split('/')[:-2])
+            if args.bertstep == "finetuning":
+                # create name of output directory from input filename
+                label = args.input.split('/')[-1].split('_')[1][1:]
+                dataset = args.input.split('/')[-1].split('_')[2]
+                output_dir = '/'.join(args.input.split('/')[:-2])
         else:
             # create name of output directory from input filename
             label = args.input.split('/')[-2]
             dataset = args.input.split('/')[-1].split('.')[0]
             output_dir = '/'.join(args.input.split('/')[:-2])
         if args.bert:
-            args.output_dir = f'{output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+            if args.bertstep == "finetuning":
+                args.output_dir = f'{output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+            elif args.bert_step == "pretraining":
+                args.output_dir = f'pretraining/tfrecords-k{args.k_value}'
         else:
             args.output_dir = f'{output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
 
@@ -384,8 +413,8 @@ def main():
             json.dump(args.dict_kmers, f)
 
     if args.dnabert:
-        dna_sequences, labels = load_dnabert_seq(args)
-        create_tfrecords(args, (dna_sequences, labels))
+            dna_sequences, labels = load_dnabert_seq(args)
+            create_tfrecords(args, (dna_sequences, labels))
     else:
         create_tfrecords(args, args.input)
         # chunk_size = math.ceil(len(fq_files)/args.num_proc)
