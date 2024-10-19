@@ -367,7 +367,7 @@ def main():
 
     if args.output_dir is None:
         if args.dnabert:
-            if args.bertstep == "finetuning":
+            if args.bert_step == "finetuning":
                 # create name of output directory from input filename
                 label = args.input.split('/')[-1].split('_')[1][1:]
                 dataset = args.input.split('/')[-1].split('_')[2]
@@ -378,7 +378,7 @@ def main():
             dataset = args.input.split('/')[-1].split('.')[0]
             output_dir = '/'.join(args.input.split('/')[:-2])
         if args.bert:
-            if args.bertstep == "finetuning":
+            if args.bert_step == "finetuning":
                 args.output_dir = f'{output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
             elif args.bert_step == "pretraining":
                 args.output_dir = f'pretraining/tfrecords-k{args.k_value}'
