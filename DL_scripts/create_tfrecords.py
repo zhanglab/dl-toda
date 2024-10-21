@@ -341,7 +341,7 @@ def create_tfrecords(args, data):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', help="Path to the input fastq file or directory containing fastq files")
-    parser.add_argument('--output_dir', help="Path to the output directory")
+    parser.add_argument('--output_dir', help="Path to the output directory", default=os.getcwd())
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--DNA_model', action='store_true', default=False, help="represent reads for DNA model")
     parser.add_argument('--bert', action='store_true', default=False, help="process reads for transformer")
@@ -363,27 +363,24 @@ def main():
     args = parser.parse_args()
 
     print(args)
-    print(args.input)
 
-    if args.output_dir is None:
-        if args.dnabert:
-            if args.bert_step == "finetuning":
-                # create name of output directory from input filename
-                label = args.input.split('/')[-1].split('_')[1][1:]
-                dataset = args.input.split('/')[-1].split('_')[2]
-                output_dir = '/'.join(args.input.split('/')[:-2])
-        else:
+    # update path to output directory
+    if args.dnabert:
+        if args.bert_step == "finetuning":
             # create name of output directory from input filename
-            label = args.input.split('/')[-2]
-            dataset = args.input.split('/')[-1].split('.')[0]
-            output_dir = '/'.join(args.input.split('/')[:-2])
-        if args.bert:
-            if args.bert_step == "finetuning":
-                args.output_dir = f'{output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
-            elif args.bert_step == "pretraining":
-                args.output_dir = f'pretraining/tfrecords-k{args.k_value}'
-        else:
-            args.output_dir = f'{output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
+            label = args.input.split('/')[-1].split('_')[1][1:]
+            dataset = args.input.split('/')[-1].split('_')[2]
+    else:
+        # create name of output directory from input filename
+        label = args.input.split('/')[-2]
+        dataset = args.input.split('/')[-1].split('.')[0]
+    if args.bert:
+        if args.bert_step == "finetuning":
+            args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+        elif args.bert_step == "pretraining":
+            args.output_dir = f'pretraining/tfrecords-k{args.k_value}'
+    else:
+        args.output_dir = f'{args.output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
