@@ -118,9 +118,9 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                  stick_to_shard=False,
                                  initial_fill=initial_fill,
                                  features={
-                                     "input_ids": tfrec.FixedLenFeature([512], tfrec.int64, 0),
-                                     "attention_mask": tfrec.FixedLenFeature([512], tfrec.int64, 0),
-                                     "token_type_ids": tfrec.FixedLenFeature([512], tfrec.int64, 0),
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     
     # retrieve data and copy it to the gpus
@@ -151,7 +151,7 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size)),
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'pretraining':
@@ -160,7 +160,7 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size)),
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         else:
