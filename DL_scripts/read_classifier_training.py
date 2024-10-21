@@ -109,7 +109,7 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
 
 # define the BERT DALI pipeline for finetuning
 @pipeline_def
-def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, vector_size, training=True):
+def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
@@ -118,9 +118,9 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                  stick_to_shard=False,
                                  initial_fill=initial_fill,
                                  features={
-                                     "input_ids": tfrec.FixedLenFeature([vector_size], tfrec.int64, 0),
-                                     "attention_mask": tfrec.FixedLenFeature([vector_size], tfrec.int64, 0),
-                                     "token_type_ids": tfrec.FixedLenFeature([vector_size], tfrec.int64, 0),
+                                     "input_ids": tfrec.FixedLenFeature([512], tfrec.int64, 0),
+                                     "attention_mask": tfrec.FixedLenFeature([512], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.FixedLenFeature([512], tfrec.int64, 0),
                                      "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     
     # retrieve data and copy it to the gpus
@@ -147,7 +147,7 @@ class DALIPreprocessor(object):
         if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'finetuning':
 
             self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus, vector_size=vector_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
