@@ -626,7 +626,7 @@ def main():
             opt = tf.keras.optimizers.SGD(args.init_lr)
 
     # prevent numeric underflow when using float16
-    # opt = keras.mixed_precision.LossScaleOptimizer(opt)
+    opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
     # if args.model_type == 'BERT':
