@@ -309,7 +309,9 @@ def create_tfrecords(args, data):
                     if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
                         dna_list = dna_list[:args.kmer_vector_length] # remove the last kmer == information about the last nucleotide
                 else:
-                    dna_list  = prepare_input_data(args, dna_sequences[i])      
+                    dna_list  = prepare_input_data(args, dna_sequences[i])   
+                print(len(dna_list), dna_list)  
+                break 
                 vector_size.add(len(dna_list))
                 # create TFrecords
                 if args.no_label:
