@@ -210,7 +210,7 @@ def create_tfrecords(args, data):
     if args.dnabert:
         if args.bert_step == 'pretraining':
             dna_sequences = data
-        else:
+        elif args.bert_step == 'finetuning':
             dna_sequences, labels = data
     else:
         # data = tsv file
@@ -261,8 +261,8 @@ def create_tfrecords(args, data):
                 if i == 0 and args.bert_step == 'pretraining':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\nnext_sentence_label: {r[4]}')
                 if i == 0 and args.bert_step == 'finetuning':
-                    print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\n')
-                    print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
+                    print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabel: {r[3]}\n')
+                    print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\tlabel: {len(r[3])}\n')
                 """
                 input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                 attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
