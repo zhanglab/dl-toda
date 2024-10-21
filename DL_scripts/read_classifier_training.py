@@ -127,9 +127,9 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
     token_type_ids = inputs["token_type_ids"].gpu()
-    label = inputs["labels"].gpu()
+    labels = inputs["labels"].gpu()
 
-    return (input_ids, attention_mask, token_type_ids, label)
+    return (input_ids, attention_mask, token_type_ids, labels)
 
 
 
@@ -746,7 +746,10 @@ def main():
         # get nvidia dali indexes
         train_idx_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'idx_files', '*.idx')))
         val_idx_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'idx_files', '*.idx')))
-
+        print('train_files', train_files)
+        print('val_files', val_files)
+        print('train_idx_files', train_idx_files)
+        print('val_idx_files', val_idx_files)
         # load data
         train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
                                                deterministic=False, training=True)
