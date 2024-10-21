@@ -157,7 +157,7 @@ def process_dnabert_data(args, dna_sequences, labels=None):
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
             dna_list = dna_list[:args.kmer_vector_length]
         
-        if arg.bert_step == 'pretraining':
+        if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
             # get list of indices of tokens to mask
