@@ -526,7 +526,7 @@ def main():
     # Initialize Horovod
     hvd.init()
     # Map one GPU per process
-    use hvd.local_rank() for gpu pinning instead of hvd.rank()
+    # use hvd.local_rank() for gpu pinning instead of hvd.rank()
     gpus = tf.config.experimental.list_physical_devices('GPU')
     print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
     for gpu in gpus:
