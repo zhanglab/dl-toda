@@ -6,14 +6,11 @@ def load_dnabert_seq(args):
     with open(args.input, 'r') as f:
         content = f.readlines()
         dna_sequences = [s.rstrip().split('\t')[1].split(" ") for s in content]
-        if args.bert and args.bert_step == "pretraining":
-            return dna_sequences
+        if args.update_labels:
+            labels = [int(args.labels_mapping[s.rstrip().split('\t')[0]]) for s in content]
         else:
-            if args.update_labels:
-                labels = [int(args.labels_mapping[s.rstrip().split('\t')[0]]) for s in content]
-            else:
-                labels = [s.rstrip().split('\t')[0] for s in content]
-            return dna_sequences, labels
+            labels = [s.rstrip().split('\t')[0] for s in content]
+        return dna_sequences, labels
             
 
 # def split_read(args, reads, read, r_index, process):
