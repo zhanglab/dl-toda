@@ -307,7 +307,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "label": tf.io.FixedLenFeature([], tf.int64)
+          "label": tf.io.FixedLenFeature([1], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
