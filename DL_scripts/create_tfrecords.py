@@ -208,9 +208,6 @@ def create_tfrecords(args, data):
     vector_size = set()
 
     if args.dnabert:
-        if args.bert_step == 'pretraining':
-            dna_sequences = data
-        elif args.bert_step == 'finetuning':
             dna_sequences, labels = data
     else:
         # data = tsv file
