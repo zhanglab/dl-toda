@@ -193,8 +193,6 @@ def process_dnabert_data(args, dna_sequences, labels=None):
                 num_padded_values = max_position_embeddings - len(labels)
                 labels = labels + [-100] * num_padded_values
             data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
-            print(f'before masking: {dna_list}\nafter masking: {mlm_dna_list}\nmasked positions: {mlm_positions}\nlabels: {labels}')
-            break
         else:
             data.append([dna_list, attention_mask, token_type_ids, label])
         dict_labels[label] += 1
