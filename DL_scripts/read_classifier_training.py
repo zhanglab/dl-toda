@@ -98,10 +98,12 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
-    attention_mask = inputs["input_mask"].gpu()
-    token_type_ids = inputs["segment_ids"].gpu()
-    labels = inputs['label_ids'].gpu()
+    attention_mask = inputs["attention_mask"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
+    labels = inputs['labels'].gpu()
+    # next_sentence_label = inputs["next_sentence_label"].gpu()
 
+    # return (input_ids, attention_mask, token_type_ids, labels, next_sentence_label)
     return (input_ids, attention_mask, token_type_ids, labels)
 
 
@@ -123,9 +125,9 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
-    attention_mask = inputs["input_mask"].gpu()
-    token_type_ids = inputs["segment_ids"].gpu()
-    label = inputs['label_ids'].gpu()
+    attention_mask = inputs["attention_mask"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
+    label = inputs["label"].gpu()
 
     return (input_ids, attention_mask, token_type_ids, label)
 
