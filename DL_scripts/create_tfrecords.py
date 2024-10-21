@@ -164,12 +164,9 @@ def process_dnabert_data(args, dna_sequences, labels=None):
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
-            print(f'before masking: {dna_list}\nafter masking: {mlm_dna_list}\nmasked positions: {mlm_positions}')
             dna_list = mlm_dna_list
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
-            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
-            labels = []
 
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
@@ -190,9 +187,14 @@ def process_dnabert_data(args, dna_sequences, labels=None):
             attention_mask = [1]*max_position_embeddings
 
         if args.bert_step == 'pretraining':
+            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
+            labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
             if len(labels) < max_position_embeddings:
-
-                data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+                num_padded_values = max_position_embeddings - len(labels)
+                labels = labels + [-100] * num_padded_values
+            data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+            print(f'before masking: {dna_list}\nafter masking: {mlm_dna_list}\nmasked positions: {mlm_positions}\nlabels: {labels}')
+            break
         else:
             data.append([dna_list, attention_mask, token_type_ids, label])
         dict_labels[label] += 1
@@ -263,7 +265,6 @@ def create_tfrecords(args, data):
                 if i == 0 and args.bert_step == 'finetuning':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\n')
                     print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
-                break
                 """
                 input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                 attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
@@ -310,8 +311,7 @@ def create_tfrecords(args, data):
                         dna_list = dna_list[:args.kmer_vector_length] # remove the last kmer == information about the last nucleotide
                 else:
                     dna_list  = prepare_input_data(args, dna_sequences[i])   
-                print(len(dna_list), dna_list)  
-                break 
+
                 vector_size.add(len(dna_list))
                 # create TFrecords
                 if args.no_label:
