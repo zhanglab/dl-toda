@@ -121,13 +121,13 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     "label": tfrec.FixedLenFeature([], tfrec.int64)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
     token_type_ids = inputs["token_type_ids"].gpu()
-    label = inputs["labels"].gpu()
+    label = inputs["label"].gpu()
 
     return (input_ids, attention_mask, token_type_ids, label)
 
@@ -307,12 +307,12 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([], tf.int64)
+          "label": tf.io.FixedLenFeature([], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "label": parsed_example['label']}
+        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "label": parsed_example['label']}
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
