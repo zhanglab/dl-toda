@@ -82,12 +82,13 @@ def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, 
 # define the BERT DALI pipeline for pretraining
 @pipeline_def
 def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
-                                 shard_id=0,
-                                 num_shards=1,
-                                 stick_to_shard=False,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 stick_to_shard=stick_to_shard,
                                  initial_fill=initial_fill,
                                  features={
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
@@ -110,12 +111,13 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
 # define the BERT DALI pipeline for finetuning
 @pipeline_def
 def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
     inputs = fn.readers.tfrecord(path=tfrec_filenames,
                                  index_path=tfrec_idx_filenames,
                                  random_shuffle=training,
-                                 shard_id=0,
-                                 num_shards=1,
-                                 stick_to_shard=False,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 stick_to_shard=stick_to_shard,
                                  initial_fill=initial_fill,
                                  features={
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
