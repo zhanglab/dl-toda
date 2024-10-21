@@ -367,7 +367,7 @@ def main():
 
     # update path to output directory
     if args.dnabert:
-        if args.bert_step == "finetuning":
+        if args.bert_step != "finetuning":
             # create name of output directory from input filename
             label = args.input.split('/')[-1].split('_')[1][1:]
             dataset = args.input.split('/')[-1].split('_')[2]
@@ -375,6 +375,7 @@ def main():
         # create name of output directory from input filename
         label = args.input.split('/')[-2]
         dataset = args.input.split('/')[-1].split('.')[0]
+    
     if args.bert:
         if args.bert_step == "finetuning":
             args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
