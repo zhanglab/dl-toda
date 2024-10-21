@@ -259,7 +259,6 @@ def create_tfrecords(args, data):
                 # for process, data_process in data.items():
                 #     print(process, len(data_process))
             for i, r in enumerate(data, 0):
-                print(r[0], len(r[0]))
                 vector_size.add(len(r[0]))
                 if i == 0 and args.bert_step == 'pretraining':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\nnext_sentence_label: {r[4]}')
