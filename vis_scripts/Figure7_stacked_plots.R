@@ -72,8 +72,11 @@ centrifuge_soil_data$V2 <- centrifuge_soil_data$V2*2
 update_data <- function(df, tool, data, num_reads){
   # get relative abundance of unknown taxa
   na_ra <- df$V2[df$V1 == 'na']/num_reads*100
-  # remove na/unknown
+  # get relative abundance of unclassified reads
+  unc_ra <- df$V2[df$V1 == 'unclassified']/num_reads*100
+  # remove na and unclassified
   df <- df[df$V1 !='na',]
+  df <- df[df$V1 !='unclassified',]
   sum_ra <- sum(df$V2/num_reads*100)
   n_taxa <- dim(df)[1]
   # compute percentages per taxon
@@ -90,7 +93,7 @@ update_data <- function(df, tool, data, num_reads){
   }
   df_above_th$V2 <- as.numeric(df_above_th$V2)
   #"\t", dim(df_above_th[df_above_th$V1 != "other",])[1],
-  cat(tool, "\t", data, "\t", n_taxa, "\t", sum_ra, "\t", dim(df_above_th)[1], "\t",  sum_ra_above, "\t", sum_ra_below, "\t", na_ra, "\n")
+  cat(tool, "\t", data, "\t", n_taxa, "\t", sum_ra, "\t", dim(df_above_th)[1], "\t",  sum_ra_above, "\t", sum_ra_below, "\t", na_ra, "\t", unc_ra, "\n")
   return(df_above_th)
   #return(df)
 }

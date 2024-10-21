@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 import sys
 import pandas as pd
 import glob
@@ -13,7 +14,7 @@ from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 from summary_utils import *
 
 
-def create_cm(args):
+def parse_results(args):
     # load cami ground truth if testing set was made by cami
     if args.dataset == 'cami':
         args.cami_data = load_cami_data(args)
@@ -21,7 +22,8 @@ def create_cm(args):
     # load results of taxonomic classification tool
     data = load_tool_output(args)
     # parse data
-    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 'centrifuge': parse_centrifuge_output}
+    functions = {'kraken': parse_kraken_output, 'dl-toda': parse_dl_toda_output, 
+        'centrifuge': parse_centrifuge_output, 'bertax': parse_bertax_output, 'bert': parse_bert_output}
     with mp.Manager() as manager:
         results = manager.dict()
         processes = [mp.Process(target=functions[args.tool], args=(args, data[i], i, results)) for i in range(len(data))]
@@ -29,6 +31,7 @@ def create_cm(args):
             p.start()
         for p in processes:
             p.join()
+        
         # combine results from all processes
         predictions = []
         ground_truth = []
@@ -37,53 +40,121 @@ def create_cm(args):
             predictions += [i[0] for i in process_results]
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
-        # create confusion matrix
-        for r_name, r_index in args.ranks.items():
-            cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
-            # store confusion matrices in excel file
-            with pd.ExcelWriter(os.path.join(args.output_dir, f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')) as writer:
-                cm.to_excel(writer, sheet_name=f'{r_name}')
+        print(len(predictions), len(ground_truth), len(confidence_scores))
+        
+        if args.confusion_matrix:
+            if not os.path.isdir(os.path.join(args.output_dir, 'confusion_matrix')):
+                os.makedirs(os.path.join(args.output_dir, 'confusion_matrix'))
+            # create confusion matrix
+            if args.tool == 'dl-toda' or args.tool == 'bert':
+                for r_name, r_index in args.ranks.items():
+                    cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
+                    # if args.output_prefix:
+                    #     output_file = os.path.join(args.output_dir,
+                    #                                  f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    # else:
+                    #     output_file = os.path.join(args.output_dir,
+                    #                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
+                    output_file = os.path.join(args.output_dir, 'confusion_matrix', 'cm.xlsx')
+                    # store confusion matrices in excel file
+                    with pd.ExcelWriter(output_file) as writer:
+                        cm.to_excel(writer, sheet_name=f'{r_name}')
+            elif args.tool == 'bertax':
+                cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
+                # store confusion matrices in excel file
+                with pd.ExcelWriter(os.path.join(args.output_dir,
+                                                 f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
+                    cm.to_excel(writer, sheet_name=f'genus')
+
+        if args.false_positives:
+            if len(predictions)+len(ground_truth)+len(confidence_scores) != 0:
+                for r_name, r_index in args.ranks.items():
+                    if args.output_prefix:
+                        output_file = os.path.join(args.output_dir,
+                                                         f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
+                    else:
+                        output_file = os.path.join(args.output_dir,
+                                                         f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
+
+                    # get taxa at given rank
+                    true_taxa = [i.split(';')[r_index] for i in ground_truth]
+                    pred_taxa = [i.split(';')[r_index] for i in predictions]
+                    df = pd.DataFrame(list(zip(true_taxa, pred_taxa, confidence_scores)), columns = ['true', 'pred', 'score'])
+                    # create dataframe
+                    df.to_csv(output_file, sep="\t") 
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='taxonomic classification tool output file or confusion matrix excel file')
-    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge'])
+    parser.add_argument('--tool', type=str, help='taxonomic classification tool', choices=['kraken', 'dl-toda', 'centrifuge', 'bertax', 'bert'])
     parser.add_argument('--dataset', type=str, help='dataset ground truth', choices=['cami', 'testing', 'meta'])
     parser.add_argument('--cutoff', type=float, help='decision thershold above which reads are classified', default=0.0)
+    parser.add_argument('--output_prefix', type=str, help='prefix of output filename')
+    parser.add_argument('--num_proc', type=int, help='number of processors to parse results output from classifiers')
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
+    parser.add_argument('--false_positives', help='get false positives', action='store_true', required=('--positive_label' in sys.argv))
+    parser.add_argument('--positive_class', type=str, help='label of positive class')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
     parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
     parser.add_argument('--zeros', help='add ground truth taxa with a null precision, recall and F1 metrics', action='store_true')
     parser.add_argument('--unclassified', help='add unclassified reads to the calculation of recall', action='store_true')
+    parser.add_argument('--species', help='summarize output results only at the species level', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
+    parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
+    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
+    parser.add_argument('--mapping_file', type=str, help='path to file to update labels')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
     args = parser.parse_args()
 
     args.ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
+    if args.species:
+        args.ranks = {'species': 0}
+
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    # update ranks to look into if added to command line
+    if args.tool == 'bertax':
+        # only analyze bertax results at the genus level
+        args.ranks = {'genus': 1}
 
     # load dl-toda ground truth taxonomy
-    if args.dl_toda_tax:
+    if args.dataset == 'testing':
         index = 1 if args.tax_db == "gtdb" else 2
-        path_dl_toda_tax = '/'.join(
-            os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
-        with open(path_dl_toda_tax, 'r') as in_f:
-            content = in_f.readlines()
-            args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
+        print(index)
+        if not args.tax_file:
+            path_dl_toda_tax = '/'.join(
+                os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+        else:
+            path_dl_toda_tax = args.tax_file
+        print(path_dl_toda_tax)
+        if path_dl_toda_tax[-4:] == 'json':
+            with open(path_dl_toda_tax, 'r') as in_f:
+                args.dl_toda_tax  = json.load(in_f)
+        else:
+            with open(path_dl_toda_tax, 'r') as in_f:
+                content = in_f.readlines()
+                args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[index] for line in content}
+        if args.mapping_file:
+            # parse file to update labels
+            args.labels_mapping = dict()
+            with open(args.mapping_file, 'r') as f:
+                for line in f:
+                    args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
     # get ncbi taxids info
     if args.ncbi_db:
         args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
-    if args.confusion_matrix:
-        # create confusion matrix
-        create_cm(args)
+    if args.confusion_matrix or args.false_positives:
+        parse_results(args)
 
     if args.combine:
         with mp.Manager() as manager:
@@ -99,9 +170,9 @@ def main():
                 for r_name, r_cm in all_cm.items():
                     r_cm.to_excel(writer, sheet_name=f'{r_name}')
 
-        files_to_rm = glob.glob(os.path.join(args.input_dir, f'*-confusion-matrix.xlsx'))
-        for f in files_to_rm:
-            os.remove(f)
+        # files_to_rm = glob.glob(os.path.join(args.input_dir, f'*-confusion-matrix.xlsx'))
+        # for f in files_to_rm:
+        #     os.remove(f)
 
     if args.metrics:
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
