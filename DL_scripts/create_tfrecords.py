@@ -212,8 +212,8 @@ def create_tfrecords(args, data):
     vector_size = set()
 
     if args.dnabert:
-        if args.bert and args.bert_step == "pretraining":
-            dna_sequences = data
+        if args.bert_step == 'pretraining':
+            dna_sequences, _ = data
         else:
             dna_sequences, labels = data
     else:
@@ -251,7 +251,10 @@ def create_tfrecords(args, data):
 
         elif args.dnabert:
             # process data obtained from DNABERT
-            data, dict_labels = process_dnabert_data(args, dna_sequences, labels)
+            if args.bert_step == 'pretraining':
+                data, dict_labels = process_dnabert_data(args, dna_sequences)
+            elif args.bert_step == 'finetuning':
+                data, dict_labels = process_dnabert_data(args, dna_sequences, labels=labels)
         
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
