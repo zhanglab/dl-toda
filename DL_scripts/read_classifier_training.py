@@ -121,7 +121,7 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([], tfrec.int64)})
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
