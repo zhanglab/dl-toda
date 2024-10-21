@@ -385,7 +385,7 @@ def main():
         if args.bert_step == "finetuning":
             args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
         elif args.bert_step == "pretraining":
-            args.output_dir = f'pretraining/tfrecords-k{args.k_value}'
+            args.output_dir = f'{os.getcwd()}/pretraining/tfrecords-k{args.k_value}'
     else:
         args.output_dir = f'{args.output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
 
