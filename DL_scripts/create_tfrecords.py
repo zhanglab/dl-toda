@@ -145,7 +145,6 @@ def process_dnabert_data(args, dna_sequences, labels=None):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
-    dict_labels = defaultdict(int)
     for i in range(len(dna_sequences)):
         if args.bert_step == "finetuning":
             label = labels[i]
@@ -195,9 +194,8 @@ def process_dnabert_data(args, dna_sequences, labels=None):
             data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
         else:
             data.append([dna_list, attention_mask, token_type_ids, label])
-        dict_labels[label] += 1
 
-    return data, dict_labels
+    return data
 
 
 def create_tfrecords(args, data):
@@ -250,9 +248,9 @@ def create_tfrecords(args, data):
         elif args.dnabert:
             # process data obtained from DNABERT
             if args.bert_step == 'pretraining':
-                data, dict_labels = process_dnabert_data(args, dna_sequences)
+                data = process_dnabert_data(args, dna_sequences)
             elif args.bert_step == 'finetuning':
-                data, dict_labels = process_dnabert_data(args, dna_sequences, labels=labels)
+                data = process_dnabert_data(args, dna_sequences, labels=labels)
         
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
