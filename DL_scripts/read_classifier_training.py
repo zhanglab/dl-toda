@@ -872,7 +872,7 @@ def main():
                 print(f'found min: {found_min}')
                 print(f'min epoch: {min_epoch}')
 
-                if stop_training:
+                if stop_training or epoch == args.epochs:
                     if found_min:
                         model.set_weights(best_weights)
                         model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
