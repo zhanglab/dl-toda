@@ -1,15 +1,15 @@
 import tensorflow as tf
 # import tensorflow_addons as tfa
-import tensorflow_models as tfm
+# import tensorflow_models as tfm
 import tensorflow_hub as hub
-# import horovod.tensorflow as hvd
+import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from keras import backend as K
 from collections import Counter, defaultdict
-# from nvidia.dali.pipeline import pipeline_def
-# import nvidia.dali.fn as fn
-# import nvidia.dali.tfrecord as tfrec
-# import nvidia.dali.plugin.tf as dali_tf
+from nvidia.dali.pipeline import pipeline_def
+import nvidia.dali.fn as fn
+import nvidia.dali.tfrecord as tfrec
+import nvidia.dali.plugin.tf as dali_tf
 from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining
 import os
 import sys
@@ -27,7 +27,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
-from BERT import BertConfiguration, BertModelFinetuning, BertModelPretraining
+# from BERT import BertConfiguration, BertModelFinetuning, BertModelPretraining
 from optimizers import AdamWeightDecayOptimizer
 import argparse
 
@@ -37,11 +37,11 @@ os.environ['PYTHONHASHSEED'] = str(seed)
 tf.random.set_seed(seed)
 tf.experimental.numpy.random.seed(seed)
 # activate tensorflow deterministic behavior
-#os.environ['TF_DETERMINISTIC_OPS'] = '1'
-#os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
     
-#tf.config.threading.set_inter_op_parallelism_threads(1)
-#tf.config.threading.set_intra_op_parallelism_threads(1)
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(1)
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
@@ -55,87 +55,125 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
-# # define the DALI pipeline
-# @pipeline_def
-# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-#     # prefetch_queue_depth = 100
-#     # read_ahead = True
-#     stick_to_shard = True
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=shard_id,
-#                                  num_shards=num_gpus,
-#                                  initial_fill=initial_fill,
-#                                  # prefetch_queue_depth=prefetch_queue_depth,
-#                                  # read_ahead=read_ahead,
-#                                  stick_to_shard=stick_to_shard,
-#                                  features={
-#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     reads = inputs["read"].gpu()
-#     labels = inputs["label"].gpu()
-#     return (reads, labels)
+# define the DALI pipeline fo CNN and LSTM
+@pipeline_def
+def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    # prefetch_queue_depth = 100
+    # read_ahead = True
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 # prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return (reads, labels)
 
 
-# # define the BERT DALI pipeline
-# @pipeline_def
-# def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=0,
-#                                  num_shards=1,
-#                                  stick_to_shard=False,
-#                                  initial_fill=initial_fill,
-#                                  features={
-#                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-#                                      "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     input_ids = inputs["input_ids"].gpu()
-#     input_mask = inputs["input_mask"].gpu()
-#     segment_ids = inputs["segment_ids"].gpu()
-#     label_ids = inputs['label_ids'].gpu()
-#     is_real_example = inputs['is_real_example'].gpu()
+# define the BERT DALI pipeline for pretraining
+@pipeline_def
+def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=0,
+                                 num_shards=1,
+                                 stick_to_shard=False,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "labels": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "next_sentence_label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    
+    # retrieve data and copy it to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    attention_mask = inputs["input_mask"].gpu()
+    token_type_ids = inputs["segment_ids"].gpu()
+    labels = inputs['label_ids'].gpu()
 
-#     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
+    return (input_ids, attention_mask, token_type_ids, labels)
+
+
+# define the BERT DALI pipeline for finetuning
+@pipeline_def
+def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=0,
+                                 num_shards=1,
+                                 stick_to_shard=False,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    
+    # retrieve data and copy it to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    attention_mask = inputs["input_mask"].gpu()
+    token_type_ids = inputs["segment_ids"].gpu()
+    label = inputs['label_ids'].gpu()
+
+    return (input_ids, attention_mask, token_type_ids, label)
 
 
 
-# class DALIPreprocessor(object):
-#     def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
-#                deterministic=False, training=False):
+class DALIPreprocessor(object):
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+               deterministic=False, training=False):
 
-#         device_id = hvd.local_rank()
-#         shard_id = hvd.rank()
-#         num_gpus = hvd.size()
+        device_id = hvd.local_rank()
+        shard_id = hvd.rank()
+        num_gpus = hvd.size()
         
-#         self.batch_size = batch_size
-#         self.device_id = device_id
+        self.batch_size = batch_size
+        self.device_id = device_id
 
-#         if args.model_type == "BERT":
-#             self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+        if args.model_type == "BERT" and args.bert_step == 'finetuning':
+            self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
-#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#                 output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
-#         else:
-#             self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        
+        if args.model_type == "BERT" and args.bert_step == 'pretraining':
+            self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        
+        else:
+            self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
    
-#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#                 output_shapes=((batch_size, vector_size), (batch_size)),
-#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
-#     def get_device_dataset(self):
-#         return self.dalidataset
+    def get_device_dataset(self):
+        return self.dalidataset
+
+
+
 
 # val_loss_before = -1
 best_val_accuracy = np.Inf
@@ -276,23 +314,16 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-          "input_word_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "masked_lm_positions": tf.io.FixedLenFeature([args.num_masked], tf.int64),
-          "masked_lm_weights": tf.io.FixedLenFeature([args.num_masked], tf.float32),
-          "masked_lm_ids": tf.io.FixedLenFeature([args.num_masked], tf.int64)
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-        input_word_ids = parsed_example['input_word_ids']
-        input_mask = parsed_example['input_mask']
-        input_type_ids = parsed_example['input_type_ids']
-        masked_lm_positions = parsed_example['masked_lm_positions']
-        masked_lm_weights = parsed_example['masked_lm_weights']
-        masked_lm_ids = parsed_example['masked_lm_ids']
-
-        return  (input_word_ids, input_mask, input_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids)
+        # not returning data for NSP task
+        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
@@ -318,63 +349,69 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
     # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
-    
-# logits = model(**data[0]).logits
-#             predicted_class_id = int(tf.math.argmax(logits, axis=-1)[0])
-#             print(predicted_class_id)
-
 
 @tf.function
 def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
-        if model_type == 'BERT' and bert_step == "finetuning":
-            input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-            labels = data["labels"]
-            logits = model(input_data, training=True)
-            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-            probs = tf.nn.softmax(logits, axis=-1)
-            log_probs = tf.nn.log_softmax(logits, axis=-1)
-            one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-            per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-            loss_value_1 = tf.reduce_mean(per_example_loss)
-            loss_value = loss(labels, probs)
+        # if model_type == 'BERT' and bert_step == "finetuning":
+        #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
+        #     labels = data["labels"]
+        #     logits = model(input_data, training=True)
+        #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        #     probs = tf.nn.softmax(logits, axis=-1)
+        #     log_probs = tf.nn.log_softmax(logits, axis=-1)
+        #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        #     loss_value_1 = tf.reduce_mean(per_example_loss)
+        #     loss_value = loss(labels, probs)
 
-        elif model_type == 'BERT' and bert_step == "pretraining":
-            input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-            logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-            masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-                                         [-1, masked_lm_log_probs.shape[-1]])
-            masked_lm_predictions = tf.argmax(
-                masked_lm_log_probs, axis=-1, output_type=tf.int32)
-            masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-            masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-            masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-            loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-            loss_value = loss(masked_lm_ids, masked_lm_probs)
+        # elif model_type == 'BERT' and bert_step == "pretraining":
+        #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
+        #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+        #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
+        #                                  [-1, masked_lm_log_probs.shape[-1]])
+        #     masked_lm_predictions = tf.argmax(
+        #         masked_lm_log_probs, axis=-1, output_type=tf.int32)
+        #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
+        #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
+        #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
+        #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
+        #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
-        elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+        if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
             logits = model(**data).logits
             per_example_loss = model(**data).loss
             predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
             labels = data["labels"]
             loss_value = loss(labels, probs)
+
+        elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
+            logits = model(**data).logits
+            per_example_loss = model(**data).loss
+            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            probs = tf.nn.softmax(logits, axis=-1)
+            labels = data["labels"]
+            loss_value = loss(labels, probs)
+            
         else:
             reads, labels = data
             probs = model(reads, training=training)
             # get the loss
             loss_value = loss(labels, probs)
+        
         # scale the loss (multiply the loss by a factor) to avoid numeric underflow
-        # scaled_loss = opt.get_scaled_loss(loss_value)
+        scaled_loss = opt.get_scaled_loss(loss_value)
+    
     # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
     # combine gradient values before applying gradients to model weights
-    # tape = hvd.DistributedGradientTape(tape)
+    tape = hvd.DistributedGradientTape(tape)
     # get the scaled gradients
-    # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
     # get the unscaled gradients
-    # grads = opt.get_unscaled_gradients(scaled_gradients)
-    grads = tape.gradient(loss_value, model.trainable_variables)
+    grads = opt.get_unscaled_gradients(scaled_gradients)
+    # grads = tape.gradient(loss_value, model.trainable_variables)
     #opt.apply_gradients(zip(grads, model.trainable_variables))
     opt.apply_gradients(zip(grads, model.trainable_variables))
     # Horovod: broadcast initial variable states from rank 0 to all other processes.
@@ -382,18 +419,13 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # training is started with random weights or restored from a checkpoint.
     # Note: broadcast should be done after the first gradient step to ensure optimizer
     # initialization.
-    # if first_batch:
-    #     print(f'First_batch: {first_batch}')
-    #     hvd.broadcast_variables(model.variables, root_rank=0)
-    #     hvd.broadcast_variables(opt.variables(), root_rank=0)
+    if first_batch:
+        print(f'First_batch: {first_batch}')
+        hvd.broadcast_variables(model.variables, root_rank=0)
+        hvd.broadcast_variables(opt.variables(), root_rank=0)
 
-    #update training accuracy and loss
-    if model_type == 'BERT' and bert_step == "finetuning":
-        train_accuracy.update_state(labels, probs)
-    elif model_type == 'BERT' and bert_step == "pretraining":
-        train_accuracy.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
-    else:
-        train_accuracy.update_state(labels, probs)
+    #update training accuracy
+    train_accuracy.update_state(labels, probs)
 
     return loss_value
 
@@ -401,34 +433,39 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
     training = False
 
-    if model_type == 'BERT' and bert_step == "finetuning":
-        input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-        labels = data["labels"]
-        logits = model(input_data, training=True)
-        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        probs = tf.nn.softmax(logits, axis=-1)
-        loss_value = loss(labels, probs)
+    # if model_type == 'BERT' and bert_step == "finetuning":
+    #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
+    #     labels = data["labels"]
+    #     logits = model(input_data, training=True)
+    #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+    #     probs = tf.nn.softmax(logits, axis=-1)
+    #     loss_value = loss(labels, probs)
 
-    elif model_type == 'BERT' and bert_step == "pretraining":
-        input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-        masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-                                         [-1, masked_lm_log_probs.shape[-1]])
-        masked_lm_predictions = tf.argmax(
-                masked_lm_log_probs, axis=-1, output_type=tf.int32)
-        masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-        masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-        masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-        loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-        loss_value = loss(masked_lm_ids, masked_lm_probs)
+    # elif model_type == 'BERT' and bert_step == "pretraining":
+    #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
+    #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
+    #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
+    #                                      [-1, masked_lm_log_probs.shape[-1]])
+    #     masked_lm_predictions = tf.argmax(
+    #             masked_lm_log_probs, axis=-1, output_type=tf.int32)
+    #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
+    #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
+    #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
+    #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
+    #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
-    elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+    if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
         logits = model(**data).logits
         loss_value = model(**data).loss
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         probs = tf.nn.softmax(logits, axis=-1)
         labels = data["labels"]
-        
+    elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
+        logits = model(**data).logits
+        loss_value = model(**data).loss
+        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        probs = tf.nn.softmax(logits, axis=-1)
+        labels = data["labels"]
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -487,16 +524,16 @@ def main():
     print(f'VECTOR SIZE: {args.vector_size}')
 
     # Initialize Horovod
-    # hvd.init()
+    hvd.init()
     # Map one GPU per process
-    # use hvd.local_rank() for gpu pinning instead of hvd.rank()
+    use hvd.local_rank() for gpu pinning instead of hvd.rank()
     gpus = tf.config.experimental.list_physical_devices('GPU')
-    # print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     if gpus:
-        tf.config.experimental.set_visible_devices(gpus, 'GPU')
-        # tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+        # tf.config.experimental.set_visible_devices(gpus, 'GPU')
+        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
@@ -515,29 +552,29 @@ def main():
         num_labels = args.num_labels
 
     # modify tensorflow precision mode
-    # policy = keras.mixed_precision.Policy('mixed_float16')
-    # # keras.mixed_precision.set_global_policy(policy)
-    # print('Compute dtype: %s' % policy.compute_dtype)
-    # print('Variable dtype: %s' % policy.variable_dtype)
+    policy = keras.mixed_precision.Policy('mixed_float16')
+    # keras.mixed_precision.set_global_policy(policy)
+    print('Compute dtype: %s' % policy.compute_dtype)
+    print('Variable dtype: %s' % policy.variable_dtype)
 
-    # if hvd.rank() == 0:
-    # create output directory
-    if not os.path.isdir(args.output_dir):
-        os.makedirs(args.output_dir)
+    if hvd.rank() == 0:
+        # create output directory
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(args.output_dir)
 
-    # create directory for storing checkpoints
-    ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-    if not os.path.isdir(ckpt_dir):
-        os.makedirs(ckpt_dir)
+        # create directory for storing checkpoints
+        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
+        if not os.path.isdir(ckpt_dir):
+            os.makedirs(ckpt_dir)
 
-    # create directory for storing logs
-    tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
-    if not os.path.exists(tensorboard_dir):
-        os.makedirs(tensorboard_dir)
+        # create directory for storing logs
+        tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
+        if not os.path.exists(tensorboard_dir):
+            os.makedirs(tensorboard_dir)
 
-    writer = tf.summary.create_file_writer(tensorboard_dir)
-    td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
-    vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
+        writer = tf.summary.create_file_writer(tensorboard_dir)
+        td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
+        vd_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'validation_data_rnd_{args.rnd}.tsv'), 'w')
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
@@ -592,86 +629,86 @@ def main():
     # opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    if args.model_type == 'BERT':
-        # load BERT configuration
-        args.config = BertConfiguration.from_json_file(args.bert_config_file)
-        with open(args.bert_config_file, "r") as f:
-            args.config_dict = json.load(f)
-        # update input vector size
-        args.vector_size = args.config_dict['max_position_embeddings']
+    # if args.model_type == 'BERT':
+    #     # load BERT configuration
+    #     args.config = BertConfiguration.from_json_file(args.bert_config_file)
+    #     with open(args.bert_config_file, "r") as f:
+    #         args.config_dict = json.load(f)
+    #     # update input vector size
+    #     args.vector_size = args.config_dict['max_position_embeddings']
 
-        if args.bert_step == "finetuning":
-            encoder_config = tfm.nlp.encoders.EncoderConfig({
-                'type':'bert',
-                'bert': args.config_dict
-            })
-            bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-            model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
-            # model = BertModelFinetuning(config=args.config)
-            # # define a forward pass
-            # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-            # # _ = model(input_ids, input_mask, token_type_ids, False)
-            # print(f'summary: {model.create_model().summary()}')
-            # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+    #     if args.bert_step == "finetuning":
+    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
+    #             'type':'bert',
+    #             'bert': args.config_dict
+    #         })
+    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+    #         model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
+    #         # model = BertModelFinetuning(config=args.config)
+    #         # # define a forward pass
+    #         # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+    #         # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+    #         # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
+    #         # # _ = model(input_ids, input_mask, token_type_ids, False)
+    #         # print(f'summary: {model.create_model().summary()}')
+    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
             
-            # # print(model.summary())
-            # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-            # print(f'number of parameters: {model.create_model().count_params()}')
-            # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-            # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-            # print(f'# trainable parameters: {trainable_params}')
-            # print(f'# non trainable parameters: {non_trainable_params}')
-            # print(f'# variables: {len(model.trainable_weights)}')
-            # total_params = 0
-            # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
-            #     for var in model.trainable_weights:
-            #         count = 1
-            #         for dim in var.shape:
-            #             count *= dim
-            #         total_params += count
-            #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-            #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-            #     f.write(f'Total params: {total_params}')
-            #     print(f'Total params: {total_params}')
+    #         # # print(model.summary())
+    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+    #         # print(f'number of parameters: {model.create_model().count_params()}')
+    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+    #         # print(f'# trainable parameters: {trainable_params}')
+    #         # print(f'# non trainable parameters: {non_trainable_params}')
+    #         # print(f'# variables: {len(model.trainable_weights)}')
+    #         # total_params = 0
+    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
+    #         #     for var in model.trainable_weights:
+    #         #         count = 1
+    #         #         for dim in var.shape:
+    #         #             count *= dim
+    #         #         total_params += count
+    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+    #         #     f.write(f'Total params: {total_params}')
+    #         #     print(f'Total params: {total_params}')
 
-            # # print(model.trainable_weights)
-            # # print(len(model.trainable_weights))
-        elif args.bert_step == "pretraining":
-            encoder_config = tfm.nlp.encoders.EncoderConfig({
-                'type':'bert',
-                'bert': args.config_dict
-            })
-            bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-            model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
-            # model = BertModelPretraining(config=args.config)
-            # print(f'summary: {model.create_model().summary()}')
-            # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
+    #         # # print(model.trainable_weights)
+    #         # # print(len(model.trainable_weights))
+    #     elif args.bert_step == "pretraining":
+    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
+    #             'type':'bert',
+    #             'bert': args.config_dict
+    #         })
+    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
+    #         model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
+    #         # model = BertModelPretraining(config=args.config)
+    #         # print(f'summary: {model.create_model().summary()}')
+    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
             
-            # # print(model.summary())
-            # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-            #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-            # print(f'number of parameters: {model.create_model().count_params()}')
-            # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-            # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-            # print(f'# trainable parameters: {trainable_params}')
-            # print(f'# non trainable parameters: {non_trainable_params}')
-            # print(f'# variables: {len(model.trainable_weights)}')
-            # total_params = 0
-            # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
-            #     for var in model.trainable_weights:
-            #         count = 1
-            #         for dim in var.shape:
-            #             count *= dim
-            #         total_params += count
-            #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-            #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-            #     f.write(f'Total params: {total_params}')
-            #     print(f'Total params: {total_params}')
+    #         # # print(model.summary())
+    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
+    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
+    #         # print(f'number of parameters: {model.create_model().count_params()}')
+    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
+    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
+    #         # print(f'# trainable parameters: {trainable_params}')
+    #         # print(f'# non trainable parameters: {non_trainable_params}')
+    #         # print(f'# variables: {len(model.trainable_weights)}')
+    #         # total_params = 0
+    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
+    #         #     for var in model.trainable_weights:
+    #         #         count = 1
+    #         #         for dim in var.shape:
+    #         #             count *= dim
+    #         #         total_params += count
+    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
+    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
+    #         #     f.write(f'Total params: {total_params}')
+    #         #     print(f'Total params: {total_params}')
 
-    elif args.model_type == 'BERT_HUGGINGFACE':
+    if args.model_type == 'BERT_HUGGINGFACE':
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
         # update input vector size
@@ -705,8 +742,8 @@ def main():
    
     if args.nvidia_dali:
         # get nvidia dali indexes
-        train_idx_files = sorted(glob.glob(os.path.join(args.train_idx_files, 'train*.idx')))
-        val_idx_files = sorted(glob.glob(os.path.join(args.val_idx_files, 'val*.idx')))
+        train_idx_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'idx_files', '*.idx')))
+        val_idx_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'idx_files', '*.idx')))
 
         # load data
         train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
