@@ -1,7 +1,7 @@
 import tensorflow as tf
 # import tensorflow_addons as tfa
 # import tensorflow_models as tfm
-import tensorflow_hub as hub
+# import tensorflow_hub as hub
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from keras import backend as K
