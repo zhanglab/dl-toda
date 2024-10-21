@@ -213,7 +213,7 @@ def create_tfrecords(args, data):
 
     if args.dnabert:
         if args.bert_step == 'pretraining':
-            dna_sequences, _ = data
+            dna_sequences = data
         else:
             dna_sequences, labels = data
     else:
@@ -417,6 +417,11 @@ def main():
             json.dump(args.dict_kmers, f)
 
     if args.dnabert:
+        if args.bert and args.bert_step == "pretraining":
+            dna_sequences = load_dnabert_seq(args)
+            print(f'# seq: {len(dna_sequences)}')
+            create_tfrecords(args, dna_sequences)
+        else:
             dna_sequences, labels = load_dnabert_seq(args)
             create_tfrecords(args, (dna_sequences, labels))
     else:
