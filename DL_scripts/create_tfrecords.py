@@ -253,7 +253,6 @@ def create_tfrecords(args, input_data):
                 if i == 0 and args.bert_step == 'finetuning':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabel: {r[3]}\n')
                     print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
-                break
                 """
                 input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                 attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
