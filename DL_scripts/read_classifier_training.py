@@ -142,7 +142,7 @@ class DALIPreprocessor(object):
         self.batch_size = batch_size
         self.device_id = device_id
 
-        if args.model_type == "BERT" and args.bert_step == 'finetuning':
+        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'finetuning':
             self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
@@ -151,7 +151,7 @@ class DALIPreprocessor(object):
                 output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size)),
                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
-        if args.model_type == "BERT" and args.bert_step == 'pretraining':
+        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'pretraining':
             self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
