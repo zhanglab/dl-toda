@@ -141,7 +141,7 @@ def process_art_data(args, dna_sequences, labels, reads_index):
     return data, dict_labels
 
 
-def process_dnabert_data(args, dna_sequences, labels=None):
+def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
@@ -184,18 +184,18 @@ def process_dnabert_data(args, dna_sequences, labels=None):
 
         if args.bert_step == 'pretraining':
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
-            labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            if len(labels) < max_position_embeddings:
-                num_padded_values = max_position_embeddings - len(labels)
-                labels = labels + [-100] * num_padded_values
-            data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+            if len(mlm_labels) < max_position_embeddings:
+                num_padded_values = max_position_embeddings - len(mlm_labels)
+                mlm_labels = mlm_labels + [-100] * num_padded_values
+            data.append([dna_list, attention_mask, token_type_ids, mlm_labels, next_sentence_label])
         else:
             data.append([dna_list, attention_mask, token_type_ids, labels[i]])
 
     return data
 
 
-def create_tfrecords(args, data):
+def create_tfrecords(args, input_data):
     # for fq_file in grouped_files:
     """ Converts dna sequences to tfrecord """
     num_lines = 8 if args.pair else 4
@@ -205,10 +205,10 @@ def create_tfrecords(args, data):
     vector_size = set()
 
     if args.dnabert:
-            dna_sequences, labels = data
+            dna_sequences, labels = input_data
     else:
         # data = tsv file
-        with open(data) as handle:
+        with open(input_data) as handle:
             reads = handle.readlines()
             dna_sequences = [r.rstrip().split('\t')[1] for r in reads]
             labels = [r.rstrip().split('\t')[0].split('|')[1] for r in reads]
@@ -240,11 +240,7 @@ def create_tfrecords(args, data):
             data, dict_labels = process_art_data(args, dna_sequences, labels, reads_index)
 
         elif args.dnabert:
-            # process data obtained from DNABERT
-            if args.bert_step == 'pretraining':
-                data = process_dnabert_data(args, dna_sequences)
-            elif args.bert_step == 'finetuning':
-                data = process_dnabert_data(args, dna_sequences, labels=labels)
+            data = process_dnabert_data(args, dna_sequences, labels)
         
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
@@ -407,13 +403,8 @@ def main():
             json.dump(args.dict_kmers, f)
 
     if args.dnabert:
-        if args.bert and args.bert_step == "pretraining":
-            dna_sequences = load_dnabert_seq(args)
-            print(f'# seq: {len(dna_sequences)}')
-            create_tfrecords(args, dna_sequences)
-        else:
-            dna_sequences, labels = load_dnabert_seq(args)
-            create_tfrecords(args, (dna_sequences, labels))
+        dna_sequences, labels = load_dnabert_seq(args)
+        create_tfrecords(args, (dna_sequences, labels))
     else:
         create_tfrecords(args, args.input)
         # chunk_size = math.ceil(len(fq_files)/args.num_proc)
