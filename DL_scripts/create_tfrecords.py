@@ -370,7 +370,7 @@ def main():
 
     # update path to output directory
     if args.dnabert:
-        if args.bert_step != "finetuning":
+        if args.bert_step not in ["pretraining", None]:
             # create name of output directory from input filename
             label = args.input.split('/')[-1].split('_')[1][1:]
             dataset = args.input.split('/')[-1].split('_')[2]
