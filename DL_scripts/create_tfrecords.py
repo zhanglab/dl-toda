@@ -146,9 +146,6 @@ def process_dnabert_data(args, dna_sequences, labels=None):
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
-        if args.bert_step == "finetuning":
-            label = labels[i]
-        
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         
@@ -193,7 +190,7 @@ def process_dnabert_data(args, dna_sequences, labels=None):
                 labels = labels + [-100] * num_padded_values
             data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
         else:
-            data.append([dna_list, attention_mask, token_type_ids, label])
+            data.append([dna_list, attention_mask, token_type_ids, labels[i]])
 
     return data
 
@@ -260,6 +257,7 @@ def create_tfrecords(args, data):
                 if i == 0 and args.bert_step == 'finetuning':
                     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabel: {r[3]}\n')
                     print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
+                break
                 """
                 input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                 attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
