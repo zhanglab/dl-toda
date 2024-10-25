@@ -147,9 +147,9 @@ def process_dnabert_data(args, dna_sequences, labels):
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
-        seq = dna_sequences[i][0]
-        for k in dna_sequences[i][1:]:
-            seq += k[-1]
+        # seq = dna_sequences[i][0]
+        # for k in dna_sequences[i][1:]:
+        #     seq += k[-1]
     
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
@@ -170,11 +170,11 @@ def process_dnabert_data(args, dna_sequences, labels):
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            if len(mlm_positions) == 1:
-                print(f'length of sequence: {len(seq)}\t{seq}')
-                print(f'mlm_positions\t{mlm_positions}')
-                print(f'dna_list\t{dna_list}')
-                print(f'mlm_labels: {mlm_labels}')
+            # if len(mlm_positions) == 1:
+            #     print(f'length of sequence: {len(seq)}\t{seq}')
+            #     print(f'mlm_positions\t{mlm_positions}')
+            #     print(f'dna_list\t{dna_list}')
+            #     print(f'mlm_labels: {mlm_labels}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
             dna_list = mlm_dna_list
