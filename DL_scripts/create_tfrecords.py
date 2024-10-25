@@ -165,7 +165,8 @@ def process_dnabert_data(args, dna_sequences, labels):
                 print(f'length of sequence: {len(seq)}\t{seq}')
             print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
             # get list of indices of tokens to mask
-            mlm_positions = sort(random.sample(list(range(len(dna_list))), n_mlm))
+            mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+            mlm_positions.sort()
             print(f'mlm_positions\t{mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
