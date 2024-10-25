@@ -143,6 +143,7 @@ def process_art_data(args, dna_sequences, labels, reads_index):
 
 def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
+    """ DNA sequences """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
@@ -169,7 +170,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            if len(seq) == 5:
+            if len(mlm_positions) == 1:
                 print(f'length of sequence: {len(seq)}\t{seq}')
                 print(f'mlm_positions\t{mlm_positions}')
                 print(f'dna_list\t{dna_list}')
