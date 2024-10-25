@@ -821,6 +821,8 @@ def main():
         print(f'input_ids: {data["input_ids"][0]}')
         print(f'mask_token_index: {len(mask_token_index)}')
         print(f'labels: {data["labels"][0]}')
+        mask_token_values = tf.where(data["labels"][0] != -100)
+        print(f'mask_token_values: {mask_token_values}\t{len(mask_token_values)}')
         break
     #     # if batch == 1:
     #     #     all_labels = [labels]
