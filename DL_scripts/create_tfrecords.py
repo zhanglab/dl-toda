@@ -146,7 +146,6 @@ def process_dnabert_data(args, dna_sequences, labels):
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
-        print(dna_sequences[i], len(dna_sequences[i]))
         seq = dna_sequences[i][0]
         for k in dna_sequences[i][1:]:
             seq += k[-1]
