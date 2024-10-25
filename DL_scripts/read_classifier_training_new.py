@@ -822,7 +822,7 @@ def main():
         print(f'mask_token_index: {mask_token_index}\t{len(mask_token_index)}')
         print(f'labels: {data["labels"][0]}')
         mask_token_values_1 = tf.where(data["labels"][0] != -100)
-        mask_token_values_1 = tf.where(data["input_ids"][0] == 4)
+        mask_token_values_2 = tf.where(data["input_ids"][0] == 4)
         print(f'mask_token_values_1: {mask_token_values_1}\t{len(mask_token_values_1)}')
         print(f'mask_token_values_2: {mask_token_values_2}\t{len(mask_token_values_2)}')
         break
