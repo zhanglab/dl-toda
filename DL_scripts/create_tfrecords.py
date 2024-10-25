@@ -147,6 +147,11 @@ def process_dnabert_data(args, dna_sequences, labels):
     data = []
     for i in range(len(dna_sequences)):
         print(dna_sequences[i], len(dna_sequences[i]))
+        seq = dna_sequences[i][0]
+        for k in dna_sequences[i][1:]:
+            seq += k[-1]
+            print(k, k[-1])
+        print(f'length of sequence: {len(seq)}\t{seq}')
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         
