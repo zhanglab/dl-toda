@@ -818,8 +818,10 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
         mask_token_index = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'input_ids: {data["input_ids"]}')
-        print(f'mask_token_index: {mask_token_index}')
+        print(f'input_ids: {data["input_ids"][0]}')
+        print(f'mask_token_index: {len(mask_token_index)}')
+        print(f'labels: {data["labels"][0]}')
+        break
     #     # if batch == 1:
     #     #     all_labels = [labels]
     #     # else:
