@@ -384,17 +384,17 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
         #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
-        if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
-            outputs = model(**data)
-            prediction_logits, seq_relationship_logits = outputs[:2]
+        # if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+            # logits = model(**data).logits
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
     #         probs = tf.nn.softmax(logits, axis=-1)
     #         labels = data["labels"]
     #         loss_value = loss(labels, probs)
 
-    #     elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-    #         logits = model(**data).logits
+        if model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
+            outputs = model(**data)
+            prediction_logits, seq_relationship_logits = outputs[:2]
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
     #         probs = tf.nn.softmax(logits, axis=-1)
