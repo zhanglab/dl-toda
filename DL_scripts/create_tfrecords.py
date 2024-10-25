@@ -172,6 +172,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+            print(f'dna_list\t{dna_list}')
             print(f'mlm_labels: {mlm_labels}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
