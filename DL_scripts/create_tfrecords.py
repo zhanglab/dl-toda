@@ -195,6 +195,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             data.append([dna_list, attention_mask, token_type_ids, mlm_labels, next_sentence_label])
         else:
             data.append([dna_list, attention_mask, token_type_ids, labels[i]])
+        break
 
     return data
 
