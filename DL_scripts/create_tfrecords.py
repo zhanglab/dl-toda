@@ -156,11 +156,14 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
+            print(f'n_mlm\t{n_mlm}')
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+            print(f'mlm_positions\t{mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             dna_list = mlm_dna_list
+            print(f'dna_list\t{dna_list}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
 
@@ -185,6 +188,7 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+            print(f'mlm_labels: {mlm_labels}')
             if len(mlm_labels) < max_position_embeddings:
                 num_padded_values = max_position_embeddings - len(mlm_labels)
                 mlm_labels = mlm_labels + [-100] * num_padded_values
