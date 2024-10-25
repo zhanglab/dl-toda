@@ -10,7 +10,7 @@ from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
-from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining
+from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining, TFBertForMaskedLM
 import os
 import sys
 import json
@@ -393,8 +393,9 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #         loss_value = loss(labels, probs)
 
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            outputs = model(**data)
-            prediction_logits, seq_relationship_logits = outputs[:2]
+            mask_token_id = 4
+            logits = model(**data).logits
+            mask_token_index = tf.where((data["input_ids"] == mask_token_id)[0])
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
     #         probs = tf.nn.softmax(logits, axis=-1)
@@ -434,7 +435,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value
-    return prediction_logits, seq_relationship_logits, outputs
+    return mask_token_index
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -724,7 +725,7 @@ def main():
         if args.bert_step == "finetuning":
             model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
-            model = TFBertForPreTraining(config=bert_config)
+            model = TFBertForMaskedLM(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -816,10 +817,9 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        prediction_logits, seq_relationship_logits, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'prediction_logits: {prediction_logits}')
-        print(f'seq_relationship_logits: {seq_relationship_logits}')
-        print(f'outputs: {outputs}')
+        mask_token_index = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(f'input_ids: {data["input_ids"]}')
+        print(f'mask_token_index: {mask_token_index}')
     #     # if batch == 1:
     #     #     all_labels = [labels]
     #     # else:
