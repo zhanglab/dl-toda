@@ -150,41 +150,50 @@ def process_dnabert_data(args, dna_sequences, labels):
         seq = dna_sequences[i][0]
         for k in dna_sequences[i][1:]:
             seq += k[-1]
-            print(k, k[-1])
-        print(f'length of sequence: {len(seq)}\t{seq}')
+    
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         
-        # adjust size for sequences longer than the max read length (dnabert data generates sequences of size 511 when specifying a size of 510!! je ne sais pas pourquoi)
+        # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
             dna_list = dna_list[:args.kmer_vector_length]
         
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
+            if len(seq) == 5:
+                print(f'length of sequence: {len(seq)}\t{seq}')
             print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             print(f'mlm_positions\t{mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
-            dna_list = mlm_dna_list
-            print(f'dna_list\t{dna_list}')
+            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
+            mlm_labels = [mlm_dna_list[i] if i in mlm_positions else -100 for i in range(len(mlm_dna_list))]
+            print(f'mlm_labels: {mlm_labels}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
+            dna_list = mlm_dna_list
+            labels = mlm_labels
+            print(f'dna_list\t{dna_list}')
 
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
 
+        if args.bert_step == 'pretraining':
+            # update vector of labels to reflect the addition of the special tokens
+            labels = [-100] + labels + [-100]
+
         # define the first and second part of the sequence - NSP is not implemented here
         token_type_ids = [0] * max_position_embeddings
         
-        # if args.bert_step == 'finetuning':
-
         # pad input vectors if necessary
         if len(dna_list) < max_position_embeddings:
             num_padded_values = max_position_embeddings - len(dna_list)
             dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
+            if args.bert_step == 'pretraining':
+                labels = labels + [-100] * num_padded_values
             # create attention_mask vector indicating padded values. Padding token indices are masked (0) to avoid
             # performing attention on them.
             attention_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
@@ -192,13 +201,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             attention_mask = [1]*max_position_embeddings
 
         if args.bert_step == 'pretraining':
-            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
-            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            print(f'mlm_labels: {mlm_labels}')
-            if len(mlm_labels) < max_position_embeddings:
-                num_padded_values = max_position_embeddings - len(mlm_labels)
-                mlm_labels = mlm_labels + [-100] * num_padded_values
-            data.append([dna_list, attention_mask, token_type_ids, mlm_labels, next_sentence_label])
+            data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
         else:
             data.append([dna_list, attention_mask, token_type_ids, labels[i]])
         break
