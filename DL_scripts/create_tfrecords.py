@@ -161,24 +161,24 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
-            if len(seq) == 5:
-                print(f'length of sequence: {len(seq)}\t{seq}')
-            print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
+            
+            # print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             mlm_positions.sort()
-            print(f'mlm_positions\t{mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            print(f'dna_list\t{dna_list}')
-            print(f'mlm_labels: {mlm_labels}')
+            if len(seq) == 5:
+                print(f'length of sequence: {len(seq)}\t{seq}')
+                print(f'mlm_positions\t{mlm_positions}')
+                print(f'dna_list\t{dna_list}')
+                print(f'mlm_labels: {mlm_labels}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
             dna_list = mlm_dna_list
             labels = mlm_labels
-            print(f'dna_list\t{dna_list}')
 
         # add CLS and SEP tokens
         dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
@@ -206,7 +206,6 @@ def process_dnabert_data(args, dna_sequences, labels):
             data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
         else:
             data.append([dna_list, attention_mask, token_type_ids, labels[i]])
-        break
 
     return data
 
