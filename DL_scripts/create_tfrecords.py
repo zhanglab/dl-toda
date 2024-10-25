@@ -165,12 +165,12 @@ def process_dnabert_data(args, dna_sequences, labels):
                 print(f'length of sequence: {len(seq)}\t{seq}')
             print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
             # get list of indices of tokens to mask
-            mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+            mlm_positions = sort(random.sample(list(range(len(dna_list))), n_mlm))
             print(f'mlm_positions\t{mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
-            mlm_labels = [mlm_dna_list[i] if i in mlm_positions else -100 for i in range(len(mlm_dna_list))]
+            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
             print(f'mlm_labels: {mlm_labels}')
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
