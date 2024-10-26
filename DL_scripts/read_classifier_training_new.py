@@ -820,6 +820,7 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
         outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(outputs)
+        print(outputs.loss)
         break
     #     # if batch == 1:
     #     #     all_labels = [labels]
