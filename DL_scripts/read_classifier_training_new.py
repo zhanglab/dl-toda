@@ -405,10 +405,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             selected_logits_2 = tf.gather_nd(logits[0], indices=mask_token_index_2)
             selected_labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
             labels = tf.gather_nd(data["labels"], indices=mask_token_index_2)
-            probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
-            probs = tf.nn.softmax(selected_logits_2, axis=-1)
-            loss_value_1 = loss(selected_labels_1, selected_logits_1)
-            loss_value_2 = loss(labels, selected_logits_2)
+            # probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
+            # probs = tf.nn.softmax(selected_logits_2, axis=-1)
+            # loss_value_1 = loss(selected_labels_1, selected_logits_1)
+            # loss_value_2 = loss(labels, selected_logits_2)
             predictions_1 = tf.argmax(selected_logits_1, axis=-1, output_type=tf.int32)
             predictions_2 = tf.argmax(selected_logits_2, axis=-1, output_type=tf.int32)
         else:
@@ -443,7 +443,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #update training accuracy
     # train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, predictions_1, predictions_2, outputs
+    return loss_value, selected_labels_1, labels, predictions_1, predictions_2, outputs
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
