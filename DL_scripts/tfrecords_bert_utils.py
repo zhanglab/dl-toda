@@ -95,7 +95,6 @@ def get_masked_array(args, mlm_positions, input_array):
             # randomly choose one type of replacement
             r_type = random.choices(replacements, weights=weights)
             final_types.append(r_type[0])
-            print(r_type[0])
             if r_type[0] == 'masked':
                 output[i] = args.dict_kmers["[MASK]"]
             elif r_type[0] == 'random':
@@ -110,6 +109,7 @@ def get_masked_array(args, mlm_positions, input_array):
     print(len(mlm_positions))
     print(0.8*len(mlm_positions))
     print(0.1*len(mlm_positions))
+    print(0.8*len(mlm_positions)+0.1*len(mlm_positions)+0.1*len(mlm_positions))
 
     return output
 
