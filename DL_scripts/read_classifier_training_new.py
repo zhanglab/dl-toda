@@ -841,8 +841,8 @@ def main():
 
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     # all_input_ids = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-    f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'w')
-    f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'w')
+    f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
+    f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         input_ids, _, _, labels = data 
         # if args.bert_step == "pretraining": 
@@ -856,11 +856,8 @@ def main():
         # else:
         #     all_labels = tf.concat([all_labels, [labels]], 1)
         print(batch, len(input_ids), len(labels))
-        for i in range(len(input_ids)):
-            f1.write(f'{input_ids[i]}\n')
-
-        for i in range(len(labels)):
-            f2.write(f'{labels[i]}\n')
+        np.savetxt(f1, input_ids)
+        np.savetxt(f2, labels)
 
     # all_input_ids = all_input_ids[0].numpy()
     # all_labels = all_labels[0].numpy()
