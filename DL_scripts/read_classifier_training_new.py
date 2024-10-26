@@ -450,7 +450,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
-    return logits, selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2
+    return selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
