@@ -395,7 +395,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
             mask_token_id = 4
             # logits = model(**data).logits
-            outputs = model(**data, labels=data["labels"])
+            outputs = model(**data)
             loss_value = round(float(outputs.loss), 2)
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
