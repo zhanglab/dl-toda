@@ -393,8 +393,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = loss(labels, probs)
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            # outputs = model(**data).logits
-            outputs = model(input_ids=data["input_ids"], token_type_ids=data["token_type_ids"], attention_mask=data["attention_mask"], labels=data["labels"])
+            outputs = model(**data).logits
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
             loss_value = outputs.loss
@@ -415,11 +414,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
             # shape of labels_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
             labels_2 = tf.gather_nd(data["labels"], indices=mask_token_index_2)
-            # probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
-            # probs = tf.nn.softmax(selected_logits_2, axis=-1)
-            # loss_value_1 = loss(selected_labels_1, selected_logits_1)
-            # loss_value_2 = loss(labels, selected_logits_2)
+            # get predicted labels
+            # shape of predictions_1: (batch_size*<number of 'MASK' tokens>,)
             predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
+            # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
             predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
         else:
             reads, labels = data
@@ -457,11 +455,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
-    return loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2, predictions_1, predictions_2
+    return loss_value
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
+def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=None):
     training = False
 
     # if model_type == 'BERT' and bert_step == "finetuning":
@@ -492,24 +489,33 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         probs = tf.nn.softmax(logits, axis=-1)
         labels = data["labels"]
     elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-        logits = model(**data).logits
-        loss_value = model(**data).loss
-        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        probs = tf.nn.softmax(logits, axis=-1)
-        labels = data["labels"]
+        outputs = model(**data).logits
+        logits = outputs.logits
+        loss_value = outputs.loss
+        mask_token_index_1 = tf.where((data["input_ids"] == 4))
+        mask_token_index_2 = tf.where((data["labels"] != -100))
+        logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
+        logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
+        labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
+        labels_2 = tf.gather_nd(data["labels"], indices=mask_token_index_2)
+        predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
+        predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
     else:
         reads, labels = data
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
-    
-    if model_type == 'BERT' and bert_step == "finetuning":
+
+    # update training accuracy
+    if bert_step == "finetuning":
         val_accuracy.update_state(labels, probs)
-    elif model_type == 'BERT' and bert_step == "pretraining":
-        val_accuracy.update_state(masked_lm_ids, masked_lm_predictions, sample_weight=masked_lm_weights)
+    elif bert_step == 'pretraining':
+        val_accuracy.update_state(labels_2, predictions_2)
+        val_accuracy_mask.update_state(labels_1, predictions_1)
     else:
         val_accuracy.update_state(labels, probs)
     
     val_loss.update_state(loss_value)
+
 
 
 
@@ -849,47 +855,44 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):       
         if args.bert_step == "pretraining": 
-            loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2, predictions_1, predictions_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
-            print('logits_1:', logits_1, logits_1.shape)
-            print('logits_2:', logits_2, logits_2.shape)
-            print('predictions_1:', predictions_1, predictions_1.shape)
-            print('predictions_2:', predictions_2, predictions_2.shape)
-            print('labels_1:', labels_1, labels_1.shape)
-            print('labels_2:', labels_2, labels_2.shape)
-            print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
-            print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
-            print("labels in first DNA sequences:", data["labels"][0])
-            mask_token_index_first_1 = tf.where((data["labels"][0] != -100))
-            mask_token_index_first_2 = tf.where((data["input_ids"][0] == 4))
-            print('mask_token_index_first_1', mask_token_index_first_1, mask_token_index_first_1.shape)
-            print('mask_token_index_first_2', mask_token_index_first_2, mask_token_index_first_2.shape)
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
+            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
         else:
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
-        break
         # if batch == 1:
         #     all_labels = [labels]
         # else:
         #     all_labels = tf.concat([all_labels, [labels]], 1)
-        # if batch % 100 == 0 and hvd.rank() == 0:
-        if batch % 100 == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        # if batch % 1 == 0 and hvd.rank() == 0:
-        if batch % 1 == 0:
+
+        if batch % 100 == 0 and hvd.rank() == 0:
+            if args.bert_step == "pretraining":
+                print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value[0]} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
+            else:
+                print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        
+        if batch % 1 == 0 and hvd.rank() == 0:
             # write metrics
             with writer.as_default():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
                 tf.summary.scalar("train_loss", loss_value, step=batch)
                 tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                if args.bert_step == "pretraining":
+                    tf.summary.scalar("train_accuracy_mask", train_accuracy_mask.result().numpy(), step=batch)
                 writer.flush()
-            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+
+            if args.bert_step == "pretraining":
+                td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
+            else:
+                td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
-                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+                if args.bert_step == "pretraining":
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=val_accuracy_mask)
+                else:
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
             # adjust learning rate
             if args.lr_decay:
@@ -898,44 +901,49 @@ def main():
                     new_lr = current_lr / 2
                     opt.learning_rate = new_lr
 
-            # if hvd.rank() == 0:
-            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+            if hvd.rank() == 0:
+                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
             
-            with writer.as_default():
-                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-                writer.flush()
-            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+                with writer.as_default():
+                    tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                    tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                    writer.flush()
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
 
-            if args.early_stopping:
-                # assess end of training
-                on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
+                if args.early_stopping:
+                    # assess end of training
+                    on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
-                # print(f'val_loss_before: {val_loss_before}')
-                print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
-                # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
-                print(f'patience: {patience}')
-                # print(f'patience overfitting: {overfitting_patience}')
-                # print(f'wait: {wait}')
-                print(f'best val loss: {best_loss}')
-                print(f'stop training: {stop_training}')
-                print(f'found min: {found_min}')
-                print(f'min epoch: {min_epoch}')
+                    # print(f'val_loss_before: {val_loss_before}')
+                    print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
+                    # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
+                    print(f'patience: {patience}')
+                    # print(f'patience overfitting: {overfitting_patience}')
+                    # print(f'wait: {wait}')
+                    print(f'best val loss: {best_loss}')
+                    print(f'stop training: {stop_training}')
+                    print(f'found min: {found_min}')
+                    print(f'min epoch: {min_epoch}')
 
-                if stop_training or epoch == args.epochs:
-                    if found_min:
-                        model.set_weights(best_weights)
-                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
-                        best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                        best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
-                        with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
-                            f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
-                    break
-            else:
-                # save weights
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                    if stop_training or epoch == args.epochs:
+                        if found_min:
+                            model.set_weights(best_weights)
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                            best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                            best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
+                            with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
+                                f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                        break
+                    
+                    # save weights every 5 epochs just for safety precautions
+                    if batch % 5 == 0:
+                        checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                else:
+                    # save weights
+                    checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
 
             # reset metrics variables at the end of epoch
             val_loss.reset_states()
