@@ -394,12 +394,22 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
             # logits = model(**data).logits
-            outputs = model(**data)
-            logits = outputs.logits
-            loss_value_1 = outputs.loss
-            probs = tf.nn.softmax(logits, axis=-1)
-            labels = data["labels"]
-            loss_value = loss(labels, probs)
+            outputs = model(input_ids=data["input_ids"], token_type_ids=data["token_type_ids"], attention_mask=data["attention_mask"], labels=data["labels"])
+            loss_value = outputs.loss
+            # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
+            mask_token_index_1 = tf.where((data["input_ids"] == 4)[0])
+            # retrieve index of masked+replaced+same tokens
+            mask_token_index_2 = tf.where((data["labels"] != 100)[0])
+            selected_logits_1 = tf.gather_nd(logits[0], indices=mask_token_index_1)
+            selected_logits_2 = tf.gather_nd(logits[0], indices=mask_token_index_2)
+            selected_labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
+            labels = tf.gather_nd(data["labels"], indices=mask_token_index_2)
+            probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
+            probs = tf.nn.softmax(selected_logits_2, axis=-1)
+            loss_value_1 = loss(selected_labels_1, probs_1)
+            loss_value_2 = loss(labels, probs)
+            # predictions_1 = tf.argmax(selected_logits_1, axis=-1, output_type=tf.int32)
+            # predictions_2 = tf.argmax(selected_logits_2, axis=-1, output_type=tf.int32)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -432,7 +442,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_value_1, probs, labels
+    return loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, outputs
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -814,8 +824,13 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, loss_value_1, probs, labels = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(outputs)
+        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
+        print(f'probs: {probs_1}\t{probs_1.shape}')
+        print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
+        PRINT('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
         print(f'probs: {probs}\t{probs.shape}')
         print(f'labels: {labels}\t{labels.shape}')
         break
