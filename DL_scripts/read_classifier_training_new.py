@@ -394,8 +394,9 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
             mask_token_id = 4
-            logits = model(**data).logits
-            mask_token_index = tf.where((data["input_ids"] == mask_token_id)[0])
+            # logits = model(**data).logits
+            outputs = model(**data, labels=data["labels"])
+            loss_value = round(float(outputs.loss), 2)
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
     #         probs = tf.nn.softmax(logits, axis=-1)
@@ -435,7 +436,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value
-    return mask_token_index
+    return outputs, loss_value
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -817,14 +818,8 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        mask_token_index = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'input_ids: {data["input_ids"][0]}')
-        print(f'mask_token_index: {mask_token_index}\t{len(mask_token_index)}')
-        print(f'labels: {data["labels"][0]}')
-        mask_token_values_1 = tf.where(data["labels"][0] != -100)
-        mask_token_values_2 = tf.where(data["input_ids"][0] == 4)
-        print(f'mask_token_values_1: {mask_token_values_1}\t{len(mask_token_values_1)}')
-        print(f'mask_token_values_2: {mask_token_values_2}\t{len(mask_token_values_2)}')
+        outputs, loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(outputs)
         break
     #     # if batch == 1:
     #     #     all_labels = [labels]
