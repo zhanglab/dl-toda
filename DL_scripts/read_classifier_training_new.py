@@ -356,7 +356,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch):
+def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, train_accuracy_mask=None):
     training = True
     with tf.GradientTape() as tape:
         # if model_type == 'BERT' and bert_step == "finetuning":
@@ -452,7 +452,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
     # update training accuracy
     if args.bert_step == 'pretraining':
-        train_accuracy_all.update_state(labels_2, logits_2)
+        train_accuracy.update_state(labels_2, logits_2)
         train_accuracy_mask.update_state(labels_1, logits_1)
     else:
         train_accuracy.update_state(labels, probs)
@@ -834,8 +834,8 @@ def main():
     val_loss = tf.keras.metrics.Mean(name='val_loss')
     if args.bert_step == "pretraining":
         # compute accuracy for all positions that have been selected to be modified (masked, replaced by another nucleotide or remained the same)
-        train_accuracy_all = tf.keras.metrics.Accuracy(name='train_accuracy_all')
-        val_accuracy_all = tf.keras.metrics.Accuracy(name='val_accuracy_all')
+        train_accuracy = tf.keras.metrics.Accuracy(name='train_accuracy_all')
+        val_accuracy = tf.keras.metrics.Accuracy(name='val_accuracy_all')
         # Compute the accuracy using only the positions that have been selected to be replaced by the MASK token
         train_accuracy_mask = tf.keras.metrics.Accuracy(name='train_accuracy_mask')
         val_accuracy_mask = tf.keras.metrics.Accuracy(name='val_accuracy_mask')
@@ -847,22 +847,23 @@ def main():
 
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
-    for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-
-        print('logits_1:', logits_1, logits_1.shape)
-        print('logits_2:', logits_2, logits_2.shape)
-        print('labels_1:', labels_1, labels_1.shape)
-        print('labels_2:', labels_2, labels_2.shape)
-        print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
-        print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
-        print("labels in first DNA sequences:", data["labels"][0])
-        mask_token_index_first_1 = tf.where((data["labels"][0] != -100))
-        mask_token_index_first_2 = tf.where((data["input_ids"][0] == 4))
-        print('mask_token_index_first_1', mask_token_index_first_1, mask_token_index_first_1.shape)
-        print('mask_token_index_first_2', mask_token_index_first_2, mask_token_index_first_2.shape)
-        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy_all.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
-
+    for batch, data in enumerate(train_input.take(num_train_steps), 1):       
+        if args.bert_step == "pretrianing": 
+            loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
+            print('logits_1:', logits_1, logits_1.shape)
+            print('logits_2:', logits_2, logits_2.shape)
+            print('labels_1:', labels_1, labels_1.shape)
+            print('labels_2:', labels_2, labels_2.shape)
+            print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
+            print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
+            print("labels in first DNA sequences:", data["labels"][0])
+            mask_token_index_first_1 = tf.where((data["labels"][0] != -100))
+            mask_token_index_first_2 = tf.where((data["input_ids"][0] == 4))
+            print('mask_token_index_first_1', mask_token_index_first_1, mask_token_index_first_1.shape)
+            print('mask_token_index_first_2', mask_token_index_first_2, mask_token_index_first_2.shape)
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
+        else:
+            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
         break
         # if batch == 1:
