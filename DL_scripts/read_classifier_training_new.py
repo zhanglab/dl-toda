@@ -402,10 +402,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, 2) - first value indicates which vector in the batch
             # and the second value corresponds to the index of the masked token
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
-            mask_token_index_1 = tf.where((data["input_ids"] == 4))
+            mask_token_index_1 = tf.where((input_ids == 4))
             # shape of mask_token_index_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
             # retrieve index of masked+replaced+same tokens
-            mask_token_index_2 = tf.where((data["labels"] != -100))
+            mask_token_index_2 = tf.where((labels != -100))
             # retrieve logits at indices of interest
             # shape of logits_1: (batch_size*<number of 'MASK' tokens>, vocab_size)
             logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
@@ -413,9 +413,9 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
             # retrieve labels of indices of interest
             # shape of labels_1: (batch_size*<number of 'MASK' tokens>,)
-            labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
+            labels_1 = tf.gather_nd(labels, indices=mask_token_index_1)
             # shape of labels_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
-            labels_2 = tf.gather_nd(data["labels"], indices=mask_token_index_2)
+            labels_2 = tf.gather_nd(labels, indices=mask_token_index_2)
             # get predicted labels
             # shape of predictions_1: (batch_size*<number of 'MASK' tokens>,)
             predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
