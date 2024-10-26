@@ -103,9 +103,9 @@ def get_masked_array(args, mlm_positions, input_array):
             elif r_type[0] == 'same':
                 continue
     masked = final_types.count("masked")
-    random = final_types.count("random")
+    n_random = final_types.count("random")
     same = final_types.count("same")
-    print(f'masked: {masked}\t{masked/len(mlm_positions)}\nrandom: {random}\t{random/len(mlm_positions)}\nsame: {same}\t{same/len(mlm_positions)}')
+    print(f'masked: {masked}\t{masked/len(mlm_positions)}\nrandom: {n_random}\t{n_random/len(mlm_positions)}\nsame: {same}\t{same/len(mlm_positions)}')
     print(len(output))
     print(len(mlm_positions))
     print(0.8*len(mlm_positions))
