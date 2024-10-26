@@ -848,7 +848,7 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):       
-        if args.bert_step == "pretrianing": 
+        if args.bert_step == "pretraining": 
             loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
             print('logits_1:', logits_1, logits_1.shape)
             print('logits_2:', logits_2, logits_2.shape)
