@@ -855,9 +855,9 @@ def main():
         #     all_input_ids = [input_ids]
         # else:
         #     all_labels = tf.concat([all_labels, [labels]], 1)
-        print(batch, len(input_ids), len(all_labels))
+        print(batch, len(input_ids), len(labels))
         for i in range(len(input_ids)):
-            f1.write(f'{labels[i]}\n')
+            f1.write(f'{input_ids[i]}\n')
 
         for i in range(len(labels)):
             f2.write(f'{labels[i]}\n')
