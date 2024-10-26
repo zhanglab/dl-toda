@@ -393,7 +393,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = loss(labels, probs)
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            outputs = model(**data).logits
+            outputs = model(**data)
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
             loss_value = outputs.loss
