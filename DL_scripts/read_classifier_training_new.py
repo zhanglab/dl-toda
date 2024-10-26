@@ -816,8 +816,9 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
         loss_value, loss_value_1, probs, labels = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        print(f'probs: {probs}')
-        print(f'labels: {labels}')
+        print(f'probs: {probs}\t{probs.shape}')
+        print(f'labels: {labels}\t{labels.shape}')
+        break
         # if batch == 1:
         #     all_labels = [labels]
         # else:
