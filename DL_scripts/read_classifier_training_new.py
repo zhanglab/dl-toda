@@ -386,8 +386,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
             logits = model(**data).logits
-            per_example_loss = model(**data).loss
-            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            # per_example_loss = model(**data).loss
+            # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
             labels = data["labels"]
             loss_value = loss(labels, probs)
@@ -432,7 +432,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #update training accuracy
     train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_value_1
+    return loss_value, loss_value_1, probs, labels
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -814,8 +814,10 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        loss_value, loss_value_1, probs, labels = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        print(f'probs: {probs}')
+        print(f'labels: {labels}')
         # if batch == 1:
         #     all_labels = [labels]
         # else:
