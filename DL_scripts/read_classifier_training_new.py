@@ -419,8 +419,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # probs = tf.nn.softmax(selected_logits_2, axis=-1)
             # loss_value_1 = loss(selected_labels_1, selected_logits_1)
             # loss_value_2 = loss(labels, selected_logits_2)
-            # predictions_1 = tf.argmax(selected_logits_1, axis=-1, output_type=tf.int32)
-            # predictions_2 = tf.argmax(selected_logits_2, axis=-1, output_type=tf.int32)
+            predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
+            predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -458,7 +458,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #     train_accuracy.update_state(labels, probs)
 
     # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
-    return loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2
+    return loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2, predictions_1, predictions_2
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -849,9 +849,11 @@ def main():
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):       
         if args.bert_step == "pretraining": 
-            loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
+            loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2, predictions_1, predictions_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
             print('logits_1:', logits_1, logits_1.shape)
             print('logits_2:', logits_2, logits_2.shape)
+            print('predictions_1:', predictions_1, predictions_1.shape)
+            print('predictions_2:', predictions_2, predictions_2.shape)
             print('labels_1:', labels_1, labels_1.shape)
             print('labels_2:', labels_2, labels_2.shape)
             print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
