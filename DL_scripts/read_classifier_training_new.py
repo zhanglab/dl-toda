@@ -398,13 +398,15 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
             loss_value = outputs.loss
+            # shape of mask_token_index_1: (batch_size, <number of 'MASK' tokens>)
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
             mask_token_index_1 = tf.where((data["input_ids"] == 4)[0])
+            # shape of mask_token_index_2: (batch_size, <number of tokens not set to -100 --> masked, replaced, same >)
             # retrieve index of masked+replaced+same tokens
             mask_token_index_2 = tf.where((data["labels"] != -100)[0])
             # retrieve logits at indices of interest
-            selected_logits_1 = tf.gather_nd(logits[0], indices=mask_token_index_1)
-            selected_logits_2 = tf.gather_nd(logits[0], indices=mask_token_index_2)
+            selected_logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
+            selected_logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
             selected_labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
             labels = tf.gather_nd(data["labels"], indices=mask_token_index_2)
             # probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
@@ -446,7 +448,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
-    return selected_logits_1, selected_logits_2, selected_labels_1, labels
+    return selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -832,11 +834,15 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        selected_logits_1, selected_logits_2, selected_labels_1, labels = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(f'logits 1: {selected_logits_1}\t{selected_logits_1.shape}')
-        print(f'logits 2: {selected_logits_2}\t{selected_logits_2.shape}')
-        print(f'selected labels 1: {selected_labels_1}\t{selected_labels_1.shape}')
-        print(f'selected labels 2: {labels}\t{labels.shape}')
+        logits, selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print('logits:', logits, logits.shape)
+        print('logits[0]:', logits[0], logits[0].shape)
+        print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
+        print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
+        # print(f'logits 1: {selected_logits_1}\t{selected_logits_1.shape}')
+        # print(f'logits 2: {selected_logits_2}\t{selected_logits_2.shape}')
+        # print(f'selected labels 1: {selected_labels_1}\t{selected_labels_1.shape}')
+        # print(f'selected labels 2: {labels}\t{labels.shape}')
         # print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         # print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
         # print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
