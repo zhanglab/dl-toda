@@ -393,7 +393,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = loss(labels, probs)
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            outputs = model(**data)
+            # outputs = model(**data)
+            outputs = model(input_ids=data["input_ids"], token_type_ids=data["token_type_ids"], attention_mask=data["attention_mask"], labels=data["labels"])
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
             loss_value = outputs.loss[0]
@@ -564,7 +565,7 @@ def main():
     # Map one GPU per process
     # use hvd.local_rank() for gpu pinning instead of hvd.rank()
     gpus = tf.config.experimental.list_physical_devices('GPU')
-    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()}')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     if gpus:
