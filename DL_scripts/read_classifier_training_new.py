@@ -825,15 +825,15 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, predictions_1, predictions_2, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        loss_value, selected_labels_1, labels, predictions_1, predictions_2, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(outputs)
-        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
         print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
-        print(f'probs: {probs_1}\t{probs_1.shape}')
         print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
+        print(f'predictions: {predictions_1}\t{predictions_1.shape}')
         PRINT('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
-        print(f'probs: {probs}\t{probs.shape}')
         print(f'labels: {labels}\t{labels.shape}')
+        print(f'predictions: {predictions_2}\t{predictions_2.shape}')
         break
         # if batch == 1:
         #     all_labels = [labels]
