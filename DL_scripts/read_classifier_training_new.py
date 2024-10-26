@@ -451,7 +451,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     # update training accuracy
-    if args.bert_step == 'pretraining':
+    if bert_step == 'pretraining':
         train_accuracy.update_state(labels_2, logits_2)
         train_accuracy_mask.update_state(labels_1, logits_1)
     else:
