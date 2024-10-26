@@ -831,7 +831,7 @@ def main():
         print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
         print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
         print(f'predictions: {predictions_1}\t{predictions_1.shape}')
-        PRINT('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
+        print('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
         print(f'labels: {labels}\t{labels.shape}')
         print(f'predictions: {predictions_2}\t{predictions_2.shape}')
         break
