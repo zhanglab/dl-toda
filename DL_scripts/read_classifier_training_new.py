@@ -407,10 +407,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             labels = tf.gather_nd(data["labels"], indices=mask_token_index_2)
             probs_1 = tf.nn.softmax(selected_logits_1, axis=-1)
             probs = tf.nn.softmax(selected_logits_2, axis=-1)
-            loss_value_1 = loss(selected_labels_1, probs_1)
-            loss_value_2 = loss(labels, probs)
-            # predictions_1 = tf.argmax(selected_logits_1, axis=-1, output_type=tf.int32)
-            # predictions_2 = tf.argmax(selected_logits_2, axis=-1, output_type=tf.int32)
+            loss_value_1 = loss(selected_labels_1, selected_logits_1)
+            loss_value_2 = loss(labels, selected_logits_2)
+            predictions_1 = tf.argmax(selected_logits_1, axis=-1, output_type=tf.int32)
+            predictions_2 = tf.argmax(selected_logits_2, axis=-1, output_type=tf.int32)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -443,7 +443,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #update training accuracy
     # train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, outputs
+    return loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, predictions_1, predictions_2, outputs
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -825,7 +825,7 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, predictions_1, predictions_2, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(outputs)
         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1}\t{loss_value_2} - Training accuracy: {train_accuracy.result().numpy()*100}')
         print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
