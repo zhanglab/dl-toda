@@ -396,7 +396,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             outputs = model(**data)
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
-            loss_value = outputs.loss
+            loss_value = outputs.loss[0]
             # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, 2) - first value indicates which vector in the batch
             # and the second value corresponds to the index of the masked token
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
@@ -491,7 +491,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
     elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
         outputs = model(**data).logits
         logits = outputs.logits
-        loss_value = outputs.loss
+        loss_value = outputs.loss[0]
         mask_token_index_1 = tf.where((data["input_ids"] == 4))
         mask_token_index_2 = tf.where((data["labels"] != -100))
         logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
