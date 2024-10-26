@@ -400,10 +400,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = outputs.loss
             # shape of mask_token_index_1: (batch_size, <number of 'MASK' tokens>)
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
-            mask_token_index_1 = tf.where((data["input_ids"] == 4)[0])
+            mask_token_index_1 = tf.where((data["input_ids"] == 4))
             # shape of mask_token_index_2: (batch_size, <number of tokens not set to -100 --> masked, replaced, same >)
             # retrieve index of masked+replaced+same tokens
-            mask_token_index_2 = tf.where((data["labels"] != -100)[0])
+            mask_token_index_2 = tf.where((data["labels"] != -100))
             # retrieve logits at indices of interest
             # shape of selected_logits_1: {batch_size, <number of 'MASK' tokens>, vocab_size}
             selected_logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
@@ -836,9 +836,8 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        logits, selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print('logits:', logits, logits.shape)
-        print('logits[0]:', logits[0], logits[0].shape)
+        selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+
         print('selected_logits_1:', selected_logits_1, selected_logits_1.shape)
         print('selected_logits_2:', selected_logits_2, selected_logits_2.shape)
         print('selected_labels_1:', selected_labels_1, selected_labels_1.shape)
