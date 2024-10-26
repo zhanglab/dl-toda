@@ -451,11 +451,11 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     # update training accuracy
-    if bert_step == 'pretraining':
-        train_accuracy.update_state(labels_2, logits_2)
-        train_accuracy_mask.update_state(labels_1, logits_1)
-    else:
-        train_accuracy.update_state(labels, probs)
+    # if bert_step == 'pretraining':
+    #     train_accuracy.update_state(labels_2, logits_2)
+    #     train_accuracy_mask.update_state(labels_1, logits_1)
+    # else:
+    #     train_accuracy.update_state(labels, probs)
 
     # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
     return loss_value, logits_1, logits_2, labels_1, labels_2, mask_token_index_1, mask_token_index_2
