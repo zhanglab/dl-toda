@@ -171,10 +171,13 @@ def process_dnabert_data(args, dna_sequences, labels):
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
             # if len(mlm_positions) == 1:
-            #     print(f'length of sequence: {len(seq)}\t{seq}')
-            #     print(f'mlm_positions\t{mlm_positions}')
-            #     print(f'dna_list\t{dna_list}')
-            #     print(f'mlm_labels: {mlm_labels}')
+            print(f'length of sequence: {len(seq)}\t{seq}')
+            print(f'mlm_positions\t{mlm_positions}')
+            print(f'dna_list\t{dna_list}')
+            print(f'mlm_labels: {mlm_labels}')
+            mask_token_values_1 = tf.where(mlm_labels != -100)
+            mask_token_values_2 = tf.where(mlm_dna_list == 4)
+            break
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
             dna_list = mlm_dna_list
