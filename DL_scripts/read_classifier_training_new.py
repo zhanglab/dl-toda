@@ -839,40 +839,47 @@ def main():
 
     start = datetime.datetime.now()
 
-    all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-    all_input_ids = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-
+    # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    # all_input_ids = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+    f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'w')
+    f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'w')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        input_ids, attention_mask, token_type_ids, labels = data 
+        input_ids, _, _, labels = data 
         # if args.bert_step == "pretraining": 
         #     loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
         # else:
         #     loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
 
-        if batch == 1:
-            all_labels = [labels]
-            all_input_ids = [input_ids]
-        else:
-            all_labels = tf.concat([all_labels, [labels]], 1)
+        # if batch == 1:
+        #     all_labels = [labels]
+        #     all_input_ids = [input_ids]
+        # else:
+        #     all_labels = tf.concat([all_labels, [labels]], 1)
+        print(batch, len(input_ids), len(all_labels))
+        for i in range(len(input_ids)):
+            f1.write(f'{labels[i]}\n')
 
-    all_input_ids = all_input_ids[0].numpy()
-    all_labels = all_labels[0].numpy()
-    num_extra_reads = (num_train_steps*args.batch_size) - train_reads_per_epoch
-    print(f'num_extra_reads: {num_extra_reads}')
-    print(f'all_labels shape: {all_labels.shape}')
-    print(f'all_input_ids shape: {all_input_ids.shape}')
-    all_labels = all_labels[:-num_extra_reads]
-    all_input_ids = all_input_ids[:-num_extra_reads]
-    print(f'all_labels shape: {all_labels.shape}')
-    print(f'all_input_ids shape: {all_input_ids.shape}')
+        for i in range(len(labels)):
+            f2.write(f'{labels[i]}\n')
 
-    with open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'w') as f:
-        for i in range(len(all_input_ids)):
-            f.write(f'{all_input_ids[i]}\n')
+    # all_input_ids = all_input_ids[0].numpy()
+    # all_labels = all_labels[0].numpy()
+    # num_extra_reads = (num_train_steps*args.batch_size) - train_reads_per_epoch
+    # print(f'num_extra_reads: {num_extra_reads}')
+    # print(f'all_labels shape: {all_labels.shape}')
+    # print(f'all_input_ids shape: {all_input_ids.shape}')
+    # all_labels = all_labels[:-num_extra_reads]
+    # all_input_ids = all_input_ids[:-num_extra_reads]
+    # print(f'all_labels shape: {all_labels.shape}')
+    # print(f'all_input_ids shape: {all_input_ids.shape}')
 
-    with open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'w') as f:
-        for i in range(len(all_labels)):
-            f.write(f'{all_labels[i]}\n')
+    # with open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'w') as f:
+    #     for i in range(len(all_input_ids)):
+    #         f.write(f'{all_input_ids[i]}\n')
+
+    # with open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'w') as f:
+    #     for i in range(len(all_labels)):
+    #         f.write(f'{all_labels[i]}\n')
         # if batch % 100 == 0 and hvd.rank() == 0:
         #     if args.bert_step == "pretraining":
         #         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
