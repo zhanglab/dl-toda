@@ -811,28 +811,17 @@ def main():
     with open(val_num_reads[0], 'r') as infile:
         val_reads_per_epoch = int(infile.readline())
 
-    # compute number of steps/batches per epoch
-    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
-    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
-    num_train_steps = math.ceil(train_reads_per_epoch/args.batch_size*args.epochs)
-    # num_train_steps = int(args.train_reads_per_epoch/args.batch_size*args.epochs)
+    # compute number of steps/batches per epoch with horovod imported
+    nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(val_reads_per_epoch/args.batch_size)
-    num_val_steps = int(val_reads_per_epoch/args.batch_size)
-
+    val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
     print(f'number of train steps: {num_train_steps}')
 
-    # # compute number of steps/batches per epoch with horovod imported
-    # nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
-    # num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
-    # # compute number of steps/batches to iterate over entire validation set
-    # val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-    # num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-
-
-    # if hvd.rank() == 0:
-    # create checkpoint object to save model
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    if hvd.rank() == 0:
+        # create checkpoint object to save model
+        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -987,12 +976,10 @@ def main():
 
     # print(d_labels)
     
-    # if hvd.rank() == 0 and args.model_type != 'BERT':
-    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+    if hvd.rank() == 0 and args.model_type != 'BERT':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
-        print(f'# embeddings: {len(emb_weights)}')
         for i in range(len(emb_weights)):
             vec = emb_weights[i]
             out_v.write('\t'.join([str(x) for x in vec]) + "\n")
@@ -1000,29 +987,24 @@ def main():
 
     end = datetime.datetime.now()
 
-    # if hvd.rank() == 0:
-    total_time = end - start
-    hours, seconds = divmod(total_time.seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-    # create summary file
-    #     if args.model_type != 'BERT':
-    #         f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
+    if hvd.rank() == 0:
+        total_time = end - start
+        hours, seconds = divmod(total_time.seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
 
-    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-                f'Vector size\t{args.vector_size}\n'
-                f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-                f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
-                # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-                f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-                f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-                f'Initial learning rate\t{args.init_lr}\n')
-        # \nNumber of classes\t{num_labels}
-        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-    print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-    td_writer.close()
-    vd_writer.close()
+        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
+                    f'Batch size per gpu\t{args.batch_size}\n'
+                    f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                    f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
+                    f'Number of steps per epoch\t{num_train_steps}\nNumber of steps for validation dataset\t{num_val_steps}\n'
+                    f'Initial learning rate\t{args.init_lr}\n')
+            if args.model_type in ["LSTM", "AlexNet"]:
+                f.write(f'Vector size\t{args.vector_size}\n')
+            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+        td_writer.close()
+        vd_writer.close()
 
 
 if __name__ == "__main__":
