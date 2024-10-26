@@ -398,10 +398,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
             loss_value = outputs.loss
-            # shape of mask_token_index_1: (batch_size, <number of 'MASK' tokens>)
+            # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, vocab_size)
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
             mask_token_index_1 = tf.where((data["input_ids"] == 4))
-            # shape of mask_token_index_2: (batch_size, <number of tokens not set to -100 --> masked, replaced, same >)
+            # shape of mask_token_index_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
             # retrieve index of masked+replaced+same tokens
             mask_token_index_2 = tf.where((data["labels"] != -100))
             # retrieve logits at indices of interest
@@ -844,7 +844,12 @@ def main():
         print('selected_labels_2:', labels, labels.shape)
         print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
         print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
-        print("labels:", data["labels"])
+        print("labels in first DNA sequences:", data["labels"][0])
+        mask_token_index_first_1 = tf.where((data["labels"][0] != -100))
+        mask_token_index_first_2 = tf.where((data["input_ids"][0] == 4))
+        print('mask_token_index_first_1', mask_token_index_first_1, mask_token_index_first_1.shape)
+        print('mask_token_index_first_2', mask_token_index_first_2, mask_token_index_first_2.shape)
+
         # print(f'logits 1: {selected_logits_1}\t{selected_logits_1.shape}')
         # print(f'logits 2: {selected_logits_2}\t{selected_logits_2.shape}')
         # print(f'selected labels 1: {selected_labels_1}\t{selected_labels_1.shape}')
