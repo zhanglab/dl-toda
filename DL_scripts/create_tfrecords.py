@@ -178,7 +178,8 @@ def process_dnabert_data(args, dna_sequences, labels):
             print(f'mlm_labels: {mlm_labels}')
             mask_token_values_1 = tf.where(mlm_labels != -100)
             mask_token_values_2 = tf.where(mlm_dna_list == 4)
-            break
+            if i == 5:
+                break
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
             dna_list = mlm_dna_list
