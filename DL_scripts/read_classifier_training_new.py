@@ -844,6 +844,7 @@ def main():
         print('selected_labels_2:', labels, labels.shape)
         print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
         print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
+        print("labels:", data["labels"])
         # print(f'logits 1: {selected_logits_1}\t{selected_logits_1.shape}')
         # print(f'logits 2: {selected_logits_2}\t{selected_logits_2.shape}')
         # print(f'selected labels 1: {selected_labels_1}\t{selected_labels_1.shape}')
