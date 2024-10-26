@@ -441,7 +441,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     #update training accuracy
-    train_accuracy.update_state(labels, probs)
+    # train_accuracy.update_state(labels, probs)
 
     return loss_value, loss_value_1, loss_value_2, selected_labels_1, labels, probs_1, probs, outputs
 
