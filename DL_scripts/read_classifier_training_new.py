@@ -400,7 +400,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
             mask_token_index_1 = tf.where((data["input_ids"] == 4)[0])
             # retrieve index of masked+replaced+same tokens
-            mask_token_index_2 = tf.where((data["labels"] != 100)[0])
+            mask_token_index_2 = tf.where((data["labels"] != -100)[0])
             selected_logits_1 = tf.gather_nd(logits[0], indices=mask_token_index_1)
             selected_logits_2 = tf.gather_nd(logits[0], indices=mask_token_index_2)
             selected_labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
@@ -443,7 +443,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     #update training accuracy
     # train_accuracy.update_state(labels, probs)
 
-    return loss_value, selected_labels_1, labels, predictions_1, predictions_2, outputs
+    # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
+    return logits
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -817,23 +818,27 @@ def main():
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
     val_loss = tf.keras.metrics.Mean(name='val_loss')
-    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
-    val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
+    if args.bert_step == "pretraining":
+        train_accuracy = tf.keras.metrics.Accuracy(name='train_accuracy')
+        val_accuracy = tf.keras.metrics.Accuracy(name='val_accuracy')
+    else:
+        train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
     start = datetime.datetime.now()
 
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        loss_value, selected_labels_1, labels, predictions_1, predictions_2, outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(outputs)
-        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-        print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
-        print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
-        print(f'predictions: {predictions_1}\t{predictions_1.shape}')
-        print('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
-        print(f'labels: {labels}\t{labels.shape}')
-        print(f'predictions: {predictions_2}\t{predictions_2.shape}')
+        logits = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(f'logits: {logits}\t{logits.shape}')
+        # print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # print('ONLY CONSIDER THE POSITIONS WITH THE MASK TOKEN')
+        # print(f'labels: {selected_labels_1}\t{selected_labels_1.shape}')
+        # print(f'predictions: {predictions_1}\t{predictions_1.shape}')
+        # print('LOOK AT POSITIONS WITH MASK AND POSITIONS THAT HAVE BEEN REPLACED OR KEPT THE SAME')
+        # print(f'labels: {labels}\t{labels.shape}')
+        # print(f'predictions: {predictions_2}\t{predictions_2.shape}')
         break
         # if batch == 1:
         #     all_labels = [labels]
