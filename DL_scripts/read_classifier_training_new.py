@@ -384,59 +384,55 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
         #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
-        # if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
-            # logits = model(**data).logits
-    #         per_example_loss = model(**data).loss
-    #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-    #         probs = tf.nn.softmax(logits, axis=-1)
-    #         labels = data["labels"]
-    #         loss_value = loss(labels, probs)
+        if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+            logits = model(**data).logits
+            per_example_loss = model(**data).loss
+            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            probs = tf.nn.softmax(logits, axis=-1)
+            labels = data["labels"]
+            loss_value = loss(labels, probs)
 
-        if model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            mask_token_id = 4
+        elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
             # logits = model(**data).logits
             outputs = model(**data)
-            # loss_value = round(float(outputs.loss), 2)
-    #         per_example_loss = model(**data).loss
-    #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-    #         probs = tf.nn.softmax(logits, axis=-1)
-    #         labels = data["labels"]
-    #         loss_value = loss(labels, probs)
-            
-    #     else:
-    #         reads, labels = data
-    #         probs = model(reads, training=training)
-    #         # get the loss
-    #         loss_value = loss(labels, probs)
+            logits = outputs.logits
+            loss_value_1 = outputs.loss
+            probs = tf.nn.softmax(logits, axis=-1)
+            labels = data["labels"]
+            loss_value = loss(labels, probs)
+        else:
+            reads, labels = data
+            probs = model(reads, training=training)
+            # get the loss
+            loss_value = loss(labels, probs)
         
-    #     # scale the loss (multiply the loss by a factor) to avoid numeric underflow
-    #     scaled_loss = opt.get_scaled_loss(loss_value)
+        # scale the loss (multiply the loss by a factor) to avoid numeric underflow
+        scaled_loss = opt.get_scaled_loss(loss_value)
     
-    # # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
-    # # combine gradient values before applying gradients to model weights
-    # tape = hvd.DistributedGradientTape(tape)
-    # # get the scaled gradients
-    # scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
-    # # get the unscaled gradients
-    # grads = opt.get_unscaled_gradients(scaled_gradients)
-    # # grads = tape.gradient(loss_value, model.trainable_variables)
-    # #opt.apply_gradients(zip(grads, model.trainable_variables))
-    # opt.apply_gradients(zip(grads, model.trainable_variables))
-    # # Horovod: broadcast initial variable states from rank 0 to all other processes.
-    # # This is necessary to ensure consistent initialization of all workers when
-    # # training is started with random weights or restored from a checkpoint.
-    # # Note: broadcast should be done after the first gradient step to ensure optimizer
-    # # initialization.
-    # if first_batch:
-    #     print(f'First_batch: {first_batch}')
-    #     hvd.broadcast_variables(model.variables, root_rank=0)
-    #     hvd.broadcast_variables(opt.variables(), root_rank=0)
+    # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
+    # combine gradient values before applying gradients to model weights
+    tape = hvd.DistributedGradientTape(tape)
+    # get the scaled gradients
+    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    # get the unscaled gradients
+    grads = opt.get_unscaled_gradients(scaled_gradients)
+    # grads = tape.gradient(loss_value, model.trainable_variables)
+    #opt.apply_gradients(zip(grads, model.trainable_variables))
+    opt.apply_gradients(zip(grads, model.trainable_variables))
+    # Horovod: broadcast initial variable states from rank 0 to all other processes.
+    # This is necessary to ensure consistent initialization of all workers when
+    # training is started with random weights or restored from a checkpoint.
+    # Note: broadcast should be done after the first gradient step to ensure optimizer
+    # initialization.
+    if first_batch:
+        print(f'First_batch: {first_batch}')
+        hvd.broadcast_variables(model.variables, root_rank=0)
+        hvd.broadcast_variables(opt.variables(), root_rank=0)
 
-    # #update training accuracy
-    # train_accuracy.update_state(labels, probs)
+    #update training accuracy
+    train_accuracy.update_state(labels, probs)
 
-    # return loss_value
-    return outputs
+    return loss_value, loss_value_1
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -818,137 +814,135 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
-        print(outputs)
-        print(outputs.loss)
-        break
-    #     # if batch == 1:
-    #     #     all_labels = [labels]
-    #     # else:
-    #     #     all_labels = tf.concat([all_labels, [labels]], 1)
-    #     # if batch % 100 == 0 and hvd.rank() == 0:
-    #     if batch % 100 == 0:
-    #         print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
-    #     # if batch % 1 == 0 and hvd.rank() == 0:
-    #     if batch % 1 == 0:
-    #         # write metrics
-    #         with writer.as_default():
-    #             tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
-    #             tf.summary.scalar("train_loss", loss_value, step=batch)
-    #             tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-    #             writer.flush()
-    #         td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
+        loss_value, loss_value_1 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value}\t{loss_value_1} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # if batch == 1:
+        #     all_labels = [labels]
+        # else:
+        #     all_labels = tf.concat([all_labels, [labels]], 1)
+        # if batch % 100 == 0 and hvd.rank() == 0:
+        if batch % 100 == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
+        # if batch % 1 == 0 and hvd.rank() == 0:
+        if batch % 1 == 0:
+            # write metrics
+            with writer.as_default():
+                tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
+                tf.summary.scalar("train_loss", loss_value, step=batch)
+                tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
+                writer.flush()
+            td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
-    #     # evaluate model at the end of every epoch
-    #     if batch % nstep_per_epoch == 0:
-    #         # evaluate model
-    #         for _, data in enumerate(val_input.take(val_steps)):
-    #             testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+        # evaluate model at the end of every epoch
+        if batch % nstep_per_epoch == 0:
+            # evaluate model
+            for _, data in enumerate(val_input.take(val_steps)):
+                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
 
-    #         # adjust learning rate
-    #         if args.lr_decay:
-    #             if epoch % args.lr_decay == 0:
-    #                 current_lr = opt.learning_rate
-    #                 new_lr = current_lr / 2
-    #                 opt.learning_rate = new_lr
+            # adjust learning rate
+            if args.lr_decay:
+                if epoch % args.lr_decay == 0:
+                    current_lr = opt.learning_rate
+                    new_lr = current_lr / 2
+                    opt.learning_rate = new_lr
 
-    #         # if hvd.rank() == 0:
-    #         print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+            # if hvd.rank() == 0:
+            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
             
-    #         with writer.as_default():
-    #             tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
-    #             tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-    #             writer.flush()
-    #         vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+            with writer.as_default():
+                tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
+                tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                writer.flush()
+            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
 
-    #         if args.early_stopping:
-    #             # assess end of training
-    #             on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
+            if args.early_stopping:
+                # assess end of training
+                on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
-    #             # print(f'val_loss_before: {val_loss_before}')
-    #             print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
-    #             # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
-    #             print(f'patience: {patience}')
-    #             # print(f'patience overfitting: {overfitting_patience}')
-    #             # print(f'wait: {wait}')
-    #             print(f'best val loss: {best_loss}')
-    #             print(f'stop training: {stop_training}')
-    #             print(f'found min: {found_min}')
-    #             print(f'min epoch: {min_epoch}')
+                # print(f'val_loss_before: {val_loss_before}')
+                print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
+                # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
+                print(f'patience: {patience}')
+                # print(f'patience overfitting: {overfitting_patience}')
+                # print(f'wait: {wait}')
+                print(f'best val loss: {best_loss}')
+                print(f'stop training: {stop_training}')
+                print(f'found min: {found_min}')
+                print(f'min epoch: {min_epoch}')
 
-    #             if stop_training or epoch == args.epochs:
-    #                 if found_min:
-    #                     model.set_weights(best_weights)
-    #                     model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
-    #                     best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-    #                     best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
-    #                     with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
-    #                         f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
-    #                 break
-    #         else:
-    #             # save weights
-    #             checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-    #             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                if stop_training or epoch == args.epochs:
+                    if found_min:
+                        model.set_weights(best_weights)
+                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                        best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                        best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
+                        with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
+                            f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                    break
+            else:
+                # save weights
+                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
 
-    #         # reset metrics variables at the end of epoch
-    #         val_loss.reset_states()
-    #         train_accuracy.reset_states()
-    #         val_accuracy.reset_states()
+            # reset metrics variables at the end of epoch
+            val_loss.reset_states()
+            train_accuracy.reset_states()
+            val_accuracy.reset_states()
 
-    #         # define end of current epoch
-    #         epoch += 1
+            # define end of current epoch
+            epoch += 1
 
-    # # all_labels = all_labels[0].numpy()
-    # # print(f'number of reads: {len(all_labels)}')
-    # # num_extra_reads = num_train_steps*args.batch_size - args.train_reads_per_epoch
-    # # print(f'number of extra reads: {num_extra_reads}')
-    # # all_labels = all_labels[:-num_extra_reads]
-    # # print(f'number of reads: {len(all_labels)}')
-    # # print(f'number of reads in set: {args.train_reads_per_epoch}')
+    # all_labels = all_labels[0].numpy()
+    # print(f'number of reads: {len(all_labels)}')
+    # num_extra_reads = num_train_steps*args.batch_size - args.train_reads_per_epoch
+    # print(f'number of extra reads: {num_extra_reads}')
+    # all_labels = all_labels[:-num_extra_reads]
+    # print(f'number of reads: {len(all_labels)}')
+    # print(f'number of reads in set: {args.train_reads_per_epoch}')
 
-    # # d_labels = defaultdict(int)
-    # # for i in range(len(all_labels)):
-    # #     d_labels[all_labels[i]] += 1
+    # d_labels = defaultdict(int)
+    # for i in range(len(all_labels)):
+    #     d_labels[all_labels[i]] += 1
 
-    # # print(d_labels)
+    # print(d_labels)
     
-    # # if hvd.rank() == 0 and args.model_type != 'BERT':
-    # if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
-    #     # save final embeddings
-    #     emb_weights = model.get_layer('embedding').get_weights()[0]
-    #     out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
-    #     print(f'# embeddings: {len(emb_weights)}')
-    #     for i in range(len(emb_weights)):
-    #         vec = emb_weights[i]
-    #         out_v.write('\t'.join([str(x) for x in vec]) + "\n")
-    #     out_v.close()
+    # if hvd.rank() == 0 and args.model_type != 'BERT':
+    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+        # save final embeddings
+        emb_weights = model.get_layer('embedding').get_weights()[0]
+        out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
+        print(f'# embeddings: {len(emb_weights)}')
+        for i in range(len(emb_weights)):
+            vec = emb_weights[i]
+            out_v.write('\t'.join([str(x) for x in vec]) + "\n")
+        out_v.close()
 
-    # end = datetime.datetime.now()
+    end = datetime.datetime.now()
 
-    # # if hvd.rank() == 0:
-    # total_time = end - start
-    # hours, seconds = divmod(total_time.seconds, 3600)
-    # minutes, seconds = divmod(seconds, 60)
-    # # create summary file
-    # #     if args.model_type != 'BERT':
-    # #         f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
+    # if hvd.rank() == 0:
+    total_time = end - start
+    hours, seconds = divmod(total_time.seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    # create summary file
+    #     if args.model_type != 'BERT':
+    #         f.write(f'Vocabulary size\t{vocab_size}\nEmbedding size\t{args.embedding_size}\n')
 
-    # with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-    #     f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-    #             f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-    #             f'Vector size\t{args.vector_size}\n'
-    #             f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
-    #             f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
-    #             # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
-    #             f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-    #             f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
-    #             f'Initial learning rate\t{args.init_lr}\n')
-    #     # \nNumber of classes\t{num_labels}
-    #     f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-    # print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-    # td_writer.close()
-    # vd_writer.close()
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
+                f'Vector size\t{args.vector_size}\n'
+                f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+                f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
+                # f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
+                f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
+                f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                f'Initial learning rate\t{args.init_lr}\n')
+        # \nNumber of classes\t{num_labels}
+        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    td_writer.close()
+    vd_writer.close()
 
 
 if __name__ == "__main__":
