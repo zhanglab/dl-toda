@@ -396,7 +396,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             mask_token_id = 4
             # logits = model(**data).logits
             outputs = model(**data)
-            loss_value = round(float(outputs.loss), 2)
+            # loss_value = round(float(outputs.loss), 2)
     #         per_example_loss = model(**data).loss
     #         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
     #         probs = tf.nn.softmax(logits, axis=-1)
@@ -436,7 +436,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value
-    return outputs, loss_value
+    return outputs
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -818,7 +818,7 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):        
-        outputs, loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+        outputs = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print(outputs)
         break
     #     # if batch == 1:
