@@ -405,7 +405,9 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # retrieve index of masked+replaced+same tokens
             mask_token_index_2 = tf.where((data["labels"] != -100)[0])
             # retrieve logits at indices of interest
+            # shape of selected_logits_1: {batch_size, <number of 'MASK' tokens>, vocab_size}
             selected_logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
+            # shape of selected_logits_2: {batch_size, <number of tokens not set to -100 --> masked, replaced, same >, vocab_size}
             selected_logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
             selected_labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
             labels = tf.gather_nd(data["labels"], indices=mask_token_index_2)
@@ -448,7 +450,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     # train_accuracy.update_state(labels, probs)
 
     # return loss_value, selected_labels_1, labels, predictions_1, predictions_2, selected_logits_1, selected_logits_2
-    return selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2
+    return logits, selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -837,6 +839,10 @@ def main():
         logits, selected_logits_1, selected_logits_2, selected_labels_1, labels, mask_token_index_1, mask_token_index_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
         print('logits:', logits, logits.shape)
         print('logits[0]:', logits[0], logits[0].shape)
+        print('selected_logits_1:', selected_logits_1, selected_logits_1.shape)
+        print('selected_logits_2:', selected_logits_2, selected_logits_2.shape)
+        print('selected_labels_1:', selected_labels_1, selected_labels_1.shape)
+        print('selected_labels_2:', labels, labels.shape)
         print('mask_token_index_1', mask_token_index_1, mask_token_index_1.shape)
         print('mask_token_index_2', mask_token_index_2, mask_token_index_2.shape)
         # print(f'logits 1: {selected_logits_1}\t{selected_logits_1.shape}')
