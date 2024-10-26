@@ -395,6 +395,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
             # logits = model(**data).logits
             outputs = model(input_ids=data["input_ids"], token_type_ids=data["token_type_ids"], attention_mask=data["attention_mask"], labels=data["labels"])
+            logits = outputs.logits
             loss_value = outputs.loss
             # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
             mask_token_index_1 = tf.where((data["input_ids"] == 4)[0])
