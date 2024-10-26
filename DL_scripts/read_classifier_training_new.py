@@ -812,11 +812,11 @@ def main():
         val_reads_per_epoch = int(infile.readline())
 
     # compute number of steps/batches per epoch with horovod imported
-    nstep_per_epoch = int(args.train_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_train_steps = int(args.train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
+    nstep_per_epoch = int(train_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_train_steps = int(train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_val_steps = int(args.val_reads_per_epoch/(args.batch_size*hvd.size()))
+    val_steps = int(val_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_val_steps = int(val_reads_per_epoch/(args.batch_size*hvd.size()))
     print(f'number of train steps: {num_train_steps}')
 
     if hvd.rank() == 0:
