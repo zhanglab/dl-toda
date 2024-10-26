@@ -166,6 +166,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             mlm_positions.sort()
+            print(f'before dna_list\t{dna_list}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
@@ -173,7 +174,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             # if len(mlm_positions) == 1:
             print(f'length of sequence: {len(seq)}\t{seq}')
             print(f'mlm_positions\t{mlm_positions}')
-            print(f'dna_list\t{dna_list}')
+            print(f'after dna_list\t{mlm_dna_list}')
             print(f'mlm_labels: {mlm_labels}')
             mask_token_values_1 = tf.where(mlm_labels != -100)
             mask_token_values_2 = tf.where(mlm_dna_list == 4)
