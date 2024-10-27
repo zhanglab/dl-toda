@@ -192,7 +192,7 @@ stop_training = False
 found_min = False
 min_epoch = 0
 
-def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model, init_lr):
     global patience
     global best_loss
     global best_val_accuracy
@@ -205,8 +205,8 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
     val_accuracy = test_accuracy.result()
 
     if patience == 10:
-        if optimizer.learning_rate == 0.00002:
-            optimizer.learning_rate = 0.000002
+        if optimizer.learning_rate == init_lr:
+            optimizer.learning_rate = init_lr / 10
             patience = 0
         else:
             stop_training = True
