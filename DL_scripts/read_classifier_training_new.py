@@ -222,71 +222,6 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
             patience += 1
 
 
-# def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
-#     global wait
-#     global found_min
-#     # Early stopping
-#     val_loss = test_loss.result()
-#     val_accuracy = test_accuracy.result()
-#     if wait < 5:
-#         model_checkpoint(val_loss, val_accuracy, model, epoch)
-#     else:
-#         found_min = True
-#         early_stopping(val_loss, optimizer)
-
-# def model_checkpoint(val_loss, val_accuracy, model, epoch):
-#     """ If the validation loss is not lower than the lowest validation loss recorded
-#     so far for 5 consecutive epochs, we evaluate the possibility of stopping the training
-#     by calling early_stopping. If the difference in the validation loss between 2 consecutive epochs
-#     is above 5% """
-#     global best_loss
-#     global best_val_accuracy
-#     global lowest_val_loss
-#     global best_weights
-#     global wait
-#     global min_epoch
-#     if val_loss < best_loss:
-#         best_loss = val_loss
-#         best_val_accuracy = val_accuracy
-#         lowest_val_loss = val_loss
-#         best_weights = model.get_weights()
-#         wait = 0 # Reset wait counter
-#         min_epoch = epoch
-#     else:
-#         wait += 1
-
-# def early_stopping(val_loss, optimizer):
-#     """ Function to assess whether the model is converging or overfitting the training data. """
-#     """ If the difference in the validation loss between 2 consecutive epochs is 
-#     less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
-#     changed after the next 5 epochs we stop the training. """
-#     global val_loss_before
-#     global best_loss
-#     global patience
-#     global stop_training
-#     global overfitting_patience
-#     # Calculate percent difference between current and previous val loss
-#     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
-#         patience += 1
-#         if patience == 5:
-#             if optimizer.learning_rate == 0.00002:
-#                 optimizer.learning_rate = 0.000002
-#                 patience = 0
-#             else:
-#                 stop_training = True
-#     else:
-#         patience = 0
-    
-#     val_loss_before = val_loss
-
-#     if abs(100 * (val_loss - best_loss) / best_loss) > 5:
-#         overfitting_patience += 1
-#         if overfitting_patience == 10:
-#             stop_training = True
-#     else:
-#         overfitting_patience = 0
-
-
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
@@ -359,30 +294,6 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, train_accuracy_mask=None):
     training = True
     with tf.GradientTape() as tape:
-        # if model_type == 'BERT' and bert_step == "finetuning":
-        #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-        #     labels = data["labels"]
-        #     logits = model(input_data, training=True)
-        #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        #     probs = tf.nn.softmax(logits, axis=-1)
-        #     log_probs = tf.nn.log_softmax(logits, axis=-1)
-        #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-        #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        #     loss_value_1 = tf.reduce_mean(per_example_loss)
-        #     loss_value = loss(labels, probs)
-
-        # elif model_type == 'BERT' and bert_step == "pretraining":
-        #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-        #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-        #                                  [-1, masked_lm_log_probs.shape[-1]])
-        #     masked_lm_predictions = tf.argmax(
-        #         masked_lm_log_probs, axis=-1, output_type=tf.int32)
-        #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-        #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-        #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-        #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-        #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
             logits = model(**data).logits
@@ -463,27 +374,6 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=None):
     training = False
 
-    # if model_type == 'BERT' and bert_step == "finetuning":
-    #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-    #     labels = data["labels"]
-    #     logits = model(input_data, training=True)
-    #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-    #     probs = tf.nn.softmax(logits, axis=-1)
-    #     loss_value = loss(labels, probs)
-
-    # elif model_type == 'BERT' and bert_step == "pretraining":
-    #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-    #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-    #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-    #                                      [-1, masked_lm_log_probs.shape[-1]])
-    #     masked_lm_predictions = tf.argmax(
-    #             masked_lm_log_probs, axis=-1, output_type=tf.int32)
-    #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-    #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-    #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-    #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-    #     loss_value = loss(masked_lm_ids, masked_lm_probs)
-
     if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
         logits = model(**data).logits
         loss_value = model(**data).loss
@@ -491,7 +381,8 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         probs = tf.nn.softmax(logits, axis=-1)
         labels = data["labels"]
     elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-        outputs = model(**data).logits
+        input_ids, attention_mask, token_type_ids, labels = data
+        outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         loss_value = outputs.loss[0]
         mask_token_index_1 = tf.where((data["input_ids"] == 4))
@@ -508,17 +399,13 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         loss_value = loss(labels, probs)
 
     # update training accuracy
-    if bert_step == "finetuning":
-        val_accuracy.update_state(labels, probs)
-    elif bert_step == 'pretraining':
+    if bert_step == 'pretraining':
         val_accuracy.update_state(labels_2, predictions_2)
         val_accuracy_mask.update_state(labels_1, predictions_1)
     else:
         val_accuracy.update_state(labels, probs)
     
     val_loss.update_state(loss_value)
-
-
 
 
 def main():
@@ -530,7 +417,7 @@ def main():
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001', required=('--resume' in sys.argv))
@@ -545,8 +432,8 @@ def main():
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT', 'BERT_HUGGINGFACE'])
-    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM','BERT_HUGGINGFACE'])
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
@@ -558,8 +445,6 @@ def main():
     parser.add_argument('--max_lr', type=float, help='maximum learning rate', default=0.001)
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
-
-    print(f'VECTOR SIZE: {args.vector_size}')
 
     # Initialize Horovod
     hvd.init()
@@ -616,47 +501,10 @@ def main():
 
     # update epoch and learning rate if necessary
     epoch = args.epoch_to_resume + 1 if args.resume else 1
-    # init_lr = args.init_lr/(2*(epoch//args.lr_decay)) if args.resume and epoch > args.lr_decay else args.init_lr
-
-    # define cyclical learning rate
-    # if args.clr:
-    #     init_lr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=args.init_lr,
-    #                                               maximal_learning_rate=args.max_lr,
-    #                                               scale_fn=lambda x: 1 / (2. ** (x - 1)),
-    #                                               step_size=2 * nstep_per_epoch)
 
     # set up the optimizer
-    if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
-        # define linear decay of the learning rate 
-        # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        #     initial_learning_rate=init_lr,
-        #     end_learning_rate=0,
-        #     decay_steps=num_train_steps)
-
-        # sys.path.append(args.path_to_lr_schedule)
-        # from lr_schedule import LinearWarmup
-
-        # # # define linear decay of the learning rate 
-        # # # use tf.compat.v1.train.polynomial_decay instead
-        # # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        # # initial_learning_rate=init_lr,
-        # # decay_steps=nstep_per_epoch*args.epochs,
-        # # end_learning_rate=0.0,
-        # # power=1.0,
-        # # cycle=False)
-
-        # # # define linear warmup schedule
-        # warmup_proportion = 0.1
-        # warmup_steps = int(warmup_proportion * num_train_steps)
-        # warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-        #      warmup_learning_rate = 0,
-        #     after_warmup_lr_sched = linear_decay,
-        #     warmup_steps = warmup_steps)
-
-        # opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
-
+    if args.model_type == 'BERT_HUGGINGFACE':
         opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
-
     else:
         if args.optimizer == 'Adam':
             opt = tf.keras.optimizers.Adam(args.init_lr)
@@ -667,85 +515,6 @@ def main():
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    # if args.model_type == 'BERT':
-    #     # load BERT configuration
-    #     args.config = BertConfiguration.from_json_file(args.bert_config_file)
-    #     with open(args.bert_config_file, "r") as f:
-    #         args.config_dict = json.load(f)
-    #     # update input vector size
-    #     args.vector_size = args.config_dict['max_position_embeddings']
-
-    #     if args.bert_step == "finetuning":
-    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
-    #             'type':'bert',
-    #             'bert': args.config_dict
-    #         })
-    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-    #         model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
-    #         # model = BertModelFinetuning(config=args.config)
-    #         # # define a forward pass
-    #         # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # _ = model(input_ids, input_mask, token_type_ids, False)
-    #         # print(f'summary: {model.create_model().summary()}')
-    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-            
-    #         # # print(model.summary())
-    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-    #         # print(f'number of parameters: {model.create_model().count_params()}')
-    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-    #         # print(f'# trainable parameters: {trainable_params}')
-    #         # print(f'# non trainable parameters: {non_trainable_params}')
-    #         # print(f'# variables: {len(model.trainable_weights)}')
-    #         # total_params = 0
-    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
-    #         #     for var in model.trainable_weights:
-    #         #         count = 1
-    #         #         for dim in var.shape:
-    #         #             count *= dim
-    #         #         total_params += count
-    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-    #         #     f.write(f'Total params: {total_params}')
-    #         #     print(f'Total params: {total_params}')
-
-    #         # # print(model.trainable_weights)
-    #         # # print(len(model.trainable_weights))
-    #     elif args.bert_step == "pretraining":
-    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
-    #             'type':'bert',
-    #             'bert': args.config_dict
-    #         })
-    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-    #         model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
-    #         # model = BertModelPretraining(config=args.config)
-    #         # print(f'summary: {model.create_model().summary()}')
-    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-            
-    #         # # print(model.summary())
-    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-    #         # print(f'number of parameters: {model.create_model().count_params()}')
-    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-    #         # print(f'# trainable parameters: {trainable_params}')
-    #         # print(f'# non trainable parameters: {non_trainable_params}')
-    #         # print(f'# variables: {len(model.trainable_weights)}')
-    #         # total_params = 0
-    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
-    #         #     for var in model.trainable_weights:
-    #         #         count = 1
-    #         #         for dim in var.shape:
-    #         #             count *= dim
-    #         #         total_params += count
-    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-    #         #     f.write(f'Total params: {total_params}')
-    #         #     print(f'Total params: {total_params}')
-
     if args.model_type == 'BERT_HUGGINGFACE':
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
@@ -791,7 +560,7 @@ def main():
         train_input = train_preprocessor.get_device_dataset()
         val_input = val_preprocessor.get_device_dataset()
     else:
-        if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
+        if args.model_type == 'BERT_HUGGINGFACE':
             if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
             else:
@@ -980,7 +749,7 @@ def main():
 
     # print(d_labels)
     
-    if hvd.rank() == 0 and args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+    if hvd.rank() == 0 and args.model_type != 'BERT_HUGGINGFACE':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
