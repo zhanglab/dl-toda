@@ -165,8 +165,10 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = loss(labels, probs)
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            # outputs = model(**data)
-            input_ids, attention_mask, token_type_ids, labels = data
+            input_ids = data["input_ids"]
+            attention_mask = data["attention_mask"]
+            token_type_ids = data["token_type_ids"]
+            labels = data["labels"]
             outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
