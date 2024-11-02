@@ -199,28 +199,12 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # get the loss
             loss_value = loss(labels, probs)
         
-        # scale the loss (multiply the loss by a factor) to avoid numeric underflow
+        # scale the loss (multiply the loss by a factor) to avoid numeric underflow --> part of implementing mixed precision training
         scaled_loss = opt.get_scaled_loss(loss_value)
     
-    # use DistributedGradientTape to wrap tf.GradientTape and use an allreduce to
-    # combine gradient values before applying gradients to model weights
-    tape = hvd.DistributedGradientTape(tape)
-    # get the scaled gradients
-    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
-    # get the unscaled gradients
-    grads = opt.get_unscaled_gradients(scaled_gradients)
-    # grads = tape.gradient(loss_value, model.trainable_variables)
-    #opt.apply_gradients(zip(grads, model.trainable_variables))
+    # compute and apply gradients 
+    grads = tape.gradient(loss_value, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
-    # Horovod: broadcast initial variable states from rank 0 to all other processes.
-    # This is necessary to ensure consistent initialization of all workers when
-    # training is started with random weights or restored from a checkpoint.
-    # Note: broadcast should be done after the first gradient step to ensure optimizer
-    # initialization.
-    if first_batch:
-        print(f'First_batch: {first_batch}')
-        hvd.broadcast_variables(model.variables, root_rank=0)
-        hvd.broadcast_variables(opt.variables(), root_rank=0)
 
     # update training accuracy
     if bert_step == 'pretraining':
@@ -443,9 +427,8 @@ def main():
     num_val_steps = int(val_reads_per_epoch/args.batch_size)
     print(f'number of train steps: {num_train_steps}')
 
-    if hvd.rank() == 0:
-        # create checkpoint object to save model
-        checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # create checkpoint object to save model
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -603,7 +586,7 @@ def main():
 
     # print(d_labels)
     
-    if hvd.rank() == 0 and args.model_type != 'BERT_HUGGINGFACE':
+    if args.model_type != 'BERT_HUGGINGFACE':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
@@ -614,24 +597,23 @@ def main():
 
     end = datetime.datetime.now()
 
-    if hvd.rank() == 0:
-        total_time = end - start
-        hours, seconds = divmod(total_time.seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
+    total_time = end - start
+    hours, seconds = divmod(total_time.seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
 
-        with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
-                    f'Batch size per gpu\t{args.batch_size}\n'
-                    f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
-                    f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{num_train_steps}\nNumber of steps for validation dataset\t{num_val_steps}\n'
-                    f'Initial learning rate\t{args.init_lr}\n')
-            if args.model_type in ["LSTM", "AlexNet"]:
-                f.write(f'Vector size\t{args.vector_size}\n')
-            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        td_writer.close()
-        vd_writer.close()
+    with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
+        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+                f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
+                f'Batch size per gpu\t{args.batch_size}\n'
+                f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
+                f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
+                f'Number of steps per epoch\t{num_train_steps}\nNumber of steps for validation dataset\t{num_val_steps}\n'
+                f'Initial learning rate\t{args.init_lr}\n')
+        if args.model_type in ["LSTM", "AlexNet"]:
+            f.write(f'Vector size\t{args.vector_size}\n')
+        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+    td_writer.close()
+    vd_writer.close()
 
 
 if __name__ == "__main__":
