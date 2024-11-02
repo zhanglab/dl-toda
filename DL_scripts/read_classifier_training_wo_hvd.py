@@ -2,6 +2,10 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from keras import backend as K
 from collections import Counter, defaultdict
+from nvidia.dali.pipeline import pipeline_def
+import nvidia.dali.fn as fn
+import nvidia.dali.tfrecord as tfrec
+import nvidia.dali.plugin.tf as dali_tf
 from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining, TFBertForMaskedLM
 import os
 import sys
@@ -45,8 +49,137 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
+# define the DALI pipeline fo CNN and LSTM
+@pipeline_def
+def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    # prefetch_queue_depth = 100
+    # read_ahead = True
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 # prefetch_queue_depth=prefetch_queue_depth,
+                                 # read_ahead=read_ahead,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return (reads, labels)
+
+
+# define the BERT DALI pipeline for pretraining
+@pipeline_def
+def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 stick_to_shard=stick_to_shard,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "labels": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "next_sentence_label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    
+    # retrieve data and copy it to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    attention_mask = inputs["attention_mask"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
+    labels = inputs['labels'].gpu()
+    # next_sentence_label = inputs["next_sentence_label"].gpu()
+
+    # return (input_ids, attention_mask, token_type_ids, labels, next_sentence_label)
+    return (input_ids, attention_mask, token_type_ids, labels)
+
+
+# define the BERT DALI pipeline for finetuning
+@pipeline_def
+def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 stick_to_shard=stick_to_shard,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    
+    # retrieve data and copy it to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    attention_mask = inputs["attention_mask"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
+    labels = inputs["labels"].gpu()
+
+    return (input_ids, attention_mask, token_type_ids, labels)
+
+
+
+class DALIPreprocessor(object):
+    def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill,
+               deterministic=False, training=False):
+
+        device_id = 0
+        shard_id = 0
+        num_gpus = 1
+        
+        self.batch_size = batch_size
+        self.device_id = device_id
+
+        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'finetuning':
+
+            self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        
+        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'pretraining':
+            self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 if deterministic else None)
+
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        
+        else:
+            self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 if deterministic else None)
+   
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+
+    def get_device_dataset(self):
+        return self.dalidataset
+
+
+
+
+# val_loss_before = -1
 best_val_accuracy = np.Inf
+# lowest_val_loss = 1
 patience = 0
+# overfitting_patience = 0
+# wait = 0
 best_weights = None
 best_loss = np.Inf
 stop_training = False
@@ -165,10 +298,8 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             loss_value = loss(labels, probs)
 
         elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            input_ids = data["input_ids"]
-            attention_mask = data["attention_mask"]
-            token_type_ids = data["token_type_ids"]
-            labels = data["labels"]
+            # outputs = model(**data)
+            input_ids, attention_mask, token_type_ids, labels = data
             outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
             # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
             logits = outputs.logits
@@ -201,11 +332,15 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
             # get the loss
             loss_value = loss(labels, probs)
         
-        # scale the loss (multiply the loss by a factor) to avoid numeric underflow --> part of implementing mixed precision training
+        # scale the loss (multiply the loss by a factor) to avoid numeric underflow
         scaled_loss = opt.get_scaled_loss(loss_value)
     
-    # compute and apply gradients 
-    grads = tape.gradient(loss_value, model.trainable_variables)
+    # get the scaled gradients
+    scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
+    # get the unscaled gradients
+    grads = opt.get_unscaled_gradients(scaled_gradients)
+    # grads = tape.gradient(loss_value, model.trainable_variables)
+    #opt.apply_gradients(zip(grads, model.trainable_variables))
     opt.apply_gradients(zip(grads, model.trainable_variables))
 
     # update training accuracy
