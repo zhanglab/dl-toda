@@ -522,7 +522,7 @@ def main():
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
     train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
     val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
-   
+    print('train_num_reads', train_num_reads)
     if args.nvidia_dali:
         # get nvidia dali indexes
         train_idx_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'idx_files', '*.idx')))
