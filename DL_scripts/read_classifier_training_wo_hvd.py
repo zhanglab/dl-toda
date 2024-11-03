@@ -285,47 +285,55 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, train_accuracy_mask=None):
+def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, nvidia_dali=False, train_accuracy_mask=None):
     training = True
     with tf.GradientTape() as tape:
 
-        if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
-            logits = model(**data).logits
-            # per_example_loss = model(**data).loss
-            # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-            probs = tf.nn.softmax(logits, axis=-1)
-            labels = data["labels"]
-            loss_value = loss(labels, probs)
+        if model_type == 'BERT_HUGGINGFACE':
+            if nvidia_dali:
+                input_ids, attention_mask, token_type_ids, labels = data
+            else:
+                input_ids = data["input_ids"]
+                attention_mask = data["attention_mask"]
+                token_type_ids = data["token_type_ids"]
+                labels = data["labels"]
+            
+            if bert_step == "finetuning":
+                outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+                logits = outputs.logits
+                # logits = model(**data).logits
+                # per_example_loss = model(**data).loss
+                # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+                probs = tf.nn.softmax(logits, axis=-1)
+                loss_value = loss(labels, probs)
 
-        elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-            # outputs = model(**data)
-            input_ids, attention_mask, token_type_ids, labels = data
-            outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-            # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
-            logits = outputs.logits
-            loss_value = outputs.loss[0]
-            # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, 2) - first value indicates which vector in the batch
-            # and the second value corresponds to the index of the masked token
-            # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
-            mask_token_index_1 = tf.where((input_ids == 4))
-            # shape of mask_token_index_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
-            # retrieve index of masked+replaced+same tokens
-            mask_token_index_2 = tf.where((labels != -100))
-            # retrieve logits at indices of interest
-            # shape of logits_1: (batch_size*<number of 'MASK' tokens>, vocab_size)
-            logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
-            # shape of logits_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
-            logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
-            # retrieve labels of indices of interest
-            # shape of labels_1: (batch_size*<number of 'MASK' tokens>,)
-            labels_1 = tf.gather_nd(labels, indices=mask_token_index_1)
-            # shape of labels_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
-            labels_2 = tf.gather_nd(labels, indices=mask_token_index_2)
-            # get predicted labels
-            # shape of predictions_1: (batch_size*<number of 'MASK' tokens>,)
-            predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
-            # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
-            predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
+            elif bert_step == "pretraining":
+                outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+                # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
+                logits = outputs.logits
+                loss_value = outputs.loss[0]
+                # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, 2) - first value indicates which vector in the batch
+                # and the second value corresponds to the index of the masked token
+                # retrieve index of masked tokens (tokens that have been replaced by 'MASK')
+                mask_token_index_1 = tf.where((input_ids == 4))
+                # shape of mask_token_index_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
+                # retrieve index of masked+replaced+same tokens
+                mask_token_index_2 = tf.where((labels != -100))
+                # retrieve logits at indices of interest
+                # shape of logits_1: (batch_size*<number of 'MASK' tokens>, vocab_size)
+                logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
+                # shape of logits_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >, vocab_size)
+                logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
+                # retrieve labels of indices of interest
+                # shape of labels_1: (batch_size*<number of 'MASK' tokens>,)
+                labels_1 = tf.gather_nd(labels, indices=mask_token_index_1)
+                # shape of labels_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
+                labels_2 = tf.gather_nd(labels, indices=mask_token_index_2)
+                # get predicted labels
+                # shape of predictions_1: (batch_size*<number of 'MASK' tokens>,)
+                predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
+                # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
+                predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -353,28 +361,40 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=None):
+def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
     training = False
 
-    if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
-        logits = model(**data).logits
-        loss_value = model(**data).loss
-        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        probs = tf.nn.softmax(logits, axis=-1)
-        labels = data["labels"]
-    elif model_type == 'BERT_HUGGINGFACE' and bert_step == "pretraining":
-        input_ids, attention_mask, token_type_ids, labels = data
-        outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-        logits = outputs.logits
-        loss_value = outputs.loss[0]
-        mask_token_index_1 = tf.where((data["input_ids"] == 4))
-        mask_token_index_2 = tf.where((data["labels"] != -100))
-        logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
-        logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
-        labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
-        labels_2 = tf.gather_nd(data["labels"], indices=mask_token_index_2)
-        predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
-        predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
+    
+    if model_type == 'BERT_HUGGINGFACE':
+        if nvidia_dali:
+            input_ids, attention_mask, token_type_ids, labels = data
+        else:
+            input_ids = data["input_ids"]
+            attention_mask = data["attention_mask"]
+            token_type_ids = data["token_type_ids"]
+            labels = data["labels"]
+
+        if bert_step == "finetuning":
+            outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+            logits = outputs.logits
+            # logits = model(**data).logits
+            # loss_value = model(**data).loss
+            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            probs = tf.nn.softmax(logits, axis=-1)
+            loss_value = loss(labels, probs)
+        
+        elif bert_step == "pretraining":
+            outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+            logits = outputs.logits
+            loss_value = outputs.loss[0]
+            mask_token_index_1 = tf.where((input_ids == 4))
+            mask_token_index_2 = tf.where((labels != -100))
+            logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
+            logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
+            labels_1 = tf.gather_nd(labels, indices=mask_token_index_1)
+            labels_2 = tf.gather_nd(labels, indices=mask_token_index_2)
+            predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
+            predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -528,6 +548,7 @@ def main():
     print('val_files', val_files)
     print('train_num_reads', train_num_reads)
     if args.nvidia_dali:
+        nvidia_dali=True
         # get nvidia dali indexes
         train_idx_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'idx_files', '*.idx')))
         val_idx_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'idx_files', '*.idx')))
@@ -540,6 +561,7 @@ def main():
         train_input = train_preprocessor.get_device_dataset()
         val_input = val_preprocessor.get_device_dataset()
     else:
+        nvidia_dali=False
         if args.model_type == 'BERT_HUGGINGFACE':
             if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
@@ -594,9 +616,9 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         # input_ids, _, _, labels = data 
         if args.bert_step == "pretraining": 
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
+            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
         else:
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1)
+            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
 
         # if batch == 1:
         #     all_labels = [labels]
@@ -651,9 +673,9 @@ def main():
             # evaluate model
             for _, data in enumerate(val_input.take(val_steps)):
                 if args.bert_step == "pretraining":
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=val_accuracy_mask)
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
                 else:
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
             # adjust learning rate
             if args.lr_decay:
