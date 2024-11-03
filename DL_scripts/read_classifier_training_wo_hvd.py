@@ -172,28 +172,22 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 
-
-
-# val_loss_before = -1
 best_val_accuracy = np.Inf
-# lowest_val_loss = 1
 patience = 0
-# overfitting_patience = 0
-# wait = 0
 best_weights = None
 best_loss = np.Inf
 stop_training = False
 found_min = False
 min_epoch = 0
 
-def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model, init_lr):
-    global patience
-    global best_loss
+def on_epoch_end(epoch, test_loss, test_accuracy, optimizer, model, init_lr):
     global best_val_accuracy
-    global min_epoch
-    global found_min
-    global stop_training
+    global patience
     global best_weights
+    global best_loss
+    global stop_training
+    global found_min
+    global min_epoch
 
     val_loss = test_loss.result()
     val_accuracy = test_accuracy.result()
@@ -695,14 +689,10 @@ def main():
 
             if args.early_stopping:
                 # assess end of training
-                on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
-
-                # print(f'val_loss_before: {val_loss_before}')
+                on_epoch_end(epoch, val_loss, val_accuracy, opt, model, args.init_lr)
+                
                 print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
-                # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
                 print(f'patience: {patience}')
-                # print(f'patience overfitting: {overfitting_patience}')
-                # print(f'wait: {wait}')
                 print(f'best val loss: {best_loss}')
                 print(f'stop training: {stop_training}')
                 print(f'found min: {found_min}')
