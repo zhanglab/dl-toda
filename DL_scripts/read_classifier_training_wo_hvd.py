@@ -667,12 +667,6 @@ def main():
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
 
-        if args.bert_step == "pretraining":
-            # save weights every 5 epochs just for safety precautions
-            if batch % 5 == 0:
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # evaluate model
@@ -724,6 +718,13 @@ def main():
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
+
+                # save weights every 5 epochs just for safety precautions
+                if epoch % 1 == 0:
+                    checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
+                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+
+
             else:
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
