@@ -49,10 +49,7 @@ def parse_results(args):
             # create confusion matrix
             if args.tool == 'dl-toda' or args.tool == 'bert':
                 output_file = os.path.join(args.output_dir, 'confusion_matrix', 'cm.xlsx')
-                if os.path.exists(output_file):
-                    # remove file if it exists
-                    os.remove(output_file)
-                for r_name, r_index in args.ranks.items():
+                for count, (r_name, r_index) in enumerate(args.ranks.items()):
                     print(r_name, r_index)
                     cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
                     print(cm)
@@ -63,8 +60,12 @@ def parse_results(args):
                     #     output_file = os.path.join(args.output_dir,
                     #                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
                     # store confusion matrices in excel file
-                    with pd.ExcelWriter(output_file, mode='a') as writer:
-                        cm.to_excel(writer, sheet_name=f'{r_name}')
+                    if count == 0:
+                        with pd.ExcelWriter(output_file) as writer:
+                            cm.to_excel(writer, sheet_name=f'{r_name}')
+                    else:
+                        with pd.ExcelWriter(output_file, mode='a') as writer:
+                            cm.to_excel(writer, sheet_name=f'{r_name}')
             elif args.tool == 'bertax':
                 cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, 1)
                 # store confusion matrices in excel file
