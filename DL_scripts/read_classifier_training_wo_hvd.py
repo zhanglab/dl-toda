@@ -577,11 +577,15 @@ def main():
         val_reads_per_epoch = int(infile.readline())
 
     # compute number of steps/batches per epoch with horovod imported
-    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
-    num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
+    # nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
+    nstep_per_epoch = args.batch_size*3
+    num_train_steps = args.batch_size*3
+    # num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(val_reads_per_epoch/args.batch_size)
-    num_val_steps = int(val_reads_per_epoch/args.batch_size)
+    val_steps = args.batch_size*3
+    num_val_steps = args.batch_size*3
+    # val_steps = int(val_reads_per_epoch/args.batch_size)
+    # num_val_steps = int(val_reads_per_epoch/args.batch_size)
     print(f'number of train steps: {num_train_steps}')
 
     # create checkpoint object to save model
@@ -662,6 +666,13 @@ def main():
             else:
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
+
+        if args.bert_step == "pretraining":
+            # save weights every 5 epochs just for safety precautions
+            if batch % 5 == 0:
+                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # evaluate model
@@ -683,8 +694,14 @@ def main():
             with writer.as_default():
                 tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
                 tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
+                if args.bert_step == "pretraining":
+                    tf.summary.scalar("val_accuracy_mask", val_accuracy_mask.result().numpy(), step=epoch)
                 writer.flush()
-            vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+
+            if args.bert_step == "pretraining":
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
+            else:
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
 
             if args.early_stopping:
@@ -707,11 +724,6 @@ def main():
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
-                
-                # save weights every 5 epochs just for safety precautions
-                if batch % 5 == 0:
-                    checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
             else:
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
