@@ -4,15 +4,12 @@ import pandas as pd
 
 
 def fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index):
-    print(ground_truth[0])
-    print(predictions[0])
+    # get list of true taxon and predicted taxon at given taxonomic rank
     ground_truth_taxa = list(set([ground_truth[i].split(';')[r_index] for i in range(len(ground_truth))]))
     predictions_taxa = list(set([predictions[i].split(';')[r_index] for i in range(len(predictions))]))
     predictions_taxa.append('unclassified')
     ground_truth_taxa.sort()
     predictions_taxa.sort()
-    print(ground_truth[0])
-    print(predictions[0])
     # create empty confusion matrix with ground truth as columns and predicted taxa as rows
     cm = pd.DataFrame(columns=list(ground_truth_taxa), index=list(predictions_taxa))
     # fill out table with zeros
