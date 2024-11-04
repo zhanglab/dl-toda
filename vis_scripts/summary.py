@@ -42,7 +42,7 @@ def parse_results(args):
             confidence_scores += [i[2] for i in process_results]
         print(len(predictions), len(ground_truth), len(confidence_scores))
         print(predictions[0], ground_truth[0], confidence_scores[0])
-        
+
         if args.confusion_matrix:
             if not os.path.isdir(os.path.join(args.output_dir, 'confusion_matrix')):
                 os.makedirs(os.path.join(args.output_dir, 'confusion_matrix'))
@@ -179,6 +179,7 @@ def main():
         cm = pd.read_excel(args.input, index_col=0, sheet_name=None)
         for r_name, r_index in args.ranks.items():
             if r_name in cm.keys():
+                print(r_name)
                 get_metrics(args, cm[r_name], r_name, r_index)
 
     if args.probs:
