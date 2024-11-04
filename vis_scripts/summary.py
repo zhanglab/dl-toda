@@ -49,6 +49,7 @@ def parse_results(args):
             # create confusion matrix
             if args.tool == 'dl-toda' or args.tool == 'bert':
                 for r_name, r_index in args.ranks.items():
+                    print(r_name, r_index)
                     cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
                     # if args.output_prefix:
                     #     output_file = os.path.join(args.output_dir,
