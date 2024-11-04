@@ -577,15 +577,11 @@ def main():
         val_reads_per_epoch = int(infile.readline())
 
     # compute number of steps/batches per epoch with horovod imported
-    # nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
-    nstep_per_epoch = 6
-    num_train_steps = 6
-    # num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
+    nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
+    num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = 3
-    num_val_steps = 3
-    # val_steps = int(val_reads_per_epoch/args.batch_size)
-    # num_val_steps = int(val_reads_per_epoch/args.batch_size)
+    val_steps = int(val_reads_per_epoch/args.batch_size)
+    num_val_steps = int(val_reads_per_epoch/args.batch_size)
     print(f'number of train steps: {num_train_steps}')
 
     # create checkpoint object to save model
@@ -720,7 +716,7 @@ def main():
                     break
 
                 # save weights every 5 epochs just for safety precautions
-                if epoch % 1 == 0:
+                if epoch % 3 == 0:
                     checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
                     model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
 
