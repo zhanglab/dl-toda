@@ -881,6 +881,11 @@ def main():
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
+
+                # save weights every 5 epochs just for safety precautions
+                if batch % 10 == 0:
+                    checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
             else:
                 # save weights
                 checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
