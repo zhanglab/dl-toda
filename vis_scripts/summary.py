@@ -48,6 +48,10 @@ def parse_results(args):
                 os.makedirs(os.path.join(args.output_dir, 'confusion_matrix'))
             # create confusion matrix
             if args.tool == 'dl-toda' or args.tool == 'bert':
+                output_file = os.path.join(args.output_dir, 'confusion_matrix', 'cm.xlsx')
+                if os.path.exists(output_file):
+                    # remove file if it exists
+                    os.remove(output_file)
                 for r_name, r_index in args.ranks.items():
                     print(r_name, r_index)
                     cm = fill_out_cm(args, predictions, ground_truth, confidence_scores, r_index)
@@ -58,7 +62,6 @@ def parse_results(args):
                     # else:
                     #     output_file = os.path.join(args.output_dir,
                     #                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-confusion-matrix.xlsx')
-                    output_file = os.path.join(args.output_dir, 'confusion_matrix', 'cm.xlsx')
                     # store confusion matrices in excel file
                     with pd.ExcelWriter(output_file, mode='a') as writer:
                         cm.to_excel(writer, sheet_name=f'{r_name}')
