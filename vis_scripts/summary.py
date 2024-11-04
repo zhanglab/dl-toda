@@ -41,6 +41,7 @@ def parse_results(args):
             ground_truth += [i[1] for i in process_results]
             confidence_scores += [i[2] for i in process_results]
         print(len(predictions), len(ground_truth), len(confidence_scores))
+        print(predictions[0], ground_truth[0], confidence_scores[0])
         
         if args.confusion_matrix:
             if not os.path.isdir(os.path.join(args.output_dir, 'confusion_matrix')):
