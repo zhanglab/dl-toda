@@ -375,7 +375,7 @@ def main():
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
-    parser.add_argument('--pretrained', type=str, help='path to ckpt.index file of pretrained model')
+    parser.add_argument('--pretrained', type=str, help='path to directory containing pretrained model saved in saved_model.pb')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
@@ -495,7 +495,7 @@ def main():
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
             if args.pretrained:
-                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, from_tf=True, config=bert_config)
+                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
