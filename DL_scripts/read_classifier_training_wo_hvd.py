@@ -598,7 +598,7 @@ def main():
         train_accuracy_mask = tf.keras.metrics.Accuracy(name='train_accuracy_mask')
         val_accuracy_mask = tf.keras.metrics.Accuracy(name='val_accuracy_mask')
     else:
-        train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy_')
+        train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
         val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
     start = datetime.datetime.now()
@@ -642,6 +642,7 @@ def main():
     #     for i in range(len(all_labels)):
     #         f.write(f'{all_labels[i]}\n')
         if batch % 100 == 0:
+            save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{batch}'))
             if args.bert_step == "pretraining":
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
             else:
@@ -716,9 +717,10 @@ def main():
                     break
 
                 # save weights every 5 epochs just for safety precautions
-                if epoch % 3 == 0:
+                if epoch % 1 == 0:
                     checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
                     model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                    save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}'))
 
 
             else:
@@ -730,6 +732,8 @@ def main():
             val_loss.reset_states()
             train_accuracy.reset_states()
             val_accuracy.reset_states()
+            train_accuracy_mask.reset_states()
+            val_accuracy_mask.reset_states()
 
             # define end of current epoch
             epoch += 1
