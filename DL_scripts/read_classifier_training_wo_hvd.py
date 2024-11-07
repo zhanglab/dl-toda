@@ -6,7 +6,7 @@ from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
-from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining, TFBertForMaskedLM
+from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining, TFBertForMaskedLM, TFPreTrainedModel
 import os
 import sys
 import json
