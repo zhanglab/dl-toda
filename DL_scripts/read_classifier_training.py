@@ -495,7 +495,7 @@ def main():
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
             if args.pretrained:
-                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, from_tf=True, config=bert_config)
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
