@@ -1,7 +1,4 @@
 import tensorflow as tf
-# import tensorflow_addons as tfa
-# import tensorflow_models as tfm
-# import tensorflow_hub as hub
 import horovod.tensorflow as hvd
 import tensorflow.keras as keras
 from keras import backend as K
@@ -20,14 +17,12 @@ import datetime
 import math
 import io
 import json
-# import numpy as np
 from AlexNet import AlexNet
 from lstm import LSTM
 from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
-# from BERT import BertConfiguration, BertModelFinetuning, BertModelPretraining
 from optimizers import AdamWeightDecayOptimizer
 import argparse
 
@@ -180,12 +175,8 @@ class DALIPreprocessor(object):
 
 
 
-# val_loss_before = -1
 best_val_accuracy = np.Inf
-# lowest_val_loss = 1
 patience = 0
-# overfitting_patience = 0
-# wait = 0
 best_weights = None
 best_loss = np.Inf
 stop_training = False
@@ -221,70 +212,6 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
         else:
             patience += 1
 
-
-# def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
-#     global wait
-#     global found_min
-#     # Early stopping
-#     val_loss = test_loss.result()
-#     val_accuracy = test_accuracy.result()
-#     if wait < 5:
-#         model_checkpoint(val_loss, val_accuracy, model, epoch)
-#     else:
-#         found_min = True
-#         early_stopping(val_loss, optimizer)
-
-# def model_checkpoint(val_loss, val_accuracy, model, epoch):
-#     """ If the validation loss is not lower than the lowest validation loss recorded
-#     so far for 5 consecutive epochs, we evaluate the possibility of stopping the training
-#     by calling early_stopping. If the difference in the validation loss between 2 consecutive epochs
-#     is above 5% """
-#     global best_loss
-#     global best_val_accuracy
-#     global lowest_val_loss
-#     global best_weights
-#     global wait
-#     global min_epoch
-#     if val_loss < best_loss:
-#         best_loss = val_loss
-#         best_val_accuracy = val_accuracy
-#         lowest_val_loss = val_loss
-#         best_weights = model.get_weights()
-#         wait = 0 # Reset wait counter
-#         min_epoch = epoch
-#     else:
-#         wait += 1
-
-# def early_stopping(val_loss, optimizer):
-#     """ Function to assess whether the model is converging or overfitting the training data. """
-#     """ If the difference in the validation loss between 2 consecutive epochs is 
-#     less than 5% for 5 consecutive epochs we divide the learning rate by 10. If the difference hasn't
-#     changed after the next 5 epochs we stop the training. """
-#     global val_loss_before
-#     global best_loss
-#     global patience
-#     global stop_training
-#     global overfitting_patience
-#     # Calculate percent difference between current and previous val loss
-#     if abs(100 * (val_loss - val_loss_before) / val_loss_before) < 5:
-#         patience += 1
-#         if patience == 5:
-#             if optimizer.learning_rate == 0.00002:
-#                 optimizer.learning_rate = 0.000002
-#                 patience = 0
-#             else:
-#                 stop_training = True
-#     else:
-#         patience = 0
-    
-#     val_loss_before = val_loss
-
-#     if abs(100 * (val_loss - best_loss) / best_loss) > 5:
-#         overfitting_patience += 1
-#         if overfitting_patience == 10:
-#             stop_training = True
-#     else:
-#         overfitting_patience = 0
 
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
@@ -359,30 +286,6 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch):
     training = True
     with tf.GradientTape() as tape:
-        # if model_type == 'BERT' and bert_step == "finetuning":
-        #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-        #     labels = data["labels"]
-        #     logits = model(input_data, training=True)
-        #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        #     probs = tf.nn.softmax(logits, axis=-1)
-        #     log_probs = tf.nn.log_softmax(logits, axis=-1)
-        #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-        #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-        #     loss_value_1 = tf.reduce_mean(per_example_loss)
-        #     loss_value = loss(labels, probs)
-
-        # elif model_type == 'BERT' and bert_step == "pretraining":
-        #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-        #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-        #                                  [-1, masked_lm_log_probs.shape[-1]])
-        #     masked_lm_predictions = tf.argmax(
-        #         masked_lm_log_probs, axis=-1, output_type=tf.int32)
-        #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-        #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-        #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-        #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-        #     loss_value = loss(masked_lm_ids, masked_lm_probs)
 
         if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
             logits = model(**data).logits
@@ -437,28 +340,6 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
     training = False
-
-    # if model_type == 'BERT' and bert_step == "finetuning":
-    #     input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-    #     labels = data["labels"]
-    #     logits = model(input_data, training=True)
-    #     predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-    #     probs = tf.nn.softmax(logits, axis=-1)
-    #     loss_value = loss(labels, probs)
-
-    # elif model_type == 'BERT' and bert_step == "pretraining":
-    #     input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-    #     logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-    #     masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-    #                                      [-1, masked_lm_log_probs.shape[-1]])
-    #     masked_lm_predictions = tf.argmax(
-    #             masked_lm_log_probs, axis=-1, output_type=tf.int32)
-    #     masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-    #     masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-    #     masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-    #     loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-    #     loss_value = loss(masked_lm_ids, masked_lm_probs)
-
     if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
         logits = model(**data).logits
         loss_value = model(**data).loss
@@ -494,6 +375,7 @@ def main():
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
+    parser.add_argument('--pretrained', type=str, help='path to ckpt.index file of pretrained model')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
@@ -593,37 +475,8 @@ def main():
     #                                               step_size=2 * nstep_per_epoch)
 
     # set up the optimizer
-    if args.model_type == 'BERT' or args.model_type == 'BERT_HUGGINGFACE':
-        # define linear decay of the learning rate 
-        # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        #     initial_learning_rate=init_lr,
-        #     end_learning_rate=0,
-        #     decay_steps=num_train_steps)
-
-        # sys.path.append(args.path_to_lr_schedule)
-        # from lr_schedule import LinearWarmup
-
-        # # # define linear decay of the learning rate 
-        # # # use tf.compat.v1.train.polynomial_decay instead
-        # # linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-        # # initial_learning_rate=init_lr,
-        # # decay_steps=nstep_per_epoch*args.epochs,
-        # # end_learning_rate=0.0,
-        # # power=1.0,
-        # # cycle=False)
-
-        # # # define linear warmup schedule
-        # warmup_proportion = 0.1
-        # warmup_steps = int(warmup_proportion * num_train_steps)
-        # warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-        #      warmup_learning_rate = 0,
-        #     after_warmup_lr_sched = linear_decay,
-        #     warmup_steps = warmup_steps)
-
-        # opt = tf.keras.optimizers.experimental.Adam(learning_rate = warmup_schedule)
-
+    if args.model_type == 'BERT_HUGGINGFACE':
         opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
-
     else:
         if args.optimizer == 'Adam':
             opt = tf.keras.optimizers.Adam(args.init_lr)
@@ -633,86 +486,6 @@ def main():
     # prevent numeric underflow when using float16
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
-    # define model
-    # if args.model_type == 'BERT':
-    #     # load BERT configuration
-    #     args.config = BertConfiguration.from_json_file(args.bert_config_file)
-    #     with open(args.bert_config_file, "r") as f:
-    #         args.config_dict = json.load(f)
-    #     # update input vector size
-    #     args.vector_size = args.config_dict['max_position_embeddings']
-
-    #     if args.bert_step == "finetuning":
-    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
-    #             'type':'bert',
-    #             'bert': args.config_dict
-    #         })
-    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-    #         model = tfm.nlp.models.BertClassifier(network=bert_encoder, num_classes=2)
-    #         # model = BertModelFinetuning(config=args.config)
-    #         # # define a forward pass
-    #         # # input_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # input_mask = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # token_type_ids = tf.ones(shape=[args.batch_size, config.seq_length], dtype=tf.int32)
-    #         # # _ = model(input_ids, input_mask, token_type_ids, False)
-    #         # print(f'summary: {model.create_model().summary()}')
-    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-            
-    #         # # print(model.summary())
-    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-    #         # print(f'number of parameters: {model.create_model().count_params()}')
-    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-    #         # print(f'# trainable parameters: {trainable_params}')
-    #         # print(f'# non trainable parameters: {non_trainable_params}')
-    #         # print(f'# variables: {len(model.trainable_weights)}')
-    #         # total_params = 0
-    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_finetuning.txt'), 'w') as f:
-    #         #     for var in model.trainable_weights:
-    #         #         count = 1
-    #         #         for dim in var.shape:
-    #         #             count *= dim
-    #         #         total_params += count
-    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-    #         #     f.write(f'Total params: {total_params}')
-    #         #     print(f'Total params: {total_params}')
-
-    #         # # print(model.trainable_weights)
-    #         # # print(len(model.trainable_weights))
-    #     elif args.bert_step == "pretraining":
-    #         encoder_config = tfm.nlp.encoders.EncoderConfig({
-    #             'type':'bert',
-    #             'bert': args.config_dict
-    #         })
-    #         bert_encoder = tfm.nlp.encoders.build_encoder(encoder_config)
-    #         model = tfm.nlp.models.BertPretrainer(network=bert_encoder, num_classes=2)
-    #         # model = BertModelPretraining(config=args.config)
-    #         # print(f'summary: {model.create_model().summary()}')
-    #         # tf.keras.utils.plot_model(model.create_model(), to_file=os.path.join(args.output_dir, f'model-bert.png'), show_shapes=True)
-            
-    #         # # print(model.summary())
-    #         # with open(os.path.join(args.output_dir, f'model-bert.txt'), 'w+') as f:
-    #         #     model.create_model().summary(print_fn=lambda x: f.write(x + '\n'))
-    #         # print(f'number of parameters: {model.create_model().count_params()}')
-    #         # trainable_params = sum(K.count_params(layer) for layer in model.trainable_weights)
-    #         # non_trainable_params = sum(K.count_params(layer) for layer in model.non_trainable_weights)
-    #         # print(f'# trainable parameters: {trainable_params}')
-    #         # print(f'# non trainable parameters: {non_trainable_params}')
-    #         # print(f'# variables: {len(model.trainable_weights)}')
-    #         # total_params = 0
-    #         # with open(os.path.join(args.output_dir, f'model_trainable_variables_pretraining.txt'), 'w') as f:
-    #         #     for var in model.trainable_weights:
-    #         #         count = 1
-    #         #         for dim in var.shape:
-    #         #             count *= dim
-    #         #         total_params += count
-    #         #         f.write(f'name = {var.name}, shape = {var.shape}\tcount = {count}\ttotal params = {total_params}\n')
-    #         #         print(f'name = {var.name}, shape = {var.shape}\t {count}')
-    #         #     f.write(f'Total params: {total_params}')
-    #         #     print(f'Total params: {total_params}')
-
     if args.model_type == 'BERT_HUGGINGFACE':
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
@@ -721,7 +494,10 @@ def main():
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
-            model = TFBertForSequenceClassification(config=bert_config)
+            if args.pretrained:
+                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+            else:
+                model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
             model = TFBertForPreTraining(config=bert_config)
     else:
@@ -749,10 +525,7 @@ def main():
         # get nvidia dali indexes
         train_idx_files = sorted(glob.glob(os.path.join(args.train_tfrecords, 'idx_files', '*.idx')))
         val_idx_files = sorted(glob.glob(os.path.join(args.val_tfrecords, 'idx_files', '*.idx')))
-        print('train_files', train_files)
-        print('val_files', val_files)
-        print('train_idx_files', train_idx_files)
-        print('val_idx_files', val_idx_files)
+
         # load data
         train_preprocessor = DALIPreprocessor(args, train_files, train_idx_files, args.batch_size, args.vector_size, args.initial_fill,
                                                deterministic=False, training=True)
