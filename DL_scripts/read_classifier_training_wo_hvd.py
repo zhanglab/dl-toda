@@ -642,7 +642,6 @@ def main():
     #     for i in range(len(all_labels)):
     #         f.write(f'{all_labels[i]}\n')
         if batch % 100 == 0:
-            model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{batch}'))
             if args.bert_step == "pretraining":
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
             else:
@@ -720,7 +719,7 @@ def main():
                 if epoch % 1 == 0:
                     checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
                     model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
-                    save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}'))
+                    model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
 
             else:
