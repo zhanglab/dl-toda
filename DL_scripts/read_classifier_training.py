@@ -7,7 +7,7 @@ from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
 import nvidia.dali.plugin.tf as dali_tf
-from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining
+from transformers import TFBertForSequenceClassification, BertConfig, TFBertForPreTraining, TFBertForMaskedLM
 import os
 import sys
 import json
@@ -375,7 +375,7 @@ def main():
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
-    parser.add_argument('--pretrained', type=str, help='path to directory containing pretrained model saved in saved_model.pb')
+    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
@@ -634,12 +634,8 @@ def main():
                 # assess end of training
                 on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
-                # print(f'val_loss_before: {val_loss_before}')
                 print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
-                # print(f'lowest_val_loss: {lowest_val_loss.numpy()}')
                 print(f'patience: {patience}')
-                # print(f'patience overfitting: {overfitting_patience}')
-                # print(f'wait: {wait}')
                 print(f'best val loss: {best_loss}')
                 print(f'stop training: {stop_training}')
                 print(f'found min: {found_min}')
