@@ -32,6 +32,7 @@ def get_metrics(args, cm, r_name, r_index):
     print(r_name)
     taxa_in_dl_toda = [v.split(';')[r_index] for v in args.dl_toda_tax.values()]
     taxa_in_dl_toda.sort()
+    print(taxa_in_dl_toda)
     outfile_1 = os.path.join(args.output_dir, f'{r_name}-metrics-per-taxon')
     outfile_2 = os.path.join(args.output_dir, f'{r_name}-metrics-reads-info')
     outfile_3 = os.path.join(args.output_dir, f'{r_name}-metrics-all')
@@ -49,6 +50,8 @@ def get_metrics(args, cm, r_name, r_index):
     # outf_1.write('true taxon\tpredicted taxon\t#reads\tprecision\trecall\tF1\tTP\tFP\tFN\n')
     ground_truth = list(cm.columns)
     predicted_taxa = list(cm.index)
+    print(ground_truth)
+    print(predicted_taxa)
     correct_predictions = 0
     classified_reads = 0
     unclassified_reads = 0
