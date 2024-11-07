@@ -110,7 +110,7 @@ def main():
     parser.add_argument('--species', help='summarize output results only at the species level', action='store_true')
     parser.add_argument('--input_dir', type=str, help='path to input directory containing excel files to combine', default=os.getcwd())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='ncbi')
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='gtdb')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
     parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
