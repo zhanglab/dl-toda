@@ -4,9 +4,11 @@ import os
 import sys
 import json
 import glob
-# import numpy as np
+import numpy as np
 import math
 import argparse
+import seaborn as sn
+import matplotlib.pyplot as plt 
 
 
 # set seed
@@ -163,8 +165,18 @@ def main():
         print(data)
         outputs = get_attentions(data, model)
         print(f'attentions: {outputs[-1]}')
-        print(f'attentions #: {len(outputs[-1])}\t{outputs[-1].shape}')
+        print(f'attentions #: {len(outputs[-1])}\t{outputs[-1].shape}') 
+        # number of attentions: 32, shape: (32, 12, 512, 512) --> 12 attention heads per batch, each attention head has 512 x 512 values 
         print(f'attentions #: {len(outputs[-1][0])}\t{outputs[-1][0].shape}')
+        # number of attentions: 12, shape: (12, 512, 512) --> attentions for the first sequence in the batch
+        print(f'attentions #: {len(outputs[-1][0][0])}\t{outputs[-1][0][0].shape}')
+        # number of attentions: 12, shape: (512, 512) --> attention weights for the first attention head of the first sequence in the batch
+        input_ids = data["input_ids"]
+        # get kmers of ids
+        print(f'input ids: {data["input_ids"]}')
+
+        #hm = sn.heatmap(data = data) 
+
         break
 
 
