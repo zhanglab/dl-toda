@@ -87,7 +87,6 @@ def get_attentions(data, model):
 
 
 def main():
-    start = datetime.datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
@@ -150,7 +149,6 @@ def main():
     # get list of testing tfrecords and number of reads per tfrecords
     test_file = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_file = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
-
 
     with open(num_reads_file[0], 'r') as infile:
         num_reads = int(infile.readline())
