@@ -111,7 +111,8 @@ def main():
     # get vocabulary
     with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
         content = f.readlines()
-        vocab = 
+        vocab = {i: content[i] for i in range(len(content))}
+    print(vocab)
 
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
