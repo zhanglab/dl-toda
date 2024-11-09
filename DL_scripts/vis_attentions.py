@@ -162,9 +162,8 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        print(data)
         attentions = get_attentions(data, model)
-        print(f'attentions : {attentions.shape}') 
+        print(f'attentions : {attentions}') 
 
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
