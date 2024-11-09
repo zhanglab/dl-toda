@@ -169,7 +169,7 @@ def main():
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
         print(data["input_ids"].shape, )
-        for i in range(len(data["input_ids"]))
+        for i in range(len(data["input_ids"])):
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
             # get attention weights of the last attention head
