@@ -161,7 +161,7 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         print(data)
-        outputs = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+        outputs = get_attentions(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
         print(f'attentions: {outputs[-1]}')
         print(f'attentions #: {len(outputs[-1])}')
         break
