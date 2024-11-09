@@ -110,7 +110,7 @@ def main():
     # get vocabulary
     with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
         content = f.readlines()
-        vocab = {i: content[i] for i in range(len(content))}
+        vocab = {i: content[i].rtrip() for i in range(len(content))}
     print(vocab)
 
     # load class_mapping file mapping label IDs to species
@@ -161,7 +161,7 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         print(data)
-        outputs = get_attentions(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+        outputs = get_attentions(data, model)
         print(f'attentions: {outputs[-1]}')
         print(f'attentions #: {len(outputs[-1])}')
         break
