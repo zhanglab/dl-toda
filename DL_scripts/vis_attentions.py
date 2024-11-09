@@ -175,7 +175,8 @@ def main():
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
         for seq_ids in data["input_ids"]:
-            seq_kmers = [vocab[i] for i in seq_ids]
+            print(seq_ids.numpy())
+            seq_kmers = [vocab[i] for i in seq_ids.numpy()]
             print(seq_kmers)
         #hm = sn.heatmap(data = data) 
 
