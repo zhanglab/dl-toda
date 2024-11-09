@@ -314,6 +314,7 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
         loss_value = loss(masked_lm_ids, masked_lm_probs)
 
     elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+        outputs = model(**data)
         logits = model(**data).logits
         loss_value = model(**data).loss
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -339,7 +340,7 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
 
-    return probs, pred_labels, pred_probs, labels
+    return probs, pred_labels, pred_probs, labels, outputs
     # return pred_labels, pred_probs, label_prob
 
 
@@ -539,7 +540,8 @@ def main():
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+                batch_predictions, batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+            print(f'outputs: {outputs}')
             break
             if batch == 1:
                 all_labels = [labels]
