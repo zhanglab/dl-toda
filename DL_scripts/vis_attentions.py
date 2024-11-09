@@ -154,7 +154,7 @@ def main():
 
     with open(num_reads_file[0], 'r') as infile:
         num_reads = int(infile.readline())
-    
+    print(f'# sequences: {num_reads}')
     # compute number of steps required to iterate over entire test set
     test_steps = math.ceil(num_reads/(args.batch_size))
 
@@ -174,8 +174,24 @@ def main():
         input_ids = data["input_ids"]
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
-
+        for seq_ids in data["input_ids"]:
+            seq_kmers = [vocab[i] for i in seq_ids]
+            print(seq_kmers)
         #hm = sn.heatmap(data = data) 
+
+        # 1. get species with high performance
+        # 2. find kmers that are attended to each other
+        # 3. get original DNA sequence form sequence of kmers
+        # 4. show parts of the DNA sequence with the meaningful kmers
+        # 5. list the kmers that are relevant
+        # 6. get stats on sequences with meaningful kmers
+        # 7. amongst the species investigated, which ones are part and important to the marine microbiomes
+        # 8. map sequences of interest (and less interesting) to the training and testing genome
+        # + show the regions of interest (and less interesting) on the genome
+        # 9. are the sequences with less relevant kmers less well classified?
+        # 10. what can be done with this information to improve taxonomic classification
+
+        # this study can help develop new methods to improve taxonomic classification of metagenomics data
 
         break
 
