@@ -541,7 +541,8 @@ def main():
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
                 batch_predictions, batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
-            print(f'outputs: {outputs}')
+            print(f'attentions: {len(outputs[-1])}')
+            print(f'attentions #: {len(outputs[-1])}')
             break
             if batch == 1:
                 all_labels = [labels]
