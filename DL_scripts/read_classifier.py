@@ -438,6 +438,8 @@ def main():
                 args.config_dict = json.load(f)
             # create BERT config object + model
             bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+            bert_config.output_attentions=True
+            print(bert_config)
             model = TFBertForSequenceClassification(config=bert_config)
             # update input vector size
             args.vector_size = args.config_dict['max_position_embeddings']
