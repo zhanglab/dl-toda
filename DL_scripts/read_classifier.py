@@ -529,11 +529,10 @@ def main():
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
             print(data)
-            outputs = model(**data)
-            attention = outputs[-1]
-            print(outputs)
-            print(attention)
-            break
+            # outputs = model(**data)
+            # attention = outputs[-1]
+            # print(outputs)
+            # print(attention)
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
                 batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
@@ -541,6 +540,7 @@ def main():
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
                 batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+            break
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
