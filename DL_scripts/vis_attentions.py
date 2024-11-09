@@ -163,22 +163,18 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         print(data)
-        outputs = get_attentions(data, model)
-        print(f'attentions: {outputs[-1]}')
-        print(f'attentions #: {len(outputs[-1])}\t{outputs[-1].shape}') 
-        # number of attentions: 32, shape: (32, 12, 512, 512) --> 12 attention heads per batch, each attention head has 512 x 512 values 
-        print(f'attentions #: {len(outputs[-1][0])}\t{outputs[-1][0].shape}')
-        # number of attentions: 12, shape: (12, 512, 512) --> attentions for the first sequence in the batch
-        print(f'attentions #: {len(outputs[-1][0][0])}\t{outputs[-1][0][0].shape}')
-        # number of attentions: 12, shape: (512, 512) --> attention weights for the first attention head of the first sequence in the batch
-        input_ids = data["input_ids"]
+        attentions = get_attentions(data, model)
+        print(f'attentions : {attentions.shape}') 
+
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
-        for seq_ids in data["input_ids"]:
-            print(seq_ids.numpy())
-            seq_kmers = [vocab[i] for i in seq_ids.numpy()]
-            print(seq_kmers)
-        #hm = sn.heatmap(data = data) 
+        print(data["input_ids"].shape, )
+        for i in range(len(data["input_ids"]))
+            seq_ids = data["input_ids"][i].numpy()
+            seq_kmers = [vocab[i] for i in seq_ids]
+            # get attention weights of the last attention head
+            attentions_weights = outputs[-1][-1][i]
+            # hm = sn.heatmap(data = data) 
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
