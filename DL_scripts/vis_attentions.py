@@ -195,12 +195,12 @@ def main():
             plt.grid(True)
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
             # plot heatmap of attention weights
-            df = pd.dataframe(attentions_weights)
+            df = pd.DataFrame(attentions_weights)
             df.columns = seq_kmers
             df.set_index(seq_kmers)
             print(df)
             #plt.figure(figsize=(10, 10))
-            #sn.heatmap(data=attentions_weights) 
+            #sn.heatmap(data=attentions_weights, annot=True, xticklabels=df.columns, yticklabels=df.index) 
             #plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
 
         # 1. get species with high performance
