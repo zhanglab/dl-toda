@@ -180,7 +180,7 @@ def main():
             print(seq_kmers)
             # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             print(attentions[-1][-1][i].shape)
-            attentions_weights = attentions[-1][-1][i]
+            attentions_weights = attentions[-1][-1][i].numpy()
             print(f'Stats on attentions:\nMean: {np.mean(attentions_weights)}\tSd: {np.std(attentions_weights)}\t'
                 f'Median: {np.median(attentions_weights)}\tMin: {np.min(attentions_weights)}\tMax: {np.max(attentions_weights)}\t'
                 f'Sum: {np.sum(attentions_weights)}')
