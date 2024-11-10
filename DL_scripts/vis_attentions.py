@@ -196,7 +196,7 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             print(df.shape)
             print(df)
-            plt.figure(figsize=(12, 12))
+            plt.figure(figsize=(15, 15))
             sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns) 
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
             # plot histogram of attention weights
