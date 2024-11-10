@@ -199,9 +199,9 @@ def main():
             df.columns = seq_kmers
             print(df.columns)
             print(df)
-            #plt.figure(figsize=(10, 10))
-            #sn.heatmap(data=attentions_weights, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
-            #plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
+            plt.figure(figsize=(10, 10))
+            sn.heatmap(data=attentions_weights, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
+            plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
