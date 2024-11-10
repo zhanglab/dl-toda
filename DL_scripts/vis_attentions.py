@@ -182,22 +182,10 @@ def main():
             # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             print(attentions[-1][-1][i].shape)
             attentions_weights = attentions[-1][-1][i].numpy()
-            print(f'Stats on attentions:\nMean: {np.mean(attentions_weights)}\tSd: {np.std(attentions_weights)}\t'
-                f'Median: {np.median(attentions_weights)}\tMin: {np.min(attentions_weights)}\tMax: {np.max(attentions_weights)}\t'
-                f'Sum: {np.sum(attentions_weights)}')
-            print(attentions_weights.flatten().shape)
-            print(attentions_weights.flatten())
-            # plot histogram of attention weights
-            plt.figure(figsize=(10, 6))
-            sn.histplot(data=attentions_weights.flatten())
-            plt.xlabel('Attention Weights')
-            plt.ylabel('Frequency')
-            plt.grid(True)
-            plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
             # plot heatmap of attention weights
             df = pd.DataFrame(attentions_weights)
             df.columns = seq_kmers
-            
+            # remove columns and rows [PAD]
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
             print(len(pad_idx))
             print(df.shape)
@@ -211,6 +199,16 @@ def main():
             plt.figure(figsize=(10, 10))
             sn.heatmap(data=df, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
+            # plot histogram of attention weights
+            plt.figure(figsize=(10, 6))
+            sn.histplot(data=df.values.tolist())
+            plt.xlabel('Attention Weights')
+            plt.ylabel('Frequency')
+            plt.grid(True)
+            plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
+            print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
+                f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
+                f'Sum: {np.sum(df.values.tolist())}')
             # get list of relevant kmers
 
         # 1. get species with high performance
