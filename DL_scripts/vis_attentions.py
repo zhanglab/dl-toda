@@ -197,7 +197,7 @@ def main():
             print(df.shape)
             print(df)
             plt.figure(figsize=(10, 10))
-            sn.heatmap(data=df, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
+            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns) 
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
             # plot histogram of attention weights
             plt.figure(figsize=(10, 6))
@@ -206,6 +206,7 @@ def main():
             plt.ylabel('Frequency')
             plt.grid(True)
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
+            # get stats on attention weights
             print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
                 f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
                 f'Sum: {np.sum(df.values.tolist())}')
