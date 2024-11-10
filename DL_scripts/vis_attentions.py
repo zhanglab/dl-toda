@@ -178,10 +178,19 @@ def main():
             seq_kmers = [vocab[i] for i in seq_ids]
             print(seq_ids)
             print(seq_kmers)
-            # get attention weights of the last attention head
+            # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             print(attentions[-1][-1][i].shape)
             attentions_weights = attentions[-1][-1][i]
-            # hm = sn.heatmap(data = data) 
+            print(f'Stats on attentions:\nMean: {np.mean(attentions_weights)}\tSd: {np.std(attentions_weights)}\t'
+                f'Median: {np.median(attentions_weights)}\tMin: {np.min(attentions_weights)}\tMax: {np.max(attentions_weights)}\t'
+                f'Sum: {np.sum(attentions_weights)}')
+            plt.figure(figsize=(10, 6))
+            sn.histplot(data=attentions_weights)
+            plt.xlabel('Attention Weights')
+            plt.ylabel('Frequency')
+            plt.grid(Tre)
+            plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
+            # hm = sn.heatmap(data=attentions_weights) 
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
