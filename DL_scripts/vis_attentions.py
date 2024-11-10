@@ -197,11 +197,29 @@ def main():
             # plot heatmap of attention weights
             df = pd.DataFrame(attentions_weights)
             df.columns = seq_kmers
-            print(df.columns)
+            
+            pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
+            print(len(pad_idx))
+            print(df.shape)
+            # remove rows ['PAD']
+            df = df.drop(pad_idx, axis='index')
+            print(df.shape)
+            # remove columns ['PAD']
+            df = df.drop('[PAD]', axis='columns')
+            print(df.shape)
             print(df)
-            plt.figure(figsize=(10, 10))
-            sn.heatmap(data=attentions_weights, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
-            plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
+            
+
+
+
+            
+
+
+            
+            # plt.figure(figsize=(10, 10))
+            # sn.heatmap(data=attentions_weights, annot=True, xticklabels=df.columns, yticklabels=df.columns) 
+            # plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
+            # get list of relevant kmers
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
