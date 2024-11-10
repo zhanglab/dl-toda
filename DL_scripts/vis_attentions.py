@@ -184,8 +184,10 @@ def main():
             print(f'Stats on attentions:\nMean: {np.mean(attentions_weights)}\tSd: {np.std(attentions_weights)}\t'
                 f'Median: {np.median(attentions_weights)}\tMin: {np.min(attentions_weights)}\tMax: {np.max(attentions_weights)}\t'
                 f'Sum: {np.sum(attentions_weights)}')
+            print(ndarray.flatten(attentions_weights).shape)
+            print(ndarray.flatten(attentions_weights))
             plt.figure(figsize=(10, 6))
-            sn.histplot(data=attentions_weights)
+            sn.histplot(data=ndarray.flatten(attentions_weights))
             plt.xlabel('Attention Weights')
             plt.ylabel('Frequency')
             plt.grid(True)
