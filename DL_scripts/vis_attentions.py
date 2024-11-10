@@ -162,7 +162,7 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        list(attentions) = get_attentions(data, model)
+        attentions = get_attentions(data, model)
         print(f'attentions : {len(attentions)}') 
         print(attentions[-1].shape)
 
