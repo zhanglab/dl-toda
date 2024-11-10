@@ -188,7 +188,7 @@ def main():
             sn.histplot(data=attentions_weights)
             plt.xlabel('Attention Weights')
             plt.ylabel('Frequency')
-            plt.grid(Tre)
+            plt.grid(True)
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
             # hm = sn.heatmap(data=attentions_weights) 
 
