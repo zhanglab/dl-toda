@@ -164,16 +164,23 @@ def main():
     for batch, data in enumerate(test_input.take(test_steps), 1):
         attentions = get_attentions(data, model)
         print(f'attentions : {len(attentions)}') 
+        # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         print(attentions[-1].shape)
+        # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
+        print(attentions[-1][-1].shape)
 
         # get kmers of ids
         print(f'input ids: {data["input_ids"]}')
-        print(data["input_ids"].shape, )
+        # (batch_size, max_position_embeddings)
+        print(data["input_ids"].shape)
         for i in range(len(data["input_ids"])):
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
+            print(seq_ids)
+            print(seq_kmers)
             # get attention weights of the last attention head
-            attentions_weights = outputs[-1][-1][i]
+            print(attentions[-1][-1][i].shape)
+            attentions_weights = attentions[-1][-1][i]
             # hm = sn.heatmap(data = data) 
 
         # 1. get species with high performance
