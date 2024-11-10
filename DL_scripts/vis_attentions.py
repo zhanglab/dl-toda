@@ -8,6 +8,7 @@ import numpy as np
 import math
 import argparse
 import seaborn as sn
+import pandas as pd
 import matplotlib.pyplot as plt 
 
 
@@ -186,13 +187,21 @@ def main():
                 f'Sum: {np.sum(attentions_weights)}')
             print(attentions_weights.flatten().shape)
             print(attentions_weights.flatten())
+            # plot histogram of attention weights
             plt.figure(figsize=(10, 6))
             sn.histplot(data=attentions_weights.flatten())
             plt.xlabel('Attention Weights')
             plt.ylabel('Frequency')
             plt.grid(True)
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
-            # hm = sn.heatmap(data=attentions_weights) 
+            # plot heatmap of attention weights
+            df = pd.dataframe(attentions_weights)
+            df.columns = seq_kmers
+            df.set_index(seq_kmers)
+            print(df)
+            #plt.figure(figsize=(10, 10))
+            #sn.heatmap(data=attentions_weights) 
+            #plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
