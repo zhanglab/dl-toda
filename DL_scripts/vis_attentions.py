@@ -10,13 +10,17 @@ import argparse
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt 
+import random
 
 
 # set seed
 seed = 42
-os.environ['PYTHONHASHSEED'] = str(seed)
 tf.random.set_seed(seed)
-tf.experimental.numpy.random.seed(seed)
+np.random.seed(seed_value)
+random.seed(seed_value)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+
+# tf.experimental.numpy.random.seed(seed)
 
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -83,9 +87,6 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model):
-    input_ids = data["input_ids"]
-    attention_mask = data["attention_mask"]
-    token_type_ids = data["token_type_ids"]
     outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
     # outputs = model(**data)
     attentions = outputs[-1]
@@ -152,21 +153,22 @@ def main():
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
     
-    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     # following command fails, not all variables in the checkpoint file have been loaded into the current model
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
     
     # use .expect_partial() to restore only a subset of the variables
-    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     # get weights from model check that the weights are always the same after loading checkpoint
     # all_weights = model.get_weights() 
     # print(all_weights)
     # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
 
 
-    model.load_weights(os.path.join(args.ckpt, f'ckpt-best-1'))
-    all_weights = model.get_weights() 
-    print(all_weights)
+    # to be used with save_weights
+    # model.load_weights(os.path.join(args.ckpt, f'ckpt-best-1'))
+    # all_weights = model.get_weights() 
+    # print(all_weights)
 
     # model = tf.keras.models.load_model(args.model, compile=True)
     # all_weights = model.get_weights() 
@@ -210,25 +212,26 @@ def main():
         for i in range(len(data["input_ids"])):
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
-            print(seq_ids)
-            print(seq_kmers)
+            # print(seq_ids)
+            # print(seq_kmers)
             # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-            print(attentions[-1][-1][i].shape)
+            # print(attentions[-1][-1][i].shape)
             attentions_weights = attentions[-1][-1][i].numpy()
+            print(attentions_weights)
             # plot heatmap of attention weights
             df = pd.DataFrame(attentions_weights)
             df.columns = seq_kmers
             # remove columns and rows [PAD]
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
-            print(len(pad_idx))
-            print(df.shape)
+            # print(len(pad_idx))
+            # print(df.shape)
             # remove rows ['PAD']
             df = df.drop(pad_idx, axis='index')
-            print(df.shape)
+            # print(df.shape)
             # remove columns ['PAD']
             df = df.drop('[PAD]', axis='columns')
-            print(df.shape)
-            print(df)
+            # print(df.shape)
+            # print(df)
             plt.figure(figsize=(15, 15))
             sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns) 
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
