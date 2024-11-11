@@ -21,6 +21,7 @@ import time
 import numpy as np
 import math
 import argparse
+import random
 
 
 # set seed
