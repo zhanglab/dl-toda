@@ -15,12 +15,13 @@ import random
 
 # set seed
 seed = 42
+# set seed for tensorflow
 tf.random.set_seed(seed)
-# np.random.seed(seed)
+# set seed for numpy operations
+np.random.seed(seed)
+# set the global python random seed
 random.seed(seed)
-# os.environ['PYTHONHASHSEED'] = str(seed)
 
-tf.experimental.numpy.random.seed(seed)
 
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -222,21 +223,22 @@ def main():
             df.columns = seq_kmers
             # remove columns and rows [PAD]
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
-            # print(len(pad_idx))
-            # print(df.shape)
+            print(len(pad_idx))
+            print(df.shape)
             # remove rows ['PAD']
             df = df.drop(pad_idx, axis='index')
-            # print(df.shape)
+            print(df.shape)
             # remove columns ['PAD']
             df = df.drop('[PAD]', axis='columns')
-            # print(df.shape)
-            # print(df)
+            print(df.shape)
+            print(df)
             plt.figure(figsize=(15, 15))
             sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns) 
+            sn.color_palette("icefire", as_cmap=True)
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
             # plot histogram of attention weights
             plt.figure(figsize=(10, 6))
-            sn.histplot(data=df.values.tolist(), center=0.5)
+            sn.histplot(data=df.values.tolist())
             plt.xlabel('Attention Weights')
             plt.ylabel('Frequency')
             plt.grid(True)
