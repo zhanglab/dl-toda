@@ -18,7 +18,7 @@ import sys
 import json
 import glob
 import time
-# import numpy as np
+import numpy as np
 import math
 import argparse
 
