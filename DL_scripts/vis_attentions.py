@@ -148,7 +148,7 @@ def main():
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
     
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     # following command fails, not all variables in the checkpoint file have been loaded into the current model
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
     
