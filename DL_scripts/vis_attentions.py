@@ -101,6 +101,7 @@ def main():
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file')
+    parser.add_argument('--model', type=str, help='path to model saved with model.save()')
     args = parser.parse_args()
 
 
@@ -142,7 +143,7 @@ def main():
     bert_config.output_attentions=True
     print(bert_config)
     
-    model = TFBertForSequenceClassification(config=bert_config)
+    #model = TFBertForSequenceClassification(config=bert_config)
     
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
@@ -150,12 +151,19 @@ def main():
     checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     # following command fails, not all variables in the checkpoint file have been loaded into the current model
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
+    
     # use .expect_partial() to restore only a subset of the variables
-    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
-
+    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     # get weights from model check that the weights are always the same after loading checkpoint
+    # all_weights = model.get_weights() 
+    # print(all_weights)
+    # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
+
+
+    model = tf.keras.models.load_model(args.model)
     all_weights = model.get_weights() 
     print(all_weights)
+
 
     # get name of layers in model
     # layer_names = [layer.name for layer in model.layers]
