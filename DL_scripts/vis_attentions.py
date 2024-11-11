@@ -88,7 +88,8 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model):
-    outputs = model(**data)
+    outputs = model(data)
+    # outputs = model(**data)
     attentions = outputs[-1]
 
     return attentions
