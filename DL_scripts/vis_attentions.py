@@ -170,11 +170,12 @@ def main():
         outputs = get_attentions(data, model)
         attentions = list(outputs[-1])
         print(f'attentions : {len(attentions)}') 
-        print(attentions.shape)
+        print(attentions)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
-        # # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
-        # # concatenate matrices along the first axis (rows)
-        # all_attention_heads = tf.concat(attentions[-1])
+        # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
+        # concatenate matrices along the first axis (rows)
+        all_attention_heads = tf.concat(attentions, axis=0)
+        print(all_attention_heads)
         # print(attentions[-1][-1].shape)
 
         # # get kmers of ids
