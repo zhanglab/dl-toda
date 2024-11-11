@@ -295,7 +295,6 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
-
     if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
         outputs = model(**data)
         logits = model(**data).logits
@@ -303,7 +302,6 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         probs = tf.nn.softmax(logits, axis=-1)
         labels = data["labels"]
-
     else:
         reads, labels = data
         probs = model(reads, training=training)
@@ -320,10 +318,10 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
     else:
         pred_probs = tf.reduce_max(probs, axis=1)
 
-    if target_label:
-        label_prob = tf.gather(probs, target_label, axis=1)
+    # if target_label:
+    #     label_prob = tf.gather(probs, target_label, axis=1)
 
-    return pred_labels, pred_probs, label_prob
+    return pred_labels, pred_probs, labels
 
 
 def main():
@@ -512,7 +510,7 @@ def main():
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+                batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
 
             if batch == 1:
                 all_labels = [labels]
