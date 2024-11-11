@@ -232,9 +232,10 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             print(df.shape)
             print(df)
+            # set color palette
+            palette = sn.color_palette("icefire", as_cmap=True)
             plt.figure(figsize=(15, 15))
-            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns) 
-            sn.color_palette("icefire", as_cmap=True)
+            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
             # plot histogram of attention weights
             plt.figure(figsize=(10, 6))
