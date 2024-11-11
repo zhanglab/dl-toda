@@ -148,8 +148,10 @@ def main():
     args.vector_size = args.config_dict['max_position_embeddings']
     
     checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
-    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    # following command fails, not all variables in the checkpoint file have been loaded into the current model
+    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
+    # use .expect_partial() to restore only a subset of the variables
+    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
 
     # get weights from model check that the weights are always the same after loading checkpoint
     all_weights = model.get_weights() 
