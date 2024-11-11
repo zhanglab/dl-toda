@@ -138,6 +138,7 @@ def main():
     
     # create BERT config object + model
     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+    # make output of attentions possible
     bert_config.output_attentions=True
     print(bert_config)
     
@@ -146,14 +147,19 @@ def main():
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
     
-    checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
+    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
 
-    layer_names = [layer.name for layer in model.layers]
+    # get weights from model check that the weights are always the same after loading checkpoint
+    all_weights = model.get_weights() 
+    print(all_weights)
+
+    # get name of layers in model
+    # layer_names = [layer.name for layer in model.layers]
+    # print(layer_names)
     # ['bert', 'dropout_37', 'classifier']
-    print(layer_names)
-    layer_weights = model.get_layer('bert').get_weights()
-    print(layer_weights)
+
 
     # get list of testing tfrecords and number of reads per tfrecords
     test_file = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
@@ -207,7 +213,7 @@ def main():
             plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
             # plot histogram of attention weights
             plt.figure(figsize=(10, 6))
-            sn.histplot(data=df.values.tolist())
+            sn.histplot(data=df.values.tolist(), center=0.5)
             plt.xlabel('Attention Weights')
             plt.ylabel('Frequency')
             plt.grid(True)
