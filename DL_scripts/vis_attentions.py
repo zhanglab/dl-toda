@@ -88,12 +88,8 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model):
-    outputs = model(input_ids=data["input_ids"], attention_mask=data["attention_mask"], token_type_ids=data["token_type_ids"])
-    # outputs = model(data)
-    # outputs = model(**data)
-    attentions = outputs[-1]
-
-    return attentions
+    outputs = model(**data)
+    return outputs
 
 def main():
     parser = argparse.ArgumentParser()
@@ -171,7 +167,8 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        attentions = get_attentions(data, model)
+        outputs = get_attentions(data, model)
+        attentions = outputs[-1]
         print(f'attentions : {len(attentions)}') 
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         print(attentions.shape)
