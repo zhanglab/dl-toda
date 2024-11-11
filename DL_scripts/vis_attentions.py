@@ -153,9 +153,9 @@ def main():
     # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     
-    # model = TFBertForSequenceClassification(config=bert_config)
-    # checkpoint = tf.train.Checkpoint(model=model)
-    # checkpoint.restore(args.model).expect_partial()
+    model = TFBertForSequenceClassification(config=bert_config)
+    checkpoint = tf.train.Checkpoint(model=model)
+    checkpoint.restore(args.model).expect_partial()
 
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
@@ -178,7 +178,7 @@ def main():
     # all_weights = model.get_weights() 
     # print(all_weights)
 
-    model = tf.keras.models.load_model(args.model, compile=False)
+    # model = tf.keras.models.load_model(args.model, compile=False)
 
     # all_weights = model.get_weights() 
     # print(all_weights)
