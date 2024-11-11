@@ -718,7 +718,7 @@ def main():
                 # save weights every 5 epochs just for safety precautions
                 if epoch % 1 == 0:
                     checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
-                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'))
                     model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
 
