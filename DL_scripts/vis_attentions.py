@@ -89,16 +89,16 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def get_attentions(data, model):
     outputs = model(**data)
+    all_weights = model.get_weights() 
     attentions = outputs[-1]
 
-    return attentions
+    return attentions, all_weights
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
-    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
@@ -149,11 +149,7 @@ def main():
     bert_config.output_attentions=True
     print(bert_config)
     
-    if args.pretrained:
-        # create model from the pretrained
-        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-    else:
-        model = TFBertForSequenceClassification(config=bert_config)
+    model = TFBertForSequenceClassification(config=bert_config)
     
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
@@ -169,6 +165,8 @@ def main():
     # print(all_weights)
     # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
 
+    for layer in model.layers:
+        print(layer.name)
 
     # to be used with save_weights
     # model.load_weights(os.path.join(args.ckpt, f'ckpt-best-1'))
@@ -203,7 +201,8 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        attentions = get_attentions(data, model)
+        attentions, all_weights = get_attentions(data, model)
+        print(all_weights)
         print(f'attentions : {len(attentions)}') 
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         print(attentions[-1].shape)
