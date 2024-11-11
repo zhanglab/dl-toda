@@ -153,47 +153,9 @@ def main():
     model = TFBertForSequenceClassification(config=bert_config)
     checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
-    
-    # load weights from model saved with model.save()
-    # model = TFBertForSequenceClassification(config=bert_config)
-    # checkpoint = tf.train.Checkpoint(model=model)
-    # checkpoint.restore(args.model).expect_partial()
 
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
-    
-    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-    # following command fails, not all variables in the checkpoint file have been loaded into the current model
-    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
-    
-    # use .expect_partial() to restore only a subset of the variables
-    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
-    # get weights from model check that the weights are always the same after loading checkpoint
-    # all_weights = model.get_weights() 
-    # print(all_weights)
-    # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
-
-
-
-    # to be used with save_weights
-    # model.load_weights(os.path.join(args.ckpt, f'ckpt-best-1'))
-    # all_weights = model.get_weights() 
-    # print(all_weights)
-
-    # model = tf.keras.models.load_model(args.model, compile=False)
-
-    # all_weights = model.get_weights() 
-    # print(all_weights)
-    # --> ValueError: Could not find matching concrete function to call loaded from the SavedModel.
-
-
-
-
-    # get name of layers in model
-    # layer_names = [layer.name for layer in model.layers]
-    # print(layer_names)
-    # ['bert', 'dropout_37', 'classifier']
-
 
     # get list of testing tfrecords and number of reads per tfrecords
     test_file = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
@@ -212,70 +174,75 @@ def main():
         attentions = get_attentions(data, model)
         print(f'attentions : {len(attentions)}') 
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
-        print(attentions[-1].shape)
-        # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
-        print(attentions[-1][-1].shape)
+        print(attentions.shape)
+        # print(attentions[-1].shape)
+        # # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
+        # # concatenate matrices along the first axis (rows)
+        # all_attention_heads = tf.concat(attentions[-1])
+        # print(attentions[-1][-1].shape)
 
-        # get kmers of ids
-        print(f'input ids: {data["input_ids"]}')
-        # (batch_size, max_position_embeddings)
-        print(data["input_ids"].shape)
-        for i in range(len(data["input_ids"])):
-            seq_ids = data["input_ids"][i].numpy()
-            seq_kmers = [vocab[i] for i in seq_ids]
-            # print(seq_ids)
-            # print(seq_kmers)
-            # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-            # print(attentions[-1][-1][i].shape)
-            attentions_weights = attentions[-1][-1][i].numpy()
-            print(attentions_weights)
-            # plot heatmap of attention weights
-            df = pd.DataFrame(attentions_weights)
-            df.columns = seq_kmers
-            # remove columns and rows [PAD]
-            pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
-            print(len(pad_idx))
-            print(df.shape)
-            # remove rows ['PAD']
-            df = df.drop(pad_idx, axis='index')
-            print(df.shape)
-            # remove columns ['PAD']
-            df = df.drop('[PAD]', axis='columns')
-            print(df.shape)
-            print(df)
-            # set color palette
-            palette = sn.color_palette("icefire", as_cmap=True)
-            plt.figure(figsize=(15, 15))
-            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
-            # plot histogram of attention weights
-            print(len(df.values.flatten().tolist()))
-            plt.figure(figsize=(10, 6))
-            sn.histplot(data=df.values.flatten().tolist())
-            plt.xlabel('Attention Weights')
-            plt.ylabel('Frequency')
-            plt.grid(True)
-            plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
-            # get stats on attention weights
-            print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
-                f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
-                f'Sum: {np.sum(df.values.tolist())}')
-            # get list of relevant kmers
+        # # get kmers of ids
+        # print(f'input ids: {data["input_ids"]}')
+        # # (batch_size, max_position_embeddings)
+        # print(data["input_ids"].shape)
+        # for i in range(len(data["input_ids"])):
+        #     print(data["labels"][i])
+        #     seq_ids = data["input_ids"][i].numpy()
+        #     seq_kmers = [vocab[i] for i in seq_ids]
+        #     # print(seq_ids)
+        #     # print(seq_kmers)
+        #     # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+        #     # print(attentions[-1][-1][i].shape)
+        #     attentions_weights = attentions[-1][-1][i].numpy()
+        #     print(attentions_weights)
+        #     # plot heatmap of attention weights
+        #     df = pd.DataFrame(attentions_weights)
+        #     df.columns = seq_kmers
+        #     # remove columns and rows [PAD]
+        #     pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
+        #     print(len(pad_idx))
+        #     print(df.shape)
+        #     # remove rows ['PAD']
+        #     df = df.drop(pad_idx, axis='index')
+        #     print(df.shape)
+        #     # remove columns ['PAD']
+        #     df = df.drop('[PAD]', axis='columns')
+        #     print(df.shape)
+        #     print(df)
+        #     # set color palette
+        #     palette = sn.color_palette("icefire", as_cmap=True)
+        #     plt.figure(figsize=(15, 15))
+        #     sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+        #     plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
+        #     # plot histogram of attention weights
+        #     print(len(df.values.flatten().tolist()))
+        #     plt.figure(figsize=(10, 6))
+        #     sn.histplot(data=df.values.flatten().tolist())
+        #     plt.xlabel('Attention Weights')
+        #     plt.ylabel('Frequency')
+        #     plt.grid(True)
+        #     plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
+        #     # get stats on attention weights
+        #     print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
+        #         f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
+        #         f'Sum: {np.sum(df.values.tolist())}')
+        #     # get list of relevant kmers
 
-        # 1. get species with high performance
-        # 2. find kmers that are attended to each other
-        # 3. get original DNA sequence form sequence of kmers
-        # 4. show parts of the DNA sequence with the meaningful kmers
-        # 5. list the kmers that are relevant
-        # 6. get stats on sequences with meaningful kmers
-        # 7. amongst the species investigated, which ones are part and important to the marine microbiomes
-        # 8. map sequences of interest (and less interesting) to the training and testing genome
-        # + show the regions of interest (and less interesting) on the genome
-        # 9. are the sequences with less relevant kmers less well classified?
-        # 10. what can be done with this information to improve taxonomic classification
+        # # 1. get species with high performance
+        # # 2. find kmers that are attended to each other
+        # # 3. get original DNA sequence form sequence of kmers
+        # # 4. show parts of the DNA sequence with the meaningful kmers
+        # # 5. list the kmers that are relevant
+        # # 6. get stats on sequences with meaningful kmers
+        # # 7. amongst the species investigated, which ones are part and important to the marine microbiomes
+        # # 8. map sequences of interest (and less interesting) to the training and testing genome
+        # # + show the regions of interest (and less interesting) on the genome
+        # # 9. are the sequences with less relevant kmers less well classified?
+        # # 10. what can be done with this information to improve taxonomic classification
 
-        # this study can help develop new methods to improve taxonomic classification of metagenomics data
+        # # this study can help develop new methods to improve taxonomic classification of metagenomics data
 
+        # break
         break
 
 
