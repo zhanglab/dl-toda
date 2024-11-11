@@ -25,9 +25,12 @@ import argparse
 
 # set seed
 seed = 42
-os.environ['PYTHONHASHSEED'] = str(seed)
+# set seed for tensorflow
 tf.random.set_seed(seed)
-tf.experimental.numpy.random.seed(seed)
+# set seed for numpy operations
+np.random.seed(seed)
+# set the global python random seed
+random.seed(seed)
 
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -428,29 +431,24 @@ def main():
 
 
     # load model
-    if args.ckpt is not None:
-        if args.model_type == 'BERT':
-            config = BertConfig.from_json_file(args.bert_config_file)
-            model = BertModel(config=config)
-            # update input vector size
-            args.vector_size = args.config_dict['max_position_embeddings']
-        elif args.model_type == 'BERT_HUGGINGFACE':
-            with open(args.bert_config_file, "r") as f:
+    if args.model_type == 'BERT_HUGGINGFACE':
+        with open(args.bert_config_file, "r") as f:
                 args.config_dict = json.load(f)
-            # create BERT config object + model
-            bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-            bert_config.output_attentions=True
-            print(bert_config)
-            model = TFBertForSequenceClassification(config=bert_config)
-            # update input vector size
-            args.vector_size = args.config_dict['max_position_embeddings']
-        else:
-            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+        # create BERT config object + model
+        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+        model = TFBertForSequenceClassification(config=bert_config)
+        # update input vector size
+        args.vector_size = args.config_dict['max_position_embeddings']
+    else:
+        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+
+    if args.ckpt is not None:
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch}')).expect_partial()
         checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     elif args.model is not None:
-        model = tf.keras.models.load_model(args.model, 'model')
+        checkpoint = tf.train.Checkpoint(model=model)
+        checkpoint.restore(args.model).expect_partial()
+        # model = tf.keras.models.load_model(args.model, 'model')
             # restore the last checkpointed values to the model
     #        checkpoint = tf.train.Checkpoint(model)
     #        checkpoint.restore(tf.train.latest_checkpoint(os.path.join(input_dir, f'run-{run_num}', 'ckpts')))
@@ -541,7 +539,7 @@ def main():
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
                 batch_predictions, batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
-            print(f'attentions: {len(outputs[-1])}')
+            print(f'attentions: {outputs[-1]}')
             print(f'attentions #: {len(outputs[-1])}')
             break
             if batch == 1:
