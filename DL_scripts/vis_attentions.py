@@ -17,8 +17,8 @@ import random
 seed = 42
 tf.random.set_seed(seed)
 np.random.seed(seed)
-random.seed(seed)
-# os.environ['PYTHONHASHSEED'] = str(seed)
+# random.seed(seed)
+os.environ['PYTHONHASHSEED'] = str(seed)
 
 # tf.experimental.numpy.random.seed(seed)
 
