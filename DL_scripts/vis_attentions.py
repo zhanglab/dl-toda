@@ -16,11 +16,11 @@ import random
 # set seed
 seed = 42
 tf.random.set_seed(seed)
-np.random.seed(seed)
+# np.random.seed(seed)
 random.seed(seed)
 # os.environ['PYTHONHASHSEED'] = str(seed)
 
-# tf.experimental.numpy.random.seed(seed)
+tf.experimental.numpy.random.seed(seed)
 
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
