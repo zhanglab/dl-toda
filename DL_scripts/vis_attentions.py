@@ -164,7 +164,7 @@ def main():
     # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
 
 
-    model = tf.keras.models.load_model(args.model)
+    model = tf.keras.models.load_model(args.model, compile=True)
     all_weights = model.get_weights() 
     print(all_weights)
 
