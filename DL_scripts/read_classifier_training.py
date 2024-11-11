@@ -28,9 +28,12 @@ import argparse
 
 # set seed
 seed = 42
-os.environ['PYTHONHASHSEED'] = str(seed)
+# set seed for tensorflow
 tf.random.set_seed(seed)
-tf.experimental.numpy.random.seed(seed)
+# set seed for numpy operations
+np.random.seed(seed)
+# set the global python random seed
+random.seed(seed)
 # activate tensorflow deterministic behavior
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
