@@ -89,11 +89,9 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def get_attentions(data, model):
     outputs = model(**data)
-    all_weights = model.get_weights() 
     attentions = outputs[-1]
 
-    return attentions, all_weights
-
+    return attentions
 
 def main():
     parser = argparse.ArgumentParser()
@@ -149,24 +147,29 @@ def main():
     bert_config.output_attentions=True
     print(bert_config)
     
-    model = TFBertForSequenceClassification(config=bert_config)
+    # model = TFBertForSequenceClassification(config=bert_config)
+    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     
+    model = TFBertForSequenceClassification(config=bert_config)
+    checkpoint = tf.train.Checkpoint(model=model)
+    checkpoint.restore(args.model).expect_partial()
+
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
     
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
     # following command fails, not all variables in the checkpoint file have been loaded into the current model
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).assert_consumed()
     
     # use .expect_partial() to restore only a subset of the variables
-    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     # get weights from model check that the weights are always the same after loading checkpoint
     # all_weights = model.get_weights() 
     # print(all_weights)
     # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
 
-    for layer in model.layers:
-        print(layer.name)
+
 
     # to be used with save_weights
     # model.load_weights(os.path.join(args.ckpt, f'ckpt-best-1'))
@@ -201,8 +204,7 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        attentions, all_weights = get_attentions(data, model)
-        print(all_weights)
+        attentions = get_attentions(data, model)
         print(f'attentions : {len(attentions)}') 
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         print(attentions[-1].shape)
