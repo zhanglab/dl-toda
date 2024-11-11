@@ -296,28 +296,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
 
-    if model_type == 'BERT' and bert_step == "finetuning":
-        input_data = (data["input_ids"], data["token_type_ids"], data["attention_mask"])
-        labels = data["labels"]
-        logits = model(input_data, training=True)
-        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        probs = tf.nn.softmax(logits, axis=-1)
-        loss_value = loss(labels, probs)
-
-    elif model_type == 'BERT' and bert_step == "pretraining":
-        input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label = data
-        logits, masked_lm_probs, masked_lm_log_probs, masked_lm_ids, label_ids, masked_lm_weights, label_weights, one_hot_labels, masked_lm_example_loss, numerator, denominator, masked_lm_loss = model(input_ids, input_mask, token_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids, nsp_label, training)
-        masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
-                                         [-1, masked_lm_log_probs.shape[-1]])
-        masked_lm_predictions = tf.argmax(
-                masked_lm_log_probs, axis=-1, output_type=tf.int32)
-        masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
-        masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
-        masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
-        loss_value_1 = tf.reduce_mean(masked_lm_example_loss)
-        loss_value = loss(masked_lm_ids, masked_lm_probs)
-
-    elif model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
+    if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
         outputs = model(**data)
         logits = model(**data).logits
         loss_value = model(**data).loss
@@ -344,8 +323,7 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
     if target_label:
         label_prob = tf.gather(probs, target_label, axis=1)
 
-    return probs, pred_labels, pred_probs, labels, outputs
-    # return pred_labels, pred_probs, label_prob
+    return pred_labels, pred_probs, label_prob
 
 
 def main():
@@ -511,7 +489,7 @@ def main():
 
             test_input = test_preprocessor.get_device_dataset()
         else:
-            if args.model_type in ['BERT', 'BERT_HUGGINGFACE']:
+            if args.model_type == 'BERT_HUGGINGFACE':
                 if args.bert_step == 'finetuning':
                     args.datatype = 'finetuning'
                 else:
@@ -528,21 +506,14 @@ def main():
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
-            print(data)
-            # outputs = model(**data)
-            # attention = outputs[-1]
-            # print(outputs)
-            # print(attention)
             if args.data_type == 'meta':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
                 batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_predictions, batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
-            print(f'attentions: {outputs[-1]}')
-            print(f'attentions #: {len(outputs[-1])}')
-            break
+                batch_predictions, batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
