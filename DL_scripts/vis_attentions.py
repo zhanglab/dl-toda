@@ -168,11 +168,10 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs = get_attentions(data, model)
-        attentions = outputs[-1]
+        attentions = outputs[-1].numpy()
         print(f'attentions : {len(attentions)}') 
-        # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         print(attentions.shape)
-        # print(attentions[-1].shape)
+        # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
         # # concatenate matrices along the first axis (rows)
         # all_attention_heads = tf.concat(attentions[-1])
