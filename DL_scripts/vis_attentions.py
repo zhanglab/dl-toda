@@ -83,7 +83,11 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model):
-    outputs = model(**data)
+    input_ids = data["input_ids"]
+    attention_mask = data["attention_mask"]
+    token_type_ids = data["token_type_ids"]
+    outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+    # outputs = model(**data)
     attentions = outputs[-1]
 
     return attentions
