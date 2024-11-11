@@ -165,8 +165,8 @@ def main():
     # use .expect_partial() to restore only a subset of the variables
     # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
     # get weights from model check that the weights are always the same after loading checkpoint
-    # all_weights = model.get_weights() 
-    # print(all_weights)
+    all_weights = model.get_weights() 
+    print(all_weights)
     # --> ValueError: Weights for model 'tf_bert_for_sequence_classification' have not yet been created. Weights are created when the model is first called on inputs or `build()` is called with an `input_shape`.
 
 
