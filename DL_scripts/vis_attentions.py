@@ -98,6 +98,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
+    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
@@ -148,7 +149,11 @@ def main():
     bert_config.output_attentions=True
     print(bert_config)
     
-    model = TFBertForSequenceClassification(config=bert_config)
+    if args.pretrained:
+        # create model from the pretrained
+        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+    else:
+        model = TFBertForSequenceClassification(config=bert_config)
     
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
