@@ -168,7 +168,7 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs = get_attentions(data, model)
-        attentions = outputs[-1].numpy()
+        attentions = list(outputs[-1])
         print(f'attentions : {len(attentions)}') 
         print(attentions.shape)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
