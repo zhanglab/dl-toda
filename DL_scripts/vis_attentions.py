@@ -88,7 +88,8 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model):
-    outputs = model(data)
+    outputs = model(input_ids=data["input_ids"], attention_mask=data["attention_mask"], token_type_ids=data["token_type_ids"])
+    # outputs = model(data)
     # outputs = model(**data)
     attentions = outputs[-1]
 
@@ -177,7 +178,8 @@ def main():
     # all_weights = model.get_weights() 
     # print(all_weights)
 
-    model = tf.keras.models.load_model(args.model, compile=True)
+    model = tf.keras.models.load_model(args.model, compile=False)
+
     # all_weights = model.get_weights() 
     # print(all_weights)
     # --> ValueError: Could not find matching concrete function to call loaded from the SavedModel.
