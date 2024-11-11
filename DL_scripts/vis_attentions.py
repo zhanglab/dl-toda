@@ -149,13 +149,15 @@ def main():
     bert_config.output_attentions=True
     print(bert_config)
     
-    # model = TFBertForSequenceClassification(config=bert_config)
-    # checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-    # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
-    
+    # load weights from checkpoint file created with tf.train.Checkpoint() and checkpoint.save()
     model = TFBertForSequenceClassification(config=bert_config)
-    checkpoint = tf.train.Checkpoint(model=model)
-    checkpoint.restore(args.model).expect_partial()
+    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    
+    # load weights from model saved with model.save()
+    # model = TFBertForSequenceClassification(config=bert_config)
+    # checkpoint = tf.train.Checkpoint(model=model)
+    # checkpoint.restore(args.model).expect_partial()
 
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
