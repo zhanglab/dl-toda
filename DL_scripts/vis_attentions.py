@@ -178,8 +178,8 @@ def main():
     # print(all_weights)
 
     model = tf.keras.models.load_model(args.model, compile=True)
-    all_weights = model.get_weights() 
-    print(all_weights)
+    # all_weights = model.get_weights() 
+    # print(all_weights)
     # --> ValueError: Could not find matching concrete function to call loaded from the SavedModel.
 
 
