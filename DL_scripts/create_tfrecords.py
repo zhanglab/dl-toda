@@ -143,7 +143,7 @@ def process_art_data(args, dna_sequences, labels, reads_index):
 
 def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
-    """ DNA sequences """
+    indices_to_mask = [-1, 1, 2]
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
@@ -161,22 +161,30 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
-            
-            # print(f'n_mlm\t{n_mlm}\t{len(dna_list)}')
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             mlm_positions.sort()
-            # print(f'before dna_list\t{dna_list}')
+            # create a boolean array of the size of the input sequence with True for masked positions and false for unmasked positions
+            # mlm_positions_bool = np.array([1 if i in mlm_positions else 0 for i in range(len(dna_list))], dtype='bool')
+            print(mlm_positions)
+            print(len(mlm_positions))
+            new_mlm_positions = set()
+            for mask_position in mlm_positions:
+                for mask_index in indices_to_mask:
+                    current_index = mask_position + mask_index
+                    if current_index <= (len(dna_list)-1) and current_index >= 0:
+                        new_mlm_positions.add(current_index)
+            mlm_positions += list(new_mlm_positions)
+            print(new_mlm_positions)
+            print(len(new_mlm_positions))
+            
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
+            
             # define vector labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            # # if len(mlm_positions) == 1:
-            #     print(f'length of sequence: {len(seq)}\t{seq}')
-            #     print(f'mlm_positions\t{mlm_positions}')
-            #     print(f'after dna_list\t{mlm_dna_list}')
-            #     print(f'mlm_labels: {mlm_labels}')
-
+            print(mlm_labels)
+            break
             # define NSP label - NSP is not implemented here
             next_sentence_label = 1
             dna_list = mlm_dna_list
