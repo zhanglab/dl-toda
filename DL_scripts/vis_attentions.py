@@ -250,7 +250,7 @@ def main():
     for i in range(len(df_label_1)):
         plt.figure(figsize=(15, 15))
         sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette) 
-        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i][])}_label.png'))
+        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i])}_label.png'))
     
     # plot histogram of attention weights
     plt.figure(figsize=(10, 6))
