@@ -207,7 +207,15 @@ def main():
             print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
                 f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
                 f'Sum: {np.sum(df.values.tolist())}')
+
+            palette = sn.color_palette("icefire", as_cmap=True)
+            # for i in range(len(df_label_0)):
+            plt.figure(figsize=(15, 15))
+            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df)}_label.png'))
+
             break
+        break
     
     # # set color palette
     # palette = sn.color_palette("icefire", as_cmap=True)
