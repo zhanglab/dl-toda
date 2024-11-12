@@ -181,7 +181,7 @@ def main():
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
         for i in range(len(data["input_ids"])):
-            label = data["labels"][i].numpy()[0]
+            label = data["labels"][i].numpy()
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
             print(label)
