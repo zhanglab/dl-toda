@@ -89,11 +89,16 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def get_attentions(data, model):
     outputs = model(**data)
+    logits = model(**data).logits
+    probs = tf.nn.softmax(logits, axis=-1)
+    labels = data["labels"]
+    test_accuracy.update_state(labels, probs)
     return outputs
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
+    parser.add_argument('--tsv_file', type=str, help='path to tsv file', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
@@ -163,13 +168,22 @@ def main():
     # compute number of steps required to iterate over entire test set
     test_steps = math.ceil(num_reads/(args.batch_size))
 
+    # get labels from class 0 
+    with open(args.tsvfile, 'r') as f:
+        content = f.readlines()
+        other_labels = [line.rstrip().split('\t')[0] for line in content]
+
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     attention_weights_label_0 = []
     df_label_0 = []
+    kmers_label_0 = []
     attention_weights_label_1 = []
     df_label_1 = []
+    kmers_label_1 = []
+
+    test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs = get_attentions(data, model)
@@ -181,6 +195,8 @@ def main():
         print(attentions[-1].shape)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
+
+        print(f'accuracy: {test_accuracy.result().numpy()}')
 
         for i in range(len(data["input_ids"])):
             label = data["labels"][i].numpy()
@@ -203,47 +219,54 @@ def main():
                 attention_weights_label_1.append(df.values.flatten().tolist())
                 df_label_1.append(df)
 
+            # get kmers with high attention weights
+            filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
+            print(filtered_df)
+            print(filtered_df.columns.tolist())
+            print(len(filtered_df.columns.tolist()))
+
             # get stats on attention weights
             print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
                 f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
                 f'Sum: {np.sum(df.values.tolist())}')
 
-            palette = sn.color_palette("icefire", as_cmap=True)
-            # for i in range(len(df_label_0)):
-            plt.figure(figsize=(15, 15))
-            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df)}_label.png'))
+        #     palette = sn.color_palette("icefire", as_cmap=True)
+        #     # for i in range(len(df_label_0)):
+        #     plt.figure(figsize=(15, 15))
+        #     sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+        #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df)}_label.png'))
 
-            break
-        break
+        #     break
+        # break
     
-    # # set color palette
-    # palette = sn.color_palette("icefire", as_cmap=True)
-    # for i in range(len(df_label_0)):
-    #     plt.figure(figsize=(15, 15))
-    #     sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
-    #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_0[i][])}_label.png'))
+    # set color palette
+    palette = sn.color_palette("icefire", as_cmap=True)
+    print(f'{other_labels}\t{len(df_label_0)}')
+    for i in range(len(df_label_0)):
+        plt.figure(figsize=(15, 15))
+        sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
+        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
     
-    # for i in range(len(df_label_1)):
-    #     plt.figure(figsize=(15, 15))
-    #     sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette) 
-    #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i][])}_label.png'))
+    for i in range(len(df_label_1)):
+        plt.figure(figsize=(15, 15))
+        sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette) 
+        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i][])}_label.png'))
     
-    # # plot histogram of attention weights
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_0)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_other.png'))
+    # plot histogram of attention weights
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_0)
+    plt.xlabel('Attention Weights')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_other.png'))
 
-    # # plot histogram of attention weights
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_1)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_label.png'))
+    # plot histogram of attention weights
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_1)
+    plt.xlabel('Attention Weights')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_label.png'))
 
 
         # 1. get species with high performance
