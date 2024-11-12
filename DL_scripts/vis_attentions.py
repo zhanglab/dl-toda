@@ -348,7 +348,7 @@ def main():
     with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
         f.write('\n'.join(list(kmers_label_1_correct)))
     with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
-    f.write('\n'.join(list(kmers_label_1_incorrect)))
+        f.write('\n'.join(list(kmers_label_1_incorrect)))
 
     label_0_correct = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'c'])
     label_0_incorrect = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'i'])
