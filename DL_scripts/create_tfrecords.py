@@ -177,11 +177,11 @@ def process_dnabert_data(args, dna_sequences, labels):
                     if current_index <= (len(dna_list)-1) and current_index >= 0:
                         print(mask_position, mask_index, current_index)
                         new_mlm_positions.add(current_index)
-                break
+
             mlm_positions += list(new_mlm_positions)
             print(new_mlm_positions)
             print(len(new_mlm_positions))
-            
+            break
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             
