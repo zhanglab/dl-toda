@@ -181,7 +181,6 @@ def process_dnabert_data(args, dna_sequences, labels):
             mlm_positions += list(new_mlm_positions)
             print(new_mlm_positions)
             print(len(new_mlm_positions))
-            break
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             
