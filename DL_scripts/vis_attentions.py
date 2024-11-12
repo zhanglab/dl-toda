@@ -173,7 +173,7 @@ def main():
         outputs = get_attentions(data, model)
         attentions = list(outputs[-1])
         print(len(attentions))
-        print(attentions.shape)
+        print(attentions[-1].shape)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
