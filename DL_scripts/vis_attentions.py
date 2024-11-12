@@ -87,7 +87,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
     return dataset
 
 @tf.function
-def get_attentions(data, model):
+def get_attentions(data, model, test_accuracy):
     outputs = model(**data)
     logits = model(**data).logits
     probs = tf.nn.softmax(logits, axis=-1)
@@ -186,7 +186,7 @@ def main():
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        outputs = get_attentions(data, model)
+        outputs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
         # print number of attention layers
@@ -236,8 +236,8 @@ def main():
         #     sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
         #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df)}_label.png'))
 
-        #     break
-        # break
+            break
+        break
     
     # set color palette
     palette = sn.color_palette("icefire", as_cmap=True)
