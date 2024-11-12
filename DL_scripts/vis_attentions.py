@@ -169,7 +169,7 @@ def main():
     test_steps = math.ceil(num_reads/(args.batch_size))
 
     # get labels from class 0 
-    with open(args.tsvfile, 'r') as f:
+    with open(args.tsv_file, 'r') as f:
         content = f.readlines()
         other_labels = [line.rstrip().split('\t')[0] for line in content]
 
