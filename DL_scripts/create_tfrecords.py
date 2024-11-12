@@ -161,6 +161,8 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
+            print(n_mlm)
+            print(len(dna_list))
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
             mlm_positions.sort()
@@ -173,7 +175,9 @@ def process_dnabert_data(args, dna_sequences, labels):
                 for mask_index in indices_to_mask:
                     current_index = mask_position + mask_index
                     if current_index <= (len(dna_list)-1) and current_index >= 0:
+                        print(mask_position, mask_index, current_index)
                         new_mlm_positions.add(current_index)
+                break
             mlm_positions += list(new_mlm_positions)
             print(new_mlm_positions)
             print(len(new_mlm_positions))
