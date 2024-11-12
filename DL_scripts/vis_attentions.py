@@ -185,19 +185,22 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     attention_weights_label_0 = []
-    df_label_0 = []
-    kmers_label_0 = []
+    # kmers_label_0 = []
     predictions_label_0 = []
     confidence_scores_label_0 = []
-    labels_0 = []
+    # labels_0 = []
 
     attention_weights_label_1 = []
-    df_label_1 = []
-    kmers_label_1 = []
+    # kmers_label_1 = []
     predictions_label_1 = []
     confidence_scores_label_1 = []
 
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
+
+    # set color palette
+    palette = sn.color_palette("icefire", as_cmap=True)
+
+    print(len(all_labels) test_steps)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
@@ -210,7 +213,7 @@ def main():
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
-        print(f'accuracy: {test_accuracy.result().numpy()}')
+        # print(f'accuracy: {test_accuracy.result().numpy()}')
 
         for i in range(len(data["input_ids"])):
             label = data["labels"][i].numpy()
@@ -218,7 +221,6 @@ def main():
             seq_kmers = [vocab[i] for i in seq_ids]
             # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             attentions_weights = attentions[-1][-1][i].numpy()
-            print(attentions_weights)
             df = pd.DataFrame(attentions_weights)
             df.columns = seq_kmers
             # remove columns and rows [PAD]
@@ -228,47 +230,34 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             # get kmers with high attention weights
             filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
+            # plot heatmap of attention weights
+            plt.figure(figsize=(15, 15))
+            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+            if pred_labels[i] == label:
+                plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            else:
+                plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
 
             if label == 0:
                 attention_weights_label_0.append(df.values.flatten().tolist())
-                df_label_0.append(df)
-                kmers_label_0 += filtered_df.columns.tolist()
+                # kmers_label_0 += filtered_df.columns.tolist()
                 confidence_scores_label_0.append(pred_probs[i])
-                labels_0.append(label)
+                # labels_0.append(label)
                 if pred_labels[i] == label:
                     predictions_label_0.append('c') 
                 else:
-                    predictions_label_0.append('i') 
+                    predictions_label_0.append('i')
             else:
                 attention_weights_label_1.append(df.values.flatten().tolist())
-                df_label_1.append(df)
-                kmers_label_1 += filtered_df.columns.tolist()
+                # kmers_label_1 += filtered_df.columns.tolist()
                 confidence_scores_label_1.append(pred_probs[i])
                 if pred_labels[i] == label:
                     predictions_label_1.append('c') 
                 else:
                     predictions_label_1.append('i') 
     
-    # set color palette
-    palette = sn.color_palette("icefire", as_cmap=True)
-    print(f'{len(all_labels)}\t{len(df_label_0)}\t{len(df_label_1)}\t{len(attention_weights_label_0)}\t{len(attention_weights_label_1)}\t{len(kmers_label_0)}\t{len(kmers_label_1)}\t{len(predictions_label_0)}\t{len(predictions_label_1)}\t{len(confidence_scores_label_0)}\t{len(confidence_scores_label_1)}\t{len(labels_0)}')
+    
 
-    for i in range(len(df_label_0)):
-        plt.figure(figsize=(15, 15))
-        sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
-        if predictions_label_0[i] == 'c':
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
-        elif predictions_label_0[i] == 'i':
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
-    
-    for i in range(len(df_label_1)):
-        plt.figure(figsize=(15, 15))
-        sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette)
-        if predictions_label_1[i] == 'c':
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{i}_{len(df_label_1[i])}_label.png'))
-        elif predictions_label_1[i] == 'i':
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{i}_{len(df_label_1[i])}_label.png'))
-    
     # plot histogram of attention weights for other labels
     confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
     confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
@@ -333,29 +322,29 @@ def main():
     plt.grid(True)
     plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_label.png'))
 
-    # store list of relevant kmers
-    print(f'# relevant kmers for label 0: {len(set(kmers_label_0))}')
-    print(f'# relevant kmers for label 1: {len(set(kmers_label_1))}')
-    kmers_label_0_correct = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'c'])
-    kmers_label_0_incorrect = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'i'])
-    with open(os.path.join(args.output_dir, 'relevant_kmers_correct_other'), 'w') as f:
-        f.write('\n'.join(list(kmers_label_0_correct)))
-    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_other'), 'w') as f:
-        f.write('\n'.join(list(kmers_label_0_incorrect)))
+    # # store list of relevant kmers
+    # print(f'# relevant kmers for label 0: {len(set(kmers_label_0))}')
+    # print(f'# relevant kmers for label 1: {len(set(kmers_label_1))}')
+    # kmers_label_0_correct = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'c'])
+    # kmers_label_0_incorrect = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'i'])
+    # with open(os.path.join(args.output_dir, 'relevant_kmers_correct_other'), 'w') as f:
+    #     f.write('\n'.join(list(kmers_label_0_correct)))
+    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_other'), 'w') as f:
+    #     f.write('\n'.join(list(kmers_label_0_incorrect)))
 
-    kmers_label_1_correct = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'c'])
-    kmers_label_1_incorrect = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'i'])
-    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
-        f.write('\n'.join(list(kmers_label_1_correct)))
-    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
-        f.write('\n'.join(list(kmers_label_1_incorrect)))
+    # kmers_label_1_correct = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'c'])
+    # kmers_label_1_incorrect = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'i'])
+    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
+    #     f.write('\n'.join(list(kmers_label_1_correct)))
+    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
+    #     f.write('\n'.join(list(kmers_label_1_incorrect)))
 
-    label_0_correct = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'c'])
-    label_0_incorrect = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'i'])
-    with open(os.path.join(args.output_dir, 'labels_other_correct'), 'w') as f:
-        f.write('\n'.join(list(label_0_correct)))
-    with open(os.path.join(args.output_dir, 'labels_other_incorrect'), 'w') as f:
-        f.write('\n'.join(list(label_0_incorrect)))
+    # label_0_correct = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'c'])
+    # label_0_incorrect = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'i'])
+    # with open(os.path.join(args.output_dir, 'labels_other_correct'), 'w') as f:
+    #     f.write('\n'.join(list(label_0_correct)))
+    # with open(os.path.join(args.output_dir, 'labels_other_incorrect'), 'w') as f:
+    #     f.write('\n'.join(list(label_0_incorrect)))
 
 
         # 3. get original DNA sequence form sequence of kmers
