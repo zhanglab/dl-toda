@@ -200,7 +200,7 @@ def main():
     # set color palette
     palette = sn.color_palette("icefire", as_cmap=True)
 
-    print(len(all_labels) test_steps)
+    print(len(all_labels), test_steps)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
