@@ -251,9 +251,7 @@ def main():
     
     # set color palette
     palette = sn.color_palette("icefire", as_cmap=True)
-    print(f'{len(all_labels)}\t{len(df_label_0)}\t{len(df_label_1)}\t{len(attention_weights_label_0)}\t{len(attention_weights_label_1)}\t'
-        f'{len(kmers_label_0)}\t{len(kmers_label_1)}\t{len(predictions_label_0)}\t{len(predictions_label_1)}'
-        f'{len(confidence_scores_label_0)}\t{len(confidence_scores_label_1)}\t{len(labels_0)}')
+    print(f'{len(all_labels)}\t{len(df_label_0)}\t{len(df_label_1)}\t{len(attention_weights_label_0)}\t{len(attention_weights_label_1)}\t{len(kmers_label_0)}\t{len(kmers_label_1)}\t{len(predictions_label_0)}\t{len(predictions_label_1)}\t{len(confidence_scores_label_0)}\t{len(confidence_scores_label_1)}\t{len(labels_0)}')
 
     for i in range(len(df_label_0)):
         plt.figure(figsize=(15, 15))
