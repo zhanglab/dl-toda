@@ -167,7 +167,9 @@ def main():
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     attention_weights_label_0 = []
+    df_label_0 = []
     attention_weights_label_1 = []
+    df_label_1 = []
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs = get_attentions(data, model)
@@ -184,47 +186,57 @@ def main():
             label = data["labels"][i].numpy()
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
-            print(label)
-            # # print(seq_ids)
-            # # print(seq_kmers)
-            # # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-            # # print(attentions[-1][-1][i].shape)
-            # attentions_weights = attentions[-1][-1][i].numpy()
-            # print(attentions_weights)
-            # # plot heatmap of attention weights
-            # df = pd.DataFrame(attentions_weights)
-            # df.columns = seq_kmers
-            # # remove columns and rows [PAD]
-            # pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
-            # print(len(pad_idx))
-            # print(df.shape)
-            # # remove rows ['PAD']
-            # df = df.drop(pad_idx, axis='index')
-            # print(df.shape)
-            # # remove columns ['PAD']
-            # df = df.drop('[PAD]', axis='columns')
-            # print(df.shape)
-            # print(df)
+            # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+            attentions_weights = attentions[-1][-1][i].numpy()
+            print(attentions_weights)
+            df = pd.DataFrame(attentions_weights)
+            df.columns = seq_kmers
+            # remove columns and rows [PAD]
+            pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
+            df = df.drop(pad_idx, axis='index')
+            # remove columns ['PAD']
+            df = df.drop('[PAD]', axis='columns')
+            if label == 0:
+                attention_weights_label_0.append(df.values.flatten().tolist())
+                df_label_0.append(df)
+            else:
+                attention_weights_label_1.append(df.values.flatten().tolist())
+                df_label_1.append(df)
 
-            # df.values.flatten().tolist()
-    
-    # set color palette
-    palette = sn.color_palette("icefire", as_cmap=True)
-    plt.figure(figsize=(15, 15))
-    sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_heatmap.png'))
-    
-    # plot histogram of attention weights
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=df.values.flatten().tolist())
-    plt.xlabel('Attention Weights')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist.png'))
             # get stats on attention weights
-            # print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
-            #     f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
-            #     f'Sum: {np.sum(df.values.tolist())}')
+            print(f'Stats on attentions:\nMean: {np.mean(df.values.tolist())}\tSd: {np.std(df.values.tolist())}\t'
+                f'Median: {np.median(df.values.tolist())}\tMin: {np.min(df.values.tolist())}\tMax: {np.max(df.values.tolist())}\t'
+                f'Sum: {np.sum(df.values.tolist())}')
+            break
+    
+    # # set color palette
+    # palette = sn.color_palette("icefire", as_cmap=True)
+    # for i in range(len(df_label_0)):
+    #     plt.figure(figsize=(15, 15))
+    #     sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
+    #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_0[i][])}_label.png'))
+    
+    # for i in range(len(df_label_1)):
+    #     plt.figure(figsize=(15, 15))
+    #     sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette) 
+    #     plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i][])}_label.png'))
+    
+    # # plot histogram of attention weights
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_0)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_other.png'))
+
+    # # plot histogram of attention weights
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_1)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_label.png'))
+
 
         # 1. get species with high performance
         # 2. find kmers that are attended to each other
