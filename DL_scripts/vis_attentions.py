@@ -93,7 +93,15 @@ def get_attentions(data, model, test_accuracy):
     probs = tf.nn.softmax(logits, axis=-1)
     labels = data["labels"]
     test_accuracy.update_state(labels, probs)
-    return outputs
+
+    # get predicted labels and confidence scores
+    pred_labels = tf.math.argmax(probs, axis=1)
+    if tf.shape(probs)[1] == 2:
+        pred_probs = probs
+    else:
+        pred_probs = tf.reduce_max(probs, axis=1)
+
+    return outputs, pred_labels, pred_probs
 
 def main():
     parser = argparse.ArgumentParser()
@@ -171,7 +179,7 @@ def main():
     # get labels from class 0 
     with open(args.tsv_file, 'r') as f:
         content = f.readlines()
-        other_labels = [line.rstrip().split('\t')[0] for line in content]
+        all_labels = [line.rstrip().split('\t')[0] for line in content]
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
@@ -179,20 +187,26 @@ def main():
     attention_weights_label_0 = []
     df_label_0 = []
     kmers_label_0 = []
+    predictions_label_0 = []
+    confidence_scores_label_0 = []
+    labels_0 = []
+
     attention_weights_label_1 = []
     df_label_1 = []
     kmers_label_1 = []
+    predictions_label_1 = []
+    confidence_scores_label_1 = []
 
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
-        outputs = get_attentions(data, model, test_accuracy)
+        outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
         # print number of attention layers
-        print(len(attentions))
+        # print(len(attentions))
         # print dimensions of the output of the last attention layer
-        print(attentions[-1].shape)
+        # print(attentions[-1].shape)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
@@ -219,57 +233,135 @@ def main():
                 attention_weights_label_0.append(df.values.flatten().tolist())
                 df_label_0.append(df)
                 kmers_label_0 += filtered_df.columns.tolist()
+                confidence_scores_label_0.append(pred_probs[i])
+                labels_0.append(label)
+                if pred_labels[i] == label:
+                    predictions_label_0.append('c') 
+                else:
+                    predictions_label_0.append('i') 
             else:
                 attention_weights_label_1.append(df.values.flatten().tolist())
                 df_label_1.append(df)
                 kmers_label_1 += filtered_df.columns.tolist()
+                confidence_scores_label_1.append(pred_probs[i])
+                if pred_labels[i] == label:
+                    predictions_label_1.append('c') 
+                else:
+                    predictions_label_1.append('i') 
     
     # set color palette
     palette = sn.color_palette("icefire", as_cmap=True)
-    print(f'{len(other_labels)}\t{len(df_label_0)}')
+    print(f'{len(all_labels)}\t{len(df_label_0)}\t{len(df_label_1)}\t{len(attention_weights_label_0)}\t{len(attention_weights_label_1)}\t'
+        f'{len(kmers_label_0)}\t{len(kmers_label_1)}\t{len(predictions_label_0)}\t{len(predictions_label_1)}'
+        f'{len(confidence_scores_label_0)}\t{len(confidence_scores_label_1)}\t{len(labels_0)}')
+
     for i in range(len(df_label_0)):
         plt.figure(figsize=(15, 15))
         sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
-        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
+        if predictions_label_0[i] == 'c':
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
+        elif predictions_label_0[i] == 'i':
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{i}_{len(df_label_0[i])}_{other_labels[i]}.png'))
     
     for i in range(len(df_label_1)):
         plt.figure(figsize=(15, 15))
-        sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette) 
-        plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{i}_{len(df_label_1[i])}_label.png'))
+        sn.heatmap(data=df_label_1[i], annot=False, xticklabels=df_label_1[i].columns, yticklabels=df_label_1[i].columns, cmap=palette)
+        if predictions_label_1[i] == 'c':
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{i}_{len(df_label_1[i])}_label.png'))
+        elif predictions_label_1[i] == 'i':
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{i}_{len(df_label_1[i])}_label.png'))
     
-    # plot histogram of attention weights
+    # plot histogram of attention weights for other labels
+    confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
+    confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
     plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_0)
-    plt.xlabel('Attention Weights')
+    sn.histplot(data=confidence_scores_label_0_correct)
+    plt.xlabel('Confidence Scores')
     plt.ylabel('Frequency')
     plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_other.png'))
+    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_other.png'))
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=confidence_scores_label_0_incorrect)
+    plt.xlabel('Confidence Scores')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_other.png'))
 
-    # plot histogram of attention weights
+    # plot histogram of attention weights for label investigated
+    confidence_scores_label_1_correct = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'c']
+    confidence_scores_label_1_incorrect = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'i']
     plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_1)
+    sn.histplot(data=confidence_scores_label_1_correct)
+    plt.xlabel('Confidence Scores')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_label.png'))
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=confidence_scores_label_1_incorrect)
+    plt.xlabel('Confidence Scores')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_label.png'))
+
+    # plot histogram of confidence scores for other labels
+    attention_weights_label_0_correct = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'c']
+    attention_weights_label_0_incorrect = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'i']
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_0_correct)
     plt.xlabel('Attention Weights')
     plt.ylabel('Frequency')
     plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_hist_label.png'))
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_other.png'))
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_0_incorrect)
+    plt.xlabel('Attention Weights')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_other.png'))
+
+    # plot histogram of attention weights for label investigated
+    attention_weights_label_1_correct = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'c']
+    attention_weights_label_1_incorrect = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'i']
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_1_correct)
+    plt.xlabel('Attention Weights')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_label.png'))
+    plt.figure(figsize=(10, 6))
+    sn.histplot(data=attention_weights_label_1_incorrect)
+    plt.xlabel('Attention Weights')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_label.png'))
 
     # store list of relevant kmers
     print(f'# relevant kmers for label 0: {len(set(kmers_label_0))}')
     print(f'# relevant kmers for label 1: {len(set(kmers_label_1))}')
+    kmers_label_0_correct = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'c'])
+    kmers_label_0_incorrect = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'i'])
+    with open(os.path.join(args.output_dir, 'relevant_kmers_correct_other'), 'w') as f:
+        f.write('\n'.join(list(kmers_label_0_correct)))
+    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_other'), 'w') as f:
+        f.write('\n'.join(list(kmers_label_0_incorrect)))
 
-    with open(os.path.join(args.output_dir, 'relevant_kmers_other'), 'w') as f:
-        f.write('\n'.join(kmers_label_0))
+    kmers_label_1_correct = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'c'])
+    kmers_label_1_incorrect = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'i'])
+    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
+        f.write('\n'.join(list(kmers_label_1_correct)))
+    with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
+    f.write('\n'.join(list(kmers_label_1_incorrect)))
 
-    with open(os.path.join(args.output_dir, 'relevant_kmers_label'), 'w') as f:
-        f.write('\n'.join(kmers_label_1))
+    label_0_correct = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'c'])
+    label_0_incorrect = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'i'])
+    with open(os.path.join(args.output_dir, 'labels_other_correct'), 'w') as f:
+        f.write('\n'.join(list(label_0_correct)))
+    with open(os.path.join(args.output_dir, 'labels_other_incorrect'), 'w') as f:
+        f.write('\n'.join(list(label_0_incorrect)))
 
 
-        # 1. get species with high performance
-        # 2. find kmers that are attended to each other
         # 3. get original DNA sequence form sequence of kmers
         # 4. show parts of the DNA sequence with the meaningful kmers
-        # 5. list the kmers that are relevant
-        # 6. get stats on sequences with meaningful kmers
         # 7. amongst the species investigated, which ones are part and important to the marine microbiomes
         # 8. map sequences of interest (and less interesting) to the training and testing genome
         # + show the regions of interest (and less interesting) on the genome
