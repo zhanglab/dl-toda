@@ -241,7 +241,7 @@ def main():
     
     # set color palette
     palette = sn.color_palette("icefire", as_cmap=True)
-    print(f'{other_labels}\t{len(df_label_0)}')
+    print(f'{len(other_labels)}\t{len(df_label_0)}')
     for i in range(len(df_label_0)):
         plt.figure(figsize=(15, 15))
         sn.heatmap(data=df_label_0[i], annot=False, xticklabels=df_label_0[i].columns, yticklabels=df_label_0[i].columns, cmap=palette) 
