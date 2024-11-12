@@ -171,23 +171,20 @@ def main():
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs = get_attentions(data, model)
+        # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
+        # print number of attention layers
         print(len(attentions))
+        # print dimensions of the output of the last attention layer
         print(attentions[-1].shape)
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
-
-        # print(attentions[-1][-1].shape)
-
-        # get kmers of ids
-        # print(f'input ids: {data["input_ids"]}')
-        # (batch_size, max_position_embeddings)
-        # print(data["input_ids"].shape)
         for i in range(len(data["input_ids"])):
-            print(data["labels"][i])
+            label = data["labels"][i].numpy()[0]
             seq_ids = data["input_ids"][i].numpy()
             seq_kmers = [vocab[i] for i in seq_ids]
+            print(label)
             # # print(seq_ids)
             # # print(seq_kmers)
             # # get attention weights of the last attention head for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
