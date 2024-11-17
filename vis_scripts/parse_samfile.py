@@ -49,9 +49,9 @@ def get_references(content, alignments):
             # ref[line.rstrip().split('\t')[1].split(':')[1]] = int(line.rstrip().split('\t')[2].split(':')[1])
     return ref
 
-def get_data(samfile):
+def get_data(args, samfile):
     alignments = defaultdict(list)
-    with open(f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv', 'w') as outfile:
+    with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
         with open(samfile, 'r') as f:
             content = f.readlines()
             for i in range(len(content)):
@@ -70,46 +70,48 @@ def main():
     parser.add_argument('--samfile', type=str, help='path to SAM file')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--num_processes', type=int, default=8)
+    parser.add_argument('--coverage', help="compute coverage of reference sequences", action='store_true', default=False)
     args = parser.parse_args()
     
     # get references
     ref_info, alignments = get_data(args.samfile)
     print(ref_info)
 
-    # determine the size of each subtask
-    size = math.ceil(len(alignments)/args.num_processes)
+    if args.coverage:
+        # determine the size of each subtask
+        size = math.ceil(len(alignments)/args.num_processes)
 
-    # determine the references in each subtasks
-    chunks = []
-    data = {}
-    for k, v in alignments.items():
-        if len(data) < size:
-            data.update({k: v})
-        else:
+        # determine the references in each subtasks
+        chunks = []
+        data = {}
+        for k, v in alignments.items():
+            if len(data) < size:
+                data.update({k: v})
+            else:
+                chunks.append(data)
+                data = {k: v}
+        if len(chunks) < args.num_processes:
             chunks.append(data)
-            data = {k: v}
-    if len(chunks) < args.num_processes:
-        chunks.append(data)
 
-    num_refs = sum([len(i) for i in chunks])
-    print(size, len(alignments), len(ref_info), len(chunks), args.num_processes, num_refs)
+        num_refs = sum([len(i) for i in chunks])
+        print(size, len(alignments), len(ref_info), len(chunks), args.num_processes, num_refs)
 
-    with mp.Manager() as manager:
-        results = manager.dict()
-        processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], results, i)) for i in range(len(ref_info))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+        with mp.Manager() as manager:
+            results = manager.dict()
+            processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], results, i)) for i in range(len(ref_info))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
 
-        for process_id, ref_results in results.items():
-            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov-pos.tsv', 'w') as out_f:
-                for k, v in ref_results.items():
-                    out_f.write(f'{k}\t{v}\n')
-            # compute mean coverage
-            mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
-            with open(f'{ref_info[process_id][0].replace(" ", "-")}-cov-mean.tsv', 'w') as out_f:
-                out_f.write(f'{k}\t{mean_cov}\n')
+            for process_id, ref_results in results.items():
+                with open(os.path.join(args.output_dir, f'{ref_info[process_id][0].replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
+                    for k, v in ref_results.items():
+                        out_f.write(f'{k}\t{v}\n')
+                # compute mean coverage
+                mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
+                with open(os.path.join(args.output_dir, f'{ref_info[process_id][0].replace(" ", "-")}-cov-mean.tsv'), 'w') as out_f:
+                    out_f.write(f'{k}\t{mean_cov}\n')
 
 
 if __name__ == '__main__':
