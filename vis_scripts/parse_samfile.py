@@ -74,7 +74,7 @@ def main():
     args = parser.parse_args()
     
     # get references
-    ref_info, alignments = get_data(args.samfile)
+    ref_info, alignments = get_data(args, args.samfile)
     print(ref_info)
 
     if args.coverage:
