@@ -42,12 +42,9 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
 
 def get_references(content, alignments):
     ref = {}
-    print(content)
     for i, line in enumerate(content):
-    # for line in content:
-        if line.rstrip().split('\t')[0][:3] == '@SQ' and line.rstrip().split('\t')[1].split(':')[1] in alignments:
+        if line.rstrip().split('\t')[0][:3] == '@SQ' and ''.join(line.rstrip().split('\t')[1].split(':')[1:]) in alignments:
             ref[i] = [line.rstrip().split('\t')[1].split(':')[1], int(line.rstrip().split('\t')[2].split(':')[1])]
-            # ref[line.rstrip().split('\t')[1].split(':')[1]] = int(line.rstrip().split('\t')[2].split(':')[1])
     return ref
 
 def get_data(args, samfile):
@@ -57,10 +54,15 @@ def get_data(args, samfile):
             content = f.readlines()
             for i in range(len(content)):
                 if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
-                    alignments[content[i].rstrip().split('\t')[2]].append([int(content[i].rstrip().split('\t')[3]), content[i].rstrip().split('\t')[5]])
-                    read_id = content[i].rstrip().split("\t")[0]
-                    start_pos = content[i].rstrip().split("\t")[3]
-                    outfile.write(f'{read_id}\t{start_pos}\n')
+                    start_pos = int(content[i].rstrip().split('\t')[3])
+                    aligned_ref = content[i].rstrip().split('\t')[2]
+                    cigar_string = content[i].rstrip().split('\t')[5]
+                    read_id = content[i].rstrip().split('\t')[0]
+                    alignments[aligned_ref].append([start_pos, cigar_string])
+                    # compute ending of alignment based on cigar string
+                    end_pos = start_pos + len(extend_cigar(cigar_string))
+                    outfile.write(f'{read_id}\t{start_pos}\t{end_pos}\n')
+
     # get references and their length
     ref = get_references(content[1:], alignments)
 
