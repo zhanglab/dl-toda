@@ -42,6 +42,7 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
 
 def get_references(content, alignments):
     ref = {}
+    print(content)
     for i, line in enumerate(content):
     # for line in content:
         if line.rstrip().split('\t')[0][:3] == '@SQ' and line.rstrip().split('\t')[1].split(':')[1] in alignments:
