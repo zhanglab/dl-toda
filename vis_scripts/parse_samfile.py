@@ -88,7 +88,7 @@ def main():
         else:
             chunks.append(data)
             data = {k: v}
-    if len(chunks) < nprocs:
+    if len(chunks) < args.num_processes:
         chunks.append(data)
 
     num_refs = sum([len(i) for i in chunks])
