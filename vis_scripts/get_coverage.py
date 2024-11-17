@@ -2,6 +2,7 @@ import sys
 from collections import defaultdict
 import math
 import multiprocessing as mp
+import argparse
 
 def extend_cigar(cigar):
     new_cigar = ''
@@ -49,7 +50,7 @@ def get_references(content, alignments):
 
 def get_data(samfile):
     alignments = defaultdict(list)
-    with open(f'reads_info.tsv', 'w') as outfile:
+    with open(f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv', 'w') as outfile:
         with open(samfile, 'r') as f:
             content = f.readlines()
             for i in range(len(content)):
@@ -64,15 +65,18 @@ def get_data(samfile):
     return ref, alignments
 
 def main():
-    samfile = sys.argv[1]
-    nprocs = int(sys.argv[2])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--samfile', type=str, help='path to SAM file')
+    parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
+    parser.add_argument('--num_processes', type=int, default=8)
+    args = parser.parse_args()
     
     # get references
-    ref_info, alignments = get_data(samfile)
+    ref_info, alignments = get_data(args.samfile)
     print(ref_info)
-    
+
     # determine the size of each subtask
-    size = math.ceil(len(alignments)/nprocs)
+    size = math.ceil(len(alignments)/args.num_processes)
 
     # determine the references in each subtasks
     chunks = []
@@ -87,7 +91,7 @@ def main():
         chunks.append(data)
 
     num_refs = sum([len(i) for i in chunks])
-    print(size, len(alignments), len(ref_info), len(chunks), nprocs, num_refs)
+    print(size, len(alignments), len(ref_info), len(chunks), args.num_processes, num_refs)
 
     with mp.Manager() as manager:
         results = manager.dict()
