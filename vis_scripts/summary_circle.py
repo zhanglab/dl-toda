@@ -328,19 +328,19 @@ def UnmappedReads(args, mapping_info):
 
 def main():
 	parser = argparse.ArgumentParser()
-    parser.add_argument('--train_samfiles', type=str, help='directory containing SAM files with alignment of testing reads to training genomes')
-    parser.add_argument('--test_samfile', type=str, help='path to SAM file containing the alignment of testing reads to the testing genome')
-    parser.add_argument('--test_coverage', type=str, help='path to file *-cov-pos.tsv containing number of mapped reads at each position')
-    parser.add_argument('--fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
-    parser.add_argument('--label', type=str, help='label of species investigated')
-    parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
-    parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
-    parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--num_processes', type=int, default=8)
-    args = parser.parse_args()
+	parser.add_argument('--train_samfiles', type=str, help='directory containing SAM files with alignment of testing reads to training genomes')
+	parser.add_argument('--test_samfile', type=str, help='path to SAM file containing the alignment of testing reads to the testing genome')
+	parser.add_argument('--test_coverage', type=str, help='path to file *-cov-pos.tsv containing number of mapped reads at each position')
+	parser.add_argument('--fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
+	parser.add_argument('--label', type=str, help='label of species investigated')
+	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
+	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
+	parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
+	parser.add_argument('--num_processes', type=int, default=8)
+	args = parser.parse_args()
 
     # define path to taxonomy of genomes in dltoda
-    ranks_index = {'species': 0, 'genus': 1, 'family':2, 'order':3, 'class':4, 'phylum': 5}
+	ranks_index = {'species': 0, 'genus': 1, 'family':2, 'order':3, 'class':4, 'phylum': 5}
 	path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
 	with open(path_dl_toda_tax, 'r') as in_f:
 		content = in_f.readlines()
@@ -348,20 +348,20 @@ def main():
 
 
 	# load data about alignments of testing reads to testing genome
-    ref_info, _, mapping_info = load_data(args, args.test_samfile)
-    testing_genome_length = ref_info[0][1]
+	ref_info, _, mapping_info = load_data(args, args.test_samfile)
+	testing_genome_length = ref_info[0][1]
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-	reads_id = Unmapped_Reads(args, mapping_info)
+    reads_id = Unmapped_Reads(args, mapping_info)
 
     # get mean confidence scores at each position of the testing genome
-    confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id)
+	confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id)
 
     # get coverage of training genome
-    pos_coverage, genome_positions = GetCoverage(args.test_coverage)
+	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
 
    	# get taxa mapped to each 
-   	df_taxa = GetTaxa(args, dltoda_tax, genome_positions)
+	df_taxa = GetTaxa(args, dltoda_tax, genome_positions)
 
 	# create circos plot showing the testing genome and other info
 	plot_circles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
