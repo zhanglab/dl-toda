@@ -236,7 +236,7 @@ def plot_circles(genome_positions, df_taxa, confidence_scores, pos_coverage, out
 	# circos.savefig(os.path.join(output_dir, f'sum_circos_{label}.png'))
 
 
-def GetTaxa(args, dltoda_tax, genome_positions)
+def GetTaxa(args, dltoda_tax, genome_positions):
 	 # load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfile, '*.sam'))
 	samfiles.remove(f'{args.label}_results.sam')
@@ -278,15 +278,23 @@ def GetCoverage(filename):
 	return pos_coverage, genome_positions
 
 
-def GetConfidenceScores(testing_results, testing_genome_length, reads_info):
+def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id):
 	# load testing results
-    dict_confidence_scores = {i:[] for i in range(testing_genome_length)}
+    dict_confidence_scores = defaultdict(list)
+    
     with open(args.testing_results, 'r') as f:
-    	for line in data:
-    		read_id = line.rstrip().split('\t')[0]
-    		start_pos = reads_info[reads_id][0]
-    		end_pos = reads_info[reads_id][1]
-	        confidence_score = float(line.rstrip().split('\t')[2])
+    	content = f.readlines()
+    	testing_results_data = [line.rstrip().split('\t')[2] for line in content]
+    
+    	assert len(testing_results_data) == len(reads_id), "the number of reads id does not match the number of reads tested"
+
+    for i, r in enumerate(reads_id):
+    	label = r.split('|')[1]
+    	# only get confidence scores of reads belonging to label
+    	if label == args.label:
+    		start_pos = mapping_info[r][0]
+    		end_pos = mapping_info[r][1]
+	        confidence_score = float(testing_results_data[i])
 	        for i in range(start_pos, end_pos, 1):
 	        	dict_confidence_scores[i].append(confidence_score)
 
@@ -300,7 +308,7 @@ def GetConfidenceScores(testing_results, testing_genome_length, reads_info):
 	return confidence_scores
 
 
-def UnmappedReads(args, reads_info):
+def UnmappedReads(args, mapping_info):
 	# load fq file with testing reads --> required to identify reads that were not mapped to the reference testing genome (too short)
 	reads = load_fq_file(args.fq_file, 4)
 	dict_reads_length = {}
@@ -310,10 +318,12 @@ def UnmappedReads(args, reads_info):
 		dict_reads_length[read_id] = length
 
 	# get reads that were not mapped to the testing genome and their length
-	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(reads_info.keys())))
+	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(mapping_info.keys())))
 	with open(os.path.join(args.output_dir, f'unmapped_reads_{label}.tsv'), 'w') as f:
 		for r in unmapped_reads:
 			f.write(f'{r}\t{dict_reads_length[r]}\n')
+
+	return reads_id
 
 
 def main():
@@ -321,7 +331,7 @@ def main():
     parser.add_argument('--train_samfiles', type=str, help='directory containing SAM files with alignment of testing reads to training genomes')
     parser.add_argument('--test_samfile', type=str, help='path to SAM file containing the alignment of testing reads to the testing genome')
     parser.add_argument('--test_coverage', type=str, help='path to file *-cov-pos.tsv containing number of mapped reads at each position')
-    parser.add_argument('--fq_file', type=str, help='path to fq file containing testing reads')
+    parser.add_argument('--fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
     parser.add_argument('--label', type=str, help='label of species investigated')
     parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
     parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
@@ -338,11 +348,14 @@ def main():
 
 
 	# load data about alignments of testing reads to testing genome
-    ref_info, _, reads_info = load_data(args, args.test_samfile)
+    ref_info, _, mapping_info = load_data(args, args.test_samfile)
     testing_genome_length = ref_info[0][1]
 
+    # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
+	reads_id = Unmapped_Reads(args, mapping_info)
+
     # get mean confidence scores at each position of the testing genome
-    confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, reads_info)
+    confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id)
 
     # get coverage of training genome
     pos_coverage, genome_positions = GetCoverage(args.test_coverage)
@@ -353,8 +366,7 @@ def main():
 	# create circos plot showing the testing genome and other info
 	plot_circles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
-	# get information about reads not mapped to testing genome
-	Unmapped_Reads(args, reads_info)
+	
 
 
 	# # load coverage of training reads to training genome
