@@ -311,11 +311,13 @@ def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, re
 def UnmappedReads(args, mapping_info):
 	# load fq file with testing reads --> required to identify reads that were not mapped to the reference testing genome (too short)
 	reads = load_fq_file(args.fq_file, 4)
+	reads_id = []
 	dict_reads_length = {}
 	for r in reads:
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
 		dict_reads_length[read_id] = length
+		reads_id.append(read_id)
 
 	# get reads that were not mapped to the testing genome and their length
 	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(mapping_info.keys())))
