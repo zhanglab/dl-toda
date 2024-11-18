@@ -47,26 +47,26 @@ def get_references(content, alignments):
             ref[i] = [line.rstrip().split('\t')[1].split(':')[1], int(line.rstrip().split('\t')[2].split(':')[1])]
     return ref
 
-def get_data(args, samfile):
+def load_data(args, samfile):
     alignments = defaultdict(list)
-    with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
-        with open(samfile, 'r') as f:
-            content = f.readlines()
-            for i in range(len(content)):
-                if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
-                    start_pos = int(content[i].rstrip().split('\t')[3])
-                    aligned_ref = content[i].rstrip().split('\t')[2]
-                    cigar_string = content[i].rstrip().split('\t')[5]
-                    read_id = content[i].rstrip().split('\t')[0]
-                    alignments[aligned_ref].append([start_pos, cigar_string])
-                    # compute ending of alignment based on cigar string
-                    end_pos = start_pos + len(extend_cigar(cigar_string))
-                    outfile.write(f'{read_id}\t{start_pos}\t{end_pos}\n')
+    read_infos = defaultdict(list)
+    with open(samfile, 'r') as f:
+        content = f.readlines()
+        for i in range(len(content)):
+            if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
+                start_pos = int(content[i].rstrip().split('\t')[3])
+                aligned_ref = content[i].rstrip().split('\t')[2]
+                cigar_string = content[i].rstrip().split('\t')[5]
+                alignments[aligned_ref].append([start_pos, cigar_string])
+                # compute ending of alignment based on cigar string
+                end_pos = start_pos + len(extend_cigar(cigar_string))
+                read_id = content[i].rstrip().split('\t')[0]
+                reads_info[read_id] = [start_pos, end_pos]
 
     # get references and their length
     ref = get_references(content[1:], alignments)
 
-    return ref, alignments
+    return ref, alignments, reads_info
 
 def main():
     parser = argparse.ArgumentParser()
@@ -74,11 +74,16 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--num_processes', type=int, default=8)
     parser.add_argument('--coverage', help="compute coverage of reference sequences", action='store_true', default=False)
+    parser.add_argument('--mapped_reads', help="store id of mapped reads into a tsv file", action='store_true', default=False)
     args = parser.parse_args()
     
     # get references
-    ref_info, alignments = get_data(args, args.samfile)
-    print(ref_info)
+    ref_info, alignments, reads_info = load_data(args, args.samfile)
+
+    if args.mapped_reads:
+        with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
+            for k, v in reads_info.items():
+                outfile.write(f'{k}\t{v[0]}\t{v[1]}\n')
 
     if args.coverage:
         # determine the size of each subtask
