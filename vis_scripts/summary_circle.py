@@ -292,6 +292,7 @@ def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 		label = r.split('|')[1]
     	# only get confidence scores of reads belonging to label
 		if label == args.label:
+			print(mapping_info[r])
 			start_pos = mapping_info[r][0]
 			end_pos = mapping_info[r][1]
 			confidence_score = float(testing_results_data[i])
