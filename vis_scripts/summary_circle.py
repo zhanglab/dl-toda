@@ -278,11 +278,11 @@ def GetCoverage(filename):
 	return pos_coverage, genome_positions
 
 
-def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id):
+def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 	# load testing results
 	dict_confidence_scores = defaultdict(list)
     
-	with open(testing_results, 'r') as f:
+	with open(args.testing_results, 'r') as f:
 		content = f.readlines()
 		testing_results_data = [line.rstrip().split('\t')[2] for line in content]
     
@@ -357,7 +357,7 @@ def main():
 	reads_id = UnmappedReads(args, mapping_info)
 
     # get mean confidence scores at each position of the testing genome
-	confidence_scores = GetConfidenceScores(args.testing_results, testing_genome_length, mapping_info, reads_id)
+	confidence_scores = GetConfidenceScores(args testing_genome_length, mapping_info, reads_id)
 
     # get coverage of training genome
 	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
