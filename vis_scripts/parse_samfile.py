@@ -49,7 +49,7 @@ def get_references(content, alignments):
 
 def load_data(args, samfile):
     alignments = defaultdict(list)
-    read_infos = defaultdict(list)
+    reads_info = defaultdict(list)
     with open(samfile, 'r') as f:
         content = f.readlines()
         for i in range(len(content)):
