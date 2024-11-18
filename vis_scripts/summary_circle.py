@@ -280,20 +280,20 @@ def GetCoverage(filename):
 
 def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id):
 	# load testing results
-    dict_confidence_scores = defaultdict(list)
+	dict_confidence_scores = defaultdict(list)
     
-    with open(args.testing_results, 'r') as f:
-    	content = f.readlines()
-    	testing_results_data = [line.rstrip().split('\t')[2] for line in content]
+	with open(args.testing_results, 'r') as f:
+		content = f.readlines()
+		testing_results_data = [line.rstrip().split('\t')[2] for line in content]
     
-    	assert len(testing_results_data) == len(reads_id), "the number of reads id does not match the number of reads tested"
+	assert len(testing_results_data) == len(reads_id), "the number of reads id does not match the number of reads tested"
 
-    for i, r in enumerate(reads_id):
-    	label = r.split('|')[1]
+	for i, r in enumerate(reads_id):
+		label = r.split('|')[1]
     	# only get confidence scores of reads belonging to label
-    	if label == args.label:
-    		start_pos = mapping_info[r][0]
-    		end_pos = mapping_info[r][1]
+		if label == args.label:
+			start_pos = mapping_info[r][0]
+			end_pos = mapping_info[r][1]
 			confidence_score = float(testing_results_data[i])
 			for i in range(start_pos, end_pos, 1):
 				dict_confidence_scores[i].append(confidence_score)
