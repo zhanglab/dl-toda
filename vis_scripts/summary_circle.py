@@ -123,7 +123,7 @@ import seaborn as sns
 
 
 
-def plot_circles(genome_positions, df_taxa, confidence_scores, pos_coverage, output_dir, label):
+def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, output_dir, label):
 	
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_positions)}
@@ -352,7 +352,7 @@ def main():
 	testing_genome_length = ref_info[0][1]
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-	reads_id = Unmapped_Reads(args, mapping_info)
+	reads_id = UnmappedReads(args, mapping_info)
 
     # get mean confidence scores at each position of the testing genome
 	confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id)
@@ -364,7 +364,7 @@ def main():
 	df_taxa = GetTaxa(args, dltoda_tax, genome_positions)
 
 	# create circos plot showing the testing genome and other info
-	plot_circles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
+	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
