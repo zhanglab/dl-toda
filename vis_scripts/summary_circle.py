@@ -242,31 +242,31 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	samfiles.remove(f'{args.label}_results.sam')
 	mapped_taxa = defaultdict(list) # key = position in the genome of interest, value = list of taxa containing that position
 	unique_mapped_taxa = set()
-    for sam in samfiles:
-    	sam_label = sam.rstrip().split('\t')[-1].split('_')[0]
-    	_, _, reads_info = load_data(args, sam)
-    	for i in range(len(reads_info)):
-    		start_pos = int(reads_info[i].split('\t')[1])
-    		end_pos = int(reads_info[i].split('\t')[2])
-    		for p in range(start_pos, end_pos, 1):
-    			mapped_taxa[p].append(dltoda_tax[sam_label])
-    			unique_mapped_taxa.add(dltoda_tax[sam_label])
+	for sam in samfiles:
+		sam_label = sam.rstrip().split('\t')[-1].split('_')[0]
+		_, _, reads_info = load_data(args, sam)
+		for i in range(len(reads_info)):
+			start_pos = int(reads_info[i].split('\t')[1])
+			end_pos = int(reads_info[i].split('\t')[2])
+			for p in range(start_pos, end_pos, 1):
+				mapped_taxa[p].append(dltoda_tax[sam_label])
+				unique_mapped_taxa.add(dltoda_tax[sam_label])
 
     # create dataframe with rows = positions in testin genome and columns = mapped taxa
-    unique_mapped_taxa = list(unique_mapped_taxa)
-    row_num = len(genome_positions)
-    col_num = len(unique_mapped_taxa)
+	unique_mapped_taxa = list(unique_mapped_taxa)
+	row_num = len(genome_positions)
+	col_num = len(unique_mapped_taxa)
     
-    matrix = np.zeros((row_num, col_num))
-    row_names = [f"{i}" for i in range(row_num)]
+	matrix = np.zeros((row_num, col_num))
+	row_names = [f"{i}" for i in range(row_num)]
 	col_names = [f"{i}" for i in unique_mapped_taxa]
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
     
-    for pos, taxa_list in mapped_taxa.items():
-    	for t in taxa_list:
-    		df.loc[pos, t] += 1
+	for pos, taxa_list in mapped_taxa.items():
+		for t in taxa_list:
+			df.loc[pos, t] += 1
 
-   	return df
+	return df
 
 
 def GetCoverage(filename):
