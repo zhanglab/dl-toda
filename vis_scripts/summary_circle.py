@@ -241,7 +241,7 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	samfiles = glob.glob(os.path.join(args.train_samfile, '*.sam'))
 	samfiles.remove(f'{args.label}_results.sam')
 	mapped_taxa = defaultdict(list) # key = position in the genome of interest, value = list of taxa containing that position
-    unique_mapped_taxa = set()
+	unique_mapped_taxa = set()
     for sam in samfiles:
     	sam_label = sam.rstrip().split('\t')[-1].split('_')[0]
     	_, _, reads_info = load_data(args, sam)
