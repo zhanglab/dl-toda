@@ -1,5 +1,6 @@
 import sys
 import os
+import glob
 from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
@@ -293,8 +294,6 @@ def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
     	# only get confidence scores of reads belonging to label
 		if label == args.label:
 			if r in mapping_info:
-				print(r)
-				print(mapping_info[r])
 				start_pos = mapping_info[r][0]
 				end_pos = mapping_info[r][1]
 				confidence_score = float(testing_results_data[i])
