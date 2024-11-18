@@ -282,7 +282,7 @@ def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, re
 	# load testing results
 	dict_confidence_scores = defaultdict(list)
     
-	with open(args.testing_results, 'r') as f:
+	with open(testing_results, 'r') as f:
 		content = f.readlines()
 		testing_results_data = [line.rstrip().split('\t')[2] for line in content]
     
