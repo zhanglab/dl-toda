@@ -294,9 +294,9 @@ def GetConfidenceScores(testing_results, testing_genome_length, mapping_info, re
     	if label == args.label:
     		start_pos = mapping_info[r][0]
     		end_pos = mapping_info[r][1]
-	        confidence_score = float(testing_results_data[i])
-	        for i in range(start_pos, end_pos, 1):
-	        	dict_confidence_scores[i].append(confidence_score)
+			confidence_score = float(testing_results_data[i])
+			for i in range(start_pos, end_pos, 1):
+				dict_confidence_scores[i].append(confidence_score)
 
 	confidence_scores = []	
 	for i in range(testing_genome_length):
