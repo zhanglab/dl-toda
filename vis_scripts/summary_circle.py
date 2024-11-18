@@ -247,9 +247,9 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	for sam in samfiles:
 		sam_label = sam.rstrip().split('\t')[-1].split('_')[0]
 		_, _, reads_info = load_data(args, sam)
-		for i in range(len(reads_info)):
-			start_pos = reads_info[i][0]
-			end_pos = reads_info[i][1]
+		for k, v in reads_info.items():
+			start_pos = v[0]
+			end_pos = v[1]
 			for p in range(start_pos, end_pos, 1):
 				mapped_taxa[p].append(dltoda_tax[sam_label])
 				unique_mapped_taxa.add(dltoda_tax[sam_label])
