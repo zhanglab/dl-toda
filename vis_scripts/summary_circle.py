@@ -352,7 +352,7 @@ def main():
 	testing_genome_length = ref_info[0][1]
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-    reads_id = Unmapped_Reads(args, mapping_info)
+	reads_id = Unmapped_Reads(args, mapping_info)
 
     # get mean confidence scores at each position of the testing genome
 	confidence_scores = GetConfidenceScores(testing_results, testing_genome_length, mapping_info, reads_id)
