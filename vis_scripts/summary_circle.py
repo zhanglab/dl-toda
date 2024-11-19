@@ -364,19 +364,20 @@ def main():
 	ref_info, _, mapping_info = load_data(args, args.test_samfile)
 	testing_genome_length = ref_info[0][1]
 	print(f'# mapped reads: {len(mapping_info)}')
-	for k, v in mapping_info.items():
-		if len(v) == 0:
-			print(k)
-			sys.exit("done")
 
-    # # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-	# reads_id = UnmappedReads(args, mapping_info)
+    # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
+	reads_id = UnmappedReads(args, mapping_info)
 
-    # # get mean confidence scores at each position of the testing genome
-	# confidence_scores = GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id)
+    # get mean confidence scores at each position of the testing genome
+	confidence_scores = GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id)
 
-    # # get coverage of training genome
-	# pos_coverage, genome_positions = GetCoverage(args.test_coverage)
+    # get coverage of training genome
+	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
+
+	if "seq|711|num_26458" in mapping_info:
+		print('damn it')
+	else:
+		print('good to go')
 
    	# # get taxa mapped to each 
 	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
