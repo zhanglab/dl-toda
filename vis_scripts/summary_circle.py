@@ -258,7 +258,7 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	row_num = len(genome_positions)
 	col_num = len(unique_mapped_taxa)
     
-    print(f'length of genome: {row_num}')
+	print(f'length of genome: {row_num}')
 	matrix = np.zeros((row_num, col_num))
 	row_names = [f"{i}" for i in range(1,row_num,1)]
 	col_names = [f"{i}" for i in unique_mapped_taxa]
