@@ -160,7 +160,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		# add track for mapped taxa
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
-		taxa_palette = sns.color_palette("icefire", n_colors=taxa_df.shape[1])
+		taxa_palette = sns.color_palette("icefire", n_colors=df_taxa.shape[1])
 		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette)
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
@@ -237,10 +237,6 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 
 
 def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
-	if "seq|711|num_26458" in mapping_info:
-		print('damn it')
-	else:
-		print('good to go')
 	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
@@ -252,8 +248,6 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 		for k in reads_info.keys():
 			# get start and end positions of alignment on the testing genome
 			if k in mapping_info:
-				if len(mapping_info[k]) == 0:
-					print(k)
 				start_position = mapping_info[k][0]
 				end_position = mapping_info[k][1]
 				for p in range(start_position, end_position+1, 1):
@@ -266,18 +260,14 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	row_num = len(genome_positions)
 	col_num = len(unique_mapped_taxa)
     
-	print(f'length of genome: {row_num}')
 	matrix = np.zeros((row_num, col_num))
 	row_names = [f"{i}" for i in range(1,row_num+1,1)]
 	col_names = [f"{i}" for i in unique_mapped_taxa]
-	print(row_names[0], row_names[-1])
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
-	print(df)
 	for pos, taxa_list in mapped_taxa.items():
 		for t in taxa_list:
 			df.loc[str(pos), t] += 1
-	print(df)
-	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'))
+	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'), index=False)
 	return df
 
 
@@ -367,7 +357,6 @@ def main():
 	# load data about alignments of testing reads to testing genome
 	ref_info, _, mapping_info = load_data(args, args.test_samfile)
 	testing_genome_length = ref_info[0][1]
-	print(f'# mapped reads: {len(mapping_info)}')
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
 	reads_id = UnmappedReads(args, mapping_info)
@@ -378,14 +367,10 @@ def main():
     # get coverage of training genome
 	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
 
-	if "seq|711|num_26458" in mapping_info:
-		print('damn it')
-	else:
-		print('good to go')
-
    	# get taxa mapped to each 
-	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
-
+	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
+	df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
+	df_taxa = df_taxa.iloc[:, 1:]
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
