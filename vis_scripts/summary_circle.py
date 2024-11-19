@@ -237,6 +237,10 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 
 
 def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
+	if "seq|711|num_26458" in mapping_info:
+		print('damn it')
+	else:
+		print('good to go')
 	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
@@ -246,10 +250,10 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 		sam_label = sam.rstrip().split('/')[-1].split('_')[0]
 		_, _, reads_info = load_data(args, sam)
 		for k in reads_info.keys():
-			print(k, reads_info[k])
-			print(k, mapping_info[k])
 			# get start and end positions of alignment on the testing genome
 			if k in mapping_info:
+				if length(v) == 0:
+					print(k)
 				start_position = mapping_info[k][0]
 				end_position = mapping_info[k][1]
 				for p in range(start_position, end_position+1, 1):
@@ -379,11 +383,11 @@ def main():
 	else:
 		print('good to go')
 
-   	# # get taxa mapped to each 
-	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
+   	# get taxa mapped to each 
+	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 
-	# # create circos plot showing the testing genome and other info
-	# PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
+	# create circos plot showing the testing genome and other info
+	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
