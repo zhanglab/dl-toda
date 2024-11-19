@@ -260,14 +260,15 @@ def GetTaxa(args, dltoda_tax, genome_positions):
     
 	print(f'length of genome: {row_num}')
 	matrix = np.zeros((row_num, col_num))
-	row_names = [f"{i}" for i in range(1,row_num,1)]
+	row_names = [f"{i}" for i in range(1,row_num+1,1)]
 	col_names = [f"{i}" for i in unique_mapped_taxa]
+	print(row_names[0], row_names[-1])
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	print(df)
 	for pos, taxa_list in mapped_taxa.items():
 		for t in taxa_list:
 			df.loc[str(pos), t] += 1
-
+	print(df)
 	return df
 
 
