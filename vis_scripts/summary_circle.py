@@ -265,7 +265,7 @@ def GetTaxa(args, dltoda_tax, genome_positions):
     
 	for pos, taxa_list in mapped_taxa.items():
 		for t in taxa_list:
-			df.loc[pos, t] += 1
+			df.loc[str(pos), t] += 1
 
 	return df
 
