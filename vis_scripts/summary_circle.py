@@ -247,6 +247,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 		_, _, reads_info = load_data(args, sam)
 		for k in reads_info.keys():
 			print(k, reads_info[k])
+			print(k, mapping_info[k])
 			# get start and end positions of alignment on the testing genome
 			start_position = mapping_info[k][0]
 			end_position = mapping_info[k][1]
