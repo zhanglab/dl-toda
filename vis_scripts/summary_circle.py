@@ -324,16 +324,16 @@ def UnmappedReads(args, mapping_info):
 	for r in reads:
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
-		read_label = read_id.split('|')[1]
-		if read_label == args.label:
-			dict_reads_length[read_id] = length
-			reads_id.append(read_id)
+		dict_reads_length[read_id] = length
+		reads_id.append(read_id)
 
 	# get reads that were not mapped to the testing genome and their length
 	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(mapping_info.keys())))
 	with open(os.path.join(args.output_dir, f'unmapped_reads_{args.label}.tsv'), 'w') as f:
 		for r in unmapped_reads:
-			f.write(f'{r}\t{dict_reads_length[r]}\n')
+			read_label = r.split('|')[1]
+			if read_label == args.label:
+				f.write(f'{r}\t{dict_reads_length[r]}\n')
 
 	return reads_id
 
