@@ -123,7 +123,6 @@ import seaborn as sns
 # 	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
 
-
 def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, output_dir, label):
 	
 	# initialize a single circos sector
@@ -370,7 +369,7 @@ def main():
 	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
 
    	# get taxa mapped to each 
-	df_taxa = GetTaxa(args, dltoda_tax, genome_positions)
+	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
