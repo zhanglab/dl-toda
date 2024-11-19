@@ -238,7 +238,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 
 
 def GetTaxa(args, dltoda_tax, genome_positions):
-	 # load data about alignments of testing reads to training genomes
+	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
 	mapped_taxa = defaultdict(list) # key = position in the genome of interest, value = list of taxa containing that position
@@ -258,15 +258,14 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	row_num = len(genome_positions)
 	col_num = len(unique_mapped_taxa)
     
+    print(f'length of genome: {row_num}')
 	matrix = np.zeros((row_num, col_num))
-	row_names = [f"{i}" for i in range(row_num)]
+	row_names = [f"{i}" for i in range(1,row_num,1)]
 	col_names = [f"{i}" for i in unique_mapped_taxa]
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	print(df)
 	for pos, taxa_list in mapped_taxa.items():
-		print(type(pos), pos)
 		for t in taxa_list:
-			print(type(t), t)
 			df.loc[str(pos), t] += 1
 
 	return df
