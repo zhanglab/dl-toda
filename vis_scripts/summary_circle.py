@@ -366,6 +366,7 @@ def main():
 	for k, v in mapping_info.items():
 		if len(v) == 0:
 			print(k)
+			sys.exit("done")
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
 	reads_id = UnmappedReads(args, mapping_info)
