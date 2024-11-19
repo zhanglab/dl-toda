@@ -277,7 +277,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 		for t in taxa_list:
 			df.loc[str(pos), t] += 1
 	print(df)
-	df.write(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'))
+	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'))
 	return df
 
 
