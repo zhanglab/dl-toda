@@ -134,7 +134,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		genome_track = sector.add_track((98, 100))
 		genome_track.axis(fc="lightgrey")
 		genome_x = list(range(0,len(genome_positions),500000))
-		base_pos_ticks = [genome_positionss[i] for i in genome_x]
+		base_pos_ticks = [genome_positions[i] for i in genome_x]
 		genome_x_labels = [f'{i/1000} Kb' for i in base_pos_ticks]
 		genome_track.xticks(genome_x, genome_x_labels)
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
@@ -278,6 +278,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 		for t in taxa_list:
 			df.loc[str(pos), t] += 1
 	print(df)
+	df.write(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'))
 	return df
 
 
