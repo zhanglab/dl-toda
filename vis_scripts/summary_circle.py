@@ -250,7 +250,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 			# get start and end positions of alignment on the testing genome
 			start_position = mapping_info[k][0]
 			end_position = mapping_info[k][1]
-			for p in range(start_position, end_position+1, 1)
+			for p in range(start_position, end_position+1, 1):
 				mapped_taxa[p].append(dltoda_tax[sam_label])
 				unique_mapped_taxa.add(dltoda_tax[sam_label])
 
