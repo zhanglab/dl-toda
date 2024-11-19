@@ -363,7 +363,7 @@ def main():
 	ref_info, _, mapping_info = load_data(args, args.test_samfile)
 	testing_genome_length = ref_info[0][1]
 	print(f'# mapped reads: {len(mapping_info)}')
-	for k, v in mapping_info.items()
+	for k, v in mapping_info.items():
 		if len(v) == 0:
 			print(k)
 
