@@ -237,21 +237,23 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 	# circos.savefig(os.path.join(output_dir, f'sum_circos_{label}.png'))
 
 
-def GetTaxa(args, dltoda_tax, genome_positions):
+def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
-	mapped_taxa = defaultdict(list) # key = position in the genome of interest, value = list of taxa containing that position
+	mapped_taxa = defaultdict(list) # key = position in testing genome, value = list of taxa with a training genome to which the read was mapped to
 	unique_mapped_taxa = set()
 	for sam in samfiles:
 		sam_label = sam.rstrip().split('/')[-1].split('_')[0]
 		_, _, reads_info = load_data(args, sam)
-		for k, v in reads_info.items():
-			start_pos = v[0]
-			end_pos = v[1]
-			for p in range(start_pos, end_pos, 1):
+		for k in reads_info.keys():
+			# get start and end positions of alignment on the testing genome
+			start_position = mapping_info[k][0]
+			end_position = mapping_info[k][1]
+			for p in range(start_position, end_position+1, 1)
 				mapped_taxa[p].append(dltoda_tax[sam_label])
 				unique_mapped_taxa.add(dltoda_tax[sam_label])
+
 
     # create dataframe with rows = positions in testin genome and columns = mapped taxa
 	unique_mapped_taxa = list(unique_mapped_taxa)
@@ -266,6 +268,7 @@ def GetTaxa(args, dltoda_tax, genome_positions):
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	print(df)
 	for pos, taxa_list in mapped_taxa.items():
+		print(pos)
 		for t in taxa_list:
 			df.loc[str(pos), t] += 1
 	print(df)
