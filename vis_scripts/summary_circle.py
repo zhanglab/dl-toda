@@ -324,8 +324,10 @@ def UnmappedReads(args, mapping_info):
 	for r in reads:
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
-		dict_reads_length[read_id] = length
-		reads_id.append(read_id)
+		read_label = read_id.split('|')[1]
+		if read_label == args.label:
+			dict_reads_length[read_id] = length
+			reads_id.append(read_id)
 
 	# get reads that were not mapped to the testing genome and their length
 	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(mapping_info.keys())))
@@ -360,6 +362,10 @@ def main():
 	# load data about alignments of testing reads to testing genome
 	ref_info, _, mapping_info = load_data(args, args.test_samfile)
 	testing_genome_length = ref_info[0][1]
+	print(f'# mapped reads: {len(mapping_info)}')
+	for k, v in mapping_info.items()
+		if len(v) == 0:
+			print(k)
 
     # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
 	reads_id = UnmappedReads(args, mapping_info)
