@@ -249,11 +249,12 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 			print(k, reads_info[k])
 			print(k, mapping_info[k])
 			# get start and end positions of alignment on the testing genome
-			start_position = mapping_info[k][0]
-			end_position = mapping_info[k][1]
-			for p in range(start_position, end_position+1, 1):
-				mapped_taxa[p].append(dltoda_tax[sam_label])
-				unique_mapped_taxa.add(dltoda_tax[sam_label])
+			if k in mapping_info:
+				start_position = mapping_info[k][0]
+				end_position = mapping_info[k][1]
+				for p in range(start_position, end_position+1, 1):
+					mapped_taxa[p].append(dltoda_tax[sam_label])
+					unique_mapped_taxa.add(dltoda_tax[sam_label])
 
 
     # create dataframe with rows = positions in testin genome and columns = mapped taxa
@@ -368,20 +369,20 @@ def main():
 			print(k)
 			sys.exit("done")
 
-    # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-	reads_id = UnmappedReads(args, mapping_info)
+    # # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
+	# reads_id = UnmappedReads(args, mapping_info)
 
-    # get mean confidence scores at each position of the testing genome
-	confidence_scores = GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id)
+    # # get mean confidence scores at each position of the testing genome
+	# confidence_scores = GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id)
 
-    # get coverage of training genome
-	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
+    # # get coverage of training genome
+	# pos_coverage, genome_positions = GetCoverage(args.test_coverage)
 
-   	# get taxa mapped to each 
-	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
+   	# # get taxa mapped to each 
+	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 
-	# create circos plot showing the testing genome and other info
-	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
+	# # create circos plot showing the testing genome and other info
+	# PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
