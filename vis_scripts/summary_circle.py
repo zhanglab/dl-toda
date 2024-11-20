@@ -13,7 +13,7 @@ import pandas as pd
 import multiprocessing as mp
 import argparse
 import statistics
-from matplotlib import cm
+from matplotlib import colormaps
 import matplotlib.colors as mcolors
 
 # def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores, ref_length):
@@ -161,7 +161,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		# add track for mapped taxa
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
-		cmap = "Inferno"
+		cmap = "inferno"
 		# cmap = cm.get_cmap('inferno')
 		# colors = [mcolors.to_hex(cmap(i)) for i in range(df_taxa.shape[1])]
 		# print(colors)
