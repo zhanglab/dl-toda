@@ -14,6 +14,7 @@ import multiprocessing as mp
 import argparse
 import statistics
 from matplotlib import cm
+import matplotlib.colors as mcolors
 
 # def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores, ref_length):
 # 	# get average of cs
@@ -160,7 +161,10 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		# add track for mapped taxa
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
-		cmap = cm.get_cmap('inferno')
+		cmap = "Inferno"
+		# cmap = cm.get_cmap('inferno')
+		# colors = [mcolors.to_hex(cmap(i)) for i in range(df_taxa.shape[1])]
+		# print(colors)
 		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=cmap)
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
