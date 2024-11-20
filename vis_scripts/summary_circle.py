@@ -161,7 +161,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
 		taxa_palette = sns.color_palette("icefire", n_colors=df_taxa.shape[1])
-		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette)
+		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette, labels=)
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
@@ -370,7 +370,7 @@ def main():
    	# get taxa mapped to each 
 	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 	df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
-	df_taxa = df_taxa.iloc[:, 1:]
+	# df_taxa = df_taxa.iloc[:, 1:]
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
 
