@@ -13,7 +13,7 @@ import pandas as pd
 import multiprocessing as mp
 import argparse
 import statistics
-import seaborn as sns
+from matplotlib import cm
 
 # def sum_data(output_dir, label, mapped_pos_conf_scores, mapped_neg_conf_scores, mapped_neg_label, mapped_pos_label, all_conf_scores, ref_length):
 # 	# get average of cs
@@ -160,8 +160,8 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		# add track for mapped taxa
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
-		taxa_palette = sns.color_palette("icefire", n_colors=df_taxa.shape[1])
-		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette)
+		cmap = cm.get_cmap('inferno')
+		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=cmap)
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
@@ -261,12 +261,12 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	col_num = len(unique_mapped_taxa)
     
 	matrix = np.zeros((row_num, col_num))
-	row_names = [f"{i}" for i in range(1,row_num+1,1)]
-	col_names = [f"{i}" for i in unique_mapped_taxa]
+	row_names = [str(i) for i in range(1,row_num+1,1)]
+	col_names = [i for i in unique_mapped_taxa]
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	for pos, taxa_list in mapped_taxa.items():
 		for t in taxa_list:
-			df.loc[str(pos), t] += 1
+			df.loc[pos, t] += 1
 	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'), index=False)
 	return df
 
@@ -349,6 +349,7 @@ def main():
     # define path to taxonomy of genomes in dltoda
 	ranks_index = {'species': 0, 'genus': 1, 'family':2, 'order':3, 'class':4, 'phylum': 5}
 	path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+	print(os.path.dirname(os.path.abspath(__file__)))
 	with open(path_dl_toda_tax, 'r') as in_f:
 		content = in_f.readlines()
 		dltoda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1].split(';')[ranks_index[args.rank]] for line in content}
@@ -371,7 +372,7 @@ def main():
 	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 	df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
 	# reset the index and remove first column
-	new_index = [i for i in range(1,df_taxa.shape[0]+1,1)]
+	new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
 	df_taxa  = df_taxa.set_index(pd.Index(new_index))
 	df_taxa = df_taxa.iloc[:, 1:]
 	# create circos plot showing the testing genome and other info
