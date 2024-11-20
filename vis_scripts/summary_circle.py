@@ -371,7 +371,7 @@ def main():
 	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
 	df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
 	# reset the index and remove first column
-	new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
+	new_index = [i for i in range(1,df_taxa.shape[0]+1,1)]
 	df_taxa  = df_taxa.set_index(pd.Index(new_index))
 	df_taxa = df_taxa.iloc[:, 1:]
 	# create circos plot showing the testing genome and other info
