@@ -161,7 +161,7 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		taxa_track = sector.add_track((46, 56))
 		taxa_track.grid()
 		taxa_palette = sns.color_palette("icefire", n_colors=df_taxa.shape[1])
-		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette, labels=)
+		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=taxa_palette)
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
