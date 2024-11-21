@@ -399,7 +399,6 @@ def main():
 	new_df.to_csv(f'{args.rank}_sum_{args.label}_df.csv')
 	# sum values in rows
 	df_taxa['TotalTaxaCount'] = df_taxa.sum(axis=1)
-	pos_sum_df['sum'] = rows_sums
 
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), df_taxa['TotalTaxaCount'].tolist(), confidence_scores, pos_coverage, args.output_dir, args.label)
