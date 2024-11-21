@@ -280,9 +280,11 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	row_names = [str(i) for i in range(1,row_num+1,1)]
 	col_names = [i for i in unique_mapped_taxa]
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
-	for pos, taxa_list in mapped_species.items():
-		for t in taxa_list:
-			df.loc[pos, t] += 1
+	for pos, labels_list in mapped_species.items():
+		for l in labels_list:
+			# get taxon of label at given rank
+			taxon = dltoda_tax[l]
+			df.loc[pos, taxon] += 1
 	print(df)
 	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'), index=False)
 	return df
@@ -412,7 +414,7 @@ def main():
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
 
-	
+	# add a track for reads assigned to label 0 and reads assigned to label 1
 
 
 	# # load coverage of training reads to training genome
