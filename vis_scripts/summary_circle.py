@@ -170,7 +170,7 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		# add track for count of total taxa per position
 		total_taxa_track = sector.add_track((46, 56))
 		total_taxa_track.axis()
-		total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 20000))
+		total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 1000))
 		print(total_taxa_y)
 		total_taxa_y_labels = list(map(str, total_taxa_y))
 		print(total_taxa_y_labels)
