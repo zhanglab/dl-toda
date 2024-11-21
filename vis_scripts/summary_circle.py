@@ -149,29 +149,31 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
 		# add track for confidence scores obtained of the label's testing reads
-		pos_cs_track = sector.add_track((59, 69))
+		pos_cs_track = sector.add_track((72, 82))
 		pos_cs_track.axis()
 		pos_cs_y = [0.0, 0.5, 1.0]
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
 		pos_cs_x = genome_positions
 		pos_cs_x_values = [confidence_scores[i] for i in pos_cs_x]
-		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
+		pos_cs_track.line(pos_cs_x, pos_cs_x_values, color="#FC6238")
 		print(f'added pos cs track')
 		# add track for count of unique taxa per position
-		unique_taxa_track = sector.add_track((46, 56))
+		unique_taxa_track = sector.add_track((59, 69))
 		unique_taxa_track.axis()
-		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 5))
+		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 10))
 		unique_taxa_y_labels = list(map(str, unique_taxa_y))
 		unique_taxa_track.yticks(unique_taxa_y, unique_taxa_y_labels)
 		unique_taxa_x = genome_positions
 		unique_taxa_x_values = unique_taxa_count
 		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
 		# add track for count of total taxa per position
-		total_taxa_track = sector.add_track((33, 43))
+		total_taxa_track = sector.add_track((46, 56))
 		total_taxa_track.axis()
-		total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 5))
+		total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 20000))
+		print(total_taxa_y)
 		total_taxa_y_labels = list(map(str, total_taxa_y))
+		print(total_taxa_y_labels)
 		total_taxa_track.yticks(total_taxa_y, total_taxa_y_labels)
 		total_taxa_x = genome_positions
 		total_taxa_x_values = total_taxa_count
@@ -254,7 +256,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
-	mapped_taxa = defaultdict(list) # key = position in testing genome, value = list of taxa with a training genome to which the read was mapped to
+	mapped_species = defaultdict(set) # key = position in testing genome, value = list of taxa with a training genome to which the read was mapped to
 	unique_mapped_taxa = set()
 	for sam in samfiles:
 		sam_label = sam.rstrip().split('/')[-1].split('_')[0]
@@ -265,7 +267,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 				start_position = mapping_info[k][0]
 				end_position = mapping_info[k][1]
 				for p in range(start_position, end_position+1, 1):
-					mapped_taxa[p].append(dltoda_tax[sam_label])
+					mapped_species[p].add(sam_label)
 					unique_mapped_taxa.add(dltoda_tax[sam_label])
 
 
@@ -278,9 +280,10 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	row_names = [str(i) for i in range(1,row_num+1,1)]
 	col_names = [i for i in unique_mapped_taxa]
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
-	for pos, taxa_list in mapped_taxa.items():
+	for pos, taxa_list in mapped_species.items():
 		for t in taxa_list:
 			df.loc[pos, t] += 1
+	print(df)
 	df.to_csv(os.path.join(args.output_dir, f'taxa_read_count_{args.label}_df.csv'), index=False)
 	return df
 
@@ -383,12 +386,12 @@ def main():
 	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
 
    	# get taxa mapped to each 
-	# df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
-	df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
+	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
+	# df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
 	# reset the index and remove first column
-	new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
-	df_taxa  = df_taxa.set_index(pd.Index(new_index))
-	df_taxa = df_taxa.iloc[:, 1:]
+	# new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
+	# df_taxa  = df_taxa.set_index(pd.Index(new_index))
+	# df_taxa = df_taxa.iloc[:, 1:]
 	# count the number of columns with non zero values per row
 	df_taxa['UniqueTaxaCount'] = (df_taxa != 0).sum(axis=1)
 	unique_taxa_count = df_taxa['UniqueTaxaCount'].tolist()
