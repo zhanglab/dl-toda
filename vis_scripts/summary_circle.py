@@ -163,7 +163,7 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		unique_taxa_track.axis()
 		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 5))
 		unique_taxa_y_labels = list(map(str, unique_taxa_y))
-		unique_taxa_y.yticks(unique_taxa_y, unique_taxa_y_labels)
+		unique_taxa_track.yticks(unique_taxa_y, unique_taxa_y_labels)
 		unique_taxa_x = genome_positions
 		unique_taxa_x_values = unique_taxa_count
 		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
@@ -172,7 +172,7 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		total_taxa_track.axis()
 		total_taxa_y = list(range(min(total_taxa_count), max(total_taxa_count)+1, 5))
 		total_taxa_y_labels = list(map(str, total_taxa_y))
-		total_taxa_y.yticks(total_taxa_y, total_taxa_y_labels)
+		total_taxa_track.yticks(total_taxa_y, total_taxa_y_labels)
 		total_taxa_x = genome_positions
 		total_taxa_x_values = total_taxa_count
 		total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
