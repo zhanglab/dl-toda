@@ -176,7 +176,6 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		total_taxa_x = genome_positions
 		total_taxa_x_values = total_taxa_count
 		total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
-
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
@@ -399,7 +398,10 @@ def main():
 	new_df.to_csv(f'{args.rank}_sum_{args.label}_df.csv')
 	# sum values in rows
 	df_taxa['TotalTaxaCount'] = df_taxa.sum(axis=1)
-
+	total_taxa_count = df_taxa['TotalTaxaCount'].tolist()
+	print(type(total_taxa_count))
+	print(min(total_taxa_count))
+	print(max(total_taxa_count))
 	# create circos plot showing the testing genome and other info
 	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), df_taxa['TotalTaxaCount'].tolist(), confidence_scores, pos_coverage, args.output_dir, args.label)
 
