@@ -403,8 +403,11 @@ def main():
 	print(type(total_taxa_count))
 	print(min(total_taxa_count))
 	print(max(total_taxa_count))
+	print(type(unique_taxa_count))
+	print(min(unique_taxa_count))
+	print(max(unique_taxa_count))
 	# create circos plot showing the testing genome and other info
-	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
+	PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
