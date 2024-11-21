@@ -124,7 +124,7 @@ import matplotlib.colors as mcolors
 # 	return l_mapped_pos_conf_scores, l_mapped_neg_conf_scores, l_mapped_pos_label_percent, l_mapped_neg_label_percent, o_mapped_pos_conf_scores, o_mapped_neg_conf_scores, o_mapped_pos_label_percent, o_mapped_neg_label_percent
 
 
-def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, output_dir, label):
+def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
 	
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_positions)}
@@ -158,14 +158,25 @@ def PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, outp
 		pos_cs_x_values = [confidence_scores[i] for i in pos_cs_x]
 		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
 		print(f'added pos cs track')
-		# add track for mapped taxa
-		taxa_track = sector.add_track((46, 56))
-		taxa_track.grid()
-		cmap = "inferno"
-		# cmap = cm.get_cmap('inferno')
-		# colors = [mcolors.to_hex(cmap(i)) for i in range(df_taxa.shape[1])]
-		# print(colors)
-		taxa_track.stacked_bar(df_taxa, width=0.2, cmap=cmap)
+		# add track for count of unique taxa per position
+		unique_taxa_track = sector.add_track((46, 56))
+		unique_taxa_track.axis()
+		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 5))
+		unique_taxa_y_labels = list(map(str, unique_taxa_y))
+		unique_taxa_y.yticks(unique_taxa_y, unique_taxa_y_labels)
+		unique_taxa_x = genome_positions
+		unique_taxa_x_values = unique_taxa_count
+		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
+		# add track for count of total taxa per position
+		total_taxa_track = sector.add_track((33, 43))
+		total_taxa_track.axis()
+		total_taxa_y = list(range(min(total_taxa_count), max(total_taxa_count)+1, 5))
+		total_taxa_y_labels = list(map(str, total_taxa_y))
+		total_taxa_y.yticks(total_taxa_y, total_taxa_y_labels)
+		total_taxa_x = genome_positions
+		total_taxa_x_values = total_taxa_count
+		total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
+
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
@@ -379,8 +390,19 @@ def main():
 	new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
 	df_taxa  = df_taxa.set_index(pd.Index(new_index))
 	df_taxa = df_taxa.iloc[:, 1:]
+	# count the number of columns with non zero values per row
+	df_taxa['UniqueTaxaCount'] = (df_taxa != 0).sum(axis=1)
+	# sum values in columns and sort columns based on sum
+	column_sums = df_taxa.sum(axis=0).sort_values()
+	new_df = pd.DataFrame()
+	new_df['sum'] = column_sums
+	new_df.to_csv(f'{args.rank}_sum_{args.label}_df.csv')
+	# sum values in rows
+	df_taxa['TotalTaxaCount'] = df_taxa.sum(axis=1)
+	pos_sum_df['sum'] = rows_sums
+
 	# create circos plot showing the testing genome and other info
-	PlotCircles(genome_positions, df_taxa, confidence_scores, pos_coverage, args.output_dir, args.label)
+	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), df_taxa['TotalTaxaCount'].tolist(), confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
