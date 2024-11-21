@@ -391,6 +391,7 @@ def main():
 	df_taxa = df_taxa.iloc[:, 1:]
 	# count the number of columns with non zero values per row
 	df_taxa['UniqueTaxaCount'] = (df_taxa != 0).sum(axis=1)
+	unique_taxa_count = df_taxa['UniqueTaxaCount'].tolist()
 	# sum values in columns and sort columns based on sum
 	column_sums = df_taxa.sum(axis=0).sort_values()
 	new_df = pd.DataFrame()
@@ -403,7 +404,7 @@ def main():
 	print(min(total_taxa_count))
 	print(max(total_taxa_count))
 	# create circos plot showing the testing genome and other info
-	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), df_taxa['TotalTaxaCount'].tolist(), confidence_scores, pos_coverage, args.output_dir, args.label)
+	PlotCircles(genome_positions, df_taxa['UniqueTaxaCount'].tolist(), total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	
 
