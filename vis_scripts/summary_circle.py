@@ -277,8 +277,9 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	col_num = len(unique_mapped_taxa)
     
 	matrix = np.zeros((row_num, col_num))
-	row_names = [str(i) for i in range(1,row_num+1,1)]
+	row_names = [i for i in range(1,row_num+1,1)]
 	col_names = [i for i in unique_mapped_taxa]
+	print(col_names)
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	for pos, labels_list in mapped_species.items():
 		for l in labels_list:
