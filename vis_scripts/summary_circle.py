@@ -256,10 +256,13 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	# load data about alignments of testing reads to training genomes
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
+	print(f'# sam files: {len(samfiles)}')
 	mapped_species = defaultdict(set) # key = position in testing genome, value = list of taxa with a training genome to which the read was mapped to
 	unique_mapped_taxa = set()
+	labels = []
 	for sam in samfiles:
 		sam_label = sam.rstrip().split('/')[-1].split('_')[0]
+		labels.append(sam_label)
 		_, _, reads_info = load_data(args, sam)
 		for k in reads_info.keys():
 			# get start and end positions of alignment on the testing genome
@@ -282,7 +285,10 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	print(col_names)
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	for pos, labels_list in mapped_species.items():
-		for l in labels_list:
+		if len(labels_list) != len(samfiles):
+			print(set(labels).difference(labels_list))
+			break
+		for l in list(labels_list):
 			# get taxon of label at given rank
 			taxon = dltoda_tax[l]
 			df.loc[pos, taxon] += 1
@@ -369,11 +375,9 @@ def main():
     # define path to taxonomy of genomes in dltoda
 	ranks_index = {'species': 0, 'genus': 1, 'family':2, 'order':3, 'class':4, 'phylum': 5}
 	path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
-	print(os.path.dirname(os.path.abspath(__file__)))
 	with open(path_dl_toda_tax, 'r') as in_f:
 		content = in_f.readlines()
 		dltoda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1].split(';')[ranks_index[args.rank]] for line in content}
-
 
 	# load data about alignments of testing reads to testing genome
 	ref_info, _, mapping_info = load_data(args, args.test_samfile)
