@@ -148,18 +148,8 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
-		# add track for confidence scores obtained of the label's testing reads
-		pos_cs_track = sector.add_track((72, 82))
-		pos_cs_track.axis()
-		pos_cs_y = [0.0, 0.5, 1.0]
-		pos_cs_y_labels = list(map(str, pos_cs_y))
-		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-		pos_cs_x = genome_positions
-		pos_cs_x_values = [confidence_scores[i] for i in pos_cs_x]
-		pos_cs_track.line(pos_cs_x, pos_cs_x_values, color="#FC6238")
-		print(f'added pos cs track')
 		# add track for count of unique taxa per position
-		unique_taxa_track = sector.add_track((59, 69))
+		unique_taxa_track = sector.add_track((72, 82))
 		unique_taxa_track.axis()
 		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 10))
 		unique_taxa_y_labels = list(map(str, unique_taxa_y))
@@ -168,7 +158,7 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		unique_taxa_x_values = unique_taxa_count
 		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
 		# add track for count of total taxa per position
-		total_taxa_track = sector.add_track((46, 56))
+		total_taxa_track = sector.add_track((59, 69))
 		total_taxa_track.axis()
 		total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 1000))
 		print(total_taxa_y)
@@ -178,6 +168,16 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		total_taxa_x = genome_positions
 		total_taxa_x_values = total_taxa_count
 		total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
+		# add track for confidence scores obtained of the label's testing reads
+		pos_cs_track = sector.add_track((46, 56))
+		pos_cs_track.axis()
+		pos_cs_y = [0.0, 0.5, 1.0]
+		pos_cs_y_labels = list(map(str, pos_cs_y))
+		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
+		pos_cs_x = genome_positions
+		pos_cs_x_values = [confidence_scores[i] for i in pos_cs_x]
+		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
+		print(f'added pos cs track')
 		# save figure
 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
