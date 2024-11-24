@@ -257,7 +257,7 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	samfiles = glob.glob(os.path.join(args.train_samfiles, '*.sam'))
 	samfiles.remove(os.path.join(args.train_samfiles, f'{args.label}_results.sam'))
 	print(f'# sam files: {len(samfiles)}')
-	mapped_species = defaultdict(set) # key = position in testing genome, value = list of taxa with a training genome to which the read was mapped to
+	mapped_species = defaultdict(set) # key = position in testing genome, value = list of taxa with a training genome to which the testing read was mapped to
 	unique_mapped_taxa = set()
 	labels = []
 	for sam in samfiles:
@@ -285,9 +285,6 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	print(col_names)
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	for pos, labels_list in mapped_species.items():
-		if len(labels_list) != len(samfiles):
-			print(set(labels).difference(labels_list))
-			break
 		for l in list(labels_list):
 			# get taxon of label at given rank
 			taxon = dltoda_tax[l]
