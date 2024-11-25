@@ -4,7 +4,7 @@ import glob
 from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
-from vis_scripts.parse_samfile import load_data
+from vis_scripts.parse_samfile import LoadData, GetCoverage
 from collections import defaultdict
 import random
 import numpy as np
@@ -259,23 +259,24 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	print(f'# sam files: {len(samfiles)}')
 	mapped_species = defaultdict(set) # key = position in testing genome, value = list of taxa with a training genome to which the testing read was mapped to
 	unique_mapped_taxa = set()
-	labels = []
+	
 	for sam in samfiles:
+		# get species label of training genome from SAM filename
 		sam_label = sam.rstrip().split('/')[-1].split('_')[0]
-		labels.append(sam_label)
-		_, _, reads_info = load_data(args, sam)
-		for k in reads_info.keys():
-			# get start and end positions of alignment on the testing genome
-			if k in mapping_info:
-				start_position = mapping_info[k][0]
-				end_position = mapping_info[k][1]
-				for p in range(start_position, end_position+1, 1):
-					if p == 1153999:
-						print(sam, start_position, end_position, k)
-						break
-					mapped_species[p].add(sam_label)
-					unique_mapped_taxa.add(dltoda_tax[sam_label])
-
+		
+		# get info about alignment
+		_, sam_alignment = LoadData(sam)
+		
+		for sam_ref, sam_info in sam_alignment.items():
+			for read_info in sam_info:
+				read_id = read_info[0]
+				# get start and end positions of alignment on the testing genome
+				if read_id in mapping_info:
+					start_position = mapping_info[read_id][0]
+					end_position = mapping_info[read_id][1]
+					for p in range(start_position, end_position+1, 1):
+						mapped_species[p].add(sam_label)
+						unique_mapped_taxa.add(dltoda_tax[sam_label])
 
     # create dataframe with rows = positions in testing genome and columns = mapped taxa
 	unique_mapped_taxa = list(unique_mapped_taxa)
@@ -300,13 +301,13 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	return df
 
 
-def GetCoverage(filename):
-	with open(filename, 'r') as f:
-		content = f.readlines()
-		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
-		genome_positions = list(range(0,len(pos_coverage),1))
+# def GetCoverage(filename):
+# 	with open(filename, 'r') as f:
+# 		content = f.readlines()
+# 		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
+# 		genome_positions = list(range(0,len(pos_coverage),1))
 
-	return pos_coverage, genome_positions
+# 	return pos_coverage, genome_positions
 
 
 def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
@@ -340,7 +341,18 @@ def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 	return confidence_scores
 
 
-def UnmappedReads(args, mapping_info):
+def GetInfoTestingGenome(args):
+
+	# load data about alignments of testing reads to testing genome
+	ref_info, alignments = LoadData(args.test_samfile)
+	
+	assert len(ref_info) == 1, f'{args.test_samfile} has more than 1 reference sequence'
+	
+	testing_genome_length = ref_info[0][1]
+	testing_genome_pos = list(range(1, testing_genome_length+1, 1))
+	dict_coverage, reads_info = GetCoverage(alignments[ref_info[0][0]], testing_genome_length)
+	pos_coverage = [dict_coverage[i] for i in range(testing_genome_length)]
+
 	# load fq file with testing reads --> required to identify reads that were not mapped to the reference testing genome (too short)
 	reads = load_fq_file(args.fq_file, 4)
 	reads_id = []
@@ -352,21 +364,20 @@ def UnmappedReads(args, mapping_info):
 		reads_id.append(read_id)
 
 	# get reads that were not mapped to the testing genome and their length
-	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(mapping_info.keys())))
+	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(reads_info.keys())))
 	with open(os.path.join(args.output_dir, f'unmapped_reads_{args.label}.tsv'), 'w') as f:
 		for r in unmapped_reads:
 			read_label = r.split('|')[1]
 			if read_label == args.label:
 				f.write(f'{r}\t{dict_reads_length[r]}\n')
 
-	return reads_id
+	return reads_id, pos_coverage, testing_genome_pos, reads_info
 
 
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--train_samfiles', type=str, help='directory containing SAM files with alignment of testing reads to training genomes')
 	parser.add_argument('--test_samfile', type=str, help='path to SAM file containing the alignment of testing reads to the testing genome')
-	parser.add_argument('--test_coverage', type=str, help='path to file *-cov-pos.tsv containing number of mapped reads at each position')
 	parser.add_argument('--fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
 	parser.add_argument('--label', type=str, help='label of species investigated')
 	parser.add_argument('--kmers', type=str, help='path to file containing of kmers of interest')
@@ -383,21 +394,15 @@ def main():
 		content = in_f.readlines()
 		dltoda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1].split(';')[ranks_index[args.rank]] for line in content}
 
-	# load data about alignments of testing reads to testing genome
-	ref_info, _, mapping_info = load_data(args, args.test_samfile)
-	testing_genome_length = ref_info[0][1]
-
-    # get information about reads not mapped to testing genome and ordered list of reads id from all reads (+ and - classes)
-	reads_id = UnmappedReads(args, mapping_info)
+	# get information about testing reads mapping testing genome
+	reads_id, pos_coverage, testing_genome_pos, alignment_reads_info = GetInfoTestingGenome(args)
 
     # get mean confidence scores at each position of the testing genome
-	confidence_scores = GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id)
+	confidence_scores = GetConfidenceScores(args, len(testing_genome_pos), alignment_reads_info, reads_id)
 
-    # get coverage of training genome
-	pos_coverage, genome_positions = GetCoverage(args.test_coverage)
-
+    
    	# get taxa mapped to each 
-	df_taxa = GetTaxa(args, dltoda_tax, genome_positions, mapping_info)
+	df_taxa = GetTaxa(args, dltoda_tax, testing_genome_pos, alignment_reads_info)
 	# df_taxa = pd.read_csv('/scratch/workspace/cecile_cres_uri_edu-dl-toda/dl-toda-bert/bin_read_classifiers/bbmap_analysis/711/taxa_read_count_711_df.csv')
 	# reset the index and remove first column
 	# new_index = [str(i) for i in range(1,df_taxa.shape[0]+1,1)]
@@ -421,7 +426,7 @@ def main():
 	print(min(unique_taxa_count))
 	print(max(unique_taxa_count))
 	# create circos plot showing the testing genome and other info
-	PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
+	PlotCircles(testing_genome_pos, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
 
 	# add a track for reads assigned to label 0 and reads assigned to label 1
 
