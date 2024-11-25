@@ -36,7 +36,7 @@ def GetCoverage(list_of_reads, length_ref):
     reads_info = defaultdict(list)
 
     for j in range(0, len(list_of_reads)):
-        read_id = list_of_reads[0]
+        read_id = list_of_reads[j][0]
         read_start = list_of_reads[j][1] - 1 
         read_cigar = ExtendCigar(list_of_reads[j][2])
         query_pos = 0
