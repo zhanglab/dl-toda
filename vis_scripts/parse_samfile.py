@@ -49,7 +49,7 @@ def GetCoverage(list_of_reads, length_ref):
             print(f'read_cigar: {read_cigar}')
 
         while query_pos < len(read_cigar):
-            if read_id == 'seq|492|num_16073'::
+            if read_id == 'seq|492|num_16073':
                 print(f'ref_pos: {ref_pos}')
             if read_cigar[query_pos] in ["=", "M"]:
                 dict_coverage[ref_pos] = dict_coverage[ref_pos] + 1
