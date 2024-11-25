@@ -301,15 +301,6 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	return df
 
 
-# def GetCoverage(filename):
-# 	with open(filename, 'r') as f:
-# 		content = f.readlines()
-# 		pos_coverage = [math.log(int(i.rstrip().split('\t')[1])) if int(i.rstrip().split('\t')[1]) != 0 else 0.0 for i in content]
-# 		genome_positions = list(range(0,len(pos_coverage),1))
-
-# 	return pos_coverage, genome_positions
-
-
 def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 	# load testing results
 	dict_confidence_scores = defaultdict(list)
