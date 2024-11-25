@@ -41,8 +41,16 @@ def GetCoverage(list_of_reads, length_ref):
         read_cigar = ExtendCigar(list_of_reads[j][2])
         query_pos = 0
         ref_pos = query_pos + read_start
+        
+        if read_id == 'seq|492|num_16073':
+            print(f'read_id: {read_id}')
+            print(f'read_start: {read_start}')
+            print(f'ref_pos: {ref_pos}')
+            print(f'read_cigar: {read_cigar}')
 
         while query_pos < len(read_cigar):
+            if read_id == 'seq|492|num_16073'::
+                print(f'ref_pos: {ref_pos}')
             if read_cigar[query_pos] in ["=", "M"]:
                 dict_coverage[ref_pos] = dict_coverage[ref_pos] + 1
             if read_cigar[query_pos] in refmoveset:
