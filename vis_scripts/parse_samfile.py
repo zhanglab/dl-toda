@@ -47,6 +47,7 @@ def GetCoverage(list_of_reads, length_ref):
             print(f'read_start: {read_start}')
             print(f'ref_pos: {ref_pos}')
             print(f'read_cigar: {read_cigar}')
+            print(f'length of read_cigar: {len(read_cigar)}')
 
         while query_pos < len(read_cigar):
             if read_id == 'seq|492|num_16073':
