@@ -2,10 +2,24 @@ import sys
 import os
 from collections import defaultdict
 import math
-import multiprocessing as mp
 import argparse
 
-def extend_cigar(cigar):
+# symbols in CIGAR string
+# M: match, no insertion or deletions, bases may not agree --> consumes query and ref
+# I: insertion, additional base in query (not in reference) --> consumes query but not ref
+# D: deletion, query is missing base from reference --> consumes ref but not query
+# =: equal, no insertions or deletions, and bases agree --> consumes query and ref
+# X: not equal, no insertions or deletions, bases do not agree --> consumes query and ref
+# N: none, no query bases to align, an expected read gap (spliced read) --> consumes ref but not query
+# S: soft-clipped, bases on end of read are not aligned but stored in SAM --> consumes query but not ref
+# H: hard-clipped, bases on end of read are not aligned, not stored in SAM --> does no consume query or ref
+# P: padding, neither read nor reference has a base here --> does no consume query or ref
+
+refmoveset = {'M', '=', 'X', 'D', 'N'}
+refnomoveset = {'I', 'S', 'H', 'P'}
+
+
+def ExtendCigar(cigar):
     new_cigar = ''
     num = ''
     for i in cigar:
@@ -16,17 +30,15 @@ def extend_cigar(cigar):
             num = ''
     return new_cigar
 
-def get_coverage(list_of_reads, length_ref, results, process_id):
-    # for each reference in the dictionary, create a new dictionary with the
-    # number of matches at each position encountered
-    # dict_coverage = defaultdict(lambda : 0)
+
+def GetCoverage(list_of_reads, length_ref):
     dict_coverage = {i: 0 for i in range(length_ref)}
+    reads_info = defaultdict(list)
 
     for j in range(0, len(list_of_reads)):
-        read_start = list_of_reads[j][0] - 1 # read_start = list_of_reads[j][0] - 1
-        read_cigar = extend_cigar(list_of_reads[j][1]) # read_cigar = list_of_reads[j][1]
-        refmoveset = {'M', '=', 'X', 'D', 'N'}
-        # refnomoveset = {'I', 'S', 'H', 'P'}
+        read_id = list_of_reads[0]
+        read_start = list_of_reads[j][1] - 1 
+        read_cigar = ExtendCigar(list_of_reads[j][2])
         query_pos = 0
         ref_pos = query_pos + read_start
 
@@ -37,89 +49,69 @@ def get_coverage(list_of_reads, length_ref, results, process_id):
                 ref_pos += 1
             query_pos += 1
 
-    results[process_id] = dict_coverage
+        reads_info[read_id] = [read_start+1, ref_pos+1]
+
+    return dict_coverage, reads_info
 
 
-def get_references(content, alignments):
-    ref = {}
-    for i, line in enumerate(content):
-        if line.rstrip().split('\t')[0][:3] == '@SQ' and ''.join(line.rstrip().split('\t')[1].split(':')[1:]) in alignments:
-            ref[i] = [line.rstrip().split('\t')[1].split(':')[1], int(line.rstrip().split('\t')[2].split(':')[1])]
-    return ref
+def GetReferences(content, alignments):
+    # get length of references
+    ref_info = []
+    for line in content:
+        if line.rstrip().split('\t')[0][:3] == '@PG':
+            break
+        if line.rstrip().split('\t')[0][:3] == '@SQ':
+            reference = line.rstrip().split('\t')[1].split(':')[1]
+            if reference in alignments:
+                length_ref = int(line.rstrip().split('\t')[2].split(':')[1])
+                ref_info.append([reference, length_ref])
+    
+    return ref_info
 
-def load_data(args, samfile):
+def LoadData(samfile):
     alignments = defaultdict(list)
-    reads_info = defaultdict(list)
     with open(samfile, 'r') as f:
         content = f.readlines()
         for i in range(len(content)):
             if content[i].rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and content[i].rstrip().split('\t')[5] != '*':
+                read_id = content[i].rstrip().split('\t')[0]
                 start_pos = int(content[i].rstrip().split('\t')[3])
                 aligned_ref = content[i].rstrip().split('\t')[2]
                 cigar_string = content[i].rstrip().split('\t')[5]
-                alignments[aligned_ref].append([start_pos, cigar_string])
-                # compute ending of alignment based on cigar string
-                end_pos = start_pos + len(extend_cigar(cigar_string))
-                read_id = content[i].rstrip().split('\t')[0]
-                reads_info[read_id] = [start_pos, end_pos]
+                alignments[aligned_ref].append([read_id, start_pos, cigar_string])
 
     # get references and their length
-    ref = get_references(content[1:], alignments)
+    ref_info = GetReferences(content[1:], alignments)
 
-    return ref, alignments, reads_info
+    return ref_info, alignments
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--samfile', type=str, help='path to SAM file')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
-    parser.add_argument('--num_processes', type=int, default=8)
-    parser.add_argument('--coverage', help="compute coverage of reference sequences", action='store_true', default=False)
     parser.add_argument('--mapped_reads', help="store id of mapped reads into a tsv file", action='store_true', default=False)
     args = parser.parse_args()
     
     # get references
-    ref_info, alignments, reads_info = load_data(args, args.samfile)
+    ref_info, alignments = LoadData(args.samfile)
 
-    if args.mapped_reads:
-        with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
-            for k, v in reads_info.items():
-                outfile.write(f'{k}\t{v[0]}\t{v[1]}\n')
+    for ref, length_ref in ref_info.items():
 
-    if args.coverage:
-        # determine the size of each subtask
-        size = math.ceil(len(alignments)/args.num_processes)
+        dict_coverage, reads_info = GetCoverage(alignments[ref], length_ref)
 
-        # determine the references in each subtasks
-        chunks = []
-        data = {}
-        for k, v in alignments.items():
-            if len(data) < size:
-                data.update({k: v})
-            else:
-                chunks.append(data)
-                data = {k: v}
-        if len(chunks) < args.num_processes:
-            chunks.append(data)
+        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
+            for k, v in dict_coverage.items():
+                out_f.write(f'{k}\t{v}\n')
+            
+        # compute mean coverage
+        mean_cov = round(sum(dict_coverage.values())/length_ref, 3)
+        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-mean.tsv'), 'w') as out_f:
+            out_f.write(f'{length_ref}\t{mean_cov}\n')
 
-        num_refs = sum([len(i) for i in chunks])
-        print(size, len(alignments), len(ref_info), len(chunks), args.num_processes, num_refs)
-
-        with mp.Manager() as manager:
-            results = manager.dict()
-            processes = [mp.Process(target=get_coverage, args=(alignments[ref_info[i][0]], ref_info[i][1], results, i)) for i in range(len(ref_info))]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-
-            for process_id, ref_results in results.items():
-                with open(os.path.join(args.output_dir, f'{ref_info[process_id][0].replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
-                    for k, v in ref_results.items():
-                        out_f.write(f'{k}\t{v}\n')
-                # compute mean coverage
-                mean_cov = round(sum(ref_results.values())/ref_info[process_id][1], 3)
-                with open(os.path.join(args.output_dir, f'{ref_info[process_id][0].replace(" ", "-")}-cov-mean.tsv'), 'w') as out_f:
-                    out_f.write(f'{k}\t{mean_cov}\n')
+        if args.mapped_reads:
+            with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
+                for k, v in reads_info.items():
+                    outfile.write(f'{k}\t{v[0]}\t{v[1]}\n')
 
 
 if __name__ == '__main__':
