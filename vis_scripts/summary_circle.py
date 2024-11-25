@@ -270,6 +270,9 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 				start_position = mapping_info[k][0]
 				end_position = mapping_info[k][1]
 				for p in range(start_position, end_position+1, 1):
+					if p == 1153999:
+						print(sam, start_position, end_position, k)
+						break
 					mapped_species[p].add(sam_label)
 					unique_mapped_taxa.add(dltoda_tax[sam_label])
 
@@ -284,11 +287,10 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 	row_names = [i for i in range(1,row_num+1,1)]
 	col_names = [i for i in unique_mapped_taxa]
 	print(col_names)
-	print(type(row_names[0]))
 	print(len(row_names), row_names[0], row_names[-1])
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
+	print(df)
 	for pos, labels_list in mapped_species.items():
-		print(f'type of pos: {type(pos)}')
 		for l in list(labels_list):
 			# get taxon of label at given rank
 			taxon = dltoda_tax[l]
