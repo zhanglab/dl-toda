@@ -274,17 +274,21 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 					unique_mapped_taxa.add(dltoda_tax[sam_label])
 
 
-    # create dataframe with rows = positions in testin genome and columns = mapped taxa
+    # create dataframe with rows = positions in testing genome and columns = mapped taxa
 	unique_mapped_taxa = list(unique_mapped_taxa)
 	row_num = len(genome_positions)
 	col_num = len(unique_mapped_taxa)
+	print(f'Size of testing genome: {row_num}')
     
 	matrix = np.zeros((row_num, col_num))
 	row_names = [i for i in range(1,row_num+1,1)]
 	col_names = [i for i in unique_mapped_taxa]
 	print(col_names)
+	print(type(row_names[0]))
+	print(len(row_names), row_names[0], row_names[-1])
 	df = pd.DataFrame(matrix, index=row_names, columns=col_names)
 	for pos, labels_list in mapped_species.items():
+		print(f'type of pos: {type(pos)}')
 		for l in list(labels_list):
 			# get taxon of label at given rank
 			taxon = dltoda_tax[l]
@@ -363,6 +367,7 @@ def main():
 	parser.add_argument('--test_coverage', type=str, help='path to file *-cov-pos.tsv containing number of mapped reads at each position')
 	parser.add_argument('--fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
 	parser.add_argument('--label', type=str, help='label of species investigated')
+	parser.add_argument('--kmers', type=str, help='path to file containing of kmers of interest')
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
 	parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
