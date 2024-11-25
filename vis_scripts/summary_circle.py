@@ -275,6 +275,9 @@ def GetTaxa(args, dltoda_tax, genome_positions, mapping_info):
 					start_position = mapping_info[read_id][0]
 					end_position = mapping_info[read_id][1]
 					for p in range(start_position, end_position+1, 1):
+						if p == 1153999:
+							print(read_id, start_position, end_position)
+							break
 						mapped_species[p].add(sam_label)
 						unique_mapped_taxa.add(dltoda_tax[sam_label])
 
