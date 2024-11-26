@@ -134,16 +134,20 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		# add track for positions of the label's testing genome
 		genome_track = sector.add_track((98, 100))
 		genome_track.axis(fc="lightgrey")
-		genome_x = list(range(0,len(genome_positions),500000))
+		interval = str(int(len(genome_positions)/5))
+		interval = int(interval[0]+ '0'*(len(interval)-1))
+		genome_x = list(range(0,len(genome_positions),interval))
 		base_pos_ticks = [genome_positions[i] for i in genome_x]
-		genome_x_labels = [f'{i/1000} Kb' for i in base_pos_ticks]
+		genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
+		print(genome_x_labels)
+		print(genome_x)
 		genome_track.xticks(genome_x, genome_x_labels)
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		print(f'added genome track')
 		# add track for coverage of label's training genome
 		cov_track = sector.add_track((85, 95))
 		cov_track.axis()
-		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 2))
+		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 4))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
 		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
