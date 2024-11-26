@@ -175,9 +175,7 @@ def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidenc
 		pos_cs_y_labels = list(map(str, pos_cs_y))
 		pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
 		pos_cs_x = genome_positions
-		print(f'pos_cs_x: {pos_cs_x[0]}\t{pos_cs_x[-1]}\t{len(pos_cs_x)}')
-		print(f'confidence_scores: {len(confidence_scores)}')
-		pos_cs_x_values = [confidence_scores[i] for i in pos_cs_x]
+		pos_cs_x_values = confidence_scores
 		pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
 		print(f'added pos cs track')
 		# save figure
