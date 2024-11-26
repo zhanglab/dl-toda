@@ -325,7 +325,7 @@ def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 					dict_confidence_scores[i].append(confidence_score)
 
 	confidence_scores = []	
-	for i in range(testing_genome_length):
+	for i in range(1, testing_genome_length+1, 1):
 		if i in dict_confidence_scores:
 			confidence_scores.append(statistics.mean(dict_confidence_scores[i]))
 		else:
