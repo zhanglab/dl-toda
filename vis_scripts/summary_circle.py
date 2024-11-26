@@ -331,6 +331,8 @@ def GetConfidenceScores(args, testing_genome_length, mapping_info, reads_id):
 		else:
 			confidence_scores.append(0.0)
 
+	print(f'size of list: {len(confidence_scores)}')
+
 	return confidence_scores
 
 
@@ -363,6 +365,8 @@ def GetInfoTestingGenome(args):
 			read_label = r.split('|')[1]
 			if read_label == args.label:
 				f.write(f'{r}\t{dict_reads_length[r]}\n')
+
+	print(f'testing_genome_pos: {testing_genome_pos[0]}\t{testing_genome_pos[-1]}\t{len(testing_genome_pos)}')
 
 	return reads_id, pos_coverage, testing_genome_pos, reads_info
 
