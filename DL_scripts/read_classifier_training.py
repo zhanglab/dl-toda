@@ -566,7 +566,7 @@ def main():
         train_input = train_preprocessor.get_device_dataset()
         val_input = val_preprocessor.get_device_dataset()
     else:
-        if args.model_type != 'BERT_HUGGINGFACE':
+        if args.model_type == 'BERT_HUGGINGFACE':
             if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
             else:
