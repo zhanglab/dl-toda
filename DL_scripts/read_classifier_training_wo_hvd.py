@@ -605,8 +605,6 @@ def main():
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        print(f'trainable variables: {model.trainable_variables}')
-        break
         # input_ids, _, _, labels = data 
         if args.bert_step == "pretraining": 
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
