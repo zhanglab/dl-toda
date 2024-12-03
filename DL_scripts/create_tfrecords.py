@@ -177,6 +177,7 @@ def process_dnabert_data(args, dna_sequences, labels):
 
             print(f'mlm_positions:{mlm_positions}')
             print(f'contiguous_positions:{contiguous_positions}')
+            print(f'# contiguous positions: {len(contiguous_positions)}')
 
             if args.contiguous_kmers:
                 # mask contiguous kmers
