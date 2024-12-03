@@ -532,6 +532,7 @@ def main():
         if args.bert_step == "finetuning":
             if args.pretrained:
                 model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+                # freeze all the layers except 
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
@@ -626,7 +627,8 @@ def main():
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
 
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        print(f'trainable variables: {model.trainable_variables}')
+        print(model.trainable_variables)
+        print(len(model.trainable_variables))
         break
         if args.bert_step == "pretraining": 
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
