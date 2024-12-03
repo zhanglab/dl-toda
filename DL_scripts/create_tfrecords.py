@@ -143,14 +143,10 @@ def process_art_data(args, dna_sequences, labels, reads_index):
 
 def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
-    indices_to_mask = [-1, 1, 2]
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
-        # seq = dna_sequences[i][0]
-        # for k in dna_sequences[i][1:]:
-        #     seq += k[-1]
-    
+
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         
@@ -164,20 +160,26 @@ def process_dnabert_data(args, dna_sequences, labels):
             
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+
+            # get indices of contiguous kmers (previous and following kmer)
+            # indices_to_mask = [-1, 1, 2]
+            indices_to_mask = [-1, 1]
             mlm_positions.sort()
-            # create a boolean array of the size of the input sequence with True for masked positions and false for unmasked positions
-            # mlm_positions_bool = np.array([1 if i in mlm_positions else 0 for i in range(len(dna_list))], dtype='bool')
-            
-            new_mlm_positions = set()
+            contiguous_positions = set()
             for mask_position in mlm_positions:
                 for mask_index in indices_to_mask:
                     current_index = mask_position + mask_index
                     if current_index <= (len(dna_list)-1) and current_index >= 0:
                         print(mask_position, mask_index, current_index)
-                        new_mlm_positions.add(current_index)
+                        contiguous_positions.add(current_index)
 
-            mlm_positions += list(new_mlm_positions)
-            
+            print(f'mlm_positions:{mlm_positions}')
+            print(f'contiguous_positions:{contiguous_positions}')
+
+            if args.contiguous_kmers:
+                # mask contiguous kmers
+                mlm_positions += list(contiguous_positions)
+
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
             
@@ -185,7 +187,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
             
             # define NSP label - NSP is not implemented here
-            next_sentence_label = 1
+            # next_sentence_label = 1
             dna_list = mlm_dna_list
             labels = mlm_labels
 
@@ -211,10 +213,19 @@ def process_dnabert_data(args, dna_sequences, labels):
         else:
             attention_mask = [1]*max_position_embeddings
 
+        print(f'before - attention_mask: {attention_mask}')
+        if not args.contiguous_kmers:
+            # update contiguous positions to masked kmers to 0
+            attention_mask = [0 for p in range(len(attention_mask)) if p in contiguous_positions]
+
+        print(f'after - attention_mask: {attention_mask}')
+
         if args.bert_step == 'pretraining':
-            data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+            # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
+            data.append([dna_list, attention_mask, token_type_ids, labels])
         else:
             data.append([dna_list, attention_mask, token_type_ids, labels[i]])
+        break
 
     return data
 
@@ -371,7 +382,7 @@ def main():
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--update_labels', action='store_true', default=False, required=('--mapping_file' in sys.argv))
-    parser.add_argument('--contiguous', action='store_true', default=False)
+    parser.add_argument('--contiguous_kmers', action='store_true', default=False)
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads", required=True)
     parser.add_argument('--dataset_type', type=str, help="type of dataset", choices=['sim', 'meta'])
