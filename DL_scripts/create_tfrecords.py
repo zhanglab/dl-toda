@@ -163,33 +163,31 @@ def process_dnabert_data(args, dna_sequences, labels):
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
 
-            # get indices of contiguous kmers (previous and following kmer)
-            # indices_to_mask = [-1, 1, 2]
-            indices_to_mask = [-1, 1]
-            mlm_positions.sort()
-            contiguous_positions = set()
-            for mask_position in mlm_positions:
-                for mask_index in indices_to_mask:
-                    current_index = mask_position + mask_index
-                    if current_index <= (len(dna_list)-1) and current_index >= 0:
-                        # print(mask_position, mask_index, current_index)
-                        contiguous_positions.add(current_index)
-
-            print(f'mlm_positions:{mlm_positions}')
-            print(f'contiguous_positions:{contiguous_positions}')
-            print(f'# contiguous positions: {len(contiguous_positions)}')
-
-            # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
-            # assign label of contiguous kmers to -100, they should not be used for evaluating the model
-            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-
             if args.contiguous_kmers:
+                # get indices of contiguous kmers (previous and following kmer)
+                indices_to_mask = [-1, 1, 2]
+                # indices_to_mask = [-1, 1]
+                mlm_positions.sort()
+                contiguous_positions = set()
+                for mask_position in mlm_positions:
+                    for mask_index in indices_to_mask:
+                        current_index = mask_position + mask_index
+                        if current_index <= (len(dna_list)-1) and current_index >= 0:
+                            # print(mask_position, mask_index, current_index)
+                            contiguous_positions.add(current_index)
+                
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
+            
+                print(f'mlm positions: {mlm_positions}')
+                print(f'contiguous positions: {contiguous_positions}\t{len(contiguous_positions)}')
 
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
-            
+
+            # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
+            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+
             # define NSP label - NSP is not implemented here
             # next_sentence_label = 1
             dna_list = mlm_dna_list
@@ -218,6 +216,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             attention_mask = [1]*max_position_embeddings
 
         position_ids = list(range(max_position_embeddings))
+        print(f'position ids : {position_ids}')
 
         # if not args.contiguous_kmers:
         #     # update contiguous positions to masked kmers to 0
@@ -230,7 +229,6 @@ def process_dnabert_data(args, dna_sequences, labels):
         else:
             # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
             data.append([dna_list, attention_mask, position_ids, labels[i]])
-        break
 
     return data
 
