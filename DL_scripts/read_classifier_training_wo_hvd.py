@@ -442,6 +442,7 @@ def main():
     parser.add_argument('--lr_decay', type=int, help='number of epochs before dividing learning rate in half', required=False)
     args = parser.parse_args()
 
+    start = datetime.datetime.now()
     
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
@@ -576,13 +577,11 @@ def main():
     with open(val_num_reads[0], 'r') as infile:
         val_reads_per_epoch = int(infile.readline())
 
-    # compute number of steps/batches per epoch with horovod imported
+    # compute number of steps/batches per epoch and total number of training steps
     nstep_per_epoch = int(train_reads_per_epoch/args.batch_size)
     num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
-    val_steps = int(val_reads_per_epoch/args.batch_size)
     num_val_steps = int(val_reads_per_epoch/args.batch_size)
-    print(f'number of train steps: {num_train_steps}')
 
     # create checkpoint object to save model
     checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
@@ -601,13 +600,13 @@ def main():
         train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
         val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 
-    start = datetime.datetime.now()
-
     # all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     # all_input_ids = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        print(f'trainable variables: {model.trainable_variables}')
+        break
         # input_ids, _, _, labels = data 
         if args.bert_step == "pretraining": 
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
@@ -666,7 +665,7 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # evaluate model
-            for _, data in enumerate(val_input.take(val_steps)):
+            for _, data in enumerate(val_input.take(num_val_steps)):
                 if args.bert_step == "pretraining":
                     testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
                 else:
@@ -761,22 +760,25 @@ def main():
         out_v.close()
 
     end = datetime.datetime.now()
-
     total_time = end - start
+    days = total_time.days if total_time.days >= 0 else 0
     hours, seconds = divmod(total_time.seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
 
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-        f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
+        f.write(f'Date\t{start_date}\nStart time\t{start_time}\n'
                 f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
                 f'Batch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
                 f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-                f'Number of steps per epoch\t{num_train_steps}\nNumber of steps for validation dataset\t{num_val_steps}\n'
+                f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
+                f'Number of steps for validation dataset\t{num_val_steps}\n'
+                f'Number of epochs done\t{epoch}\n'
                 f'Initial learning rate\t{args.init_lr}\n')
         if args.model_type in ["LSTM", "AlexNet"]:
             f.write(f'Vector size\t{args.vector_size}\n')
-        f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+        f.write(f'\nTraining runtime:\t{days} days\t{hours} hours\t{minutes} minutes\t{seconds} seconds\n')
+
     td_writer.close()
     vd_writer.close()
 
