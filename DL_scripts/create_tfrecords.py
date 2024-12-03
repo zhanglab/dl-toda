@@ -149,7 +149,7 @@ def process_dnabert_data(args, dna_sequences, labels):
 
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
-        
+        print(f'# kmers: {len(dna_list)}')
         # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
             print(f'abnormal sequence length: {len(dna_list)}')
@@ -158,6 +158,7 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
+            print(f'# masked kmers: {n_mlm}')
             
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
@@ -171,7 +172,7 @@ def process_dnabert_data(args, dna_sequences, labels):
                 for mask_index in indices_to_mask:
                     current_index = mask_position + mask_index
                     if current_index <= (len(dna_list)-1) and current_index >= 0:
-                        print(mask_position, mask_index, current_index)
+                        # print(mask_position, mask_index, current_index)
                         contiguous_positions.add(current_index)
 
             print(f'mlm_positions:{mlm_positions}')
@@ -217,7 +218,8 @@ def process_dnabert_data(args, dna_sequences, labels):
         print(f'before - attention_mask: {attention_mask}')
         if not args.contiguous_kmers:
             # update contiguous positions to masked kmers to 0
-            attention_mask = [0 for p in range(len(attention_mask)) if p in contiguous_positions]
+            for p in contiguous_positions:
+                attention_mask[p] = 0
 
         print(f'after - attention_mask: {attention_mask}')
 
