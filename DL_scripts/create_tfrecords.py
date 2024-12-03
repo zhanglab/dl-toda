@@ -146,7 +146,6 @@ def process_dnabert_data(args, dna_sequences, labels):
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
     for i in range(len(dna_sequences)):
-
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
         print(f'# kmers: {len(dna_list)}')
@@ -165,8 +164,8 @@ def process_dnabert_data(args, dna_sequences, labels):
 
             if args.contiguous_kmers:
                 # get indices of contiguous kmers (previous and following kmer)
-                indices_to_mask = [-1, 1, 2]
-                # indices_to_mask = [-1, 1]
+                # indices_to_mask = [-1, 1, 2]
+                indices_to_mask = [-1, 1]
                 mlm_positions.sort()
                 contiguous_positions = set()
                 for mask_position in mlm_positions:
@@ -179,9 +178,6 @@ def process_dnabert_data(args, dna_sequences, labels):
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
             
-                print(f'mlm positions: {mlm_positions}')
-                print(f'contiguous positions: {contiguous_positions}\t{len(contiguous_positions)}')
-
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
 
