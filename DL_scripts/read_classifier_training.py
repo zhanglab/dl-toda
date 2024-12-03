@@ -532,7 +532,8 @@ def main():
         if args.bert_step == "finetuning":
             if args.pretrained:
                 model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-                # freeze all the layers except 
+                # freeze all the layers except the pooler layer and the classifier layer (last 4 trainable variables, kernel + bias)
+                # model.layers[].trainable = False
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
@@ -629,6 +630,7 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         print(model.trainable_variables)
         print(len(model.trainable_variables))
+        print(model.layers)
         print(model.summary())
         break
         if args.bert_step == "pretraining": 
