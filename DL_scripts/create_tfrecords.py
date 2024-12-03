@@ -179,15 +179,16 @@ def process_dnabert_data(args, dna_sequences, labels):
             print(f'contiguous_positions:{contiguous_positions}')
             print(f'# contiguous positions: {len(contiguous_positions)}')
 
+            # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
+            # assign label of contiguous kmers to -100, they should not be used for evaluating the model
+            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+
             if args.contiguous_kmers:
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
 
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
-            
-            # define vector labels containing indices of masked tokens and -100 for unmasked tokens
-            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
             
             # define NSP label - NSP is not implemented here
             # next_sentence_label = 1
@@ -202,7 +203,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             labels = [-100] + labels + [-100]
 
         # define the first and second part of the sequence - NSP is not implemented here
-        token_type_ids = [0] * max_position_embeddings
+        # token_type_ids = [0] * max_position_embeddings
         
         # pad input vectors if necessary
         if len(dna_list) < max_position_embeddings:
@@ -216,19 +217,19 @@ def process_dnabert_data(args, dna_sequences, labels):
         else:
             attention_mask = [1]*max_position_embeddings
 
-        print(f'before - attention_mask: {attention_mask}')
-        if not args.contiguous_kmers:
-            # update contiguous positions to masked kmers to 0
-            for p in contiguous_positions:
-                attention_mask[p] = 0
+        position_ids = list(range(max_position_embeddings))
 
-        print(f'after - attention_mask: {attention_mask}')
+        # if not args.contiguous_kmers:
+        #     # update contiguous positions to masked kmers to 0
+        #     for p in contiguous_positions:
+        #         attention_mask[p] = 0
 
         if args.bert_step == 'pretraining':
             # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
-            data.append([dna_list, attention_mask, token_type_ids, labels])
+            data.append([dna_list, attention_mask, position_ids, labels])
         else:
-            data.append([dna_list, attention_mask, token_type_ids, labels[i]])
+            # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
+            data.append([dna_list, attention_mask, position_ids, labels[i]])
         break
 
     return data
