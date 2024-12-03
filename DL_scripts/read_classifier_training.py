@@ -629,6 +629,7 @@ def main():
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
         print(model.trainable_variables)
         print(len(model.trainable_variables))
+        print(model.summary())
         break
         if args.bert_step == "pretraining": 
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, train_accuracy_mask=train_accuracy_mask)
