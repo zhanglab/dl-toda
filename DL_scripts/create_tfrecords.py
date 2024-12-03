@@ -152,6 +152,7 @@ def process_dnabert_data(args, dna_sequences, labels):
         
         # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+            print(f'abnormal sequence length: {len(dna_list)}')
             dna_list = dna_list[:args.kmer_vector_length]
         
         if args.bert_step == 'pretraining':
