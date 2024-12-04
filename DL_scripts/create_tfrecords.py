@@ -5,6 +5,7 @@ import numpy as np
 import random
 import datetime
 from collections import defaultdict
+import statistics
 # from Bio import SeqIO
 import argparse
 import json
@@ -145,6 +146,9 @@ def process_dnabert_data(args, dna_sequences, labels):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
     data = []
+    if args.bert_step == 'pretraining':
+        n_masked_pos = []
+
     for i in range(len(dna_sequences)):
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
@@ -174,6 +178,8 @@ def process_dnabert_data(args, dna_sequences, labels):
                 
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
+
+            n_masked_pos.append(len(mlm_positions))
             
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
@@ -213,6 +219,7 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
             data.append([dna_list, attention_mask, position_ids, labels])
+            args.info.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')
         else:
             # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
             data.append([dna_list, attention_mask, position_ids, labels[i]])
@@ -311,7 +318,7 @@ def create_tfrecords(args, input_data):
                 example = tf.train.Example(features=feature)
                 serialized = example.SerializeToString()
                 writer.write(serialized)
-                count += 1
+                count += 1            
     
     else:
         with tf.io.TFRecordWriter(output_tfrec) as writer:
@@ -350,11 +357,12 @@ def create_tfrecords(args, input_data):
         f.write(f'{count}')
 
     with open(os.path.join(args.output_dir, output_prefix + '-vector_size'), 'w') as f:
-        for vs in list(vector_size):
-            f.write(f'vector size: {vs}\n')
+        f.write(f'min vector size: {min(list(vector_size))}\n')
+        f.write(f'max vector size: {max(list(vector_size))}\n')
+        f.write(f'mean vector size: {statistics.mean(list(vector_size))}\n')
+        f.write(f'median vector size: {statistics.median(list(vector_size))}\n')
         f.write(f'required vector size: {args.kmer_vector_length}\n')
         f.write(f'max read length: {args.max_read_length}\n')
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -396,6 +404,8 @@ def main():
     if args.bert:
         if args.bert_step == "finetuning":
             args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+        elif args.bert_step == "pretraining":
+            args.info = f'{args.output_dir}/pretraining_data_info.tsv'
     else:
         args.output_dir = f'{args.output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
 
