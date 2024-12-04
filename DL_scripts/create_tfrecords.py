@@ -218,8 +218,9 @@ def process_dnabert_data(args, dna_sequences, labels):
 
         if args.bert_step == 'pretraining':
             # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
-            data.append([dna_list, attention_mask, position_ids, labels])
-            args.info.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')
+            data.append([dna_list, attention_mask, position_ids, labels])       
+            with open(args.info, 'w') as f:
+                f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')
         else:
             # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
             data.append([dna_list, attention_mask, position_ids, labels[i]])
