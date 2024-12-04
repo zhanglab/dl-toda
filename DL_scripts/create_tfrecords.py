@@ -155,7 +155,6 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # compute the number of tokens to mask
             n_mlm = int(args.masked_lm_prob * len(dna_list))
-            print(f'# masked kmers: {n_mlm}')
             
             # get list of indices of tokens to mask
             mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
@@ -176,7 +175,6 @@ def process_dnabert_data(args, dna_sequences, labels):
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
             
-            print(f'mlm positions: {mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
 
@@ -195,8 +193,6 @@ def process_dnabert_data(args, dna_sequences, labels):
             # update vector of labels to reflect the addition of the special tokens
             labels = [-100] + labels + [-100]
 
-        print(f'labels: {labels}')
-
         # define the first and second part of the sequence - NSP is not implemented here
         # token_type_ids = [0] * max_position_embeddings
         
@@ -213,11 +209,6 @@ def process_dnabert_data(args, dna_sequences, labels):
             attention_mask = [1]*max_position_embeddings
 
         position_ids = list(range(max_position_embeddings))
-        print(f'attention mask: {attention_mask}')
-        # if not args.contiguous_kmers:
-        #     # update contiguous positions to masked kmers to 0
-        #     for p in contiguous_positions:
-        #         attention_mask[p] = 0
 
         if args.bert_step == 'pretraining':
             # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
