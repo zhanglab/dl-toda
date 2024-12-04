@@ -538,16 +538,20 @@ def main():
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
     if args.resume:
-        if args.model_type == 'BERT_HUGGINGFACE' and args.bert_step == "finetuning":
-            checkpoint = tf.train.Checkpoint(encoder=model)
-            checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
-        else:
-            # load model in SavedModel format
-            #model = tf.keras.models.load_model(args.model)
-            # load model saved with checkpoints
-            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-            checkpoint.restore(args.ckpt).expect_partial()
-            # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+        # if args.model_type == 'BERT_HUGGINGFACE' and args.bert_step == "finetuning":
+        #     checkpoint = tf.train.Checkpoint(encoder=model)
+        #     checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
+        # else:
+        # load model in SavedModel format
+        #model = tf.keras.models.load_model(args.model)
+        # load model saved with checkpoints
+        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+        checkpoint.restore(args.ckpt).expect_partial()
+        # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+
+
+    print(model.summary())
+    print(model.layers)
 
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
