@@ -148,10 +148,8 @@ def process_dnabert_data(args, dna_sequences, labels):
     for i in range(len(dna_sequences)):
         # parse dna sequence
         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
-        print(f'# kmers: {len(dna_list)}')
         # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-            print(f'abnormal sequence length: {len(dna_list)}')
             dna_list = dna_list[:args.kmer_vector_length]
         
         if args.bert_step == 'pretraining':
@@ -178,12 +176,13 @@ def process_dnabert_data(args, dna_sequences, labels):
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
             
+            print(f'mlm positions: {mlm_positions}')
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
 
             # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
             mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-
+            
             # define NSP label - NSP is not implemented here
             # next_sentence_label = 1
             dna_list = mlm_dna_list
@@ -195,6 +194,8 @@ def process_dnabert_data(args, dna_sequences, labels):
         if args.bert_step == 'pretraining':
             # update vector of labels to reflect the addition of the special tokens
             labels = [-100] + labels + [-100]
+
+        print(f'labels: {labels}')
 
         # define the first and second part of the sequence - NSP is not implemented here
         # token_type_ids = [0] * max_position_embeddings
@@ -212,8 +213,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             attention_mask = [1]*max_position_embeddings
 
         position_ids = list(range(max_position_embeddings))
-        print(f'position ids : {position_ids}')
-
+        print(f'attention mask: {attention_mask}')
         # if not args.contiguous_kmers:
         #     # update contiguous positions to masked kmers to 0
         #     for p in contiguous_positions:
