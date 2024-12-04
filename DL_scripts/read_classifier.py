@@ -224,33 +224,29 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
         # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-          "input_word_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "input_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "masked_lm_positions": tf.io.FixedLenFeature([args.num_masked], tf.int64),
-          "masked_lm_weights": tf.io.FixedLenFeature([args.num_masked], tf.float32),
-          "masked_lm_ids": tf.io.FixedLenFeature([args.num_masked], tf.int64)
+            "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-        input_word_ids = parsed_example['input_word_ids']
-        input_mask = parsed_example['input_mask']
-        input_type_ids = parsed_example['input_type_ids']
-        masked_lm_positions = parsed_example['masked_lm_positions']
-        masked_lm_weights = parsed_example['masked_lm_weights']
-        masked_lm_ids = parsed_example['masked_lm_ids']
 
-        return  (input_word_ids, input_mask, input_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids)
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        # return (input_word_ids, input_mask, input_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids)
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
@@ -349,7 +345,7 @@ def main():
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
-    parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file')
+    parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the suffix)')
     # parser.add_argument('--testing_epoch', type=str, help='path to file containnig testing epoch')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
@@ -410,7 +406,7 @@ def main():
     # load model
     if args.model_type == 'BERT_HUGGINGFACE':
         with open(args.bert_config_file, "r") as f:
-                args.config_dict = json.load(f)
+            args.config_dict = json.load(f)
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification(config=bert_config)
@@ -421,7 +417,7 @@ def main():
 
     if args.ckpt is not None:
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+        checkpoint.restore(args.ckpt).expect_partial()
     elif args.model is not None:
         checkpoint = tf.train.Checkpoint(model=model)
         checkpoint.restore(args.model).expect_partial()
