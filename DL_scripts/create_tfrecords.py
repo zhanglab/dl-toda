@@ -179,7 +179,7 @@ def process_dnabert_data(args, dna_sequences, labels):
                 # mask contiguous kmers
                 mlm_positions += list(contiguous_positions)
 
-            n_masked_pos.append(len(mlm_positions))
+            n_masked_pos.append(len(mlm_positions)/len(dna_list))
             
             # mask tokens
             mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
