@@ -549,10 +549,6 @@ def main():
         checkpoint.restore(args.ckpt).expect_partial()
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
 
-
-    print(model.summary())
-    print(model.layers)
-
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
@@ -625,7 +621,7 @@ def main():
     # all_input_ids = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
-    for batch, data in enumerate(train_input.take(num_train_steps), 1):
+    # for batch, data in enumerate(train_input.take(num_train_steps), 1):
         # if args.bert_step == "pretraining": 
         #     loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
         # else:
@@ -683,21 +679,24 @@ def main():
     #     # evaluate model at the end of every epoch
     #     if batch % nstep_per_epoch == 0:
         # evaluate model
-        for _, data in enumerate(val_input.take(num_val_steps)):
-            if args.bert_step == "pretraining":
-                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
-            else:
-                testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
+    for _, data in enumerate(val_input.take(num_val_steps)):
+        if args.bert_step == "pretraining":
+            testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
+        else:
+            testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
+    
+    print(model.summary())
+    print(model.layers)
 
-            # # adjust learning rate
-            # if args.lr_decay:
-            #     if epoch % args.lr_decay == 0:
-            #         current_lr = opt.learning_rate
-            #         new_lr = current_lr / 2
-            #         opt.learning_rate = new_lr
+        # # adjust learning rate
+        # if args.lr_decay:
+        #     if epoch % args.lr_decay == 0:
+        #         current_lr = opt.learning_rate
+        #         new_lr = current_lr / 2
+        #         opt.learning_rate = new_lr
 
-        print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
-        
+    print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+    
             # with writer.as_default():
             #     tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
             #     tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
