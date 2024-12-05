@@ -351,10 +351,11 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
                 predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
                 # get probability
-                # probs_1 = tf.nn.softmax(logits_1, axis=-1)
-                # probs_2 = tf.nn.softmax(logits_2, axis=-1)
-                # # get loss
-                # loss_1 = loss()
+                probs_1 = tf.nn.softmax(logits_1, axis=-1)
+                probs_2 = tf.nn.softmax(logits_2, axis=-1)
+                # get loss
+                loss_1 = loss(labels_1, probs_1)
+                loss_2 = loss(labels_2, probs_2)
             
         else:
             reads, labels = data
@@ -392,7 +393,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    return loss_value, outputs.loss, logits
+    return loss_value, loss_1, loss_2
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -674,10 +675,10 @@ def main():
         # print(model.summary())
         # break
         if args.bert_step == "pretraining": 
-            loss_value, loss, logits = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
+            loss_value, loss_1, loss_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
             print(loss_value)
-            print(loss)
-            print(logits)
+            print(loss_1)
+            print(loss_2)
             break
         else:
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
