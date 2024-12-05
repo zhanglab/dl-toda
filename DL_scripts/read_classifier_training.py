@@ -326,7 +326,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
                 # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
                 logits = outputs.logits
-                # get the masked language modeling loss
+                # get the masked language modeling loss --> corresponds to the loss of all masked tokens 
                 loss_value = outputs.loss[0]
                 # shape of mask_token_index_1: (batch_size*<number of 'MASK' tokens>, 2) - first value indicates which vector in the batch
                 # and the second value corresponds to the index of the masked token
@@ -350,13 +350,12 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
                 # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
                 predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
-                # get probability
-                probs_1 = tf.nn.softmax(logits_1, axis=-1)
-                probs_2 = tf.nn.softmax(logits_2, axis=-1)
-                # get loss
-                loss_1 = loss(labels_1, probs_1)
-                loss_2 = loss(labels_2, probs_2)
-            
+                # # get probability
+                # probs_1 = tf.nn.softmax(logits_1, axis=-1)
+                # probs_2 = tf.nn.softmax(logits_2, axis=-1)
+                # # get loss
+                # loss_1 = loss(labels_1, probs_1)
+                # loss_2 = loss(labels_2, probs_2) --> same as loss_value  
         else:
             reads, labels = data
             probs = model(reads, training=training)
@@ -393,7 +392,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    return loss_value, loss_1, loss_2
+    return loss_value
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -675,11 +674,7 @@ def main():
         # print(model.summary())
         # break
         if args.bert_step == "pretraining": 
-            loss_value, loss_1, loss_2 = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
-            print(loss_value)
-            print(loss_1)
-            print(loss_2)
-            break
+            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
         else:
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
 
