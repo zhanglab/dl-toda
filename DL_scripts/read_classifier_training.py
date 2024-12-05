@@ -468,7 +468,6 @@ def main():
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT', 'BERT_HUGGINGFACE'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT_HUGGINGFACE' in sys.argv))
-    parser.add_argument('--masked_lm_prob', type=float, help='percentage of token masked', required=('pretraining' in sys.argv), default=0.15)
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
