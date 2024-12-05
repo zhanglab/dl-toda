@@ -350,6 +350,11 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
                 # shape of predictions_2: (batch_size*<number of tokens not set to -100 --> masked, replaced, same >,)
                 predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
+                # get probability
+                # probs_1 = tf.nn.softmax(logits_1, axis=-1)
+                # probs_2 = tf.nn.softmax(logits_2, axis=-1)
+                # # get loss
+                # loss_1 = loss()
             
         else:
             reads, labels = data
@@ -387,7 +392,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     else:
         train_accuracy.update_state(labels, probs)
 
-    return loss_value, outputs.loss
+    return loss_value, outputs.loss, logits
 
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
@@ -669,8 +674,10 @@ def main():
         # print(model.summary())
         # break
         if args.bert_step == "pretraining": 
-            loss_value, loss = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
+            loss_value, loss, logits = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
+            print(loss_value)
             print(loss)
+            print(logits)
             break
         else:
             loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
@@ -818,7 +825,7 @@ def main():
                     f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                     f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{val_steps}\n'
+                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{num_val_steps}\n'
                     f'Initial learning rate\t{args.init_lr}\n')
             f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
         print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
