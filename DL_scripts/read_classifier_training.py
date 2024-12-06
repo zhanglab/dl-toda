@@ -631,9 +631,11 @@ def main():
 
     # compute number of steps/batches per epoch
     nstep_per_epoch = int(train_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_train_steps = math.ceil(train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
-    # compute number of steps/batches to iterate over entire validation set
-    num_val_steps = int(val_reads_per_epoch/(args.batch_size*hvd.size()))
+    # num_train_steps = math.ceil(train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
+    # # compute number of steps/batches to iterate over entire validation set
+    # num_val_steps = int(val_reads_per_epoch/(args.batch_size*hvd.size()))
+    num_train_steps = 200
+    num_val_steps = 100
 
     print(f'number of train steps: {num_train_steps}')
 
