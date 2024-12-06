@@ -707,7 +707,7 @@ def main():
         # evaluate model at the end of every epoch
         if batch % nstep_per_epoch == 0:
             # evaluate model
-            for _, data in enumerate(val_input.take(val_steps)):
+            for _, data in enumerate(val_input.take(num_val_steps)):
                 if args.bert_step == "pretraining":
                     testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=val_accuracy_mask)
                 else:
