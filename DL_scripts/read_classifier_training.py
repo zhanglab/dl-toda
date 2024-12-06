@@ -395,7 +395,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model):
+def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
     training = False
     if model_type == 'BERT_HUGGINGFACE':
         if nvidia_dali:
@@ -709,9 +709,9 @@ def main():
             # evaluate model
             for _, data in enumerate(val_input.take(num_val_steps)):
                 if args.bert_step == "pretraining":
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, val_accuracy_mask=val_accuracy_mask)
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
                 else:
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model)
+                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
             # adjust learning rate
             if args.lr_decay:
