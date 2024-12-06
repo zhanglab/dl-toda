@@ -542,8 +542,8 @@ def main():
                 model = TFBertForSequenceClassification(config=bert_config)
                 # freeze all the layers except the classifier layer (the pooler layer is not accessible)
                 model.layers[0].trainable = False
-                else:
-                    model = TFBertForSequenceClassification(config=bert_config)
+            else:
+                model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
             model = TFBertForMaskedLM(config=bert_config)
     else:
@@ -734,6 +734,7 @@ def main():
                     if found_min:
                         model.set_weights(best_weights)
                         model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                        model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-best'))
                         best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
                         best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
