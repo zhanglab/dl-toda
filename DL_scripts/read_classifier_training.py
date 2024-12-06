@@ -420,14 +420,15 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
 
     elif bert_step == "pretraining":
         outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         loss_value = outputs.loss[0]
-        mask_token_index_1 = tf.where((data["input_ids"] == 4))
-        mask_token_index_2 = tf.where((data["labels"] != -100))
+        mask_token_index_1 = tf.where((input_ids == 4))
+        mask_token_index_2 = tf.where((labels != -100))
         logits_1 = tf.gather_nd(logits, indices=mask_token_index_1)
         logits_2 = tf.gather_nd(logits, indices=mask_token_index_2)
-        labels_1 = tf.gather_nd(data["labels"], indices=mask_token_index_1)
-        labels_2 = tf.gather_nd(data["labels"], indices=mask_token_index_2)
+        labels_1 = tf.gather_nd(labels, indices=mask_token_index_1)
+        labels_2 = tf.gather_nd(labels, indices=mask_token_index_2)
         predictions_1 = tf.argmax(logits_1, axis=-1, output_type=tf.int32)
         predictions_2 = tf.argmax(logits_2, axis=-1, output_type=tf.int32)
     else:
