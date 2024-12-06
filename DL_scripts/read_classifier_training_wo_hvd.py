@@ -262,8 +262,8 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
+          "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64)
+          # "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
@@ -378,7 +378,6 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 @tf.function
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
     training = False
-
     
     if model_type == 'BERT_HUGGINGFACE':
         if nvidia_dali:
@@ -419,7 +418,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         probs = model(reads, training=training)
         loss_value = loss(labels, probs)
 
-    # update training accuracy
+    # update validation accuracy
     if bert_step == 'pretraining':
         val_accuracy.update_state(labels_2, predictions_2)
         val_accuracy_mask.update_state(labels_1, predictions_1)
@@ -478,7 +477,7 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # get vocabulary size
-    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+    if args.model_type !='BERT_HUGGINGFACE':
         with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
@@ -539,7 +538,12 @@ def main():
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
-            model = TFBertForSequenceClassification(config=bert_config)
+            if args.pretrained:
+                model = TFBertForSequenceClassification(config=bert_config)
+                # freeze all the layers except the classifier layer (the pooler layer is not accessible)
+                model.layers[0].trainable = False
+                else:
+                    model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
             model = TFBertForMaskedLM(config=bert_config)
     else:
@@ -788,7 +792,7 @@ def main():
     minutes, seconds = divmod(seconds, 60)
 
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-        f.write(f'Date\t{start_date}\nStart time\t{start_time}\n'
+        f.write(f'Start time\t{start_time}\n'
                 f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
                 f'Batch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
