@@ -634,7 +634,7 @@ def main():
     # num_train_steps = math.ceil(train_reads_per_epoch/(args.batch_size*hvd.size())*args.epochs)
     # # compute number of steps/batches to iterate over entire validation set
     # num_val_steps = int(val_reads_per_epoch/(args.batch_size*hvd.size()))
-    num_train_steps = 200
+    num_train_steps = 100
     num_val_steps = 100
 
     print(f'number of train steps: {num_train_steps}')
@@ -707,7 +707,8 @@ def main():
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
         # evaluate model at the end of every epoch
-        if batch % nstep_per_epoch == 0:
+        # if batch % nstep_per_epoch == 0:
+        if batch % 100 == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(num_val_steps)):
                 if args.bert_step == "pretraining":
