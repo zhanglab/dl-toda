@@ -726,8 +726,6 @@ def main():
                     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\t{val_accuracy_mask.result().numpy()*100}')
                 else:
                     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
-        
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
             
                 with writer.as_default():
                     tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
