@@ -736,10 +736,10 @@ def main():
                 if stop_training or epoch == args.epochs:
                     if found_min:
                         model.set_weights(best_weights)
-                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
-                        model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-best'))
+                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}-best'))
+                        model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}-best'))
                         best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                        best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
+                        best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
