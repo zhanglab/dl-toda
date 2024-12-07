@@ -545,11 +545,14 @@ def main():
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
-            model = TFBertForMaskedLM(config=bert_config)
+            if args.pretrained:
+                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+            else:
+                model = TFBertForMaskedLM(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
-    if args.resume:
+    if args.resume and args.model_type != 'BERT_HUGGINGFACE':
         # if args.model_type == 'BERT_HUGGINGFACE' and args.bert_step == "finetuning":
         #     checkpoint = tf.train.Checkpoint(encoder=model)
         #     checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
