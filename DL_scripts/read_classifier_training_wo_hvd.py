@@ -547,7 +547,7 @@ def main():
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
             if args.pretrained:
-                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+                model = TFBertForMaskedLM.from_pretrained(args.pretrained, config=bert_config)
             else:
                 model = TFBertForMaskedLM(config=bert_config)
     else:
