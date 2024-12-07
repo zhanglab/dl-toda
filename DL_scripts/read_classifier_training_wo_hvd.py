@@ -793,7 +793,7 @@ def main():
     minutes, seconds = divmod(seconds, 60)
 
     with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-        f.write(f'Start time\t{start_time}\n'
+        f.write(f'Start time\t{start}\n'
                 f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
                 f'Batch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
