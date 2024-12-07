@@ -438,6 +438,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001')
