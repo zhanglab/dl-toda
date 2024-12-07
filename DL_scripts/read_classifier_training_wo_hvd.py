@@ -440,7 +440,7 @@ def main():
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
-    parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001', required=('--resume' in sys.argv))
+    parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001')
     parser.add_argument('--model', type=str, help='path to model', required=('-resume' in sys.argv))
     parser.add_argument('--epochs', type=int, help='number of epochs', default=30)
     parser.add_argument('--optimizer', type=str, help='type of optimizer', default='Adam', choices=['Adam', 'SGD'])
