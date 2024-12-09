@@ -572,7 +572,7 @@ def main():
         if args.bert_step == "finetuning":
             if args.pretrained:
                 model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-                # freeze all the layers except the pooler layer and the classifier layer (last 4 trainable variables, kernel + bias)
+                # freeze all the layers except the pooler layer and the classifier layer
                 model.layers[0].trainable = False
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
@@ -756,17 +756,22 @@ def main():
                     if stop_training or epoch == args.epochs:
                         if found_min:
                             model.set_weights(best_weights)
-                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}-best'))
                             best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                            best_checkpoint.save(os.path.join(ckpt_dir, 'ckpt-best'))
+                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                                 f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                            if args.bert_step == "pretraining":
+                                model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}-best'))
                         break
 
                     # save weights every 5 epochs just for safety precautions
-                    if batch % 10 == 0:
-                        checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                    if epoch % 1 == 0:
+                        checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
+                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'))
+                        if args.bert_step == "pretraining":
+                            model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
+
                 else:
                     # save weights
                     checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
