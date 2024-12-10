@@ -270,7 +270,8 @@ def main():
 		total_reads_pred.append(reads_pred)
 		if reads_pred >= 40:
 			relevant_reads += df['read_id'].to_list()
-			info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
+			print(len(confidence_scores), len(df['read_id'].to_list()))
+			info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		info_all.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 	print(statistics.mean(total_reads_pred), min(total_reads_pred), max(total_reads_pred), statistics.median(total_reads_pred))
 	plt.hist(total_reads_pred, bins=30)
