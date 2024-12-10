@@ -180,7 +180,7 @@ def GetInfoTestingGenome(args):
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
 		if length > 500:
-			print(read_id, length)
+			print(read_id, length, r.split("\n")[1])
 		dict_reads_length[read_id] = length
 		reads_id.append(read_id)
 	print(len(reads_id), reads[0])
@@ -213,6 +213,7 @@ def main():
     # define path to taxonomy of genomes in dltoda
 	ranks_index = {'species': 0, 'genus': 1, 'family':2, 'order':3, 'class':4, 'phylum': 5}
 	path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+	print(path_dl_toda_tax)
 	with open(path_dl_toda_tax, 'r') as in_f:
 		content = in_f.readlines()
 		dltoda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1].split(';')[ranks_index[args.rank]] for line in content}
@@ -263,7 +264,7 @@ def main():
 		pred_label = input_file.split('/')[-1].split('_')[1]
 		df = pd.read_csv(input_file, sep='\t')
 		confidence_scores = df['score'].to_list()
-		reads_pred = (len(confidence_scores)/len(reads))*100
+		reads_pred = (len(confidence_scores)/len(reads_id))*100
 		total_reads_pred.append(reads_pred)
 		if reads_pred >= 40:
 			relevant_reads += df['read_id'].to_list()
