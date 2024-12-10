@@ -180,12 +180,10 @@ def GetInfoTestingGenome(args):
 	for r in reads:
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
-		if length > 500:
-			print(read_id, length, r.split("\n")[1])
 		if r.split("\n")[0].split('|')[1] == args.label:
 			dict_reads_length[read_id] = length
 			reads_id.append(read_id)
-	print(len(reads_id), reads[0])
+	print(len(reads_id))
 
 	# get reads that were not mapped to the testing genome and their length
 	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(reads_info.keys())))
@@ -253,7 +251,6 @@ def main():
 	# # create circos plot showing the testing genome and other info
 	# PlotCircles(testing_genome_pos, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, args.output_dir, args.label)
 
-
 	# get files with results 
 	files_w_results = glob.glob(os.path.join(args.input_dir, '*/*/*/*/testing-*/*_false_positives.tsv'))
 	print(len(files_w_results))
@@ -270,7 +267,6 @@ def main():
 		total_reads_pred.append(reads_pred)
 		if reads_pred >= 40:
 			relevant_reads += df['read_id'].to_list()
-			print(len(confidence_scores), len(df['read_id'].to_list()))
 			info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		info_all.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 	print(statistics.mean(total_reads_pred), min(total_reads_pred), max(total_reads_pred), statistics.median(total_reads_pred))
@@ -281,13 +277,9 @@ def main():
 
 	print(len(relevant_reads))
 	print(len(set(relevant_reads)))
-
-
-
-
-
-
-
+	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
+		for r in relevant_reads:
+			f.write(f'{r}\n')
 
 
 
