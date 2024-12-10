@@ -274,7 +274,6 @@ def main():
 		info_all.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		for i in range(len(label_reads_id)):
 			if float(confidence_scores[i]) >= 0.9:
-				print(confidence_scores[i])
 				relevant_reads.append(label_reads_id[i])
 				relevant_labels.add(pred_label)
 	print(statistics.mean(total_reads_pred), min(total_reads_pred), max(total_reads_pred), statistics.median(total_reads_pred))
@@ -287,6 +286,7 @@ def main():
 
 	print(len(relevant_reads))
 	print(len(set(relevant_reads)))
+	print(count_relevant_reads)
 	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
 		for k, v in count_relevant_reads.items():
 			f.write(f'{k}\t{v}\n')
