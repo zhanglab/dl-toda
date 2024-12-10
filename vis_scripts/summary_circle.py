@@ -267,7 +267,7 @@ def main():
 		confidence_scores = df['score'].to_list()
 		label_reads_id = df['read_id'].to_list()
 		reads_pred = (len(confidence_scores)/len(reads_id))*100
-		# total_reads_pred.append(reads_pred)
+		total_reads_pred.append(reads_pred)
 		# if reads_pred >= 40:
 		# 	relevant_reads += df['read_id'].to_list()
 		# 	info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
