@@ -1,6 +1,7 @@
 import sys
 import os
 import glob
+import json
 from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
@@ -286,10 +287,8 @@ def main():
 
 	print(len(relevant_reads))
 	print(len(set(relevant_reads)))
-	print(count_relevant_reads)
 	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
-		for k, v in count_relevant_reads.items():
-			f.write(f'{k}\t{v}\n')
+		json.dump(f, count_relevant_reads)
 
 	with open(os.path.join(args.input_dir, 'relevant_labels.tsv'), 'w') as f:
 		for l in list(relevant_labels):
