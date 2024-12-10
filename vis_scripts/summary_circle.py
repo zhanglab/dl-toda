@@ -274,7 +274,7 @@ def main():
 		# 	info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		info_all.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		for i in range(len(label_reads_id)):
-			if float(confidence_scores[i]) == 1.0:
+			if float(confidence_scores[i]) == 0.95:
 				relevant_reads.append(label_reads_id[i])
 				relevant_labels.add(pred_label)
 	print(statistics.mean(total_reads_pred), min(total_reads_pred), max(total_reads_pred), statistics.median(total_reads_pred))
