@@ -284,11 +284,13 @@ def main():
 	plt.savefig(os.path.join(args.input_dir, 'false_positives.png'))
 
 	count_relevant_reads = Counter(relevant_reads)
+	count_relevant_reads_sorted = {k: v for k, v in sorted(count_relevant_reads.items(), key=lambda item: item[1])}
+
 
 	print(len(relevant_reads))
 	print(len(set(relevant_reads)))
 	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
-		json.dump(count_relevant_reads, f)
+		json.dump(count_relevant_reads_sorted, f)
 
 	with open(os.path.join(args.input_dir, 'relevant_labels.tsv'), 'w') as f:
 		for l in list(relevant_labels):
