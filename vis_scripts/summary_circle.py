@@ -15,6 +15,7 @@ import argparse
 import statistics
 from matplotlib import colormaps
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 
 def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
 	
@@ -181,8 +182,9 @@ def GetInfoTestingGenome(args):
 		length = len(r.split("\n")[1])
 		if length > 500:
 			print(read_id, length, r.split("\n")[1])
-		dict_reads_length[read_id] = length
-		reads_id.append(read_id)
+		if r.split("\n")[0].split('|')[1] == args.label:
+			dict_reads_length[read_id] = length
+			reads_id.append(read_id)
 	print(len(reads_id), reads[0])
 
 	# get reads that were not mapped to the testing genome and their length
