@@ -288,7 +288,7 @@ def main():
 	print(len(relevant_reads))
 	print(len(set(relevant_reads)))
 	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
-		json.dump(f, count_relevant_reads)
+		json.dump(count_relevant_reads, f)
 
 	with open(os.path.join(args.input_dir, 'relevant_labels.tsv'), 'w') as f:
 		for l in list(relevant_labels):
