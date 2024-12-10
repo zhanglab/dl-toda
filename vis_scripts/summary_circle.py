@@ -253,7 +253,7 @@ def main():
 
 	# get files with results 
 	files_w_results = glob.glob(os.path.join(args.input_dir, '*/*/*/*/testing-*/*_false_positives.tsv'))
-    print(len(files_w_results))
+	print(len(files_w_results))
 
 	info_all = open(os.path.join(args.input_dir, 'false_positives_summary.tsv'), 'w')
 	info_selected = open(os.path.join(args.input_dir, 'false_positives_summary_above_40.tsv'), 'w')
