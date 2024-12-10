@@ -179,8 +179,11 @@ def GetInfoTestingGenome(args):
 	for r in reads:
 		read_id = r.split("\n")[0][1:]
 		length = len(r.split("\n")[1])
+		if length > 500:
+			print(read_id, length)
 		dict_reads_length[read_id] = length
 		reads_id.append(read_id)
+	print(len(reads_id), reads[0])
 
 	# get reads that were not mapped to the testing genome and their length
 	unmapped_reads = set(list(dict_reads_length.keys())).difference(set(list(reads_info.keys())))
