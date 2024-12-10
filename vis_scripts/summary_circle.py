@@ -16,6 +16,7 @@ import statistics
 from matplotlib import colormaps
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from collections import Counter
 
 def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
 	
@@ -256,19 +257,25 @@ def main():
 	print(len(files_w_results))
 
 	info_all = open(os.path.join(args.input_dir, 'false_positives_summary.tsv'), 'w')
-	info_selected = open(os.path.join(args.input_dir, 'false_positives_summary_above_40.tsv'), 'w')
+	# info_selected = open(os.path.join(args.input_dir, 'false_positives_summary_above_40.tsv'), 'w')
 	total_reads_pred = []
 	relevant_reads = []
+	relevant_labels = set()
 	for input_file in files_w_results:
 		pred_label = input_file.split('/')[-1].split('_')[1]
 		df = pd.read_csv(input_file, sep='\t')
 		confidence_scores = df['score'].to_list()
+		label_reads_id = df['read_id'].to_list()
 		reads_pred = (len(confidence_scores)/len(reads_id))*100
-		total_reads_pred.append(reads_pred)
-		if reads_pred >= 40:
-			relevant_reads += df['read_id'].to_list()
-			info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
+		# total_reads_pred.append(reads_pred)
+		# if reads_pred >= 40:
+		# 	relevant_reads += df['read_id'].to_list()
+		# 	info_selected.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{len(confidence_scores)}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
 		info_all.write(f'{pred_label}\t{dltoda_tax[pred_label]}\t{reads_pred}\t{statistics.mean(confidence_scores)}\t{statistics.median(confidence_scores)}\t{min(confidence_scores)}\t{max(confidence_scores)}\n')
+		for i in range(len(label_reads_id)):
+			if float(confidence_scores[i]) >= 0.9:
+				relevant_reads.append(label_reads_id[i])
+				relevant_labels.add(pred_label)
 	print(statistics.mean(total_reads_pred), min(total_reads_pred), max(total_reads_pred), statistics.median(total_reads_pred))
 	plt.hist(total_reads_pred, bins=30)
 	plt.xlabel('Fraction of testing reads predicted to be true')
@@ -280,6 +287,10 @@ def main():
 	with open(os.path.join(args.input_dir, 'relevant_reads.tsv'), 'w') as f:
 		for r in relevant_reads:
 			f.write(f'{r}\n')
+
+	with open(os.path.join(args.input_dir, 'relevant_labels.tsv'), 'w') as f:
+		for l in list(relevant_labels):
+			f.write(f'{l}\t{dltoda_tax[l]}\n')
 
 
 
