@@ -54,7 +54,7 @@ def GetCoverage(list_of_reads, length_ref):
     return dict_coverage, reads_info
 
 
-def GetReferences(content, alignments):
+def GetReferences(content, mapped):
     # get length of references
     ref_info = []
     for line in content:
@@ -62,14 +62,15 @@ def GetReferences(content, alignments):
             break
         if line.rstrip().split('\t')[0][:3] == '@SQ':
             reference = line.rstrip().split('\t')[1].split(':')[1]
-            if reference in alignments:
+            if reference in mapped:
                 length_ref = int(line.rstrip().split('\t')[2].split(':')[1])
                 ref_info.append([reference, length_ref])
     
     return ref_info
 
 def LoadData(samfile):
-    alignments = defaultdict(list)
+    mapped = defaultdict(list)
+    unmapped = defaultdict(list)
     with open(samfile, 'r') as f:
         content = f.readlines()
         for i in range(len(content)):
@@ -78,12 +79,15 @@ def LoadData(samfile):
                 start_pos = int(content[i].rstrip().split('\t')[3])
                 aligned_ref = content[i].rstrip().split('\t')[2]
                 cigar_string = content[i].rstrip().split('\t')[5]
-                alignments[aligned_ref].append([read_id, start_pos, cigar_string])
+                if cigar_string != "*":
+                    mapped[aligned_ref].append([read_id, start_pos, cigar_string])
+                else:
+                    unmapped[aligned_ref].append([read_id, start_pos, cigar_string])
 
     # get references and their length
-    ref_info = GetReferences(content[1:], alignments)
+    ref_info = GetReferences(content[1:], mapped)
 
-    return ref_info, alignments
+    return ref_info, mapped, unmapped
 
 def main():
     parser = argparse.ArgumentParser()
