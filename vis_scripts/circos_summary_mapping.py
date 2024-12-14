@@ -167,14 +167,14 @@ def GetMappedReadsInfo(args, samfile, fqfile):
 	# load data about alignments of testing reads to testing genome
 	ref_info, mapped, unmapped = LoadData(samfile)
 	print(ref_info)
-	print(len(mapped))
-	print(len(unmapped))
+	print(f'mapped: {len(mapped)}')
+	print(f'unmapped: {len(unmapped)}')
 	
 	assert len(ref_info) == 1, f'{samfile} has more than 1 reference sequence'
 	
 	# select alignments for reads from label of interest
 	label_mapped = [a for a in mapped[ref_info[0][0]] if a[0].split('|')[1] == args.label]
-	print(len(label_mapped))
+	print(f'label_mapped: {len(label_mapped)}')
 
 	genome_length = ref_info[0][1]
 	genome_pos = list(range(1, genome_length+1, 1))
