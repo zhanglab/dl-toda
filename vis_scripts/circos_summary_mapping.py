@@ -177,7 +177,7 @@ def GetMappedReadsInfo(args, samfile, fqfile):
 	print(len(label_mapped))
 
 	genome_length = ref_info[0][1]
-	genome_pos = list(range(1, testing_genome_length+1, 1))
+	genome_pos = list(range(1, genome_length+1, 1))
 	dict_coverage, reads_info = GetCoverage(label_mapped, genome_length)
 	pos_coverage = [dict_coverage[i] for i in range(genome_length)]
 
