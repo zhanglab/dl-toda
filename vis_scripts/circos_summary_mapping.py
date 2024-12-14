@@ -212,7 +212,7 @@ def main():
 	args = parser.parse_args()
 
 	# get information about testing reads mapping testing genome
-	test_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'testing_data_vs_testing_genome_results.sam'), os.path.join(args.fqfiles, 'testing_data_vs_testing_genome_results.sam'))
+	test_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'testing_data_vs_testing_genome_results.sam'), os.path.join(args.fqfiles, f'finetuning_l{args.label}_test_data_k4_cleaned.fq'))
 	# # get information about training reads mapping training genome
 	# train_ref_info, train_alignments = GetMappedReadsInfo(os.path.join(args.samfiles, 'training_data_vs_training_genome_results.sam'))
 	# # get information about testing reads mapping training genome
