@@ -107,13 +107,13 @@ def main():
 
 	# get information about testing reads mapping testing genome
 	test_pos_coverage = GetMappedReadsInfo(args, os.path.join(args.samfiles, 'testing_data_vs_testing_genome_results.sam'), os.path.join(args.fqfiles, f'finetuning_l{args.label}_test_data_k4_cleaned.fq'))
-	CreatePlot(test_pos_coverage, os.path.join(output_dir, f'test_test_{label}.png'))
+	CreatePlot(test_pos_coverage, os.path.join(args.output_dir, f'test_test_{args.label}.png'))
 	# get information about training reads mapping training genome
 	train_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'training_data_vs_training_genome_results.sam'))
-	CreatePlot(train_pos_coverage, os.path.join(output_dir, f'train_train_{label}.png'))
+	CreatePlot(train_pos_coverage, os.path.join(args.output_dir, f'train_train_{args.label}.png'))
 	# get information about testing reads mapping training genome
 	test_train_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'testing_data_vs_training_genome_results.sam'))
-	CreatePlot(test_train_pos_coverage, os.path.join(output_dir, f'test_train_{label}.png'))
+	CreatePlot(test_train_pos_coverage, os.path.join(args.output_dir, f'test_train_{args.label}.png'))
 
 
 
