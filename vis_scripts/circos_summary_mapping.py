@@ -165,10 +165,9 @@ from collections import Counter
 
 def GetMappedReadsInfo(args, samfile, fqfile):
 	# load data about alignments of testing reads to testing genome
-	ref_info, mapped, unmapped = LoadData(samfile)
+	ref_info, mapped = LoadData(samfile)
 	print(ref_info)
 	print(f'mapped: {len(mapped)}')
-	print(f'unmapped: {len(unmapped)}')
 	
 	assert len(ref_info) == 1, f'{samfile} has more than 1 reference sequence'
 	
@@ -180,6 +179,7 @@ def GetMappedReadsInfo(args, samfile, fqfile):
 	genome_pos = list(range(1, genome_length+1, 1))
 	dict_coverage, reads_info = GetCoverage(label_mapped, genome_length)
 	pos_coverage = [dict_coverage[i] for i in range(genome_length)]
+	print(len(pos_coverage), pos_coverage[:10])
 
 	reads = load_fq_file(fqfile, 4)
 	reads_id = []
