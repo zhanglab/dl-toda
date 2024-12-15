@@ -19,7 +19,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from collections import Counter
 
-def PlotCircles(pos_coverage, output_dir, label):
+def CreatePlot(pos_coverage, figname):
 	
 	# initialize a single circos sector
 	sectors = {'genome': len(pos_coverage)}
@@ -51,7 +51,7 @@ def PlotCircles(pos_coverage, output_dir, label):
 		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
 		# save figure
-		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
+		circos.savefig(figname)
 
 
 def GetMappedReadsInfo(args, samfile, fqfile):
@@ -91,6 +91,9 @@ def GetMappedReadsInfo(args, samfile, fqfile):
 			if read_label == args.label:
 				f.write(f'{r}\t{dict_reads_length[r]}\n')
 
+	with open(os.path.join(args.output_dir, f'coverage-info.tsv'), 'w') as f:
+		f.write(f'min: {min(pos_coverage)}\nmax: {max(pos_coverage)}\nmean: {statistics.mean(pos_coverage)}\nmedian: {statistics.median(pos_coverage)}')
+
 	return pos_coverage
 
 
@@ -104,12 +107,13 @@ def main():
 
 	# get information about testing reads mapping testing genome
 	test_pos_coverage = GetMappedReadsInfo(args, os.path.join(args.samfiles, 'testing_data_vs_testing_genome_results.sam'), os.path.join(args.fqfiles, f'finetuning_l{args.label}_test_data_k4_cleaned.fq'))
-	PlotCircles(test_pos_coverage, args.output_dir, args.label)
-	# # get information about training reads mapping training genome
-	# train_ref_info, train_alignments = GetMappedReadsInfo(os.path.join(args.samfiles, 'training_data_vs_training_genome_results.sam'))
-	# # get information about testing reads mapping training genome
-	# _, test_train_alignments = GetMappedReadsInfo(os.path.join(args.samfiles, 'testing_data_vs_training_genome_results.sam'))
-
+	CreatePlot(test_pos_coverage, os.path.join(output_dir, f'test_test_{label}.png'))
+	# get information about training reads mapping training genome
+	train_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'training_data_vs_training_genome_results.sam'))
+	CreatePlot(train_pos_coverage, os.path.join(output_dir, f'train_train_{label}.png'))
+	# get information about testing reads mapping training genome
+	test_train_pos_coverage = GetMappedReadsInfo(os.path.join(args.samfiles, 'testing_data_vs_training_genome_results.sam'))
+	CreatePlot(test_train_pos_coverage, os.path.join(output_dir, f'test_train_{label}.png'))
 
 
 
