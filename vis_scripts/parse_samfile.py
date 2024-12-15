@@ -70,7 +70,6 @@ def GetReferences(content, mapped):
 
 def LoadData(samfile):
     mapped = defaultdict(list)
-    unmapped = defaultdict(list)
     with open(samfile, 'r') as f:
         content = f.readlines()
         for i in range(len(content)):
@@ -79,15 +78,12 @@ def LoadData(samfile):
                 start_pos = int(content[i].rstrip().split('\t')[3])
                 aligned_ref = content[i].rstrip().split('\t')[2]
                 cigar_string = content[i].rstrip().split('\t')[5]
-                if cigar_string != "*":
-                    mapped[aligned_ref].append([read_id, start_pos, cigar_string])
-                else:
-                    unmapped[aligned_ref].append([read_id, start_pos, cigar_string])
+                mapped[aligned_ref].append([read_id, start_pos, cigar_string])
 
     # get references and their length
     ref_info = GetReferences(content[1:], mapped)
 
-    return ref_info, mapped, unmapped
+    return ref_info, mapped
 
 def main():
     parser = argparse.ArgumentParser()
