@@ -112,7 +112,7 @@ def main():
             out_f.write(f'{length_ref}\t{mean_cov}\n')
 
         if args.mapped_reads:
-            with open(os.path.join(args.output_dir, f'{samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
+            with open(os.path.join(args.output_dir, f'{args.samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
                 for k, v in reads_info.items():
                     outfile.write(f'{k}\t{v[0]}\t{v[1]}\n')
 
