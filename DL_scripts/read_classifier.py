@@ -292,15 +292,11 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
     if model_type == 'BERT_HUGGINGFACE':
-        if nvidia_dali:
-            # input_ids, attention_mask, token_type_ids, labels = data
-            input_ids, attention_mask, position_ids, labels = data
-        else:
-            input_ids = data["input_ids"]
-            attention_mask = data["attention_mask"]
-            # token_type_ids = data["token_type_ids"]
-            position_ids = data["position_ids"]
-            labels = data["labels"]
+        input_ids = data["input_ids"]
+        attention_mask = data["attention_mask"]
+        # token_type_ids = data["token_type_ids"]
+        position_ids = data["position_ids"]
+        labels = data["labels"]
 
     if bert_step == "finetuning":
         outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
