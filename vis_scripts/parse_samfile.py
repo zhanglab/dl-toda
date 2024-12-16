@@ -49,7 +49,7 @@ def GetCoverage(list_of_reads, length_ref):
                 ref_pos += 1
             query_pos += 1
 
-        reads_info[read_id] = [read_start+1, ref_pos+1]
+        reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
 
     return dict_coverage, reads_info
 
@@ -114,7 +114,7 @@ def main():
         if args.mapped_reads:
             with open(os.path.join(args.output_dir, f'{args.samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
                 for k, v in reads_info.items():
-                    outfile.write(f'{k}\t{v[0]}\t{v[1]}\n')
+                    outfile.write(f'{k}\t{v[0]}\t{v[1]}\t{v[2]}\n')
 
 
 if __name__ == '__main__':
