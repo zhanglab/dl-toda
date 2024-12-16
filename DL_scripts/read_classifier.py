@@ -291,13 +291,28 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
-    if model_type == 'BERT_HUGGINGFACE' and bert_step == "finetuning":
-        outputs = model(**data)
-        logits = model(**data).logits
-        loss_value = model(**data).loss
-        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+    if model_type == 'BERT_HUGGINGFACE':
+        if nvidia_dali:
+            # input_ids, attention_mask, token_type_ids, labels = data
+            input_ids, attention_mask, position_ids, labels = data
+        else:
+            input_ids = data["input_ids"]
+            attention_mask = data["attention_mask"]
+            # token_type_ids = data["token_type_ids"]
+            position_ids = data["position_ids"]
+            labels = data["labels"]
+
+    if bert_step == "finetuning":
+        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        # outputs = model(**data)
+        # logits = model(**data).logits
+        # loss_value = model(**data).loss
+        # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        # probs = tf.nn.softmax(logits, axis=-1)
+        # labels = data["labels"]
+        logits = outputs.logits
         probs = tf.nn.softmax(logits, axis=-1)
-        labels = data["labels"]
+        loss_value = loss(labels, probs)
     else:
         reads, labels = data
         probs = model(reads, training=training)
