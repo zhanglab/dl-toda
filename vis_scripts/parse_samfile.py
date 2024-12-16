@@ -3,6 +3,8 @@ import os
 from collections import defaultdict
 import math
 import argparse
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from dataprep_scripts.utils import load_fq_file
 
 # symbols in CIGAR string
 # M: match, no insertion or deletions, bases may not agree --> consumes query and ref
@@ -63,6 +65,8 @@ def GetCoverageOfSample(list_of_reads, length_ref, label=None):
             ref_pos = GetCoverageOfRead(read_start, read_cigar, dict_coverage)
             reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
 
+        print(sum(dict_coverage.values()))
+
     return dict_coverage, reads_info
 
 
@@ -103,7 +107,9 @@ def main():
     parser.add_argument('--samfile', type=str, help='path to SAM file')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--mapped_reads', help="store id of mapped reads into a tsv file", action='store_true', default=False)
+    parser.add_argument('--unmapped_reads', help="store id of unmapped reads into a tsv file", action='store_true', default=False)
     parser.add_argument('--label', type=str, help="label of reads of interest")
+    parser.add_argument('--fqfile', type=str, help="path to fastq file")
     args = parser.parse_args()
     
     # get references
@@ -131,6 +137,21 @@ def main():
             with open(os.path.join(args.output_dir, f'{args.samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
                 for k, v in reads_info.items():
                     outfile.write(f'{k}\t{v[0]}\t{v[1]}\t{v[2]}\n')
+
+        if args.unmapped_reads:
+            reads = load_fq_file(fqfile, 4)
+            dict_reads_length = {}
+            for r in reads:
+                read_id = r.split("\n")[0][1:]
+                length = len(r.split("\n")[1])
+                if r.split("\n")[0].split('|')[1] == args.label:
+                    dict_reads_length[read_id] = length
+
+            # get unmapped reads and their length
+            unmapped = set(list(dict_reads_length.keys())).difference(set(list(reads_info.keys())))
+            with open(os.path.join(args.output_dir, f'unmapped_reads_{args.label}.tsv'), 'w') as f:
+                for r in unmapped:
+                    f.write(f'{r}\t{dict_reads_length[r]}\n')
 
 
 if __name__ == '__main__':
