@@ -31,7 +31,7 @@ def ExtendCigar(cigar):
     return new_cigar
 
 
-def GetCoverageOfRead(read_start, read_cigar)
+def GetCoverageOfRead(read_start, read_cigar):
     query_pos = 0
     ref_pos = query_pos + read_start
 
