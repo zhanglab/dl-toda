@@ -31,25 +31,37 @@ def ExtendCigar(cigar):
     return new_cigar
 
 
-def GetCoverage(list_of_reads, length_ref):
+def GetCoverageOfRead(read_start, read_cigar)
+    query_pos = 0
+    ref_pos = query_pos + read_start
+
+    while query_pos < len(read_cigar):
+        if read_cigar[query_pos] in ["=", "M"]:
+            dict_coverage[ref_pos] = dict_coverage[ref_pos] + 1
+        if read_cigar[query_pos] in refmoveset:
+            ref_pos += 1
+        query_pos += 1
+    
+    return ref_pos
+
+
+def GetCoverageOfSample(args, list_of_reads, length_ref):
     dict_coverage = {i: 0 for i in range(length_ref)}
     reads_info = defaultdict(list)
 
     for j in range(0, len(list_of_reads)):
         read_id = list_of_reads[j][0]
-        read_start = list_of_reads[j][1] - 1 
+        read_label = list_of_reads[j][0].split('|')[1]
+        read_start = list_of_reads[j][1] - 1
         read_cigar = ExtendCigar(list_of_reads[j][2])
-        query_pos = 0
-        ref_pos = query_pos + read_start
 
-        while query_pos < len(read_cigar):
-            if read_cigar[query_pos] in ["=", "M"]:
-                dict_coverage[ref_pos] = dict_coverage[ref_pos] + 1
-            if read_cigar[query_pos] in refmoveset:
-                ref_pos += 1
-            query_pos += 1
-
-        reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
+        if args.label:
+            if read_label == args.label:
+                ref_pos = GetCoverageOfRead(read_start, read_cigar)
+                reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
+        else:
+            ref_pos = GetCoverageOfRead(read_start, read_cigar)
+            reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
 
     return dict_coverage, reads_info
 
@@ -91,6 +103,7 @@ def main():
     parser.add_argument('--samfile', type=str, help='path to SAM file')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--mapped_reads', help="store id of mapped reads into a tsv file", action='store_true', default=False)
+    parser.add_argument('--label', help="label of reads of interest")
     args = parser.parse_args()
     
     # get references
@@ -100,7 +113,7 @@ def main():
         ref = ref_info[i][0]
         length_ref = ref_info[i][1]
 
-        dict_coverage, reads_info = GetCoverage(alignments[ref], length_ref)
+        dict_coverage, reads_info = GetCoverageOfSample(args, alignments[ref], length_ref)
 
         with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
             for k, v in dict_coverage.items():
