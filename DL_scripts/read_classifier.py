@@ -235,7 +235,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
-            "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),

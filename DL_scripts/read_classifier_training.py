@@ -754,13 +754,13 @@ def main():
                     if stop_training or epoch == args.epochs:
                         if found_min:
                             model.set_weights(best_weights)
-                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}-best'))
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
                             best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
+                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                                 f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                             if args.bert_step == "pretraining":
-                                model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}-best'))
+                                model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-best'))
                         break
 
                     # save weights every 5 epochs just for safety precautions
