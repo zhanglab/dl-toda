@@ -420,18 +420,21 @@ def main():
             args.config_dict = json.load(f)
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-        model = TFBertForSequenceClassification(config=bert_config)
+        # model = TFBertForSequenceClassification(config=bert_config)
+        # if args.pretrained:
+        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
         # update input vector size
         args.vector_size = args.config_dict['max_position_embeddings']
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+        if args.ckpt is not None:
+            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+            checkpoint.restore(args.ckpt).expect_partial()
+        elif args.model is not None:
+            checkpoint = tf.train.Checkpoint(model=model)
+            checkpoint.restore(args.model).expect_partial()
+        
 
-    if args.ckpt is not None:
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(args.ckpt).expect_partial()
-    elif args.model is not None:
-        checkpoint = tf.train.Checkpoint(model=model)
-        checkpoint.restore(args.model).expect_partial()
         # model = tf.keras.models.load_model(args.model, 'model')
             # restore the last checkpointed values to the model
     #        checkpoint = tf.train.Checkpoint(model)
