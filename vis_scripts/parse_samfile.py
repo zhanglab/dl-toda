@@ -96,7 +96,9 @@ def main():
     # get references
     ref_info, alignments = LoadData(args.samfile)
 
-    for ref, length_ref in ref_info.items():
+    for i in range(len(ref_info)):
+        ref = ref_info[i][0]
+        length_ref = ref_info[i][1]
 
         dict_coverage, reads_info = GetCoverage(alignments[ref], length_ref)
 
