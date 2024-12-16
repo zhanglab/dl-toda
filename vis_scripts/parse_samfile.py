@@ -103,7 +103,7 @@ def main():
     parser.add_argument('--samfile', type=str, help='path to SAM file')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--mapped_reads', help="store id of mapped reads into a tsv file", action='store_true', default=False)
-    parser.add_argument('--label', help="label of reads of interest")
+    parser.add_argument('--label', type=str, help="label of reads of interest")
     args = parser.parse_args()
     
     # get references
