@@ -31,7 +31,7 @@ def ExtendCigar(cigar):
     return new_cigar
 
 
-def GetCoverageOfRead(read_start, read_cigar):
+def GetCoverageOfRead(read_start, read_cigar, dict_coverage):
     query_pos = 0
     ref_pos = query_pos + read_start
 
@@ -57,10 +57,10 @@ def GetCoverageOfSample(list_of_reads, length_ref, label=None):
 
         if label:
             if read_label == label:
-                ref_pos = GetCoverageOfRead(read_start, read_cigar)
+                ref_pos = GetCoverageOfRead(read_start, read_cigar, dict_coverage)
                 reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
         else:
-            ref_pos = GetCoverageOfRead(read_start, read_cigar)
+            ref_pos = GetCoverageOfRead(read_start, read_cigar, dict_coverage)
             reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
 
     return dict_coverage, reads_info
