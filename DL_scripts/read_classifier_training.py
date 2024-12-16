@@ -240,8 +240,6 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         read = tf.sparse.to_dense(read)
         return read, label
 
-
-
     def load_tfrecords_for_finetuning(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
@@ -252,7 +250,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
         # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "label": parsed_example['label']}
 
     def load_tfrecords_for_pretraining(proto_example):
@@ -817,20 +815,23 @@ def main():
 
     if hvd.rank() == 0:
         total_time = end - start
+        days = total_time.days if total_time.days >= 0 else 0
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
 
         with open(os.path.join(args.output_dir, f'training-summary-rnd-{args.rnd}.tsv'), 'a') as f:
-            f.write(f'Date\t{datetime.datetime.now().strftime("%d/%m/%Y")}\nTime\t{datetime.datetime.now().strftime("%H:%M:%S")}\n'
-                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\nEpochs\t{args.epochs}\n'
-                    f'Vector size\t{args.vector_size}\n'
-                    f'Dropout rate\t{args.dropout_rate}\nBatch size per gpu\t{args.batch_size}\n'
+            f.write(f'Start time\t{start}\n'
+                    f'Model\t{args.model_type}\nRound of training\t{args.rnd}\n'
+                    f'Batch size per gpu\t{args.batch_size}\n'
                     f'Global batch size\t{args.batch_size*hvd.size()}\nNumber of gpus\t{hvd.size()}\n'
                     f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
-                    f'Number of steps per epoch\t{nstep_per_epoch}\nNumber of steps for validation dataset\t{num_val_steps}\n'
+                    f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
+                    f'Number of steps for validation dataset\t{num_val_steps}\n'
+                    f'Number of epochs done\t{epoch}\n'
                     f'Initial learning rate\t{args.init_lr}\n')
-            f.write("\nTraining runtime:\t%02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
-        print("\nTraining runtime: %02d:%02d:%02d.%d\n" % (hours, minutes, seconds, total_time.microseconds))
+            if args.model_type in ["LSTM", "AlexNet"]:
+                f.write(f'Vector size\t{args.vector_size}\nDropout rate\t{args.dropout_rate}\n')
+            f.write(f'\nTraining runtime:\t{days} days\t{hours} hours\t{minutes} minutes\t{seconds} seconds\n')
         td_writer.close()
         vd_writer.close()
 
