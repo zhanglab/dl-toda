@@ -128,7 +128,7 @@ def main():
             
         # compute mean coverage
         mean_cov = round(sum(dict_coverage.values())/length_ref, 3)
-        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-mean.tsv'), 'w') as out_f:
+        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-").replace("/","-")}-cov-mean.tsv'), 'w') as out_f:
             out_f.write(f'number of positions covered\t{sum(dict_coverage.values())}\nreference length\t{length_ref}\naverage coverage\t{mean_cov}\n')
 
         if args.mapped_reads:
