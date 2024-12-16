@@ -62,6 +62,7 @@ def GetReferences(content, mapped):
             break
         if line.rstrip().split('\t')[0][:3] == '@SQ':
             reference = line.rstrip().split('\t')[1].split(':')[1]
+            print(reference)
             if reference in mapped:
                 length_ref = int(line.rstrip().split('\t')[2].split(':')[1])
                 ref_info.append([reference, length_ref])
@@ -79,7 +80,9 @@ def LoadData(samfile):
                 aligned_ref = content[i].rstrip().split('\t')[2]
                 cigar_string = content[i].rstrip().split('\t')[5]
                 mapped[aligned_ref].append([read_id, start_pos, cigar_string])
-
+    print(mapped.keys())
+    for k, v in mapped.items():
+        orint(k, len(v))
     # get references and their length
     ref_info = GetReferences(content[1:], mapped)
 
