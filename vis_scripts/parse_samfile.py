@@ -137,7 +137,7 @@ def main():
                     outfile.write(f'{k}\t{v[0]}\t{v[1]}\t{v[2]}\n')
 
         if args.unmapped_reads:
-            reads = load_fq_file(fqfile, 4)
+            reads = load_fq_file(args.fqfile, 4)
             dict_reads_length = {}
             for r in reads:
                 read_id = r.split("\n")[0][1:]
