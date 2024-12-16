@@ -122,7 +122,7 @@ def main():
         else:
             dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref)
 
-        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
+        with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-").replace("/","-")}-cov-pos.tsv'), 'w') as out_f:
             for k, v in dict_coverage.items():
                 out_f.write(f'{k}\t{v}\n')
             
