@@ -65,8 +65,6 @@ def GetCoverageOfSample(list_of_reads, length_ref, label=None):
             ref_pos = GetCoverageOfRead(read_start, read_cigar, dict_coverage)
             reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
 
-        print(sum(dict_coverage.values()))
-
     return dict_coverage, reads_info
 
 
@@ -131,7 +129,7 @@ def main():
         # compute mean coverage
         mean_cov = round(sum(dict_coverage.values())/length_ref, 3)
         with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-mean.tsv'), 'w') as out_f:
-            out_f.write(f'{length_ref}\t{mean_cov}\n')
+            out_f.write(f'number of positions covered\t{sum(dict_coverage.values())}\nreference length\t{length_ref}\naverage coverage\t{mean_cov}\n')
 
         if args.mapped_reads:
             with open(os.path.join(args.output_dir, f'{args.samfile.split("/")[-1].split(".")[0]}_mapped_reads.tsv'), 'w') as outfile:
