@@ -61,7 +61,8 @@ def GetReferences(content, mapped):
         if line.rstrip().split('\t')[0][:3] == '@PG':
             break
         if line.rstrip().split('\t')[0][:3] == '@SQ':
-            reference = line.rstrip().split('\t')[1].split(':')[1]
+            # reference = line.rstrip().split('\t')[1].split(':')[1]
+            reference = line.rstrip().split('\t')[1][3:]
             print(reference)
             if reference in mapped:
                 length_ref = int(line.rstrip().split('\t')[2].split(':')[1])
