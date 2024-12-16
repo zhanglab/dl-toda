@@ -45,7 +45,7 @@ def GetCoverageOfRead(read_start, read_cigar)
     return ref_pos
 
 
-def GetCoverageOfSample(args, list_of_reads, length_ref):
+def GetCoverageOfSample(list_of_reads, length_ref, label=None):
     dict_coverage = {i: 0 for i in range(length_ref)}
     reads_info = defaultdict(list)
 
@@ -55,8 +55,8 @@ def GetCoverageOfSample(args, list_of_reads, length_ref):
         read_start = list_of_reads[j][1] - 1
         read_cigar = ExtendCigar(list_of_reads[j][2])
 
-        if args.label:
-            if read_label == args.label:
+        if label:
+            if read_label == label:
                 ref_pos = GetCoverageOfRead(read_start, read_cigar)
                 reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
         else:
@@ -113,7 +113,10 @@ def main():
         ref = ref_info[i][0]
         length_ref = ref_info[i][1]
 
-        dict_coverage, reads_info = GetCoverageOfSample(args, alignments[ref], length_ref)
+        if args.label:
+            dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=args.label)
+        else:
+            dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref)
 
         with open(os.path.join(args.output_dir, f'{ref.replace(" ", "-")}-cov-pos.tsv'), 'w') as out_f:
             for k, v in dict_coverage.items():
