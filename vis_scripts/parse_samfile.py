@@ -82,7 +82,7 @@ def LoadData(samfile):
                 mapped[aligned_ref].append([read_id, start_pos, cigar_string])
     print(mapped.keys())
     for k, v in mapped.items():
-        orint(k, len(v))
+        print(k, len(v))
     # get references and their length
     ref_info = GetReferences(content[1:], mapped)
 
