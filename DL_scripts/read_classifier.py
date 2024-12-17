@@ -225,28 +225,26 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
+          # "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return (input_word_ids, input_mask, input_type_ids, masked_lm_positions, masked_lm_weights, masked_lm_ids)
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
@@ -294,12 +292,12 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
     if model_type == 'BERT_HUGGINGFACE':
         input_ids = data["input_ids"]
         attention_mask = data["attention_mask"]
-        # token_type_ids = data["token_type_ids"]
+        token_type_ids = data["token_type_ids"]
         position_ids = data["position_ids"]
         labels = data["labels"]
 
     if bert_step == "finetuning":
-        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
         # logits = model(**data).logits
         # loss_value = model(**data).loss
