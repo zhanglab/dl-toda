@@ -420,7 +420,6 @@ def main():
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification(config=bert_config)
         # model = tf.saved_model.load(args.model) --> not working
-        # model = tf.keras.models.load_model(args.model)
         # update input vector size
         args.vector_size = args.config_dict['max_position_embeddings']
     else:
@@ -432,7 +431,7 @@ def main():
     #     checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
     #     checkpoint.restore(args.ckpt).expect_partial()
     #     checkpoint.restore(args.ckpt)
-        # no errors or warnings with the following model loading method
+        # no errors or warnings with the following model
         model.load_weights(args.ckpt) 
     # elif args.model is not None:
 
