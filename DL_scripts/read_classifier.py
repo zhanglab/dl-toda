@@ -429,14 +429,17 @@ def main():
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
     
     if args.ckpt is not None:
-        checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+        # the following 2 restore() functions raise warnings about inconsistent references, the model is not correctly loaded
+        # for bert at least
+        # checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         # checkpoint.restore(args.ckpt).expect_partial()
-        checkpoint.restore(args.ckpt)
+        # checkpoint.restore(args.ckpt)
+        model.load_weights(args.ckpt)
     # elif args.model is not None:
-    #     model.load_weights()
-        # the following restoration procedure does not work
-        # checkpoint = tf.train.Checkpoint(model=model)
-        # checkpoint.restore(args.model).expect_partial()
+    #     model.load_weights(args.ckpt)
+    #     # the following restoration procedure does not work
+    #     checkpoint = tf.train.Checkpoint(model=model)
+    #     checkpoint.restore(args.model).expect_partial()
         
 
         # model = tf.keras.models.load_model(args.model, 'model')
