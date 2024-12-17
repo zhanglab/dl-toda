@@ -430,10 +430,13 @@ def main():
     
     if args.ckpt is not None:
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(args.ckpt).expect_partial()
-    elif args.model is not None:
-        checkpoint = tf.train.Checkpoint(model=model)
-        checkpoint.restore(args.model).expect_partial()
+        # checkpoint.restore(args.ckpt).expect_partial()
+        checkpoint.restore(args.ckpt)
+    # elif args.model is not None:
+    #     model.load_weights()
+        # the following restoration procedure does not work
+        # checkpoint = tf.train.Checkpoint(model=model)
+        # checkpoint.restore(args.model).expect_partial()
         
 
         # model = tf.keras.models.load_model(args.model, 'model')
