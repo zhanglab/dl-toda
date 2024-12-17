@@ -307,8 +307,8 @@ def create_tfrecords(args, input_data):
                             'input_ids': wrap_vector(r[0]),
                             'attention_mask': wrap_vector(r[1]),
                             'position_ids': wrap_vector(r[2]),
-                            'token_type_ids': wrap_vector(r[2]),
-                            'labels': wrap_vector(r[3]),
+                            'token_type_ids': wrap_vector(r[3]),
+                            'labels': wrap_vector(r[4]),
                             # 'next_sentence_label': wrap_label(r[4])
                         }
                 elif args.bert_step == 'finetuning':
@@ -317,8 +317,8 @@ def create_tfrecords(args, input_data):
                             'input_ids': wrap_vector(r[0]),
                             'attention_mask': wrap_vector(r[1]),
                             'position_ids': wrap_vector(r[2]),
-                            'token_type_ids': wrap_vector(r[2]),
-                            'labels': wrap_label(r[3])
+                            'token_type_ids': wrap_vector(r[3]),
+                            'labels': wrap_label(r[4])
                         }
                 feature = tf.train.Features(feature=tfrecord_data)
                 example = tf.train.Example(features=feature)
