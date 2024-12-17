@@ -722,10 +722,10 @@ def main():
             if hvd.rank() == 0:
                 if args.bert_step == "pretraining":
                     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\t{val_accuracy_mask.result().numpy()*100}')
+                    vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
                 else:
                     print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
-        
-                print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
+                    vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
             
                 with writer.as_default():
                     tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
@@ -733,12 +733,6 @@ def main():
                     if args.bert_step == "pretraining":
                         tf.summary.scalar("val_accuracy_mask", val_accuracy_mask.result().numpy(), step=epoch)
                     writer.flush()
-
-                if args.bert_step == "pretraining":
-                    vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
-                else:
-                    vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
-
 
                 if args.early_stopping:
                     # assess end of training
@@ -754,7 +748,9 @@ def main():
                     if stop_training or epoch == args.epochs:
                         if found_min:
                             model.set_weights(best_weights)
-                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'))
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best.h5'), save_format='h5')
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'), save_format='tf')
+                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best.keras'))
                             best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
                             best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
@@ -763,17 +759,13 @@ def main():
                                 model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-best'))
                         break
 
-                    # save weights every 5 epochs just for safety precautions
-                    if epoch % 1 == 0:
-                        checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
-                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'))
-                        if args.bert_step == "pretraining":
-                            model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
-
-                else:
-                    # save weights
-                    checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+                # save model in different formats at the end of each epoch
+                checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}.h5'), save_format='h5')
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}.keras'))
+                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'), save_format='tf')
+                if args.bert_step == "pretraining":
+                    model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
             # reset metrics variables at the end of epoch
             val_loss.reset_states()
