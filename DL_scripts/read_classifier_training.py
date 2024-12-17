@@ -92,7 +92,7 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
                                  features={
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     # "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "labels": tfrec.VarLenFeature([], tfrec.int64, 0)})
                                      # "next_sentence_label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
@@ -100,14 +100,12 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
-    # token_type_ids = inputs["token_type_ids"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
     position_ids = inputs["position_ids"].gpu()
     labels = inputs['labels'].gpu()
     # next_sentence_label = inputs["next_sentence_label"].gpu()
 
-    # return (input_ids, attention_mask, token_type_ids, labels, next_sentence_label)
-    # return (input_ids, attention_mask, token_type_ids, labels)
-    return (input_ids, attention_mask, position_ids, labels)
+    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
 
 
 # define the BERT DALI pipeline for fine-tuning
@@ -125,18 +123,17 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     # "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
-    # token_type_ids = inputs["token_type_ids"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
     position_ids = inputs["position_ids"].gpu()
     labels = inputs["labels"].gpu()
 
-    # return (input_ids, attention_mask, token_type_ids, labels)
-    return (input_ids, attention_mask, position_ids, labels)
+    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
 
 
 
@@ -158,8 +155,8 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'pretraining':
             self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
@@ -167,8 +164,8 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         else:
             self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
@@ -245,28 +242,26 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([1], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "label": parsed_example['label']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64)
           # "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
         # not returning data for NSP task
-        # return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
 
     """ Return data in TFRecords """
@@ -301,16 +296,16 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
         if model_type == 'BERT_HUGGINGFACE':
             if nvidia_dali:
-                input_ids, attention_mask, position_ids, labels = data
+                input_ids, attention_mask, position_ids, token_type_ids, labels = data
             else:
                 input_ids = data["input_ids"]
                 attention_mask = data["attention_mask"]
-                # token_type_ids = data["token_type_ids"]
+                token_type_ids = data["token_type_ids"]
                 position_ids = data["position_ids"]
                 labels = data["labels"]
 
             if bert_step == "finetuning":
-                outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+                outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # logits = model(**data).logits
                 logits = outputs.logits
                 # per_example_loss = model(**data).loss
@@ -318,10 +313,11 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 probs = tf.nn.softmax(logits, axis=-1)
                 # labels = data["labels"]
                 loss_value = loss(labels, probs)
+
             elif bert_step == "pretraining":
                 # outputs = model(**data)
                 # input_ids, attention_mask, token_type_ids, labels = data
-                outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+                outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
                 logits = outputs.logits
                 # get the masked language modeling loss --> corresponds to the loss of all masked tokens 
@@ -397,18 +393,16 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
     training = False
     if model_type == 'BERT_HUGGINGFACE':
         if nvidia_dali:
-            # input_ids, attention_mask, token_type_ids, labels = data
-            input_ids, attention_mask, position_ids, labels = data
+            input_ids, attention_mask, position_ids, token_type_ids, labels = data
         else:
             input_ids = data["input_ids"]
             attention_mask = data["attention_mask"]
-            # token_type_ids = data["token_type_ids"]
+            token_type_ids = data["token_type_ids"]
             position_ids = data["position_ids"]
             labels = data["labels"]
 
     if bert_step == "finetuning":
-        # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         # logits = model(**data).logits
         # loss_value = model(**data).loss
@@ -417,8 +411,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
         loss_value = loss(labels, probs)
 
     elif bert_step == "pretraining":
-        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         loss_value = outputs.loss[0]
         mask_token_index_1 = tf.where((input_ids == 4))
