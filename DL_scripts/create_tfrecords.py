@@ -200,7 +200,7 @@ def process_dnabert_data(args, dna_sequences, labels):
             labels = [-100] + labels + [-100]
 
         # define the first and second part of the sequence - NSP is not implemented here
-        # token_type_ids = [0] * max_position_embeddings
+        token_type_ids = [0] * max_position_embeddings
         
         # pad input vectors if necessary
         if len(dna_list) < max_position_embeddings:
@@ -218,10 +218,13 @@ def process_dnabert_data(args, dna_sequences, labels):
 
         if args.bert_step == 'pretraining':
             # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
-            data.append([dna_list, attention_mask, position_ids, labels])       
+            data.append([dna_list, attention_mask, position_ids, token_type_ids, labels])
+            print(f'dna_list: {dna_list}\tattention_mask: {attention_mask}\tposition_ids: {position_ids}\ttoken_type_ids: {token_type_ids}\tlabels: {labels}')       
         else:
             # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
-            data.append([dna_list, attention_mask, position_ids, labels[i]])
+            data.append([dna_list, attention_mask, position_ids, token_type_ids, labels[i]])
+            print(f'dna_list: {dna_list}\tattention_mask: {attention_mask}\tposition_ids: {position_ids}\ttoken_type_ids: {token_type_ids}\tlabel: {labels[i]}')
+
 
     if args.bert_step == 'pretraining':
         with open(args.info, 'w') as f:
@@ -304,7 +307,7 @@ def create_tfrecords(args, input_data):
                             'input_ids': wrap_vector(r[0]),
                             'attention_mask': wrap_vector(r[1]),
                             'position_ids': wrap_vector(r[2]),
-                            # 'token_type_ids': wrap_vector(r[2]),
+                            'token_type_ids': wrap_vector(r[2]),
                             'labels': wrap_vector(r[3]),
                             # 'next_sentence_label': wrap_label(r[4])
                         }
@@ -314,7 +317,7 @@ def create_tfrecords(args, input_data):
                             'input_ids': wrap_vector(r[0]),
                             'attention_mask': wrap_vector(r[1]),
                             'position_ids': wrap_vector(r[2]),
-                            # 'token_type_ids': wrap_vector(r[2]),
+                            'token_type_ids': wrap_vector(r[2]),
                             'labels': wrap_label(r[3])
                         }
                 feature = tf.train.Features(feature=tfrecord_data)
