@@ -517,9 +517,11 @@ def main():
             os.makedirs(args.output_dir)
 
         # create directory for storing checkpoints
-        ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
-        if not os.path.isdir(ckpt_dir):
-            os.makedirs(ckpt_dir)
+        ckpt_dir_1 = os.path.join(args.output_dir, f'ckpts-1-rnd-{args.rnd}')
+        ckpt_dir_2 = os.path.join(args.output_dir, f'ckpts-2-rnd-{args.rnd}')
+        if not os.path.isdir(ckpt_dir_1):
+            os.makedirs(ckpt_dir_1)
+            os.makedirs(ckpt_dir_2)
 
         # create directory for storing logs
         tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
@@ -640,6 +642,7 @@ def main():
     if hvd.rank() == 0:
         # create checkpoint object to save model
         checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+        checkpoint_path = os.path.join(ckpt_dir_2, 'cp-{epoch:04d}.ckpt')
         
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
@@ -741,11 +744,11 @@ def main():
                     if stop_training or epoch == args.epochs:
                         if found_min:
                             model.set_weights(best_weights)
-                            model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best.h5'), save_format='h5')
                             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best'), save_format='tf')
                             model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-best.keras'))
+                            model.save_weights(checkpoint_path.format(epoch=epoch))
                             best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
+                            best_checkpoint.save(os.path.join(ckpt_dir_1, f'ckpt-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                                 f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                             if args.bert_step == "pretraining":
@@ -753,10 +756,10 @@ def main():
                         break
 
                 # save model in different formats at the end of each epoch
-                checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}.h5'), save_format='h5')
+                checkpoint.save(os.path.join(ckpt_dir_1, f'ckpt-{epoch}'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}.keras'))
                 model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'), save_format='tf')
+                model.save_weights(checkpoint_path.format(epoch=epoch))
                 if args.bert_step == "pretraining":
                     model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
