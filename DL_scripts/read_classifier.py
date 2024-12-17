@@ -418,19 +418,20 @@ def main():
             args.config_dict = json.load(f)
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-        # model = TFBertForSequenceClassification(config=bert_config)
-        model = tf.saved_model.load(args.model)
+        model = TFBertForSequenceClassification(config=bert_config)
+        # model = tf.saved_model.load(args.model) --> not working
         # update input vector size
         args.vector_size = args.config_dict['max_position_embeddings']
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
     
-    # if args.ckpt is not None:
+    if args.ckpt is not None:
     #     the following 2 restore() functions raise warnings about inconsistent references, the model is not correctly loaded
     #     for bert at least
     #     checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
     #     checkpoint.restore(args.ckpt).expect_partial()
     #     checkpoint.restore(args.ckpt)
+        model.load_weights(args.ckpt)
     # elif args.model is not None:
 
         
