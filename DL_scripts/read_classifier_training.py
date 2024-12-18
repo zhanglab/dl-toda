@@ -524,7 +524,7 @@ def main():
             os.makedirs(ckpt_dir)
 
         # create directory for storing models in keras format
-        models_dir = os.path.join(args.output_dir, f'models-keras-{args.rnd}')
+        models_dir = os.path.join(args.output_dir, f'models-keras-rnd-{args.rnd}')
         if not os.path.isdir(models_dir):
             os.makedirs(models_dir)
 
