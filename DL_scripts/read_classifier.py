@@ -297,7 +297,8 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
         labels = data["labels"]
 
     if bert_step == "finetuning":
-        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+        # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
         # logits = model(**data).logits
         # loss_value = model(**data).loss
