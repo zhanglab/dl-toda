@@ -142,95 +142,94 @@ def process_art_data(args, dna_sequences, labels, reads_index):
     return data, dict_labels
 
 
-def process_dnabert_data(args, dna_sequences, labels):
+# def process_dnabert_data(args, dna_sequences, labels):
+def process_dnabert_data(args, dna_sequence):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
-    data = []
+    # data = []
+    # if args.bert_step == 'pretraining':
+    #     n_masked_pos = []
+
+    # for i in range(len(dna_sequences)):
+    # parse dna sequence
+    dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences]
+    # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
+    if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+        dna_list = dna_list[:args.kmer_vector_length]
+    
     if args.bert_step == 'pretraining':
-        n_masked_pos = []
-
-    for i in range(len(dna_sequences)):
-        # parse dna sequence
-        dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences[i]]
-        # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
-        if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-            dna_list = dna_list[:args.kmer_vector_length]
+        # compute the number of tokens to mask
+        n_mlm = int(args.masked_lm_prob * len(dna_list))
         
-        if args.bert_step == 'pretraining':
-            # compute the number of tokens to mask
-            n_mlm = int(args.masked_lm_prob * len(dna_list))
+        # get list of indices of tokens to mask
+        mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+
+        if args.contiguous_kmers:
+            # get indices of contiguous kmers (previous and following kmer)
+            # indices_to_mask = [-1, 1, 2]
+            indices_to_mask = [-1, 1]
+            mlm_positions.sort()
+            contiguous_positions = set()
+            for mask_position in mlm_positions:
+                for mask_index in indices_to_mask:
+                    current_index = mask_position + mask_index
+                    if current_index <= (len(dna_list)-1) and current_index >= 0:
+                        # print(mask_position, mask_index, current_index)
+                        contiguous_positions.add(current_index)
             
-            # get list of indices of tokens to mask
-            mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
+            # mask contiguous kmers
+            mlm_positions += list(contiguous_positions)
 
-            if args.contiguous_kmers:
-                # get indices of contiguous kmers (previous and following kmer)
-                # indices_to_mask = [-1, 1, 2]
-                indices_to_mask = [-1, 1]
-                mlm_positions.sort()
-                contiguous_positions = set()
-                for mask_position in mlm_positions:
-                    for mask_index in indices_to_mask:
-                        current_index = mask_position + mask_index
-                        if current_index <= (len(dna_list)-1) and current_index >= 0:
-                            # print(mask_position, mask_index, current_index)
-                            contiguous_positions.add(current_index)
-                
-                # mask contiguous kmers
-                mlm_positions += list(contiguous_positions)
-
-            n_masked_pos.append(len(mlm_positions)/len(dna_list))
-            
-            # mask tokens
-            mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
-
-            # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
-            mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
-            
-            # define NSP label - NSP is not implemented here
-            # next_sentence_label = 1
-            dna_list = mlm_dna_list
-            labels = mlm_labels
-
-        # add CLS and SEP tokens
-        dna_list = [args.dict_kmers['[CLS]']] + dna_list + [args.dict_kmers['[SEP]']]
-
-        if args.bert_step == 'pretraining':
-            # update vector of labels to reflect the addition of the special tokens
-            labels = [-100] + labels + [-100]
-
-        # define the first and second part of the sequence - NSP is not implemented here
-        token_type_ids = [0] * max_position_embeddings
+        # n_masked_pos.append(len(mlm_positions)/len(dna_list))
         
-        # pad input vectors if necessary
-        if len(dna_list) < max_position_embeddings:
-            num_padded_values = max_position_embeddings - len(dna_list)
-            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-            if args.bert_step == 'pretraining':
-                labels = labels + [-100] * num_padded_values
-            # create attention_mask vector indicating padded values. Padding token indices are masked (0) to avoid
-            # performing attention on them.
-            attention_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
-        else:
-            attention_mask = [1]*max_position_embeddings
+        # mask tokens
+        mlm_dna_list = get_masked_array(args, mlm_positions, dna_list)
 
-        position_ids = list(range(max_position_embeddings))
+        # define vector of labels containing indices of masked tokens and -100 for unmasked tokens
+        mlm_labels = [dna_list[i] if i in mlm_positions else -100 for i in range(len(dna_list))]
+        
+        # define NSP label - NSP is not implemented here
+        # next_sentence_label = 1
+        input_ids = mlm_dna_list
+        labels = mlm_labels
 
-        if args.bert_step == 'pretraining':
-            # data.append([dna_list, attention_mask, token_type_ids, labels, next_sentence_label])
-            data.append([dna_list, attention_mask, position_ids, token_type_ids, labels])
-            print(f'dna_list: {dna_list}\tattention_mask: {attention_mask}\tposition_ids: {position_ids}\ttoken_type_ids: {token_type_ids}\tlabels: {labels}')       
-        else:
-            # data.append([dna_list, attention_mask, token_type_ids, labels[i]])
-            data.append([dna_list, attention_mask, position_ids, token_type_ids, labels[i]])
-            print(f'dna_list: {dna_list}\tattention_mask: {attention_mask}\tposition_ids: {position_ids}\ttoken_type_ids: {token_type_ids}\tlabel: {labels[i]}')
-
+    # add CLS and SEP tokens
+    input_ids = [args.dict_kmers['[CLS]']] + input_ids + [args.dict_kmers['[SEP]']]
 
     if args.bert_step == 'pretraining':
-        with open(args.info, 'w') as f:
-            f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')
+        # update vector of labels to reflect the addition of the special tokens
+        labels = [-100] + labels + [-100]
+
+    # define the first and second part of the sequence - NSP is not implemented here
+    token_type_ids = [0] * max_position_embeddings
+    
+    # pad input vectors if necessary
+    if len(input_ids) < max_position_embeddings:
+        num_padded_values = max_position_embeddings - len(input_ids)
+        input_ids = input_ids + [args.dict_kmers['[PAD]']] * num_padded_values
+        if args.bert_step == 'pretraining':
+            labels = labels + [-100] * num_padded_values
+        # create attention_mask vector indicating padded values. Padding token indices are masked (0) to avoid
+        # performing attention on them.
+        attention_mask = [1]*(max_position_embeddings - num_padded_values) + [0]*num_padded_values
+    else:
+        attention_mask = [1]*max_position_embeddings
+
+    position_ids = list(range(max_position_embeddings))
+
+    if args.bert_step == 'pretraining':
+        return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list)
+        # data.append([dna_list, attention_mask, position_ids, token_type_ids, labels])
+    else:
+        return input_ids, attention_mask, position_ids, token_type_ids
+        # data.append([dna_list, attention_mask, position_ids, token_type_ids, labels[i]])
+
+
+    # if args.bert_step == 'pretraining':
+    #     with open(args.info, 'w') as f:
+    #         f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')
         
-    return data
+    # return data
 
 
 def create_tfrecords(args, input_data):
@@ -277,20 +276,16 @@ def create_tfrecords(args, input_data):
             reads_index = list(range(len(reads)))
             data, dict_labels = process_art_data(args, dna_sequences, labels, reads_index)
 
-        elif args.dnabert:
-            data = process_dnabert_data(args, dna_sequences, labels)
-        
+        # elif args.dnabert:
+            # data = process_dnabert_data(args, dna_sequences, labels)
+        if args.bert_step == 'pretraining':
+            n_masked_pos = []
 
         with tf.io.TFRecordWriter(output_tfrec) as writer:
-                # for process, data_process in data.items():
-                #     print(process, len(data_process))
-            for i, r in enumerate(data, 0):
-                vector_size.add(len(r[0]))
-                # if i == 0 and args.bert_step == 'pretraining':
-                #     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabels: {r[3]}\nnext_sentence_label: {r[4]}')
-                # if i == 0 and args.bert_step == 'finetuning':
-                #     print(f'{len(r)}\tinput_ids: {r[0]}\tattention_mask: {r[1]}\ttoken_type_ids: {r[2]}\tlabel: {r[3]}\n')
-                #     print(f'{len(r)}\tinput_ids: {len(r[0])}\tattention_mask: {len(r[1])}\ttoken_type_ids: {len(r[2])}\n')
+            for i in range(len(dna_sequences)):
+                
+            # for i, r in enumerate(data, 0):
+                # vector_size.add(len(r[0]))
                 """
                 input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                 attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
@@ -302,30 +297,38 @@ def create_tfrecords(args, input_data):
                 labels: labels for computing the MLM loss (indices of tokens for masked tokens and -100 for unmasked tokens)  - length: 512
                 """
                 if args.bert_step == 'pretraining':
+                    input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos = process_dnabert_data(args, dna_sequence)
+                    n_masked_pos.append(fraction_masked_pos)
                     tfrecord_data = \
                         {
-                            'input_ids': wrap_vector(r[0]),
-                            'attention_mask': wrap_vector(r[1]),
-                            'position_ids': wrap_vector(r[2]),
-                            'token_type_ids': wrap_vector(r[3]),
-                            'labels': wrap_vector(r[4]),
+                            'input_ids': wrap_vector(input_ids),
+                            'attention_mask': wrap_vector(attention_mask),
+                            'position_ids': wrap_vector(position_ids),
+                            'token_type_ids': wrap_vector(token_type_ids),
+                            'labels': wrap_vector(labels),
                             # 'next_sentence_label': wrap_label(r[4])
                         }
                 elif args.bert_step == 'finetuning':
+                    input_ids, attention_mask, position_ids, token_type_ids = process_dnabert_data(args, dna_sequence)
                     tfrecord_data = \
                         {
-                            'input_ids': wrap_vector(r[0]),
-                            'attention_mask': wrap_vector(r[1]),
-                            'position_ids': wrap_vector(r[2]),
-                            'token_type_ids': wrap_vector(r[3]),
-                            'labels': wrap_label(r[4])
+                            'input_ids': wrap_vector(input_ids),
+                            'attention_mask': wrap_vector(attention_mask),
+                            'position_ids': wrap_vector(position_ids),
+                            'token_type_ids': wrap_vector(token_type_ids),
+                            'labels': wrap_label(labels[i])
                         }
                 feature = tf.train.Features(feature=tfrecord_data)
                 example = tf.train.Example(features=feature)
                 serialized = example.SerializeToString()
                 writer.write(serialized)
-                count += 1            
-    
+                count += 1  
+                vector_size.add(len(r[0]))
+
+        if args.bert_step == 'pretraining':
+            with open(args.info, 'w') as f:
+                f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')          
+        
     else:
         with tf.io.TFRecordWriter(output_tfrec) as writer:
             for i, r in enumerate(dna_sequences, 0):
