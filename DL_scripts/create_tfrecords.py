@@ -152,7 +152,7 @@ def process_dnabert_data(args, dna_sequence):
 
     # for i in range(len(dna_sequences)):
     # parse dna sequence
-    dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequences]
+    dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequence]
     # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
     if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
         dna_list = dna_list[:args.kmer_vector_length]
