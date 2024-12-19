@@ -297,7 +297,7 @@ def create_tfrecords(args, input_data):
                 labels: labels for computing the MLM loss (indices of tokens for masked tokens and -100 for unmasked tokens)  - length: 512
                 """
                 if args.bert_step == 'pretraining':
-                    input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos = process_dnabert_data(args, dna_sequence)
+                    input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos = process_dnabert_data(args, dna_sequences[i])
                     n_masked_pos.append(fraction_masked_pos)
                     tfrecord_data = \
                         {
@@ -309,7 +309,7 @@ def create_tfrecords(args, input_data):
                             # 'next_sentence_label': wrap_label(r[4])
                         }
                 elif args.bert_step == 'finetuning':
-                    input_ids, attention_mask, position_ids, token_type_ids = process_dnabert_data(args, dna_sequence)
+                    input_ids, attention_mask, position_ids, token_type_ids = process_dnabert_data(args, dna_sequences[i])
                     tfrecord_data = \
                         {
                             'input_ids': wrap_vector(input_ids),
