@@ -323,7 +323,7 @@ def create_tfrecords(args, input_data):
                 serialized = example.SerializeToString()
                 writer.write(serialized)
                 count += 1  
-                vector_size.add(len(r[0]))
+                vector_size.add(len(input_ids))
 
         if args.bert_step == 'pretraining':
             with open(args.info, 'w') as f:
