@@ -327,7 +327,7 @@ def create_tfrecords(args, input_data):
 
         if args.bert_step == 'pretraining':
             with open(args.info, 'w') as f:
-                f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')          
+                f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{round(statistics.mean(n_masked_pos),2)}\t{statistics.median(n_masked_pos)}')          
         
     else:
         with tf.io.TFRecordWriter(output_tfrec) as writer:
