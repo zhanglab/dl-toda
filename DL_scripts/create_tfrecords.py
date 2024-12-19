@@ -218,7 +218,7 @@ def process_dnabert_data(args, dna_sequence):
     position_ids = list(range(max_position_embeddings))
 
     if args.bert_step == 'pretraining':
-        return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list)
+        return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list), len(dna_list)+2
         # data.append([dna_list, attention_mask, position_ids, token_type_ids, labels])
     else:
         return input_ids, attention_mask, position_ids, token_type_ids
@@ -297,7 +297,7 @@ def create_tfrecords(args, input_data):
                 labels: labels for computing the MLM loss (indices of tokens for masked tokens and -100 for unmasked tokens)  - length: 512
                 """
                 if args.bert_step == 'pretraining':
-                    input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos = process_dnabert_data(args, dna_sequences[i])
+                    input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos, sequence_size = process_dnabert_data(args, dna_sequences[i])
                     n_masked_pos.append(fraction_masked_pos)
                     tfrecord_data = \
                         {
@@ -323,7 +323,7 @@ def create_tfrecords(args, input_data):
                 serialized = example.SerializeToString()
                 writer.write(serialized)
                 count += 1  
-                vector_size.add(len(input_ids))
+                vector_size.add(sequence_size)
 
         if args.bert_step == 'pretraining':
             with open(args.info, 'w') as f:
