@@ -305,10 +305,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 labels = data["labels"]
 
             if bert_step == "finetuning":
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
-                # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-                # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+                outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # logits = model(**data).logits
                 logits = outputs.logits
                 # per_example_loss = model(**data).loss
@@ -405,10 +402,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
             labels = data["labels"]
 
     if bert_step == "finetuning":
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         # logits = model(**data).logits
         # loss_value = model(**data).loss
