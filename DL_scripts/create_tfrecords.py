@@ -316,7 +316,7 @@ def create_tfrecords(args):
                                 # 'next_sentence_label': wrap_label(r[4])
                             }
                     elif args.bert_step == 'finetuning':
-                        input_ids, attention_mask, position_ids, token_type_ids = process_dnabert_data(args, dna_sequence)
+                        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = process_dnabert_data(args, dna_sequence)
                         tfrecord_data = \
                             {
                                 'input_ids': wrap_vector(input_ids),
