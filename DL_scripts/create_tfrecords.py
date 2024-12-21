@@ -193,6 +193,9 @@ def process_dnabert_data(args, dna_sequence):
         input_ids = mlm_dna_list
         labels = mlm_labels
 
+    else:
+        input_ids = dna_list
+
     # add CLS and SEP tokens
     input_ids = [args.dict_kmers['[CLS]']] + input_ids + [args.dict_kmers['[SEP]']]
 
