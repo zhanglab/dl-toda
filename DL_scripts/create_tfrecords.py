@@ -224,7 +224,7 @@ def process_dnabert_data(args, dna_sequence):
         return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list), len(dna_list)+2
         # data.append([dna_list, attention_mask, position_ids, token_type_ids, labels])
     else:
-        return input_ids, attention_mask, position_ids, token_type_ids
+        return input_ids, attention_mask, position_ids, token_type_ids, len(dna_list)+2
         # data.append([dna_list, attention_mask, position_ids, token_type_ids, labels[i]])
 
 
