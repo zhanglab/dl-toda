@@ -323,7 +323,7 @@ def create_tfrecords(args):
                                 'attention_mask': wrap_vector(attention_mask),
                                 'position_ids': wrap_vector(position_ids),
                                 'token_type_ids': wrap_vector(token_type_ids),
-                                'labels': wrap_label(labels[i])
+                                'labels': wrap_label(label)
                             }
                     feature = tf.train.Features(feature=tfrecord_data)
                     example = tf.train.Example(features=feature)
