@@ -760,11 +760,11 @@ def main():
                                 model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-best'))
                         break
 
-                # save model in different formats at the end of each epoch
-                checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
-                model.save(os.path.join(models_dir, f'model-rnd-{args.rnd}-{epoch}.keras'))
-                if args.bert_step == "pretraining":
-                    model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-{epoch}'))
+                # # save model in different formats at the end of each epoch
+                # checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
+                # model.save(os.path.join(models_dir, f'model-rnd-{args.rnd}-{epoch}.keras'))
+                # if args.bert_step == "pretraining":
+                #     model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
             # reset metrics variables at the end of epoch
             val_loss.reset_states()
