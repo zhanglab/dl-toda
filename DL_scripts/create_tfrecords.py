@@ -288,11 +288,19 @@ def create_tfrecords(args):
         with tf.io.TFRecordWriter(output_tfrec) as writer:
             with open(args.input, 'r') as f:
                 for line in f:
-                    dna_sequence = line.rstrip().split('\t')[1].split(" ")
-                    if args.update_labels:
-                        label = int(args.labels_mapping[line.rstrip().split('\t')[0]]) 
+                    if args.dnabert:
+                        label = line.rstrip().split('\t')[0]
+                        dna_sequence = line.rstrip().split('\t')[1].split(" ")
                     else:
-                        label = int(line.rstrip().split('\t')[0])
+                        label = line.rstrip().split('\t')[0].split('|')[1]
+                        dna_sequence = line.rstrip().split('\t')[1]
+                        dna_sequence = prepare_input_data(args, dna_sequence) 
+                        print(label)
+                        print(dna_sequence)
+                    break
+                    if args.update_labels:
+                        label = int(args.labels_mapping[label])
+
                     """
                     input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                     attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
