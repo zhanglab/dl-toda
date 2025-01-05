@@ -295,9 +295,6 @@ def create_tfrecords(args):
                         label = line.rstrip().split('\t')[0].split('|')[1]
                         dna_sequence = line.rstrip().split('\t')[1]
                         dna_sequence = prepare_input_data(args, dna_sequence) 
-                        print(label)
-                        print(dna_sequence)
-                    break
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
 
