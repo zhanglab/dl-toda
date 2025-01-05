@@ -67,7 +67,7 @@ def create_meta_tfrecords(args, grouped_files):
         outfile.close()
 
 
-def prepare_data_for_bert(args, dna_sequence):
+def prepare_data_for_bert(args, dna_list):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
 
