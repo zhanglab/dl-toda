@@ -269,7 +269,6 @@ def create_tfrecords(args):
         f.write(f'max vector size: {max(list(vector_size))}\n')
         f.write(f'mean vector size: {statistics.mean(list(vector_size))}\n')
         f.write(f'median vector size: {statistics.median(list(vector_size))}\n')
-        f.write(f'required vector size: {args.kmer_vector_length}\n')
         f.write(f'max read length: {args.max_read_length}\n')
 
 
@@ -278,7 +277,6 @@ def create_tfrecords(args):
         f.write(f'max dna sequence size: {max(list(dna_sequence_size))}\n')
         f.write(f'mean dna sequence size: {statistics.mean(list(dna_sequence_size))}\n')
         f.write(f'median dna sequence size: {statistics.median(list(dna_sequence_size))}\n')
-        f.write(f'required dna sequence size: {args.kmer_vector_length}\n')
         f.write(f'max read length: {args.max_read_length}\n')
 
 def main():
