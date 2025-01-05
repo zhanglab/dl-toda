@@ -411,41 +411,41 @@ def main():
 
     print(args)
 
-    # update path to output directory
-    if args.dnabert:
-        if args.bert_step == 'finetuning' or not args.bert:
-            # create name of output directory from input filename
-            label = args.input.split('/')[-1].split('_')[1][1:]
-            dataset = args.input.split('/')[-1].split('_')[2]
-    else:
-        # create name of output directory from input filename
-        label = args.input.split('/')[-2]
-        dataset = args.input.split('/')[-1].split('.')[0]
+    # # update path to output directory
+    # if args.dnabert:
+    #     if args.bert_step == 'finetuning' or not args.bert:
+    #         # create name of output directory from input filename
+    #         label = args.input.split('/')[-1].split('_')[1][1:]
+    #         dataset = args.input.split('/')[-1].split('_')[2]
+    # else:
+    #     # create name of output directory from input filename
+    #     label = args.input.split('/')[-2]
+    #     dataset = args.input.split('/')[-1].split('.')[0]
     
-    if args.bert:
-        if args.bert_step == "finetuning":
-            args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
-        elif args.bert_step == "pretraining":
-            args.info = f'{args.output_dir}/pretraining_data_info.tsv'
-    else:
-        args.output_dir = f'{args.output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
+    # if args.bert:
+    #     if args.bert_step == "finetuning":
+    #         args.output_dir = f'{args.output_dir}/{label}/{dataset}-bert-tfrecords-k{args.k_value}'
+    #     elif args.bert_step == "pretraining":
+    #         args.info = f'{args.output_dir}/pretraining_data_info.tsv'
+    # else:
+    #     args.output_dir = f'{args.output_dir}/{label}/{dataset}-other-models-tfrecords-k{args.k_value}'
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
     if args.update_labels:
-        if os.path.isfile(args.mapping_file):
-            filename = args.mapping_file
-        else:
-            # get the label from the input filename
-            if args.dnabert:
-                label = args.input.split('/')[-1].split('_')[1][1:]
-            else:
-                label = args.input.split('/')[-2]
-            filename = os.path.join(args.mapping_file, label, 'mapping_labels.tsv')
+        # if os.path.isfile(args.mapping_file):
+        #     filename = args.mapping_file
+        # else:
+        #     # get the label from the input filename
+        #     if args.dnabert:
+        #         label = args.input.split('/')[-1].split('_')[1][1:]
+        #     else:
+        #         label = args.input.split('/')[-2]
+        #     filename = os.path.join(args.mapping_file, label, 'mapping_labels.tsv')
         
         args.labels_mapping = dict()
-        with open(filename, 'r') as f:
+        with open(args.mapping_file, 'r') as f:
             for line in f:
                 args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
