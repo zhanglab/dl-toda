@@ -434,8 +434,8 @@ def main():
         # the following 2 restore() functions and load_weights function raise warnings about inconsistent references, the model is not correctly loaded
         # for bert at least
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        checkpoint.restore(args.ckpt).expect_partial()
-        # checkpoint.restore(args.ckpt)
+        # checkpoint.restore(args.ckpt).expect_partial()
+        checkpoint.restore(args.ckpt)
         # model.load_weights(args.ckpt) 
 
     # define metrics
