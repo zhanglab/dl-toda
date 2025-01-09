@@ -435,8 +435,8 @@ def main():
         # for bert at least
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         # checkpoint.restore(args.ckpt).expect_partial()
-        checkpoint.restore(args.ckpt)
-        # model.load_weights(args.ckpt) 
+        # checkpoint.restore(args.ckpt) # same warning as checkpoint.restore(args.ckpt).expect_partial()
+        model.load_weights(args.ckpt) 
 
     # define metrics
     if args.data_type == 'sim':
