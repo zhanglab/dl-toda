@@ -356,7 +356,7 @@ def main():
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
-    parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the suffix)')
+    parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the prefix)')
     # parser.add_argument('--testing_epoch', type=str, help='path to file containnig testing epoch')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
@@ -434,9 +434,9 @@ def main():
         # the following 2 restore() functions and load_weights function raise warnings about inconsistent references, the model is not correctly loaded
         # for bert at least
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-        # checkpoint.restore(args.ckpt).expect_partial()
+        checkpoint.restore(args.ckpt).expect_partial()
         # checkpoint.restore(args.ckpt) # same warning as checkpoint.restore(args.ckpt).expect_partial()
-        model.load_weights(args.ckpt) 
+        # model.load_weights(args.ckpt) # does not work
 
     # define metrics
     if args.data_type == 'sim':
