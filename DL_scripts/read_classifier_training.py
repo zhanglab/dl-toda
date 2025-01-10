@@ -574,7 +574,7 @@ def main():
             if args.pretrained:
                 model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
                 # freeze all the layers except the pooler layer and the classifier layer
-                model.layers[0].trainable = False
+                # model.layers[0].trainable = False
             else:
                 model = TFBertForSequenceClassification(config=bert_config)
         elif args.bert_step == "pretraining":
