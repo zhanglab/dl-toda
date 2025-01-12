@@ -415,24 +415,24 @@ def main():
     # opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
 
 
-    if args.model_type == 'BERT_HUGGINGFACE':
-        with open(args.bert_config_file, "r") as f:
-            args.config_dict = json.load(f)
-        # update input vector size
-        args.vector_size = args.config_dict['max_position_embeddings']
-        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-    else:
-        if args.model is not None:
-            model = tf.keras.models.load_model(args.model)
-        elif args.ckpt is not None:
-            # load model with checkpoint
-            # if args.model_type == 'BERT_HUGGINGFACE':
-            #     # create BERT config object + model
-            #     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-            #     model = TFBertForSequenceClassification(config=bert_config)            
-            # else:
-            model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
+    # if args.model_type == 'BERT_HUGGINGFACE':
+    #     with open(args.bert_config_file, "r") as f:
+    #         args.config_dict = json.load(f)
+    #     # update input vector size
+    #     args.vector_size = args.config_dict['max_position_embeddings']
+    #     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+    #     model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+    # else:
+    if args.model is not None:
+        model = tf.keras.models.load_model(args.model)
+    elif args.ckpt is not None:
+        # load model with checkpoint
+        # if args.model_type == 'BERT_HUGGINGFACE':
+        #     # create BERT config object + model
+        #     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+        #     model = TFBertForSequenceClassification(config=bert_config)            
+        # else:
+        model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
                
         # the following 2 restore() functions and load_weights function raise warnings about inconsistent references, the model is not correctly loaded
         # for bert at least
