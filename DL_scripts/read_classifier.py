@@ -415,12 +415,12 @@ def main():
     # opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
 
 
-    # if args.model_type == 'BERT_HUGGINGFACE':
-    #     with open(args.bert_config_file, "r") as f:
-    #         args.config_dict = json.load(f)
-    #     # update input vector size
-    #     args.vector_size = args.config_dict['max_position_embeddings']
-    #     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+    if args.model_type == 'BERT_HUGGINGFACE':
+        with open(args.bert_config_file, "r") as f:
+            args.config_dict = json.load(f)
+        # update input vector size
+        args.vector_size = args.config_dict['max_position_embeddings']
+        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
     #     model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
     # else:
     if args.model is not None:
