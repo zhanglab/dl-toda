@@ -357,6 +357,7 @@ def main():
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the prefix)')
+    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     # parser.add_argument('--testing_epoch', type=str, help='path to file containnig testing epoch')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
