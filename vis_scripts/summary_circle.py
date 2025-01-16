@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
 	# get alignment info for FN sequences with training genomes
 	fn_alignments = defaultdict(dict)
-	samfiles = glob.glob(os.path.join(args.test_samfile_dir, '*.sam'))
+	samfiles = glob.glob(os.path.join(args.test_train_samfiles, '*.sam'))
 	mapped_labels = defaultdict(int)
 	for s in samfiles:
 		with open(s, 'r') as f:
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 						mapped_labels[sam_label] += 1
 
 	# get coverage of training genome with training sequences
-	ref_info, alignments = LoadData(args.train_samfile)
+	ref_info, alignments = LoadData(args.train_train_samfile)
 	training_genome_size = ref_info[0][1]
 	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref_info[0][0]], training_genome_size)
 	pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 	for k, v in mapped_taxa_info.items():
 		test_genome_taxa_count[k] = len(set(v))
 
-	
+
 
 
 
