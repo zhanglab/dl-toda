@@ -7,7 +7,7 @@ from collections import defaultdict
 # from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
-from vis_scripts.parse_samfile import LoadData, GetCoverage
+from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
 
 # def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 	# get coverage of training genome with training sequences
 	ref_info, alignments = LoadData(args.train_samfile)
 	training_genome_length = ref_info[0][1]
-	dict_coverage, reads_info = GetCoverage(alignments[ref_info[0][0]], training_genome_length)
+	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref_info[0][0]], training_genome_length)
 	pos_coverage = [dict_coverage[i] for i in range(training_genome_length)]
 
 	# get positions of training genome mapped by testing sequences
