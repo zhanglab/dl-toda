@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
 	# get alignment info for FN sequences
 	fn_alignments = defaultdict(dict)
-	samfiles = glob.glob(os.path.join(args.samfile_dir, '*.sam'))
+	samfiles = glob.glob(os.path.join(args.test_samfile_dir, '*.sam'))
 	mapped_labels = defaultdict(int)
 	for s in samfiles:
 		with open(s, 'r') as f:
