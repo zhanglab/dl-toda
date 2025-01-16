@@ -10,66 +10,118 @@ from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
 
-# def PlotCircles(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
+def PlotCirclesTrainGenome(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
 	
-# 	# initialize a single circos sector
-# 	sectors = {'genome': len(genome_positions)}
-# 	circos = Circos(sectors=sectors, space=14)
+	# initialize a single circos sector
+	sectors = {'genome': len(genome_positions)}
+	circos = Circos(sectors=sectors, space=14)
 
-# 	for sector in circos.sectors:
-# 		# add track for positions of the label's testing genome
-# 		genome_track = sector.add_track((98, 100))
-# 		genome_track.axis(fc="lightgrey")
-# 		interval = str(int(len(genome_positions)/5))
-# 		interval = int(interval[0]+ '0'*(len(interval)-1))
-# 		genome_x = list(range(0,len(genome_positions),interval))
-# 		base_pos_ticks = [genome_positions[i] for i in genome_x]
-# 		genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
-# 		print(genome_x_labels)
-# 		print(genome_x)
-# 		genome_track.xticks(genome_x, genome_x_labels)
-# 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
-# 		print(f'added genome track')
-# 		# add track for coverage of label's training genome
-# 		cov_track = sector.add_track((85, 95))
-# 		cov_track.axis()
-# 		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 4))
-# 		cov_y_labels = list(map(str, cov_y))
-# 		cov_track.yticks(cov_y, cov_y_labels)
-# 		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
-# 		print(f'added coverage track')
-# 		# add track for count of unique taxa per position
-# 		unique_taxa_track = sector.add_track((72, 82))
-# 		unique_taxa_track.axis()
-# 		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 10))
-# 		unique_taxa_y_labels = list(map(str, unique_taxa_y))
-# 		unique_taxa_track.yticks(unique_taxa_y, unique_taxa_y_labels)
-# 		unique_taxa_x = genome_positions
-# 		unique_taxa_x_values = unique_taxa_count
-# 		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
-# 		# # add track for count of total taxa per position
-# 		# total_taxa_track = sector.add_track((59, 69))
-# 		# total_taxa_track.axis()
-# 		# total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 1000))
-# 		# print(total_taxa_y)
-# 		# total_taxa_y_labels = list(map(str, total_taxa_y))
-# 		# print(total_taxa_y_labels)
-# 		# total_taxa_track.yticks(total_taxa_y, total_taxa_y_labels)
-# 		# total_taxa_x = genome_positions
-# 		# total_taxa_x_values = total_taxa_count
-# 		# total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
-# 		# # add track for confidence scores obtained of the label's testing reads
-# 		# pos_cs_track = sector.add_track((46, 56))
-# 		# pos_cs_track.axis()
-# 		# pos_cs_y = [0.0, 0.5, 1.0]
-# 		# pos_cs_y_labels = list(map(str, pos_cs_y))
-# 		# pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
-# 		# pos_cs_x = genome_positions
-# 		# pos_cs_x_values = confidence_scores
-# 		# pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
-# 		# print(f'added pos cs track')
-# 		# save figure
-# 		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
+	for sector in circos.sectors:
+		# add track for positions of the label's testing genome
+		genome_track = sector.add_track((98, 100))
+		genome_track.axis(fc="lightgrey")
+		interval = str(int(len(genome_positions)/5))
+		interval = int(interval[0]+ '0'*(len(interval)-1))
+		genome_x = list(range(0,len(genome_positions),interval))
+		base_pos_ticks = [genome_positions[i] for i in genome_x]
+		genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
+		print(genome_x_labels)
+		print(genome_x)
+		genome_track.xticks(genome_x, genome_x_labels)
+		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		print(f'added genome track')
+		# add track for coverage of label's training genome
+		cov_track = sector.add_track((85, 95))
+		cov_track.axis()
+		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 4))
+		cov_y_labels = list(map(str, cov_y))
+		cov_track.yticks(cov_y, cov_y_labels)
+		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
+		print(f'added coverage track')
+		# add track for count of unique taxa per position
+		unique_taxa_track = sector.add_track((72, 82))
+		unique_taxa_track.axis()
+		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 10))
+		unique_taxa_y_labels = list(map(str, unique_taxa_y))
+		unique_taxa_track.yticks(unique_taxa_y, unique_taxa_y_labels)
+		unique_taxa_x = genome_positions
+		unique_taxa_x_values = unique_taxa_count
+		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
+		# # add track for count of total taxa per position
+		# total_taxa_track = sector.add_track((59, 69))
+		# total_taxa_track.axis()
+		# total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 1000))
+		# print(total_taxa_y)
+		# total_taxa_y_labels = list(map(str, total_taxa_y))
+		# print(total_taxa_y_labels)
+		# total_taxa_track.yticks(total_taxa_y, total_taxa_y_labels)
+		# total_taxa_x = genome_positions
+		# total_taxa_x_values = total_taxa_count
+		# total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
+		# save figure
+		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
+
+
+def PlotCirclesTrainGenome(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
+	
+	# initialize a single circos sector
+	sectors = {'genome': len(genome_positions)}
+	circos = Circos(sectors=sectors, space=14)
+
+	for sector in circos.sectors:
+		# add track for positions of the label's testing genome
+		genome_track = sector.add_track((98, 100))
+		genome_track.axis(fc="lightgrey")
+		interval = str(int(len(genome_positions)/5))
+		interval = int(interval[0]+ '0'*(len(interval)-1))
+		genome_x = list(range(0,len(genome_positions),interval))
+		base_pos_ticks = [genome_positions[i] for i in genome_x]
+		genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
+		print(genome_x_labels)
+		print(genome_x)
+		genome_track.xticks(genome_x, genome_x_labels)
+		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		print(f'added genome track')
+		# add track for coverage of label's training genome
+		cov_track = sector.add_track((85, 95))
+		cov_track.axis()
+		cov_y = list(range(min([int(i) for i in pos_coverage]), max([math.ceil(j) for j in pos_coverage])+1, 4))
+		cov_y_labels = list(map(str, cov_y))
+		cov_track.yticks(cov_y, cov_y_labels)
+		cov_track.line(list(range(0,len(genome_positions),1)), pos_coverage, color="#00A5E3")
+		print(f'added coverage track')
+		# add track for count of unique taxa per position
+		unique_taxa_track = sector.add_track((72, 82))
+		unique_taxa_track.axis()
+		unique_taxa_y = list(range(min(unique_taxa_count), max(unique_taxa_count)+1, 10))
+		unique_taxa_y_labels = list(map(str, unique_taxa_y))
+		unique_taxa_track.yticks(unique_taxa_y, unique_taxa_y_labels)
+		unique_taxa_x = genome_positions
+		unique_taxa_x_values = unique_taxa_count
+		unique_taxa_track.line(unique_taxa_x, unique_taxa_x_values, color="#9e1369")
+		# # add track for count of total taxa per position
+		# total_taxa_track = sector.add_track((59, 69))
+		# total_taxa_track.axis()
+		# total_taxa_y = list(range(int(min(total_taxa_count)), int(max(total_taxa_count))+1, 1000))
+		# print(total_taxa_y)
+		# total_taxa_y_labels = list(map(str, total_taxa_y))
+		# print(total_taxa_y_labels)
+		# total_taxa_track.yticks(total_taxa_y, total_taxa_y_labels)
+		# total_taxa_x = genome_positions
+		# total_taxa_x_values = total_taxa_count
+		# total_taxa_track.line(total_taxa_x, total_taxa_x_values, color="#465d66")
+		# # add track for confidence scores obtained of the label's testing reads
+		# pos_cs_track = sector.add_track((46, 56))
+		# pos_cs_track.axis()
+		# pos_cs_y = [0.0, 0.5, 1.0]
+		# pos_cs_y_labels = list(map(str, pos_cs_y))
+		# pos_cs_track.yticks(pos_cs_y, pos_cs_y_labels)
+		# pos_cs_x = genome_positions
+		# pos_cs_x_values = confidence_scores
+		# pos_cs_track.scatter(pos_cs_x, pos_cs_x_values, color="#FC6238")
+		# print(f'added pos cs track')
+		# save figure
+		circos.savefig(os.path.join(output_dir, f'circos_{label}.png'))
 
 
 if __name__ == "__main__":
@@ -152,7 +204,7 @@ if __name__ == "__main__":
 					start_pos = int(line.rstrip().split('\t')[3])
 					for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 						seq_length_info[i].append(sequence_length[seq_id])
-						test_genome_taxa_count[i] += mapped_taxa
+						mapped_taxa_info[i] += mapped_taxa
 						
 
 	test_genome_seq_length = {i: 0 for i in range(args.test_genome_size)}
