@@ -125,14 +125,14 @@ if __name__ == "__main__":
 	pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
 
 	# get positions of training genome mapped by testing sequences
-	train_genome = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
+	train_genome_count = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
 	num_seq_in = 0
 	for seq_id, seq_align_info in fn_alignments.items():
 		if args.label in seq_align_info:
 			num_seq_in += 1
 			start_pos = seq_align_info[args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
-				test_to_train[i] += 1
+				train_genome_count[i] += 1
 			print(start_pos, sequence_length[seq_id], start_pos+sequence_length[seq_id]+1)
 	print(f'# FN sequences mapped to training genome: {num_seq_in}')
 
