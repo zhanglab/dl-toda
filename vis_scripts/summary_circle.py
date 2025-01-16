@@ -74,12 +74,13 @@ from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--test_samfile_dir', type=str, help='path to directory containing sam files')
-	parser.add_argument('--train_samfile', type=str, help='path to sam file with mapping of training reads to training genome')
+	parser.add_argument('--test_train_samfiles', type=str, help='path to directory containing sam files with mapping of testing sequences to training genomes')
+	parser.add_argument('--train_train_samfile', type=str, help='path to sam file with mapping of training sequences to training genome')
+	parser.add_argument('--test_test_samfile', type=str, help='path to sam file with mapping of testing sequences to testing genome')
 	parser.add_argument('--testing_fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
 	parser.add_argument('--label', type=str, help='label of species investigated')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold')
-	parser.add_argument('--genome_size', type=float, help='size in bp of genome of interest')
+	parser.add_argument('--test_genome_size', type=int, help='size in bp of genome of interest')
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
 	parser.add_argument('--dltoda_taxonomy', type=str, help='path to file containing dltoda taxonomy')
@@ -101,37 +102,75 @@ if __name__ == "__main__":
 
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
 
-	# get alignment info for FN sequences
+	# get alignment info for FN sequences with training genomes
 	fn_alignments = defaultdict(dict)
 	samfiles = glob.glob(os.path.join(args.test_samfile_dir, '*.sam'))
 	mapped_labels = defaultdict(int)
 	for s in samfiles:
 		with open(s, 'r') as f:
 			sam_label = s.split('/')[-1].split('_')[0]
-			# if sam_label != args.label:
 			print(sam_label)
 			for line in f:
 				if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and line.rstrip().split('\t')[5] != '*':
 					seq_id = line.rstrip().split('\t')[0]
 					if seq_id in fn_sequences:
 						start_pos = int(line.rstrip().split('\t')[3])
-						aligned_ref = line.rstrip().split('\t')[2]
-						cigar_string = line.rstrip().split('\t')[5]
-						fn_alignments[seq_id][sam_label] = [start_pos, aligned_ref, cigar_string]
+						fn_alignments[seq_id][sam_label] = start_pos
 						mapped_labels[sam_label] += 1
-			break
-
-	print(fn_alignments)
 
 	# get coverage of training genome with training sequences
 	ref_info, alignments = LoadData(args.train_samfile)
-	training_genome_length = ref_info[0][1]
-	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref_info[0][0]], training_genome_length)
-	pos_coverage = [dict_coverage[i] for i in range(training_genome_length)]
+	training_genome_size = ref_info[0][1]
+	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref_info[0][0]], training_genome_size)
+	pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
 
 	# get positions of training genome mapped by testing sequences
-	test_to_train = defaultdict(int)  # key = training genome position, value = number of mapped FN sequences
-	# for k, v in fn_alignments.items():
+	train_genome = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
+	num_seq_in = 0
+	for seq_id, seq_align_info in fn_alignments.items():
+		if args.label in seq_align_info:
+			num_seq_in += 1
+			start_pos = seq_align_info[args.label][0]
+			for i in range(start_pos, start_pos+len(sequence_length[seq_id])+1, 1):
+				test_to_train[i] += 1
+			print(start_pos, len(sequence_length[seq_id]), start_pos+len(sequence_length[seq_id])+1)
+	print(f'# FN sequences mapped to training genome: {num_seq_in}')
+
+
+	# get average FN sequence length and number of mapped taxa at each mapped position of the testing genome
+	seq_length_info = defaultdict(list)
+	mapped_taxa_info = defaultdict(list)
+	with open(args.test_test_samfile, 'r') as f:
+		for line in f:
+			if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and line.rstrip().split('\t')[5] != '*':
+				seq_id = line.rstrip().split('\t')[0]
+				if seq_id in fn_sequences:
+					mapped_taxa = list(fn_alignments[seq_id].values())
+					if args.label in mapped_taxa:
+						mapped_taxa.remove(args.label)
+
+					start_pos = int(line.rstrip().split('\t')[3])
+					for i in range(start_pos, start_pos+len(sequence_length[seq_id])+1, 1):
+						seq_length_info[i].append(len(sequence_length[seq_id]))
+						test_genome_taxa_count[i] += mapped_taxa
+						
+
+	test_genome_seq_length = {i: 0 for i in range(args.test_genome_size)}
+	for k, v in seq_length_info.items():
+		test_genome_seq_length[k] = statistics.mean(v)
+	# print(test_genome_seq_length)
+
+	test_genome_taxa_count = {i: 0 for i in range(args.test_genome_size)} 
+	for k, v in mapped_taxa_info.items():
+		test_genome_taxa_count[k] = len(set(v))
+
+	
+
+
+
+
+
+
 
 
 
