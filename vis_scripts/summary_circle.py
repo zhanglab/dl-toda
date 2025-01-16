@@ -119,6 +119,7 @@ if __name__ == "__main__":
 						cigar_string = line.rstrip().split('\t')[5]
 						fn_alignments[seq_id][sam_label] = [start_pos, aligned_ref, cigar_string]
 						mapped_labels[sam_label] += 1
+						break
 
 	print(fn_alignments)
 
