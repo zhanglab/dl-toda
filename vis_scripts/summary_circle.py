@@ -131,9 +131,9 @@ if __name__ == "__main__":
 		if args.label in seq_align_info:
 			num_seq_in += 1
 			start_pos = seq_align_info[args.label]
-			for i in range(start_pos, start_pos+len(sequence_length[seq_id])+1, 1):
+			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				test_to_train[i] += 1
-			print(start_pos, len(sequence_length[seq_id]), start_pos+len(sequence_length[seq_id])+1)
+			print(start_pos, sequence_length[seq_id], start_pos+sequence_length[seq_id]+1)
 	print(f'# FN sequences mapped to training genome: {num_seq_in}')
 
 
@@ -150,8 +150,8 @@ if __name__ == "__main__":
 						mapped_taxa.remove(args.label)
 
 					start_pos = int(line.rstrip().split('\t')[3])
-					for i in range(start_pos, start_pos+len(sequence_length[seq_id])+1, 1):
-						seq_length_info[i].append(len(sequence_length[seq_id]))
+					for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
+						seq_length_info[i].append(sequence_length[seq_id])
 						test_genome_taxa_count[i] += mapped_taxa
 						
 
