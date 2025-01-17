@@ -10,7 +10,7 @@ from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
 
-def PlotCirclesTrainGenome(genome_positions, train_pos_coverage, test_pos_count, output_dir, label):
+def PlotCirclesFnTrainGenome(genome_positions, train_pos_coverage, test_pos_count, output_dir, label):
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_positions)}
 	circos = Circos(sectors=sectors, space=14)
@@ -50,7 +50,7 @@ def PlotCirclesTrainGenome(genome_positions, train_pos_coverage, test_pos_count,
 		circos.savefig(os.path.join(output_dir, f'circos_fn_train_genome{label}.png'))
 
 
-def PlotCirclesTestGenome(genome_positions, test_genome_seq_length, test_genome_taxa_count, output_dir, label):
+def PlotCirclesFnTestGenome(genome_positions, test_genome_seq_length, test_genome_taxa_count, output_dir, label):
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_positions)}
 	circos = Circos(sectors=sectors, space=14)
@@ -201,7 +201,7 @@ if __name__ == "__main__":
 	ref_info, alignments = LoadData(args.train_train_samfile)
 	training_genome_size = ref_info[0][1]
 	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref_info[0][0]], training_genome_size)
-	pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
+	train_pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
 
 	# get positions of training genome mapped by testing sequences
 	train_genome_count = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
@@ -246,10 +246,12 @@ if __name__ == "__main__":
 		test_genome_taxa_count[k+1] = len(set(v))
 
 	train_genome_pos = list(range(1, training_genome_size+1, 1))
-	PlotCirclesTrainGenome(train_genome_pos, train_pos_coverage, test_pos_count, output_dir, label)
+	PlotCirclesFnTrainGenome(train_genome_pos, train_pos_coverage, test_pos_count, output_dir, label)
 
 	test_genome_pos = list(range(1, args.test_genome_size+1, 1))
-	PlotCirclesTestGenome(test_genome_pos, test_genome_seq_length, test_genome_taxa_count, output_dir, label)
+	PlotCirclesFnTestGenome(test_genome_pos, test_genome_seq_length, test_genome_taxa_count, output_dir, label)
+
+	# get FP sequences
 
 	# print(fn_alignments)
 	# print(len(mapped_labels))
