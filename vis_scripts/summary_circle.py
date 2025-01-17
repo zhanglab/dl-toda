@@ -10,7 +10,7 @@ from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
 
-def PlotCirclesTrainGenome(genome_positions, unique_taxa_count, total_taxa_count, confidence_scores, pos_coverage, output_dir, label):
+def PlotCirclesTrainGenome(genome_positions, pos_coverage, output_dir, label):
 	
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_positions)}
