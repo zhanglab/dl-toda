@@ -170,16 +170,20 @@ if __name__ == "__main__":
 	sequence_length = {line.split('\n')[0][1:]: len(line.split('\n')[1]) for line in sequences}
 	print(sequence_length['seq|100|num_0'])
 
-	# get FN sequences
+	# get FN and FP sequences
 	fn_sequences = set()
+	fp_sequences = set()
 	with open(args.testing_results, 'r') as f:
 		for count, line in enumerate(f):
-			if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
-				prob = float(line.rstrip().split('\t')[2])
-				if prob >= args.prob_threshold:
+			prob = float(line.rstrip().split('\t')[2])
+			if prob >= args.prob_threshold:
+				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
 					fn_sequences.add(sequences[count].split('\n')[0][1:])
+				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
+					fp_sequences.add(sequences[count].split('\n')[0][1:])
 
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
+	print(f'#FP for label {args.label}: {len(fp_sequences)}')
 
 	# get alignment info for FN sequences with training genomes
 	fn_alignments = defaultdict(dict)
@@ -204,7 +208,7 @@ if __name__ == "__main__":
 	train_pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
 
 	# get positions of training genome mapped by testing sequences
-	train_genome_count = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
+	train_genome_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
 	mapped_seq_count = 0
 	unmapped_seq_length = defaultdict(int)
 	for seq_id, seq_align_info in fn_alignments.items():
@@ -212,7 +216,7 @@ if __name__ == "__main__":
 			mapped_seq_count += 1
 			start_pos = seq_align_info[args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
-				train_genome_count[i] += 1
+				train_genome_count[i-1] += 1
 		else:
 			unmapped_seq_length[seq_id] = sequence_length[seq_id]
 			# print(start_pos, sequence_length[seq_id], start_pos+sequence_length[seq_id]+1)
@@ -239,19 +243,19 @@ if __name__ == "__main__":
 
 	test_genome_seq_length = [0 for i in range(args.test_genome_size)]
 	for k, v in seq_length_info.items():
-		test_genome_seq_length[k+1] = statistics.mean(v)
+		test_genome_seq_length[k-1] = statistics.mean(v)
 
 	test_genome_taxa_count = [0 for i in range(args.test_genome_size)]
 	for k, v in mapped_taxa_info.items():
-		test_genome_taxa_count[k+1] = len(set(v))
+		test_genome_taxa_count[k-1] = len(set(v))
 
 	train_genome_pos = list(range(1, training_genome_size+1, 1))
-	PlotCirclesFnTrainGenome(train_genome_pos, train_pos_coverage, test_pos_count, output_dir, label)
+	PlotCirclesFnTrainGenome(train_genome_pos, train_pos_coverage, train_genome_count, args.output_dir, label)
 
 	test_genome_pos = list(range(1, args.test_genome_size+1, 1))
-	PlotCirclesFnTestGenome(test_genome_pos, test_genome_seq_length, test_genome_taxa_count, output_dir, label)
+	PlotCirclesFnTestGenome(test_genome_pos, test_genome_seq_length, test_genome_taxa_count, args.output_dir, label)
 
-	# get FP sequences
+	
 
 	# print(fn_alignments)
 	# print(len(mapped_labels))
