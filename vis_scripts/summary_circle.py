@@ -205,15 +205,19 @@ if __name__ == "__main__":
 
 	# get positions of training genome mapped by testing sequences
 	train_genome_count = {i: 0 for i in range(training_genome_size)}  # key = training genome position, value = number of mapped FN sequences
-	num_seq_in = 0
+	mapped_seq_count = 0
+	unmapped_seq_length = defaultdict(int)
 	for seq_id, seq_align_info in fn_alignments.items():
 		if args.label in seq_align_info:
-			num_seq_in += 1
+			mapped_seq_count += 1
 			start_pos = seq_align_info[args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_count[i] += 1
-			print(start_pos, sequence_length[seq_id], start_pos+sequence_length[seq_id]+1)
-	print(f'# FN sequences mapped to training genome: {num_seq_in}')
+		else:
+			unmapped_seq_length[seq_id] = sequence_length[seq_id]
+			# print(start_pos, sequence_length[seq_id], start_pos+sequence_length[seq_id]+1)
+	print(f'# FN sequences mapped to training genome: {mapped_seq_count}')
+	print(f'# FN sequences unmapped to training genome: {len(unmapped_seq_length)}\t{statistics.mean(list(unmapped_seq_length.values()))}\t{statistics.median(list(unmapped_seq_length.values()))}\t{min(list(unmapped_seq_length.values()))}\t{max(list(unmapped_seq_length.values()))}')
 
 	# get average FN sequence length and number of mapped taxa at each mapped position of the testing genome
 	seq_length_info = defaultdict(list)
