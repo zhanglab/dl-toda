@@ -261,7 +261,7 @@ def create_tfrecords(args):
                     # label = ""
                     for line in f:
                         if line_count == 1:
-                            print(line.rstrip().split('|'))
+                            print(line.rstrip().split('|')[1])
                             label = line.rstrip().split('|')[1]
                         elif line_count == 2:
                             dna_sequence = line.rstrip()
