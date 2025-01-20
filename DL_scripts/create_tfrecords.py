@@ -6,7 +6,6 @@ import random
 import datetime
 from collections import defaultdict
 import statistics
-# from Bio import SeqIO
 import argparse
 import json
 import glob
@@ -15,8 +14,6 @@ import gzip
 import multiprocessing as mp
 from tfrecords_utils import vocab_dict, get_kmer_arr, prepare_input_data
 from tfrecords_bert_utils import *
-sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from dataprep_scripts.utils import load_fq_file
 
 
 def wrap_vector(value):
@@ -264,9 +261,9 @@ def create_tfrecords(args):
                     # label = ""
                     for line in f:
                         if line_count == 1:
-                            label = line.rstrip().split('\t')[0].split('|')[1]
+                            label = line.rstrip().split('|')[1]
                         elif line_count == 2:
-                            dna_sequence = line.rstrip().split('\t')[1]
+                            dna_sequence = line.rstrip()
                         elif line_count == 4:         
                             # parse dna sequence into kmers
                             dna_list = prepare_input_data(args, dna_sequence)
