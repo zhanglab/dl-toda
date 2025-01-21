@@ -102,7 +102,7 @@ def PlotCirclesFnTestGenome(genome_positions, test_genome_seq_length, test_genom
 		# add track for count of unique taxa per position
 		taxa_count_track = sector.add_track((72, 82))
 		taxa_count_track.axis()
-		taxa_count_y = list(range(min(test_genome_taxa_count), max(test_genome_taxa_count)+1, 10))
+		taxa_count_y = list(range(min(test_genome_taxa_count), max(test_genome_taxa_count)+1, 1000))
 		taxa_count_y_labels = list(map(str, taxa_count_y))
 		taxa_count_track.yticks(taxa_count_y, taxa_count_y_labels)
 		taxa_count_x = genome_positions
@@ -222,6 +222,7 @@ if __name__ == "__main__":
 						start_pos = int(line.rstrip().split('\t')[3])
 						fn_alignments[seq_id][sam_label] = start_pos
 						fn_mapped_labels[sam_label] += 1
+						print(line)
 					if seq_id in fp_sequences:
 						start_pos = int(line.rstrip().split('\t')[3])
 						fp_alignments[seq_id][sam_label] = start_pos
