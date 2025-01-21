@@ -4,7 +4,7 @@ import glob
 import argparse
 import statistics
 from collections import defaultdict
-# from pycirclize import Circos
+from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
