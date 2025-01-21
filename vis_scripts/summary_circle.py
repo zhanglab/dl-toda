@@ -262,7 +262,7 @@ if __name__ == "__main__":
 	# print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{min(unmapped_fp_seq_length)}\t{max(unmapped_fp_seq_length)}')
 
 	# get average FP sequence length and number of taxa that were misclassified at each mapped position of the training genome	
-	fn_seq_length_info, fn_mapped_taxa_info = GetSeqLength(args.test_test_samfile, , fn_alignments)
+	fn_seq_length_info, fn_mapped_taxa_info = GetSeqLength(args.test_test_samfile, list(fn_sequences), fn_alignments)
 
 	fn_test_genome_seq_length = [0 for i in range(args.test_genome_size)]
 	for k, v in fn_seq_length_info.items():
