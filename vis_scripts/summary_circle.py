@@ -2,6 +2,7 @@ import sys
 import os
 import glob
 import argparse
+import math
 import statistics
 from collections import defaultdict
 from pycirclize import Circos
@@ -267,7 +268,6 @@ if __name__ == "__main__":
 	fn_test_genome_seq_length = [0 for i in range(args.test_genome_size)]
 	print(f'fn_test_genome_seq_length: {fn_test_genome_seq_length[:10]}\t{len(fn_test_genome_seq_length)}')
 	for k, v in fn_seq_length_info.items():
-		print(k)
 		fn_test_genome_seq_length[k-1] = statistics.mean(v)
 
 	fn_test_genome_taxa_count = [0 for i in range(args.test_genome_size)]
