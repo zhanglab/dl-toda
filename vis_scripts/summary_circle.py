@@ -241,7 +241,7 @@ if __name__ == "__main__":
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fn_count[i-1] += 1
 		else:
-			unmapped_fn_seq_length.append(len(sequence_length[seq_id]))
+			unmapped_fn_seq_length.append(sequence_length[seq_id])
 
 	print(f'# FN sequences mapped to training genome: {mapped_fn_seq_count}')
 	print(f'# FN sequences unmapped to training genome: {len(unmapped_fn_seq_length)}\t{statistics.mean(unmapped_fn_seq_length)}\t{statistics.median(unmapped_fn_seq_length)}\t{min(unmapped_fn_seq_length)}\t{max(unmapped_fn_seq_length)}')
