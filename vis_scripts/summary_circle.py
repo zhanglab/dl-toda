@@ -62,8 +62,9 @@ def PlotCirclesFnTrainGenome(genome_positions, train_pos_coverage, test_pos_coun
 		test_count_track = sector.add_track((72, 82))
 		test_count_track.axis()
 		test_count_y = list(range(min(test_pos_count), max(test_pos_count)+1, 10))
+		print(f'min(test_pos_count): {min(test_pos_count)}\tmax(test_pos_count)+1: {max(test_pos_count)+1}')
 		test_count_y_labels = list(map(str, test_count_y))
-		test_count_track.yticks(test_count_y, test_pos_count)
+		test_count_track.yticks(test_count_y, test_count_y_labels)
 		test_count_x = genome_positions
 		test_count_x_values = test_pos_count
 		test_count_track.line(test_count_x, test_count_x_values, color="#9e1369")
@@ -235,15 +236,18 @@ if __name__ == "__main__":
 	train_genome_fn_count = [0 for i in range(training_genome_size)]
 	mapped_fn_seq_count = 0
 	unmapped_fn_seq_length = []
+	index = 0
 	for seq_id in list(fn_sequences):
 		if seq_id in fn_alignments and args.label in fn_alignments[seq_id]:
 			mapped_fn_seq_count += 1
 			start_pos = fn_alignments[seq_id][args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fn_count[i-1] += 1
+				if index == 0:
+					index = i-1
 		else:
 			unmapped_fn_seq_length.append(sequence_length[seq_id])
-	print(f'train_genome_fn_count: {len(train_genome_fn_count)}\t{train_genome_fn_count[:10]}')
+	print(f'train_genome_fn_count: {len(train_genome_fn_count)}\t{train_genome_fn_count[:10]}\t{train_genome_fn_count[index]}')
 	print(f'# FN sequences mapped to training genome: {mapped_fn_seq_count}')
 	print(f'# FN sequences unmapped to training genome: {len(unmapped_fn_seq_length)}\t{statistics.mean(unmapped_fn_seq_length)}\t{statistics.median(unmapped_fn_seq_length)}\t{min(unmapped_fn_seq_length)}\t{max(unmapped_fn_seq_length)}')
 
