@@ -1,4 +1,4 @@
-import sys
+ import sys
 import os
 import glob
 import argparse
@@ -8,6 +8,26 @@ from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
+
+def GetSeqLength(samfile, target_sequences, alignments):
+	# get average FN sequence length and number of mapped taxa at each mapped position of the testing genome
+	seq_length_info = defaultdict(list)
+	mapped_taxa_info = defaultdict(list)
+	with open(samfile, 'r') as f:
+		for line in f:
+			if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and line.rstrip().split('\t')[5] != '*':
+				seq_id = line.rstrip().split('\t')[0]
+				if seq_id in target_sequences:
+					mapped_taxa = list(alignments[seq_id].values())
+					if args.label in mapped_taxa:
+						mapped_taxa.remove(args.label)
+
+					start_pos = int(line.rstrip().split('\t')[3])
+					for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
+						seq_length_info[i].append(sequence_length[seq_id])
+						mapped_taxa_info[i] += mapped_taxa
+
+	return seq_length_info, mapped_taxa_info
 
 
 def PlotCirclesFnTrainGenome(genome_positions, train_pos_coverage, test_pos_count, output_dir, label):
@@ -240,26 +260,8 @@ if __name__ == "__main__":
 	print(f'# FP sequences mapped to training genome: {mapped_fp_seq_count}')
 	print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(list(unmapped_fp_seq_length.values()))}\t{statistics.median(list(unmapped_fp_seq_length.values()))}\t{min(list(unmapped_fp_seq_length.values()))}\t{max(list(unmapped_fp_seq_length.values()))}')
 
-
-	# get average FN sequence length and number of mapped taxa at each mapped position of the testing genome
-	seq_length_info = defaultdict(list)
-	mapped_taxa_info = defaultdict(list)
-	with open(args.test_test_samfile, 'r') as f:
-		for line in f:
-			if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and line.rstrip().split('\t')[5] != '*':
-				seq_id = line.rstrip().split('\t')[0]
-				if seq_id in fn_sequences:
-					mapped_taxa = list(fn_alignments[seq_id].values())
-					if args.label in mapped_taxa:
-						mapped_taxa.remove(args.label)
-
-					start_pos = int(line.rstrip().split('\t')[3])
-					for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
-						seq_length_info[i].append(sequence_length[seq_id])
-						mapped_taxa_info[i] += mapped_taxa
-	
-	# get number of taxa that were misclassified to at each mapped position of the training genome	
-		
+	# get average FP sequence length and number of taxa that were misclassified to at each mapped position of the training genome	
+	seq_length_info, mapped_taxa_info = GetSeqLength(samfile, target_sequences, alignments)
 
 	test_genome_seq_length = [0 for i in range(args.test_genome_size)]
 	for k, v in seq_length_info.items():
