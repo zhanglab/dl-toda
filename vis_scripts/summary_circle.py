@@ -63,7 +63,7 @@ def PlotCirclesFnTrainGenome(genome_positions, train_pos_coverage, test_pos_coun
 		test_count_track.axis()
 		test_count_y = list(range(min(test_pos_count), max(test_pos_count)+1, 10))
 		test_count_y_labels = list(map(str, test_count_y))
-		test_count_track.yticks(test_count_y, test_count_labels)
+		test_count_track.yticks(test_count_y, test_pos_count)
 		test_count_x = genome_positions
 		test_count_x_values = test_pos_count
 		test_count_track.line(test_count_x, test_count_x_values, color="#9e1369")
