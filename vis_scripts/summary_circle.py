@@ -237,7 +237,7 @@ if __name__ == "__main__":
 	for seq_id in list(fn_sequences):
 		if seq_id in fn_alignments and args.label in fn_alignments[seq_id]:
 			mapped_fn_seq_count += 1
-			start_pos = seq_align_info[args.label]
+			start_pos = fn_alignments[seq_id][args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fn_count[i-1] += 1
 		else:
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 	for seq_id in list(fp_sequences):
 		if seq_id in fp_alignments and args.label in fp_alignments[seq_id]:
 			mapped_fp_seq_count += 1
-			start_pos = seq_align_info[args.label]
+			start_pos = fp_alignments[seq_id][args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fp_count[i-1] += 1
 		else:
