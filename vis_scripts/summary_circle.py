@@ -213,7 +213,6 @@ if __name__ == "__main__":
 	for s in samfiles:
 		with open(s, 'r') as f:
 			sam_label = s.split('/')[-1].split('_')[0]
-			print(sam_label)
 			for line in f:
 				if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD'] and line.rstrip().split('\t')[5] != '*':
 					seq_id = line.rstrip().split('\t')[0]
@@ -234,31 +233,33 @@ if __name__ == "__main__":
 	# get positions of training genome mapped by FN testing sequences
 	train_genome_fn_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
 	mapped_fn_seq_count = 0
-	unmapped_fn_seq_length = defaultdict(int)
-	for seq_id, seq_align_info in fn_alignments.items():
-		if args.label in seq_align_info:
+	unmapped_fn_seq_length = []
+	for seq_id in list(fn_sequences):
+		if seq_id in fn_alignments and args.label in fn_alignments[seq_id]:
 			mapped_fn_seq_count += 1
 			start_pos = seq_align_info[args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fn_count[i-1] += 1
+		else:
+			unmapped_fn_seq_length.append(len(sequence_length[seq_id]))
 
 	print(f'# FN sequences mapped to training genome: {mapped_fn_seq_count}')
-	print(f'# FN sequences unmapped to training genome: {len(unmapped_fn_seq_length)}\t{statistics.mean(list(unmapped_fn_seq_length.values()))}\t{statistics.median(list(unmapped_fn_seq_length.values()))}\t{min(list(unmapped_fn_seq_length.values()))}\t{max(list(unmapped_fn_seq_length.values()))}')
+	print(f'# FN sequences unmapped to training genome: {len(unmapped_fn_seq_length)}\t{statistics.mean(unmapped_fn_seq_length)}\t{statistics.median(unmapped_fn_seq_length)}\t{min(unmapped_fn_seq_length)}\t{max(unmapped_fn_seq_length)}')
 
 	# get positions of training genome mapped by FP testing sequences
 	train_genome_fp_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
 	mapped_fp_seq_count = 0
-	unmapped_fp_seq_length = defaultdict(int)
-	for seq_id, seq_align_info in fp_alignments.items():
-		if args.label in seq_align_info:
+	unmapped_fp_seq_length = []
+	for seq_id in list(fp_sequences):
+		if seq_id in fp_alignments and args.label in fp_alignments[seq_id]:
 			mapped_fp_seq_count += 1
 			start_pos = seq_align_info[args.label]
 			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
 				train_genome_fp_count[i-1] += 1
 		else:
-			unmapped_fp_seq_length[seq_id] = sequence_length[seq_id]
+			unmapped_fp_seq_length.append(sequence_length[seq_id])
 	print(f'# FP sequences mapped to training genome: {mapped_fp_seq_count}')
-	print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(list(unmapped_fp_seq_length.values()))}\t{statistics.median(list(unmapped_fp_seq_length.values()))}\t{min(list(unmapped_fp_seq_length.values()))}\t{max(list(unmapped_fp_seq_length.values()))}')
+	print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{min(unmapped_fp_seq_length)}\t{max(unmapped_fp_seq_length)}')
 
 	# get average FP sequence length and number of taxa that were misclassified to at each mapped position of the training genome	
 	seq_length_info, mapped_taxa_info = GetSeqLength(samfile, target_sequences, alignments)
