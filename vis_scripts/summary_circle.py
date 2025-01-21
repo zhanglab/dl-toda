@@ -231,7 +231,7 @@ if __name__ == "__main__":
 	train_pos_coverage = [dict_coverage[i] for i in range(training_genome_size)]
 
 	# get positions of training genome mapped by FN testing sequences
-	train_genome_fn_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
+	train_genome_fn_count = [0 for i in range(training_genome_size)]
 	mapped_fn_seq_count = 0
 	unmapped_fn_seq_length = []
 	for seq_id in list(fn_sequences):
@@ -246,37 +246,37 @@ if __name__ == "__main__":
 	print(f'# FN sequences mapped to training genome: {mapped_fn_seq_count}')
 	print(f'# FN sequences unmapped to training genome: {len(unmapped_fn_seq_length)}\t{statistics.mean(unmapped_fn_seq_length)}\t{statistics.median(unmapped_fn_seq_length)}\t{min(unmapped_fn_seq_length)}\t{max(unmapped_fn_seq_length)}')
 
-	# get positions of training genome mapped by FP testing sequences
-	train_genome_fp_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
-	mapped_fp_seq_count = 0
-	unmapped_fp_seq_length = []
-	for seq_id in list(fp_sequences):
-		if seq_id in fp_alignments and args.label in fp_alignments[seq_id]:
-			mapped_fp_seq_count += 1
-			start_pos = fp_alignments[seq_id][args.label]
-			for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
-				train_genome_fp_count[i-1] += 1
-		else:
-			unmapped_fp_seq_length.append(sequence_length[seq_id])
-	print(f'# FP sequences mapped to training genome: {mapped_fp_seq_count}')
-	print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{min(unmapped_fp_seq_length)}\t{max(unmapped_fp_seq_length)}')
+	# # get positions of training genome mapped by FP testing sequences
+	# train_genome_fp_count = [0 for i in range(training_genome_size)]  # key = training genome position, value = number of mapped FN sequences
+	# mapped_fp_seq_count = 0
+	# unmapped_fp_seq_length = []
+	# for seq_id in list(fp_sequences):
+	# 	if seq_id in fp_alignments and args.label in fp_alignments[seq_id]:
+	# 		mapped_fp_seq_count += 1
+	# 		start_pos = fp_alignments[seq_id][args.label]
+	# 		for i in range(start_pos, start_pos+sequence_length[seq_id]+1, 1):
+	# 			train_genome_fp_count[i-1] += 1
+	# 	else:
+	# 		unmapped_fp_seq_length.append(sequence_length[seq_id])
+	# print(f'# FP sequences mapped to training genome: {mapped_fp_seq_count}')
+	# print(f'# FP sequences unmapped to training genome: {len(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{statistics.mean(unmapped_fp_seq_length)}\t{min(unmapped_fp_seq_length)}\t{max(unmapped_fp_seq_length)}')
 
-	# get average FP sequence length and number of taxa that were misclassified to at each mapped position of the training genome	
-	seq_length_info, mapped_taxa_info = GetSeqLength(samfile, target_sequences, alignments)
+	# get average FP sequence length and number of taxa that were misclassified at each mapped position of the training genome	
+	fn_seq_length_info, fn_mapped_taxa_info = GetSeqLength(args.test_test_samfile, , fn_alignments)
 
-	test_genome_seq_length = [0 for i in range(args.test_genome_size)]
-	for k, v in seq_length_info.items():
-		test_genome_seq_length[k-1] = statistics.mean(v)
+	fn_test_genome_seq_length = [0 for i in range(args.test_genome_size)]
+	for k, v in fn_seq_length_info.items():
+		fn_test_genome_seq_length[k-1] = statistics.mean(v)
 
-	test_genome_taxa_count = [0 for i in range(args.test_genome_size)]
-	for k, v in mapped_taxa_info.items():
-		test_genome_taxa_count[k-1] = len(set(v))
+	fn_test_genome_taxa_count = [0 for i in range(args.test_genome_size)]
+	for k, v in fn_mapped_taxa_info.items():
+		fn_test_genome_taxa_count[k-1] = len(set(v))
 
 	train_genome_pos = list(range(1, training_genome_size+1, 1))
-	PlotCirclesFnTrainGenome(train_genome_pos, train_pos_coverage, train_genome_count, args.output_dir, args.label)
+	PlotCirclesFnTrainGenome(train_genome_pos, train_pos_coverage, train_genome_fn_count, args.output_dir, args.label)
 
 	test_genome_pos = list(range(1, args.test_genome_size+1, 1))
-	PlotCirclesFnTestGenome(test_genome_pos, test_genome_seq_length, test_genome_taxa_count, args.output_dir, args.label)
+	PlotCirclesFnTestGenome(test_genome_pos, fn_test_genome_seq_length, fn_test_genome_taxa_count, args.output_dir, args.label)
 
 	
 
