@@ -110,8 +110,8 @@ def PlotCircos(genome_pos, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos
 		fn_count_track.axis()
 		fn_count_y = list(range(min(fn_mapped_pos_info), max(fn_mapped_pos_info)+1, 10))
 		print(f'min(test_pos_count): {min(fn_mapped_pos_info)}\tmax(test_pos_count)+1: {max(fn_mapped_pos_info)+1}')
-		fn_count_y_labels = list(map(str, test_count_y))
-		fn_count_track.yticks(test_count_y, test_count_y_labels)
+		fn_count_y_labels = list(map(str, fn_count_y))
+		fn_count_track.yticks(fn_count_y, fn_count_y_labels)
 		fn_count_x = genome_pos
 		fn_count_x_values = fn_mapped_pos_info
 		fn_count_track.heatmap(fn_mapped_pos_info, cmap="viridis")
@@ -173,7 +173,10 @@ if __name__ == "__main__":
 	fn_alignments_pos_train, fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_train)
 	fp_alignments, fp_mapped_reads_id, fp_unmapped_reads_id = GetAlignmentsInfo(fp_sequences, args.neg_test_pos_train)
 	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_train)
-
+	print('FN - neg train', fn_mapped_reads_id_neg_train, fn_unmapped_reads_id_neg_train)
+	print('FN - pos train', fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train)
+	print('FP - pos train', fp_mapped_reads_id, fp_unmapped_reads_id)
+	print('TP - pos train', tp_mapped_reads_id, tp_unmapped_reads_id)
 	GetSeqLength(fn_mapped_reads_id_neg_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fn_mapped_reads_id_pos_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fp_mapped_reads_id, sequence_length, 'other labels mapped testing FP sequences to label 239 training genome')
