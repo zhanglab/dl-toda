@@ -186,11 +186,11 @@ if __name__ == "__main__":
 	print(f'mean: {statistics.mean(train_pos_coverage)}\tmedian: {statistics.median(train_pos_coverage)}\tmin: {min(train_pos_coverage)}\tmax: {max(train_pos_coverage)}')
 
 	# get number of unique taxa mapped by FN testing reads per position of the label's training genome
-	fn_taxa_count, fn_mapped_pos_info = GetTaxaInfo(fn_alignments, args.label, sequence_length, training_genome_size, 'FN')
+	fn_taxa_count, fn_mapped_pos_info = GetTaxaAndMappingInfo(fn_alignments, args.label, sequence_length, training_genome_size, 'FN')
 	# get number of unique taxa mapped by FP testing reads per position of the label's training genome
-	fp_taxa_count, fp_mapped_pos_info = GetTaxaInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
+	fp_taxa_count, fp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	# get positions on the label's training genome where TP testing reads map
-	_, tp_mapped_pos_info = GetTaxaInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
+	_, tp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	
 	train_genome_pos = list(range(1, training_genome_size+1, 1))
 	# create circos plot with FN reads info
