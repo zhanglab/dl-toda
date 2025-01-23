@@ -17,12 +17,12 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type)
 
 	if type == 'FN':
 		for read_id in alignments.keys():
-			mapped_taxa = list(set(alignments[read_id].values()))
+			mapped_taxa = set(list(alignments[read_id].values()))
 			if label in mapped_taxa:
 				mapped_taxa.remove(label)
 			start_pos = int(line.rstrip().split('\t')[3])
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
-				mapped_taxa_info[i] += mapped_taxa
+				mapped_taxa_info[i] += list(mapped_taxa)
 				mapped_pos_info[i-1] += 1
 	
 	elif type == 'FP':
