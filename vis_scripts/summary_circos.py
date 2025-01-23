@@ -16,27 +16,27 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type)
 	mapped_pos_info = [0 for i in range(genome_size)]
 
 	if type == 'FN':
-		for read_id in alignments.keys():
-			mapped_taxa = alignments[read_id].values()
-			print(mapped_taxa)
-			if label in mapped_taxa:
-				mapped_taxa.remove(label)
-			start_pos = int(line.rstrip().split('\t')[3])
+		for read_id, data in alignments.items():
+			start_pos = data[1]
+			seq_label = data[0]
+			print(f'FN\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
-				mapped_taxa_info[i] += mapped_taxa
+				mapped_taxa_info[i].append(seq_label)
 				mapped_pos_info[i-1] += 1
 	
 	elif type == 'FP':
-		for read_id in alignments.keys():
+		for read_id, data in alignments.items():
 			read_label = read_id.split('|')[1]
-			start_pos = int(line.rstrip().split('\t')[3])
+			start_pos = data[1]
+			print(f'FP\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
 				mapped_taxa_info[i] += [read_label]
 				mapped_pos_info[i-1] += 1
 
 	elif type == 'TP':
-		for read_id in alignments.keys():
-			start_pos = int(line.rstrip().split('\t')[3])
+		for read_id, data in alignments.items():
+			start_pos = data[1]
+			print(f'TP\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
 				mapped_pos_info[i-1] += 1
 
@@ -48,7 +48,7 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type)
 
 
 def GetAlignmentsInfo(sequences, samfile):
-	alignments = defaultdict(dict)
+	alignments = defaultdict(list)
 	mapped_reads_id = []
 	unmapped_reads_id = []
 	with open(samfile, 'r') as f:
@@ -59,9 +59,10 @@ def GetAlignmentsInfo(sequences, samfile):
 					if line.rstrip().split('\t')[5] != '*':
 						seq_id = line.rstrip().split('\t')[2]
 						seq_label = seq_to_labels[seq_id]
+						print(f'{seq_label}\t{seq_id}')
 						start_pos = int(line.rstrip().split('\t')[3])
-						mapping_score =int(line.rstrip().split('\t')[3])
-						alignments[read_id][seq_label] = [start_pos, mapping_score]
+						mapping_score =int(line.rstrip().split('\t')[4])
+						alignments[read_id] = [seq_label, start_pos, mapping_score]
 						mapped_reads_id.append(read_id)
 					else:
 						unmapped_reads_id.append(read_id)
@@ -159,8 +160,7 @@ if __name__ == "__main__":
 	# get association between sequences and labels
 	with open(args.sequences_info, 'r') as f:
 		content = f.readlines()
-		seq_to_labels = {line.rstrip().split('\t')[1]: line.rstrip().split('\t')[0] for line in content}
-
+		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
 	# get alignments info for FN, FP and TP reads
 	fn_alignments, fn_mapped_reads_id, fn_unmapped_reads_id = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train)
