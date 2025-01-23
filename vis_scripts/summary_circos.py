@@ -21,6 +21,7 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type)
 			seq_label = data[0]
 			print(f'FN\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
+				print(start_pos, start_pos+sequence_length[read_id]+1, genome_size)
 				mapped_taxa_info[i].append(seq_label)
 				mapped_pos_info[i-1] += 1
 	
