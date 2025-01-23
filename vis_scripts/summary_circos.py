@@ -10,19 +10,22 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 
-def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type):
+def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type, fn_alignments_neg_train=None):
 	""" return list with number of unique taxon per position on the target genome"""
 	mapped_taxa_info = defaultdict(list)
 	mapped_pos_info = [0 for i in range(genome_size)]
 
 	if type == 'FN':
+		reads_to_taxon = {}
+		for read_id, data in fn_alignments_neg_train.items():
+			seq_label = data[0]
+			reads_to_taxon[read_id] = seq_label
+			print(f'FN\t{data}')
+
 		for read_id, data in alignments.items():
 			start_pos = data[1]
-			seq_label = data[0]
-			print(f'FN\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
-				print(start_pos, start_pos+sequence_length[read_id]+1, genome_size)
-				mapped_taxa_info[i].append(seq_label)
+				mapped_taxa_info[i].append(reads_to_taxon[read_id])
 				mapped_pos_info[i-1] += 1
 	
 	elif type == 'FP':
@@ -164,14 +167,17 @@ if __name__ == "__main__":
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
 	# get alignments info for FN, FP and TP reads
-	fn_alignments, fn_mapped_reads_id, fn_unmapped_reads_id = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train)
+	fn_alignments_neg_train, fn_mapped_reads_id_neg_train, fn_unmapped_reads_id_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train)
+	fn_alignments_pos_train, fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_train)
 	fp_alignments, fp_mapped_reads_id, fp_unmapped_reads_id = GetAlignmentsInfo(fp_sequences, args.neg_test_pos_train)
-	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_neg_train)
+	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_train)
 
-	GetSeqLength(fn_mapped_reads_id, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
+	GetSeqLength(fn_mapped_reads_id_neg_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
+	GetSeqLength(fn_mapped_reads_id_pos_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fp_mapped_reads_id, sequence_length, 'other labels mapped testing FP sequences to label 239 training genome')
 	GetSeqLength(tp_mapped_reads_id, sequence_length, 'label 239 mapped testing TP sequences to label 239 training genome')
-	GetSeqLength(fn_unmapped_reads_id, sequence_length, 'label 239 unmapped testing FN sequences to label 239 training genome')
+	GetSeqLength(fn_unmapped_reads_id_neg_train, sequence_length, 'label 239 unmapped testing FN sequences to label 239 training genome')
+	GetSeqLength(fn_unmapped_reads_id_pos_train, sequence_length, 'label 239 unmapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fp_unmapped_reads_id, sequence_length, 'other labels unmapped testing FP sequences to label 239 training genome')
 	GetSeqLength(tp_unmapped_reads_id, sequence_length, 'label 239 unmapped testing TP sequences to label 239 training genome')
 
@@ -188,7 +194,7 @@ if __name__ == "__main__":
 	print(f'mean: {statistics.mean(train_pos_coverage)}\tmedian: {statistics.median(train_pos_coverage)}\tmin: {min(train_pos_coverage)}\tmax: {max(train_pos_coverage)}')
 
 	# get number of unique taxa mapped by FN testing reads per position of the label's training genome
-	fn_taxa_count, fn_mapped_pos_info = GetTaxaAndMappingInfo(fn_alignments, args.label, sequence_length, training_genome_size, 'FN')
+	fn_taxa_count, fn_mapped_pos_info = GetTaxaAndMappingInfo(fn_alignments_pos_train, args.label, sequence_length, training_genome_size, 'FN', fn_alignments_neg_train)
 	# get number of unique taxa mapped by FP testing reads per position of the label's training genome
 	fp_taxa_count, fp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	# get positions on the label's training genome where TP testing reads map
