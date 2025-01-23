@@ -66,7 +66,6 @@ def GetAlignmentsInfo(sequences, samfile):
 					if line.rstrip().split('\t')[5] != '*':
 						seq_id = line.rstrip().split('\t')[2]
 						seq_label = seq_to_labels[seq_id]
-						print(f'{seq_label}\t{seq_id}')
 						start_pos = int(line.rstrip().split('\t')[3])
 						mapping_score =int(line.rstrip().split('\t')[4])
 						alignments[read_id] = [seq_label, start_pos, mapping_score]
