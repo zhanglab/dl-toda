@@ -20,19 +20,23 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type,
 		for read_id, data in fn_alignments_neg_train.items():
 			seq_label = data[0]
 			reads_to_taxon[read_id] = seq_label
-			print(f'FN\t{data}')
-
+		print(f'# FN reads mapped to negative train genomes: {len(reads_to_taxon)}\t{len(fn_alignments_neg_train)}')
+		print(f'# FN reads mapped to positive train genome: {len(alignments)}')
+		miss_reads = 0
 		for read_id, data in alignments.items():
 			start_pos = data[1]
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
-				mapped_taxa_info[i].append(reads_to_taxon[read_id])
+				if read_id in reads_to_taxon:
+					mapped_taxa_info[i].append(reads_to_taxon[read_id])
+				else:
+					miss_reads += 1
 				mapped_pos_info[i-1] += 1
+		print(f'# FN reads not included: {miss_reads}')
 	
 	elif type == 'FP':
 		for read_id, data in alignments.items():
 			read_label = read_id.split('|')[1]
 			start_pos = data[1]
-			print(f'FP\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
 				mapped_taxa_info[i] += [read_label]
 				mapped_pos_info[i-1] += 1
@@ -40,7 +44,6 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type,
 	elif type == 'TP':
 		for read_id, data in alignments.items():
 			start_pos = data[1]
-			print(f'TP\t{data}')
 			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
 				mapped_pos_info[i-1] += 1
 
