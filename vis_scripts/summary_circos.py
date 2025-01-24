@@ -252,5 +252,5 @@ if __name__ == "__main__":
 	_, tp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	
 	# create circos plot with FN reads info
-	PlotCircos(train_genome_size, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fn_taxa_count, os.path.join(args.output_dir, f'{args.label}_false_negatives.png'))
+	PlotCircos(training_genome_size, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fn_taxa_count, os.path.join(args.output_dir, f'{args.label}_false_negatives.png'))
 
