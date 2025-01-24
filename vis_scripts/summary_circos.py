@@ -114,8 +114,20 @@ def PlotCircos(genome_pos, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos
 		fn_count_track.yticks(fn_count_y, fn_count_y_labels)
 		fn_count_x = genome_pos
 		fn_count_x_values = fn_mapped_pos_info
-		fn_count_track.heatmap(fn_mapped_pos_info, cmap="viridis")
-		# test_count_track.line(test_count_x, test_count_x_values, color="#9e1369")
+		fn_count_track.heatmap(fn_mapped_pos_info)
+		print(f'fn_mapped_pos_info: {len(fn_mapped_pos_info)}\t{fn_mapped_pos_info[:20]}')
+		print(f'added FN heatmap track')
+		# add track for FN positions
+		fn_count_track = sector.add_track((80, 85))
+		fn_count_track.axis()
+		fn_count_y = list(range(min(fn_mapped_pos_info), max(fn_mapped_pos_info)+1, 10))
+		print(f'min(test_pos_count): {min(fn_mapped_pos_info)}\tmax(test_pos_count)+1: {max(fn_mapped_pos_info)+1}')
+		fn_count_y_labels = list(map(str, fn_count_y))
+		fn_count_track.yticks(fn_count_y, fn_count_y_labels)
+		fn_count_x = genome_pos
+		fn_count_x_values = fn_mapped_pos_info
+		test_count_track.line(fn_count_x, fn_count_x_values, color="#9e1369")
+		print(f'added FN line track')
 		# save figure
 		circos.savefig(output_filename)
 
