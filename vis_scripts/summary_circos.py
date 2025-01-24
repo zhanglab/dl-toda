@@ -9,8 +9,18 @@ from pycirclize import Circos
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
+from pygenomeviz.parser import Fasta
+from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
+from pygenomeviz.align import AlignCoord, Blast
+from matplotlib.patches import Patch
+ColorCycler.set_cmap("Set1")
 
-def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type, fn_alignments_neg_train=None):
+QUERY_TRACK_SIZE = 5
+MIN_IDENTITY = 70
+TICKS_INTERVAL = 100000
+
+
+def GetMappingInfo(alignments, label, sequence_length, genome_size, type, fn_alignments_neg_train=None):
 	""" return list with number of unique taxon per position on the target genome"""
 	mapped_taxa_info = defaultdict(list)
 	mapped_pos_info = [0 for i in range(genome_size)]
@@ -32,14 +42,6 @@ def GetTaxaAndMappingInfo(alignments, label, sequence_length, genome_size, type,
 			else:
 				miss_reads += 1		
 		print(f'# FN reads not included: {miss_reads}')
-	
-	elif type == 'FP':
-		for read_id, data in alignments.items():
-			read_label = read_id.split('|')[1]
-			start_pos = data[1]
-			for i in range(start_pos, start_pos+sequence_length[read_id]+1, 1):
-				mapped_taxa_info[i] += [read_label]
-				mapped_pos_info[i-1] += 1
 
 	elif type == 'TP':
 		for read_id, data in alignments.items():
@@ -87,25 +89,67 @@ def GetSeqLength(sequences_id, sequence_length, type):
 	print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
 
-def PlotCircos(genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn_taxa_count, output_filename):
+def PlotCircos(args, genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn_taxa_count, output_filename):
 	# get x values for all tracks
 	genome_pos = list(range(1, genome_size+1, 1))
 
-	# initialize a single circos sector
-	sectors = {'genome': len(genome_pos)}
-	circos = Circos(sectors=sectors, space=14)
+	# load data from training and testing genomes
+	target_fasta = Fasta(args.test_fasta) # ref/subject
+	queries = [args.train_fasta] # query
+	comp_fasta_list = list(map(Fasta, queries))
+
+	# Initialize circos instance
+	circos = Circos(
+	    sectors=target_fasta.get_seqid2size(),
+	    space=0 if len(target_fasta.get_seqid2size()) == 1 else 2,
+	)
+	circos.text(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)", size=13)
+	print(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)")
+
+	# Blast genome comparison & plot match blocks
+	min_r_pos = 100
+	comp_name2color = {}
+	for idx, comp_fasta in enumerate(comp_fasta_list):
+	    align_coords = Blast([target_fasta, comp_fasta]).run()
+	    align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	    color = ColorCycler()
+	    comp_name2color[comp_fasta.name] = color
+	    min_r_pos -= QUERY_TRACK_SIZE
+	    for sector in circos.sectors:
+	        sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)
+	    for ac in align_coords:
+	        track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+	        rect_color = interpolate_color(color, v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+	        track.rect(ac.query_start, ac.query_end, color=rect_color)
+
 	for sector in circos.sectors:
-		# add track for positions of the genome
-		genome_track = sector.add_track((98, 100))
-		genome_track.axis(fc="lightgrey")
-		interval = str(int(len(genome_pos)/5))
-		interval = int(interval[0]+ '0'*(len(interval)-1))
-		genome_x = list(range(0,len(genome_pos),interval))
-		base_pos_ticks = [genome_pos[i] for i in genome_x]
-		genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
-		genome_track.xticks(genome_x, genome_x_labels)
-		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
-		print(f'added genome track')
+	    # plot genomic sector axis & xticks
+	    # track = sector.add_track((min_r_pos - 0.3, min_r_pos))
+	    track = sector.add_track((95, 100))
+	    track.axis(fc="white")
+	    if sector.size >= TICKS_INTERVAL:
+	        track.xticks_by_interval(
+	            TICKS_INTERVAL,
+	            # outer=False,
+	            label_formatter=lambda v: f"{v/1000000:.1f} Mb",
+	            label_orientation="vertical",
+	        )
+
+	# initialize a single circos sector
+	# sectors = {'genome': len(genome_pos)}
+	# circos = Circos(sectors=sectors, space=14)
+	# for sector in circos.sectors:
+		# # add track for positions of the genome
+		# genome_track = sector.add_track((98, 100))
+		# genome_track.axis(fc="lightgrey")
+		# interval = str(int(len(genome_pos)/5))
+		# interval = int(interval[0]+ '0'*(len(interval)-1))
+		# genome_x = list(range(0,len(genome_pos),interval))
+		# base_pos_ticks = [genome_pos[i] for i in genome_x]
+		# genome_x_labels = ['1 bp'] + [f'{i/1000} Kb' for i in base_pos_ticks[1:]]
+		# genome_track.xticks(genome_x, genome_x_labels)
+		# genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		# print(f'added genome track')
 		
 		# add track for coverage of the genome
 		cov_track = sector.add_track((92, 97))
@@ -173,8 +217,10 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--pos_test_neg_train', type=str, help='path to sam file with mapping of testing sequences from label of interest to training genomes from other labels')
 	parser.add_argument('--pos_test_pos_train', type=str, help='path to sam file with mapping of testing sequences from label of interest to training genome from label of interest')
-	parser.add_argument('--neg_test_pos_train', type=str, help='path to sam file with mapping of testing sequences from other labels to training genome from label of interest')
+	# parser.add_argument('--neg_test_pos_train', type=str, help='path to sam file with mapping of testing sequences from other labels to training genome from label of interest')
 	parser.add_argument('--pos_train_pos_train', type=str, help='path to sam file with mapping of training sequences from label of interest to training genome from label of interest')
+	parser.add_argument('--train_fasta', type =str, help='path to fasta file containing training genome')
+	parser.add_argument('--test_fasta', type =str, help='path to fasta file containing testing genome')
 	parser.add_argument('--testing_fq_file', type=str, help='path to fastq file containing all testing reads (+ and - class)')
 	parser.add_argument('--label', type=str, help='label of species investigated')
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to training sequence ids')
@@ -220,19 +266,15 @@ if __name__ == "__main__":
 	# get alignments info for FN, FP and TP reads
 	fn_alignments_neg_train, fn_mapped_reads_id_neg_train, fn_unmapped_reads_id_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, args.output_dir, 'false_negatives_pos_test_neg_train')
 	fn_alignments_pos_train, fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_train, args.output_dir, 'false_negatives_pos_test_pos_train')
-	fp_alignments, fp_mapped_reads_id, fp_unmapped_reads_id = GetAlignmentsInfo(fp_sequences, args.neg_test_pos_train, args.output_dir, 'false_positives_neg_test_pos_train')
 	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_train, args.output_dir, 'true_positives_pos_test_pos_train')
 	print('FN - neg train', len(fn_alignments_neg_train), len(fn_mapped_reads_id_neg_train), len(fn_unmapped_reads_id_neg_train))
 	print('FN - pos train', len(fn_alignments_pos_train), len(fn_mapped_reads_id_pos_train), len(fn_unmapped_reads_id_pos_train))
-	print('FP - pos train', len(fp_alignments), len(fp_mapped_reads_id), len(fp_unmapped_reads_id))
 	print('TP - pos train', len(tp_alignments), len(tp_mapped_reads_id), len(tp_unmapped_reads_id))
 	GetSeqLength(fn_mapped_reads_id_neg_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fn_mapped_reads_id_pos_train, sequence_length, 'label 239 mapped testing FN sequences to label 239 training genome')
-	GetSeqLength(fp_mapped_reads_id, sequence_length, 'other labels mapped testing FP sequences to label 239 training genome')
 	GetSeqLength(tp_mapped_reads_id, sequence_length, 'label 239 mapped testing TP sequences to label 239 training genome')
 	GetSeqLength(fn_unmapped_reads_id_neg_train, sequence_length, 'label 239 unmapped testing FN sequences to label 239 training genome')
 	GetSeqLength(fn_unmapped_reads_id_pos_train, sequence_length, 'label 239 unmapped testing FN sequences to label 239 training genome')
-	GetSeqLength(fp_unmapped_reads_id, sequence_length, 'other labels unmapped testing FP sequences to label 239 training genome')
 	GetSeqLength(tp_unmapped_reads_id, sequence_length, 'label 239 unmapped testing TP sequences to label 239 training genome')
 
 	# get coverage of training genome with training sequences
@@ -249,8 +291,6 @@ if __name__ == "__main__":
 
 	# get number of unique taxa mapped by FN testing reads per position of the label's training genome
 	fn_taxa_count, fn_mapped_pos_info = GetTaxaAndMappingInfo(fn_alignments_pos_train, args.label, sequence_length, training_genome_size, 'FN', fn_alignments_neg_train)
-	# get number of unique taxa mapped by FP testing reads per position of the label's training genome
-	fp_taxa_count, fp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	# get positions on the label's training genome where TP testing reads map
 	_, tp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	
