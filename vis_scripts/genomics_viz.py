@@ -123,17 +123,17 @@ def PlotCircos(args, genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_p
 	        track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
-	    # plot genomic sector axis & xticks
-	    # track = sector.add_track((min_r_pos - 0.3, min_r_pos))
-	    track = sector.add_track((95, 100))
-	    track.axis(fc="white")
-	    if sector.size >= TICKS_INTERVAL:
-	        track.xticks_by_interval(
-	            TICKS_INTERVAL,
-	            # outer=False,
-	            label_formatter=lambda v: f"{v/1000000:.1f} Mb",
-	            label_orientation="vertical",
-	        )
+		# plot genomic sector axis & xticks
+		# track = sector.add_track((min_r_pos - 0.3, min_r_pos))
+		track = sector.add_track((95, 100))
+		track.axis(fc="white")
+		if sector.size >= TICKS_INTERVAL:
+			track.xticks_by_interval(
+				TICKS_INTERVAL,
+				# outer=False,
+				label_formatter=lambda v: f"{v/1000000:.1f} Mb",
+				label_orientation="vertical",
+			)
 
 	# initialize a single circos sector
 	# sectors = {'genome': len(genome_pos)}
