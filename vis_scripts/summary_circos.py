@@ -187,10 +187,10 @@ if __name__ == "__main__":
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
 	# get alignments info for FN, FP and TP reads
-	fn_alignments_neg_train, fn_mapped_reads_id_neg_train, fn_unmapped_reads_id_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, output_dir, 'false_negatives_pos_test_neg_train')
-	fn_alignments_pos_train, fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_train, output_dir, 'false_negatives_pos_test_pos_train')
-	fp_alignments, fp_mapped_reads_id, fp_unmapped_reads_id = GetAlignmentsInfo(fp_sequences, args.neg_test_pos_train, output_dir, 'false_positives_neg_test_pos_train')
-	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_train, output_dir, 'true_positives_pos_test_pos_train')
+	fn_alignments_neg_train, fn_mapped_reads_id_neg_train, fn_unmapped_reads_id_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, args.output_dir, 'false_negatives_pos_test_neg_train')
+	fn_alignments_pos_train, fn_mapped_reads_id_pos_train, fn_unmapped_reads_id_pos_train = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_train, args.output_dir, 'false_negatives_pos_test_pos_train')
+	fp_alignments, fp_mapped_reads_id, fp_unmapped_reads_id = GetAlignmentsInfo(fp_sequences, args.neg_test_pos_train, args.output_dir, 'false_positives_neg_test_pos_train')
+	tp_alignments, tp_mapped_reads_id, tp_unmapped_reads_id = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_train, args.output_dir, 'true_positives_pos_test_pos_train')
 	print('FN - neg train', len(fn_alignments_neg_train), len(fn_mapped_reads_id_neg_train), len(fn_unmapped_reads_id_neg_train))
 	print('FN - pos train', len(fn_alignments_pos_train), len(fn_mapped_reads_id_pos_train), len(fn_unmapped_reads_id_pos_train))
 	print('FP - pos train', len(fp_alignments), len(fp_mapped_reads_id), len(fp_unmapped_reads_id))
