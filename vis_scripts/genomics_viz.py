@@ -292,7 +292,7 @@ if __name__ == "__main__":
 	# get number of unique taxa mapped by FN testing reads per position of the label's training genome
 	fn_taxa_count, fn_mapped_pos_info = GetMappingInfo(fn_alignments_pos_train, args.label, sequence_length, training_genome_size, 'FN', fn_alignments_neg_train)
 	# get positions on the label's training genome where TP testing reads map
-	_, tp_mapped_pos_info = GetMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
+	_, tp_mapped_pos_info = GetMappingInfo(tp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	
 	# create circos plot with FN reads info
 	PlotCircos(training_genome_size, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fn_taxa_count, os.path.join(args.output_dir, f'{args.label}_false_negatives.png'))
