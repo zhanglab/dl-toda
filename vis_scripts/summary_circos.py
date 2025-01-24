@@ -127,7 +127,8 @@ def PlotCircos(genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn
 		print(f'added FN line track')
 		
 		# add track for FN positions
-		fn_mapped_pos_pct = [i/max(fn_mapped_pos)*100 for i in fn_mapped_pos]
+		max_fn_mapped_pos = max(fn_mapped_pos)
+		fn_mapped_pos_pct = [i/max_fn_mapped_pos*100 for i in fn_mapped_pos]
 		print(f'min(fn_mapped_pos_info): {min(fn_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax(fn_mapped_pos_info): {max(fn_mapped_pos)}-{max(fn_mapped_pos_pct)}')
 		fn_count_track_2 = sector.add_track((80, 85))
 		fn_count_track_2.axis()
@@ -139,7 +140,8 @@ def PlotCircos(genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn
 		print(f'added FN pct line track')
 
 		# add track for TP positions
-		tp_mapped_pos_pct = [i/max(tp_mapped_pos)*100 for i in tp_mapped_pos]
+		max_tp_mapped_pos = max(tp_mapped_pos)
+		tp_mapped_pos_pct = [i/max_tp_mapped_pos*100 for i in tp_mapped_pos]
 		print(f'min tp_mapped_pos: {min(tp_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax fn_mapped_pos : {max(tp_mapped_pos)}-{max(fn_mapped_pos_pct)}')
 		tp_count_track_2 = sector.add_track((74, 79))
 		tp_count_track_2.axis()
@@ -151,7 +153,8 @@ def PlotCircos(genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn
 		print(f'added TP pct line track')
 
 		# add track for FN taxa
-		fn_taxa_count_pct = [i/max(fn_taxa_count)*100 for i in fn_taxa_count]
+		max_fn_taxa_count = max(fn_taxa_count)
+		fn_taxa_count_pct = [i/max_fn_taxa_count*100 for i in fn_taxa_count]
 		print(f'min(fn_taxa_count): {min(fn_taxa_count)}-{min(fn_taxa_count_pct)}\tmax(fn_taxa_count): {max(fn_taxa_count)}-{max(fn_taxa_count_pct)}')
 		fn_taxa_track = sector.add_track((68, 73))
 		fn_taxa_track.axis()
