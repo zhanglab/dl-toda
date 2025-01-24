@@ -87,7 +87,10 @@ def GetSeqLength(sequences_id, sequence_length, type):
 	print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
 
-def PlotCircos(genome_pos, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fp_mapped_pos_info, fn_taxa_count, fp_taxa_count, output_filename):
+def PlotCircos(genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_pos, fn_taxa_count, output_filename):
+	# get x values for all tracks
+	genome_pos = list(range(1, genome_size+1, 1))
+
 	# initialize a single circos sector
 	sectors = {'genome': len(genome_pos)}
 	circos = Circos(sectors=sectors, space=14)
@@ -103,37 +106,62 @@ def PlotCircos(genome_pos, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos
 		genome_track.xticks(genome_x, genome_x_labels)
 		genome_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		print(f'added genome track')
+		
 		# add track for coverage of the genome
 		cov_track = sector.add_track((92, 97))
 		cov_track.axis()
 		cov_y = list(range(min([int(i) for i in train_pos_coverage]), max([math.ceil(j) for j in train_pos_coverage])+1, 4))
 		cov_y_labels = list(map(str, cov_y))
 		cov_track.yticks(cov_y, cov_y_labels)
-		cov_track.line(list(range(0,len(genome_pos),1)), train_pos_coverage, color="#00A5E3")
+		cov_track.line(genome_pos, train_pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
+		
 		# add track for FN positions
-		fn_count_track = sector.add_track((86, 91))
-		fn_count_track.axis()
-		fn_count_y = list(range(min(fn_mapped_pos_info), max(fn_mapped_pos_info)+1, 10))
-		print(f'min(test_pos_count): {min(fn_mapped_pos_info)}\tmax(test_pos_count)+1: {max(fn_mapped_pos_info)+1}')
-		fn_count_y_labels = list(map(str, fn_count_y))
-		fn_count_track.yticks(fn_count_y, fn_count_y_labels)
-		fn_count_x = genome_pos
-		fn_count_x_values = fn_mapped_pos_info
-		fn_count_track.heatmap(fn_mapped_pos_info)
-		print(f'fn_mapped_pos_info: {len(fn_mapped_pos_info)}\t{fn_mapped_pos_info[:20]}')
-		print(f'added FN heatmap track')
+		fn_count_track_1 = sector.add_track((86, 91))
+		fn_count_track_1.axis()
+		fn_count_y_1 = list(range(min(fn_mapped_pos), max(fn_mapped_pos)+1, 2))
+		print(fn_count_y_1)
+		fn_count_y_labels_1 = list(map(str, fn_count_y_1))
+		fn_count_track_1.yticks(fn_count_y_1, fn_count_y_labels_1)
+		fn_count_track_1.line(genome_pos, fn_mapped_pos, color="#9e1369")
+		print(f'added FN line track')
+		
 		# add track for FN positions
+		fn_mapped_pos_pct = [i/max(fn_mapped_pos)*100 for i in fn_mapped_pos]
+		print(f'min(fn_mapped_pos_info): {min(fn_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax(fn_mapped_pos_info): {max(fn_mapped_pos)}-{max(fn_mapped_pos_pct)}')
 		fn_count_track_2 = sector.add_track((80, 85))
 		fn_count_track_2.axis()
-		fn_count_y_2 = list(range(min(fn_mapped_pos_info), max(fn_mapped_pos_info)+1, 10))
-		print(f'min(test_pos_count): {min(fn_mapped_pos_info)}\tmax(test_pos_count)+1: {max(fn_mapped_pos_info)+1}')
+		fn_count_y_2 = list(range(min(fn_mapped_pos_pct, max(fn_mapped_pos_pct)+1, 2)))
+		print(fn_count_y_2)
 		fn_count_y_labels_2 = list(map(str, fn_count_y_2))
 		fn_count_track_2.yticks(fn_count_y_2, fn_count_y_labels_2)
-		fn_count_x_2 = genome_pos
-		fn_count_x_values_2 = fn_mapped_pos_info
-		fn_count_track_2.line(fn_count_x_2, fn_count_x_values_2, color="#9e1369")
-		print(f'added FN line track')
+		fn_count_track_2.line(genome_pos, fn_mapped_pos_pct, color="#9e1369")
+		print(f'added FN pct line track')
+
+		# add track for TP positions
+		tp_mapped_pos_pct = [i/max(tp_mapped_pos)*100 for i in tp_mapped_pos]
+		print(f'min tp_mapped_pos: {min(tp_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax fn_mapped_pos : {max(tp_mapped_pos)}-{max(fn_mapped_pos_pct)}')
+		tp_count_track_2 = sector.add_track((74, 79))
+		tp_count_track_2.axis()
+		fn_count_y_2 = list(range(min(tp_mapped_pos_pct, max(tp_mapped_pos_pct)+1, 10)))
+		print(tp_count_y_2)
+		tp_count_y_labels_2 = list(map(str, tp_count_y_2))
+		tp_count_track_2.yticks(tp_count_y_2, tp_count_y_labels_2)
+		tp_count_track_2.line(genome_pos, tp_mapped_pos_pct, color="#9e1369")
+		print(f'added TP pct line track')
+
+		# add track for FN taxa
+		fn_taxa_count_pct = [i/max(fn_taxa_count)*100 for i in fn_taxa_count]
+		print(f'min(fn_taxa_count): {min(fn_taxa_count)}-{min(fn_taxa_count_pct)}\tmax(fn_taxa_count): {max(fn_taxa_count)}-{max(fn_taxa_count_pct)}')
+		fn_taxa_track = sector.add_track((68, 73))
+		fn_taxa_track.axis()
+		fn_taxa_y = list(range(min(fn_taxa_count_pct, max(fn_taxa_count_pct)+1, 2)))
+		print(fn_taxa_y)
+		fn_taxa_y_labels = list(map(str, fn_taxa_y))
+		fn_taxa_track.yticks(fn_taxa_y, fn_taxa_y_labels)
+		fn_taxa_track.line(genome_pos, fn_taxa_count_pct, color="#9e1369")
+		print(f'added FN taxa line track')
+
 		# save figure
 		circos.savefig(output_filename)
 
@@ -223,7 +251,6 @@ if __name__ == "__main__":
 	# get positions on the label's training genome where TP testing reads map
 	_, tp_mapped_pos_info = GetTaxaAndMappingInfo(fp_alignments, args.label, sequence_length, training_genome_size, 'FP')
 	
-	train_genome_pos = list(range(1, training_genome_size+1, 1))
 	# create circos plot with FN reads info
-	PlotCircos(train_genome_pos, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fp_mapped_pos_info, fn_taxa_count, fp_taxa_count, os.path.join(args.output_dir, f'{args.label}_false_negatives.png'))
+	PlotCircos(train_genome_size, train_pos_coverage, fn_mapped_pos_info, tp_mapped_pos_info, fn_taxa_count, os.path.join(args.output_dir, f'{args.label}_false_negatives.png'))
 
