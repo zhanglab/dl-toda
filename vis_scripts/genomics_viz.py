@@ -160,54 +160,54 @@ def PlotCircos(args, genome_size, train_pos_coverage, fn_mapped_pos, tp_mapped_p
 		cov_track.line(genome_pos, train_pos_coverage, color="#00A5E3")
 		print(f'added coverage track')
 		
-		# add track for FN positions
-		fn_count_track_1 = sector.add_track((86, 91))
-		fn_count_track_1.axis()
-		fn_count_y_1 = list(range(min(fn_mapped_pos), max(fn_mapped_pos)+1, 2))
-		print(fn_count_y_1)
-		fn_count_y_labels_1 = list(map(str, fn_count_y_1))
-		fn_count_track_1.yticks(fn_count_y_1, fn_count_y_labels_1)
-		fn_count_track_1.line(genome_pos, fn_mapped_pos, color="#9e1369")
-		print(f'added FN line track')
+		# # add track for FN positions
+		# fn_count_track_1 = sector.add_track((86, 91))
+		# fn_count_track_1.axis()
+		# fn_count_y_1 = list(range(min(fn_mapped_pos), max(fn_mapped_pos)+1, 2))
+		# print(fn_count_y_1)
+		# fn_count_y_labels_1 = list(map(str, fn_count_y_1))
+		# fn_count_track_1.yticks(fn_count_y_1, fn_count_y_labels_1)
+		# fn_count_track_1.line(genome_pos, fn_mapped_pos, color="#9e1369")
+		# print(f'added FN line track')
 		
-		# add track for FN positions
-		max_fn_mapped_pos = max(fn_mapped_pos)
-		fn_mapped_pos_pct = [i/max_fn_mapped_pos*100 for i in fn_mapped_pos]
-		print(f'min(fn_mapped_pos_info): {min(fn_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax(fn_mapped_pos_info): {max(fn_mapped_pos)}-{max(fn_mapped_pos_pct)}')
-		fn_count_track_2 = sector.add_track((80, 85))
-		fn_count_track_2.axis()
-		fn_count_y_2 = list(range(min(fn_mapped_pos_pct, max(fn_mapped_pos_pct)+1, 2)))
-		print(fn_count_y_2)
-		fn_count_y_labels_2 = list(map(str, fn_count_y_2))
-		fn_count_track_2.yticks(fn_count_y_2, fn_count_y_labels_2)
-		fn_count_track_2.line(genome_pos, fn_mapped_pos_pct, color="#9e1369")
-		print(f'added FN pct line track')
+		# # add track for FN positions
+		# max_fn_mapped_pos = max(fn_mapped_pos)
+		# fn_mapped_pos_pct = [i/max_fn_mapped_pos*100 for i in fn_mapped_pos]
+		# print(f'min(fn_mapped_pos_info): {min(fn_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax(fn_mapped_pos_info): {max(fn_mapped_pos)}-{max(fn_mapped_pos_pct)}')
+		# fn_count_track_2 = sector.add_track((80, 85))
+		# fn_count_track_2.axis()
+		# fn_count_y_2 = list(range(min(fn_mapped_pos_pct, max(fn_mapped_pos_pct)+1, 2)))
+		# print(fn_count_y_2)
+		# fn_count_y_labels_2 = list(map(str, fn_count_y_2))
+		# fn_count_track_2.yticks(fn_count_y_2, fn_count_y_labels_2)
+		# fn_count_track_2.line(genome_pos, fn_mapped_pos_pct, color="#9e1369")
+		# print(f'added FN pct line track')
 
-		# add track for TP positions
-		max_tp_mapped_pos = max(tp_mapped_pos)
-		tp_mapped_pos_pct = [i/max_tp_mapped_pos*100 for i in tp_mapped_pos]
-		print(f'min tp_mapped_pos: {min(tp_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax fn_mapped_pos : {max(tp_mapped_pos)}-{max(fn_mapped_pos_pct)}')
-		tp_count_track_2 = sector.add_track((74, 79))
-		tp_count_track_2.axis()
-		fn_count_y_2 = list(range(min(tp_mapped_pos_pct, max(tp_mapped_pos_pct)+1, 10)))
-		print(tp_count_y_2)
-		tp_count_y_labels_2 = list(map(str, tp_count_y_2))
-		tp_count_track_2.yticks(tp_count_y_2, tp_count_y_labels_2)
-		tp_count_track_2.line(genome_pos, tp_mapped_pos_pct, color="#9e1369")
-		print(f'added TP pct line track')
+		# # add track for TP positions
+		# max_tp_mapped_pos = max(tp_mapped_pos)
+		# tp_mapped_pos_pct = [i/max_tp_mapped_pos*100 for i in tp_mapped_pos]
+		# print(f'min tp_mapped_pos: {min(tp_mapped_pos)}-{min(fn_mapped_pos_pct)}\tmax fn_mapped_pos : {max(tp_mapped_pos)}-{max(fn_mapped_pos_pct)}')
+		# tp_count_track_2 = sector.add_track((74, 79))
+		# tp_count_track_2.axis()
+		# fn_count_y_2 = list(range(min(tp_mapped_pos_pct, max(tp_mapped_pos_pct)+1, 10)))
+		# print(tp_count_y_2)
+		# tp_count_y_labels_2 = list(map(str, tp_count_y_2))
+		# tp_count_track_2.yticks(tp_count_y_2, tp_count_y_labels_2)
+		# tp_count_track_2.line(genome_pos, tp_mapped_pos_pct, color="#9e1369")
+		# print(f'added TP pct line track')
 
-		# add track for FN taxa
-		max_fn_taxa_count = max(fn_taxa_count)
-		fn_taxa_count_pct = [i/max_fn_taxa_count*100 for i in fn_taxa_count]
-		print(f'min(fn_taxa_count): {min(fn_taxa_count)}-{min(fn_taxa_count_pct)}\tmax(fn_taxa_count): {max(fn_taxa_count)}-{max(fn_taxa_count_pct)}')
-		fn_taxa_track = sector.add_track((68, 73))
-		fn_taxa_track.axis()
-		fn_taxa_y = list(range(min(fn_taxa_count_pct, max(fn_taxa_count_pct)+1, 2)))
-		print(fn_taxa_y)
-		fn_taxa_y_labels = list(map(str, fn_taxa_y))
-		fn_taxa_track.yticks(fn_taxa_y, fn_taxa_y_labels)
-		fn_taxa_track.line(genome_pos, fn_taxa_count_pct, color="#9e1369")
-		print(f'added FN taxa line track')
+		# # add track for FN taxa
+		# max_fn_taxa_count = max(fn_taxa_count)
+		# fn_taxa_count_pct = [i/max_fn_taxa_count*100 for i in fn_taxa_count]
+		# print(f'min(fn_taxa_count): {min(fn_taxa_count)}-{min(fn_taxa_count_pct)}\tmax(fn_taxa_count): {max(fn_taxa_count)}-{max(fn_taxa_count_pct)}')
+		# fn_taxa_track = sector.add_track((68, 73))
+		# fn_taxa_track.axis()
+		# fn_taxa_y = list(range(min(fn_taxa_count_pct, max(fn_taxa_count_pct)+1, 2)))
+		# print(fn_taxa_y)
+		# fn_taxa_y_labels = list(map(str, fn_taxa_y))
+		# fn_taxa_track.yticks(fn_taxa_y, fn_taxa_y_labels)
+		# fn_taxa_track.line(genome_pos, fn_taxa_count_pct, color="#9e1369")
+		# print(f'added FN taxa line track')
 
 		# save figure
 		circos.savefig(output_filename)
