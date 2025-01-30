@@ -154,6 +154,7 @@ def create_tfrecords(args):
     dna_sequence_size = set()
 
     if args.bert:
+        # create tfrecords for bert model
         if args.bert_step == 'pretraining':
             # monitor the fraction of masked positions
             n_masked_pos = []
@@ -219,81 +220,90 @@ def create_tfrecords(args):
                 f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')          
         
     else:
-        if args.dnabert:
-            with tf.io.TFRecordWriter(output_tfrec) as writer:
-                with open(args.input, 'r') as f:
-                    for line in f:
+        # create tfrecords for cnn model
+        with tf.io.TFRecordWriter(output_tfrec) as writer:
+            with open(args.input, 'r') as f:
+                for line in f:
+                    if args.dnabert:
                         label = line.rstrip().split('\t')[0]
                         dna_sequence = line.rstrip().split('\t')[1].split(" ")
                         # parse dna sequence into kmers
                         dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequence]
+                        
                         if len(dna_list) < args.kmer_vector_length:
                             num_padded_values = args.kmer_vector_length-len(dna_list)
                             dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                         if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
                             dna_list = dna_list[:args.kmer_vector_length] # remove the last kmer == information about the last nucleotide
-        
-                        # create TFrecords
-                        if args.no_label:
-                            tfrecord_data = \
-                                {
-                                    'read': wrap_vector(dna_list),
-                                }
-                        else:
-                            tfrecord_data = \
-                                {
-                                    'read': wrap_vector(dna_list),
-                                    'label': wrap_label(label),
-                                }
-                        feature = tf.train.Features(feature=tfrecord_data)
-                        example = tf.train.Example(features=feature)
-                        serialized = example.SerializeToString()
-                        writer.write(serialized)
-                        count += 1
-                        vector_size.add(len(dna_list))
-                        dna_sequence_size.add(len(dna_sequence))
+    
+                    else:
+                        label = line.rstrip().split('\t')[0].split('|')[1]
+                        dna_sequence = line.rstrip().split('\t')[1]
+                        # parse dna sequence into kmers
+                        dna_list = prepare_input_data(args, dna_sequence)
 
-        else:
-            with tf.io.TFRecordWriter(output_tfrec) as writer:
-                with open(args.input, 'r') as f:
-                    line_count = 1
-                    # dna_sequence = ""
-                    # label = ""
-                    for line in f:
-                        if line_count == 1:
-                            print(line.rstrip().split('|')[1])
-                            label = line.rstrip().split('|')[1]
-                        elif line_count == 2:
-                            dna_sequence = line.rstrip()
-                        elif line_count == 4:         
-                            # parse dna sequence into kmers
-                            dna_list = prepare_input_data(args, dna_sequence)
-                            if args.update_labels:
-                                label = int(args.labels_mapping[label])
-                            # create TFrecords
-                            if args.no_label:
-                                tfrecord_data = \
-                                    {
-                                        'read': wrap_vector(dna_list),
-                                    }
-                            else:
-                                tfrecord_data = \
-                                    {
-                                        'read': wrap_vector(dna_list),
-                                        'label': wrap_label(label),
-                                    }
-                            feature = tf.train.Features(feature=tfrecord_data)
-                            example = tf.train.Example(features=feature)
-                            serialized = example.SerializeToString()
-                            writer.write(serialized)
-                            count += 1
-                            vector_size.add(len(dna_list))
-                            dna_sequence_size.add(len(dna_sequence))
-                            print(f'{label}\n{dna_list}\n{dna_sequence}')
-                            print(f'{len(dna_list)}\n{len(dna_sequence)}')
-                            line_count = 0 
+                    if args.update_labels:
+                        label = int(args.labels_mapping[label])
+
+                    print(f'label: {label}\ndna sequence: {dna_sequence}\ninput ids: {dna_list}')
+                    break
+                    # create TFrecords
+                    if args.no_label:
+                        tfrecord_data = \
+                            {
+                                'read': wrap_vector(dna_list),
+                            }
+                    else:
+                        tfrecord_data = \
+                            {
+                                'read': wrap_vector(dna_list),
+                                'label': wrap_label(label),
+                            }
+                    feature = tf.train.Features(feature=tfrecord_data)
+                    example = tf.train.Example(features=feature)
+                    serialized = example.SerializeToString()
+                    writer.write(serialized)
+                    count += 1
+                    vector_size.add(len(dna_list))
+                    dna_sequence_size.add(len(dna_sequence))
+
+        # else:
+        #     with tf.io.TFRecordWriter(output_tfrec) as writer:
+        #         with open(args.input, 'r') as f:
+        #             line_count = 1
+
+        #             for line in f:
+        #                 if line_count == 1:
+        #                     label = line.rstrip().split('|')[1]
+        #                 elif line_count == 2:
+        #                     dna_sequence = line.rstrip()
+        #                 elif line_count == 4:         
+        #                     # parse dna sequence into kmers
+        #                     dna_list = prepare_input_data(args, dna_sequence)
+        #                     if args.update_labels:
+        #                         label = int(args.labels_mapping[label])
+        #                     # create TFrecords
+        #                     if args.no_label:
+        #                         tfrecord_data = \
+        #                             {
+        #                                 'read': wrap_vector(dna_list),
+        #                             }
+        #                     else:
+        #                         tfrecord_data = \
+        #                             {
+        #                                 'read': wrap_vector(dna_list),
+        #                                 'label': wrap_label(label),
+        #                             }
+        #                     feature = tf.train.Features(feature=tfrecord_data)
+        #                     example = tf.train.Example(features=feature)
+        #                     serialized = example.SerializeToString()
+        #                     writer.write(serialized)
+        #                     count += 1
+        #                     vector_size.add(len(dna_list))
+        #                     dna_sequence_size.add(len(dna_sequence))
+        #                     line_count = 0 
                         
-                        line_count += 1
+        #                 line_count += 1
 
     with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
         f.write(f'{count}')
