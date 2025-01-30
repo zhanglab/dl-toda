@@ -175,6 +175,16 @@ def create_tfrecords(args):
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
 
+                    if count == 0:
+                        reconstructed_token_list = []
+                        for token_id in dna_list:
+                            for key, value in args.dict_kmers.items():
+                                if value == token_id:
+                                    reconstructed_token_list.append(key)
+                        with open(os.path.join(args.output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
+                            out_ex.write(f'count\t{count+1}\nline:\t{line}\nupdated label\t{label}'
+                                f'\ndna sequence\t{dna_sequence}\ndna list\t{dna_list}\nreconstructed list of tokens\t{reconstructed_token_list}')
+
                     """
                     input_ids: vector with indices of tokens (includes masked token: MASK) - length: 512
                     attention_mask: vector necessary to avoid performing attention on padded positions (0 for positions with the PAD token and 1 otherwise)  - length: 512
@@ -242,21 +252,18 @@ def create_tfrecords(args):
                         # parse dna sequence into kmers
                         dna_list = prepare_input_data(args, dna_sequence)
 
+                    if args.update_labels:
+                        label = int(args.labels_mapping[label])
+
+                    if count == 0:
                         reconstructed_token_list = []
                         for token_id in dna_list:
                             for key, value in args.dict_kmers.items():
                                 if value == token_id:
-                                    print(token_id, value, key)
                                     reconstructed_token_list.append(key)
-                        reconstructed_read = reconstructed_token_list[0]
-                        for i in range(1, len(reconstructed_token_list), 1):
-                            reconstructed_read += reconstructed_token_list[i][-1]
-
-                        assert reconstructed_read == dna_sequence, f"tokenization incorrect! {len(dna_sequence)} vs {len(reconstructed_read)}\n{dna_sequence} vs {reconstructed_read}"
-
-
-                    if args.update_labels:
-                        label = int(args.labels_mapping[label])
+                        with open(os.path.join(args.output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
+                            out_ex.write(f'count\t{count+1}\nline:\t{line}\nupdated label\t{label}'
+                                f'\ndna sequence\t{dna_sequence}\ndna list\t{dna_list}\nreconstructed list of tokens\t{reconstructed_token_list}')
 
                     # create TFrecords
                     if args.no_label:
