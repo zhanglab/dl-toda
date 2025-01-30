@@ -246,8 +246,7 @@ def create_tfrecords(args):
                         for token_id in dna_list:
                             for key, value in args.dict_kmers.items():
                                 if value == token_id:
-                                    if key == "]":
-                                        print(key, value)
+                                    print(token_id, value, key)
                                     reconstructed_token_list.append(key)
                         reconstructed_read = reconstructed_token_list[0]
                         for i in range(1, len(reconstructed_token_list), 1):
