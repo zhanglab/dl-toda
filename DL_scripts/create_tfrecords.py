@@ -242,10 +242,23 @@ def create_tfrecords(args):
                         # parse dna sequence into kmers
                         dna_list = prepare_input_data(args, dna_sequence)
 
+                        reconstructed_token_list = []
+                        for token_id in dna_list:
+                            for key, value in args.dict_kmers.items():
+                                if value == token_id:
+                                    reconstructed_token_list.append(key)
+                        reconstructed_read = reconstructed_token_list[0]
+                        for i in range(1, len(reconstructed_token_list), 1):
+                            reconstructed_read += reconstructed_token_list[i][-1]
+
+                        assert reconstructed_read == dna_sequence, "tokenization incorrect!"
+
+
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
 
                     print(f'line: {line}\nlabel: {label}\ndna sequence: {dna_sequence}\ninput ids: {dna_list}')
+
                     break
                     # create TFrecords
                     if args.no_label:
