@@ -257,9 +257,6 @@ def create_tfrecords(args):
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
 
-                    print(f'line: {line}\nlabel: {label}\ndna sequence: {dna_sequence}\ninput ids: {dna_list}')
-
-                    break
                     # create TFrecords
                     if args.no_label:
                         tfrecord_data = \
