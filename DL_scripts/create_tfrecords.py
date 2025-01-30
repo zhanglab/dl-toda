@@ -251,7 +251,7 @@ def create_tfrecords(args):
                         for i in range(1, len(reconstructed_token_list), 1):
                             reconstructed_read += reconstructed_token_list[i][-1]
 
-                        assert reconstructed_read == dna_sequence, "tokenization incorrect!"
+                        assert reconstructed_read == dna_sequence, f"tokenization incorrect! {dna_sequence} vs {reconstructed_read}"
 
 
                     if args.update_labels:
