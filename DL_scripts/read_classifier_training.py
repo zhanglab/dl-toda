@@ -531,7 +531,7 @@ def main():
         if not os.path.exists(tensorboard_dir):
             os.makedirs(tensorboard_dir)
 
-        if args.bert_step == "pretraining":
+        if args.model_type == 'BERT_HUGGINGFACE':
             pretrained_dir= os.path.join(args.output_dir, f'pretrained-models-{args.rnd}')
             if not os.path.isdir(pretrained_dir):
                 os.makedirs(pretrained_dir)
@@ -752,12 +752,14 @@ def main():
                         if found_min:
                             model.set_weights(best_weights)
                             model.save(os.path.join(models_dir, f'model-rnd-{args.rnd}-best.keras'))
-                            best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
+                            if args.model_type == 'BERT_HUGGINGFACE':
+                                model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-best'))
+                            else:
+                                best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                                best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                                 f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
-                            if args.bert_step == "pretraining":
-                                model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-best'))
+                            
                         break
 
                 # # save model in different formats at the end of each epoch
