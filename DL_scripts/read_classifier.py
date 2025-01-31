@@ -465,11 +465,10 @@ def main():
             # out_filename = os.path.join(args.output_dir, f'{test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
-                    # print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-                    # if args.model_type != 'BERT':
-                    out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                    # else:
-                        # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                    if nvidia_dali:
+                        out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                    else:
+                        out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
                     # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
                     # if len(all_prob_sp[j]) == num_labels:
                         # out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
