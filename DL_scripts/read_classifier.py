@@ -381,7 +381,7 @@ def main():
 
         # load data
         if args.nvidia_dali:
-            test_preprocessor = DALIPreprocessor(model_type, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
+            test_preprocessor = DALIPreprocessor(args.model_type, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
 
             test_input = test_preprocessor.get_device_dataset()
         else:
