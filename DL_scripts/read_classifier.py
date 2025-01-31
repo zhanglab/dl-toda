@@ -313,13 +313,12 @@ def main():
             os.makedirs(os.path.join(args.output_dir))
 
     if args.model_type == 'BERT':
+        with open(args.bert_config_file, "r") as f:
+                args.config_dict = json.load(f)
+            args.vector_size = args.config_dict['max_position_embeddings']
         if args.model is not None:
             model = tf.keras.models.load_model(args.model)
         else:
-            with open(args.bert_config_file, "r") as f:
-                args.config_dict = json.load(f)
-            # update input vector size
-            args.vector_size = args.config_dict['max_position_embeddings']
             bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
             model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
     else:
