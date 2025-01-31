@@ -244,7 +244,6 @@ def main():
     start = datetime.datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
-    parser.add_argument('--dali_idx', type=str, help='path to dali indexes files')
     parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
@@ -346,7 +345,7 @@ def main():
 
     if args.nvidia_dali:
         # get nvidia dali indexes
-        test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
+        test_idx_files = sorted(glob.glob(os.path.join(args.tfrecords, 'idx_files', '*.idx')))
     
     # split tfrecords between gpus
     test_files_per_gpu = len(test_files)//hvd.size()
