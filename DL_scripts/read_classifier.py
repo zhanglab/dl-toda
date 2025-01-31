@@ -1,10 +1,10 @@
 import datetime
 import tensorflow as tf
-# import horovod.tensorflow as hvd
-# from nvidia.dali.pipeline import pipeline_def
-# import nvidia.dali.fn as fn
-# import nvidia.dali.tfrecord as tfrec
-# import nvidia.dali.plugin.tf as dali_tf
+import horovod.tensorflow as hvd
+from nvidia.dali.pipeline import pipeline_def
+import nvidia.dali.fn as fn
+import nvidia.dali.tfrecord as tfrec
+import nvidia.dali.plugin.tf as dali_tf
 from AlexNet import AlexNet
 from lstm import LSTM
 from VDCNN import VDCNN
@@ -32,7 +32,12 @@ tf.random.set_seed(seed)
 np.random.seed(seed)
 # set the global python random seed
 random.seed(seed)
-
+# activate tensorflow deterministic behavior
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+# set the number of threads used for parallel execution of independent operations to 1
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(1)
 
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
@@ -44,174 +49,92 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 #tf.debugging.set_log_device_placement(True)
 
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
-# TensorFlow models with potentially no source code changes
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
-# # Initialize Horovod
-# hvd.init()
+# define the DALI pipeline for CNN
+@pipeline_def
+def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 initial_fill=initial_fill,
+                                 stick_to_shard=stick_to_shard,
+                                 features={
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    # retrieve reads and labels and copy them to the gpus
+    reads = inputs["read"].gpu()
+    labels = inputs["label"].gpu()
+    return reads, labels
 
-# # Pin GPU to be used to process local rank (one GPU per process)
-# # use hvd.local_rank() for gpu pinning instead of hvd.rank()
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
-# # comment next 2 lines if testing large dataset
-# for gpu in gpus:
-#     tf.config.experimental.set_memory_growth(gpu, True)
-# if gpus:
-#     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+# define the DALI pipeline for BERT 
+@pipeline_def
+def bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
+    stick_to_shard = True
+    inputs = fn.readers.tfrecord(path=tfrec_filenames,
+                                 index_path=tfrec_idx_filenames,
+                                 random_shuffle=training,
+                                 shard_id=shard_id,
+                                 num_shards=num_gpus,
+                                 stick_to_shard=stick_to_shard,
+                                 initial_fill=initial_fill,
+                                 features={
+                                     "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+    
+    # retrieve data and copy it to the gpus
+    input_ids = inputs["input_ids"].gpu()
+    attention_mask = inputs["attention_mask"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
+    position_ids = inputs["position_ids"].gpu()
+    labels = inputs["labels"].gpu()
 
-
-# define the DALI pipeline
-# @pipeline_def
-# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, num_gpus, dali_cpu=True, training=True):
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=shard_id,
-#                                  num_shards=num_gpus,
-#                                  initial_fill=10000,
-#                                  features={
-#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     reads = inputs["read"].gpu()
-#     labels = inputs["label"].gpu()
-#     return reads, labels
-
-
-# class DALIPreprocessor(object):
-#     def __init__(self, filenames, idx_filenames, batch_size, num_threads, dali_cpu=True,
-#                deterministic=False, training=False):
-#
-#         device_id = hvd.local_rank()
-#         shard_id = hvd.rank()
-#         num_gpus = hvd.size()
-#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
-#                                       dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
-#
-#         self.daliop = dali_tf.DALIIterator()
-#
-#         self.batch_size = batch_size
-#         self.device_id = device_id
-#
-#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#             output_shapes=((batch_size, 239), (batch_size)),
-#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
-#
-#     def get_device_dataset(self):
-#         return self.dalidataset
-
-# class DALIPreprocessor(object):
-#     def __init__(self, filenames, idx_filenames, batch_size, num_threads, vector_size, dali_cpu=True,
-#                deterministic=False, training=False):
-
-#         device_id = hvd.local_rank()
-#         shard_id = hvd.rank()
-#         num_gpus = hvd.size()
-#         self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       num_threads=num_threads, device_id=device_id, shard_id=shard_id, num_gpus=num_gpus,
-#                                       dali_cpu=dali_cpu, training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
-
-#         self.daliop = dali_tf.DALIIterator()
-
-#         self.batch_size = batch_size
-#         self.device_id = device_id
-
-#         self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#             output_shapes=((batch_size, vector_size), (batch_size)),
-#             batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
-
-#     def get_device_dataset(self):
-#         return self.dalidataset
+    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
 
 
-# # define the DALI pipeline
-# @pipeline_def
-# def get_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-#     # prefetch_queue_depth = 100
-#     # read_ahead = True
-#     stick_to_shard = True
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=shard_id,
-#                                  num_shards=num_gpus,
-#                                  initial_fill=initial_fill,
-#                                  # prefetch_queue_depth=prefetch_queue_depth,
-#                                  # read_ahead=read_ahead,
-#                                  stick_to_shard=stick_to_shard,
-#                                  features={
-#                                      "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     reads = inputs["read"].gpu()
-#     labels = inputs["label"].gpu()
-#     return (reads, labels)
+class DALIPreprocessor(object):
+    def __init__(self, model_type, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
 
-
-# # define the BERT DALI pipeline
-# @pipeline_def
-# def get_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
-#     inputs = fn.readers.tfrecord(path=tfrec_filenames,
-#                                  index_path=tfrec_idx_filenames,
-#                                  random_shuffle=training,
-#                                  shard_id=0,
-#                                  num_shards=1,
-#                                  stick_to_shard=False,
-#                                  initial_fill=initial_fill,
-#                                  features={
-#                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "input_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "segment_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-#                                      "is_real_example": tfrec.FixedLenFeature([1], tfrec.int64, -1),
-#                                      "label_ids": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
-#     # retrieve reads and labels and copy them to the gpus
-#     input_ids = inputs["input_ids"].gpu()
-#     input_mask = inputs["input_mask"].gpu()
-#     segment_ids = inputs["segment_ids"].gpu()
-#     label_ids = inputs['label_ids'].gpu()
-#     is_real_example = inputs['is_real_example'].gpu()
-
-#     return (input_ids, input_mask, segment_ids, label_ids, is_real_example)
-
-
-# class DALIPreprocessor(object):
-#     def __init__(self, args, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
-
-#         device_id = hvd.local_rank()
-#         shard_id = hvd.rank()
-#         num_gpus = hvd.size()
+        device_id = hvd.local_rank()
+        shard_id = hvd.rank()
+        num_gpus = hvd.size()
         
-#         self.batch_size = batch_size
-#         self.device_id = device_id
+        # self.batch_size = batch_size
+        # self.device_id = device_id
 
-#         if args.model_type == "BERT":
-#             self.pipe = get_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+        if model_type == "BERT":
+            self.pipe = bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
-#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#                 output_shapes=((args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size, vector_size), (args.batch_size), (args.batch_size)),
-#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
-#         else:
-#             self.pipe = get_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
-#                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-#                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+        else:
+            self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
+                                      device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
+                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
    
-#             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-#                 output_shapes=((batch_size, vector_size), (batch_size)),
-#                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+            self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
+                output_shapes=((batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
 
-#     def get_device_dataset(self):
-#         return self.dalidataset
+    def get_device_dataset(self):
+        return self.dalidataset
+
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
             'read': tf.io.VarLenFeature(tf.int64),
-            'label': tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
+            'label': tf.io.FixedLenFeature([1], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
@@ -226,28 +149,14 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([], tf.int64)
+          "labels": tf.io.FixedLenFeature([1], tf.int64)
         }
-        parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
-
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-
-    def load_tfrecords_for_pretraining(proto_example):
-        name_to_features = {
-          "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
-        }
-        # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
         return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
     """ Return data in TFRecords """
-    fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
+    fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning}
 
     dataset = tf.data.TFRecordDataset([filenames])
 
@@ -289,7 +198,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
     training = False
-    if model_type == 'BERT_HUGGINGFACE':
+    if model_type == 'BERT':
         input_ids = data["input_ids"]
         attention_mask = data["attention_mask"]
         token_type_ids = data["token_type_ids"]
@@ -339,7 +248,7 @@ def main():
     parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--n_rows', type=int, default=50)
@@ -352,8 +261,8 @@ def main():
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT', 'BERT_HUGGINGFACE'])
-    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the prefix)')
@@ -365,21 +274,21 @@ def main():
     args = parser.parse_args()
 
     # Initialize Horovod
-    # hvd.init()
+    hvd.init()
     # Map one GPU per process
     # use hvd.local_rank() for gpu pinning instead of hvd.rank()
     gpus = tf.config.experimental.list_physical_devices('GPU')
-    # print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
+    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     if gpus:
-        tf.config.experimental.set_visible_devices(gpus, 'GPU')
-        # tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+        # tf.config.experimental.set_visible_devices(gpus, 'GPU')
+        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # get vocabulary size
-    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+    if args.model_type != 'BERT':
         with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
@@ -392,30 +301,18 @@ def main():
     else:
         num_labels = args.num_labels
 
-    # with open(args.testing_epoch, 'r') as f:
-    #     testing_epoch = f.readline().rstrip().split('\t')[0]
-    # print(f'testing epoch: {testing_epoch}')
-
-    # # create dtype policy
-    # policy = tf.keras.mixed_precision.Policy('mixed_float16')
-    # tf.keras.mixed_precision.set_global_policy(policy)
-    # print('Compute dtype: %s' % policy.compute_dtype)
-    # print('Variable dtype: %s' % policy.variable_dtype)
-    # print(f'2: {datetime.datetime.now()}')
+    # create dtype policy
+    policy = tf.keras.mixed_precision.Policy('mixed_float16')
+    tf.keras.mixed_precision.set_global_policy(policy)
+    print('Compute dtype: %s' % policy.compute_dtype)
+    print('Variable dtype: %s' % policy.variable_dtype)
     
+    if hvd.rank() == 0:
+        # create output directories
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(os.path.join(args.output_dir))
 
-    # if hvd.rank() == 0:
-    # create output directories
-    if not os.path.isdir(args.output_dir):
-        os.makedirs(os.path.join(args.output_dir))
-
-
-    init_lr = args.init_lr
-    opt = tf.keras.optimizers.Adam(init_lr)
-    # opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
-
-
-    if args.model_type == 'BERT_HUGGINGFACE':
+    if args.model_type == 'BERT':
         if args.model is not None:
             model = tf.keras.models.load_model(args.model)
         else:
@@ -429,20 +326,13 @@ def main():
         if args.model is not None:
             model = tf.keras.models.load_model(args.model)
         elif args.ckpt is not None:
-            # load model with checkpoint
-            # if args.model_type == 'BERT_HUGGINGFACE':
-            #     # create BERT config object + model
-            #     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
-            #     model = TFBertForSequenceClassification(config=bert_config)            
-            # else:
             model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
-                   
-            # the following 2 restore() functions and load_weights function raise warnings about inconsistent references, the model is not correctly loaded
-            # for bert at least
+            # define the optimizer
+            opt = tf.keras.optimizers.Adam(args.init_lr)
+            # prevent numeric underflow when using float16
+            opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
             checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
             checkpoint.restore(args.ckpt).expect_partial()
-            # checkpoint.restore(args.ckpt) # same warning as checkpoint.restore(args.ckpt).expect_partial()
-            # model.load_weights(args.ckpt) # does not work
 
     # define metrics
     if args.data_type == 'sim':
@@ -450,7 +340,7 @@ def main():
         test_loss = tf.keras.metrics.Mean(name='test_loss')
         test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
-    # get list of testing tfrecords and number of reads per tfrecords
+    # get list of testing tfrecords, number of reads per tfrecords and reads id for metagenomic data
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
     read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
@@ -460,22 +350,22 @@ def main():
         test_idx_files = sorted(glob.glob(os.path.join(args.dali_idx, '*.idx')))
     
     # split tfrecords between gpus
-    # test_files_per_gpu = len(test_files)//hvd.size()
+    test_files_per_gpu = len(test_files)//hvd.size()
 
-    # if hvd.rank() != hvd.size() - 1:
-    #     gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-    #     gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-    #     gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
+    if hvd.rank() != hvd.size() - 1:
+        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
 
-    #     if args.nvidia_dali:
-    #         gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-    # else:
-    #     gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-    #     gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-    #     gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+        if args.nvidia_dali:
+            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
+    else:
+        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
-    #     if args.nvidia_dali:
-    #         gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
+        if args.nvidia_dali:
+            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
 
     elapsed_time = []
     num_reads_classified = 0
@@ -493,11 +383,11 @@ def main():
 
         # load data
         if args.nvidia_dali:
-            test_preprocessor = DALIPreprocessor(args, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
+            test_preprocessor = DALIPreprocessor(model_type, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
 
             test_input = test_preprocessor.get_device_dataset()
         else:
-            if args.model_type == 'BERT_HUGGINGFACE':
+            if args.model_type == 'BERT':
                 if args.bert_step == 'finetuning':
                     args.datatype = 'finetuning'
                 else:
@@ -572,7 +462,7 @@ def main():
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
                     # print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-                    if args.model_type not in ['BERT', 'BERT_HUGGINGFACE']:
+                    if args.model_type != 'BERT':
                         out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
                     else:
                         out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
