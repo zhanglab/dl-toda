@@ -315,7 +315,7 @@ def main():
     if args.model_type == 'BERT':
         with open(args.bert_config_file, "r") as f:
                 args.config_dict = json.load(f)
-            args.vector_size = args.config_dict['max_position_embeddings']
+        args.vector_size = args.config_dict['max_position_embeddings']
         if args.model is not None:
             model = tf.keras.models.load_model(args.model)
         else:
