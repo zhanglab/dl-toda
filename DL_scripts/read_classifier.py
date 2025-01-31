@@ -461,10 +461,10 @@ def main():
             with open(out_filename, 'w') as out_f:
                 for j in range(num_reads):
                     # print(f'{j}\t{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-                    if args.model_type != 'BERT':
-                        out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                    else:
-                        out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                    # if args.model_type != 'BERT':
+                    out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                    # else:
+                        # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
                     # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
                     # if len(all_prob_sp[j]) == num_labels:
                         # out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
@@ -483,10 +483,8 @@ def main():
     hours, seconds = divmod(total_time.seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
 
-    # with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
-    with open(os.path.join(args.output_dir, f'testing-summary.tsv'), 'w') as outfile:
-        outfile.write(f'{args.batch_size}\t{len(test_files)}\t{num_reads_classified}\t')
-        # outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
+    with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
+        outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
         if args.data_type == 'sim':
             outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
