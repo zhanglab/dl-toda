@@ -114,7 +114,7 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size), (batch_size)),
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         else:
             self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
