@@ -196,14 +196,18 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
+def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
     training = False
+
     if model_type == 'BERT':
-        input_ids = data["input_ids"]
-        attention_mask = data["attention_mask"]
-        token_type_ids = data["token_type_ids"]
-        position_ids = data["position_ids"]
-        labels = data["labels"]
+        if nvidia_dali:
+            input_ids, attention_mask, position_ids, token_type_ids, labels = data
+        else:
+            input_ids = data["input_ids"]
+            attention_mask = data["attention_mask"]
+            token_type_ids = data["token_type_ids"]
+            position_ids = data["position_ids"]
+            labels = data["labels"]
 
     if bert_step == "finetuning":
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
@@ -381,10 +385,12 @@ def main():
 
         # load data
         if args.nvidia_dali:
+            nvidia_dali = True
             test_preprocessor = DALIPreprocessor(args.model_type, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
 
             test_input = test_preprocessor.get_device_dataset()
         else:
+            nvidia_dali=False
             if args.model_type == 'BERT':
                 if args.bert_step == 'finetuning':
                     args.datatype = 'finetuning'
@@ -408,7 +414,7 @@ def main():
             elif args.data_type == 'sim':
                 # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
                 # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy)
+                batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
 
             if batch == 1:
                 all_labels = [labels]
