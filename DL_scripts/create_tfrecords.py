@@ -70,21 +70,21 @@ def prepare_meta_data(args):
             for count, rec in enumerate(reads, 1):
                 read = rec.split('\n')[1].rstrip()
                 read_id = rec.split('\n')[0].rstrip()
-                kmer_vector = prepare_input_data(args, read)
+                dna_list = prepare_input_data(args, read)
 
-                if len(kmer_vector) > args.kmer_vector_length:
-                    num_parts = math.ceil(len(kmer_vector) / args.kmer_vector_length)
-                    grouped_tokens = [kmer_vector[i:i+args.kmer_vector_length] for i in range(0, len(kmer_vector), args.kmer_vector_length)]
+                if len(dna_list) > args.kmer_vector_length:
+                    num_parts = math.ceil(len(dna_list) / args.kmer_vector_length)
+                    grouped_tokens = [dna_list[i:i+args.kmer_vector_length] for i in range(0, len(dna_list), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
                         create_meta_tfrecords(args, kmer_vector, output_tfrec)
-                    print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
-                    outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
+                    print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
+                    outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
 
                 else:
-                    create_meta_tfrecords(args, kmer_vector, output_tfrec)
-                    print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
-                    outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
+                    create_meta_tfrecords(args, dna_list, output_tfrec)
+                    print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
+                    outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
