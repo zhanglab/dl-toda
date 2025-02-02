@@ -391,7 +391,7 @@ def main():
         # write results to file
         with open(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv'), 'w') as out_f:
             for j in range(num_reads):
-                out_f.write(f'{dict_read_ids[str(all_labels[j])]}\t\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
+                out_f.write(f'{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
 
 
         end_time = time.time()
