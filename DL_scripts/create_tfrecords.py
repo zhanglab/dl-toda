@@ -78,12 +78,12 @@ def prepare_meta_data(args):
 
                     for kmer_vector in grouped_tokens:
                         create_meta_tfrecords(args, kmer_vector, output_tfrec)
-                    print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
+                    # print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
 
                 else:
                     create_meta_tfrecords(args, dna_list, output_tfrec)
-                    print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
+                    # print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
