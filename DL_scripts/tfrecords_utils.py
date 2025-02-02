@@ -29,7 +29,7 @@ def prepare_input_data(args, read_seq, rec=None, read_id=None):
                 # pad list of bases with 0s to the right
                 dna_list = dna_list + [0] * (args.read_length - len(dna_list))
         else:
-            dna_list = get_kmer_arr(args, read_seq, args.max_read_length, args.kmer_vector_length)
+            dna_list = get_kmer_arr(args, read_seq)
 
     return dna_list
 
@@ -81,7 +81,7 @@ def get_kmer_index(args, kmer, dict_kmers):
 def get_flipped_reads(args, records):
     flipped_records = []
     for rec in records:
-        flipped_read_id = rec.split("\n")[0]
+        flipped_read_id = rec.split('\n')[0]
         flipped_read = rec.split('\n')[1][::-1]
         flipped_qual = rec.split('\n')[3][::-1]
         flipped_records.append(f'{flipped_read_id}-f\n{flipped_read}\n+\n{flipped_qual}')
@@ -99,12 +99,13 @@ def cut_read(args, read):
     return list_reads
 
 
-def get_kmer_arr(args, read, max_length, vector_length):
+def get_kmer_arr(args, read):
     """ Converts a DNA sequence split into a list of k-mers """
 
     # adjust read length if above args.read_length
-    if len(read) > max_length:
-        read = read[:max_length]
+    if args.dataset_type == 'sim':
+        if len(read) > args.max_read_length:
+            read = read[:args.max_read_length]
 
     list_kmers = []
     for i in range(0, len(read)-args.k_value+1, args.step):
