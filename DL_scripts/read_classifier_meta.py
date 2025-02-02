@@ -375,7 +375,7 @@ def main():
 
 
         # adjust the list of predicted species and read ids if necessary
-        if len(all_labels) > num_reads:
+        if len(all_prob_sp) > num_reads:
             num_extra_reads = (test_steps*args.batch_size) - num_reads
             # all_predictions = all_predictions[:-num_extra_reads]
             all_pred_sp = all_pred_sp[:-num_extra_reads]
