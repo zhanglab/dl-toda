@@ -28,7 +28,33 @@ def wrap_weights(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def create_meta_tfrecords(args):
+def create_meta_tfrecords(args, kmer_vector):
+
+    if args.bert:
+        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
+        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
+        tfrecord_data = \
+            {
+                'input_ids': wrap_vector(input_ids),
+                'attention_mask': wrap_vector(attention_mask),
+                'position_ids': wrap_vector(position_ids),
+                'token_type_ids': wrap_vector(token_type_ids),
+                'labels': wrap_label(label)
+            }
+    else:
+        tfrecord_data = \
+            {
+                'read': wrap_read(kmer_vector),
+            }
+
+    feature = tf.train.Features(feature=tfrecord_data)
+    example = tf.train.Example(features=feature)
+    serialized = example.SerializeToString()
+    writer.write(serialized)
+
+
+
+def prepare_meta_data(args):
         output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.inputsplit('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
@@ -48,20 +74,16 @@ def create_meta_tfrecords(args):
                 if len(kmer_vector) > args.kmer_vector_length:
                     num_parts = math.ceil(len(kmer_vector) / args.kmer_vector_length)
                     grouped_tokens = [kmer_vector[i:i+args.kmer_vector_length] for i in range(0, len(kmer_vector), args.kmer_vector_length)]
-                    print(len(read), num_parts, len(grouped_tokens), grouped_tokens[0], len(grouped_tokens[0]))
-                    print(grouped_tokens)
-                    break
-                    # prepare_data_for_bert(args, dna_list
 
-                # data = \
-                #     {
-                #         'read': wrap_read(kmer_array),
-                #         'label': wrap_label(count)
-                #     }
-                # feature = tf.train.Features(feature=data)
-                # example = tf.train.Example(features=feature)
-                # serialized = example.SerializeToString()
-                # writer.write(serialized)
+                    for kmer_vector in grouped_tokens:
+                        create_meta_tfrecords(args, kmer_vector)
+                    print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
+                    outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
+
+                else:
+                    create_meta_tfrecords(args, kmer_vector)
+                    print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
+                    outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
