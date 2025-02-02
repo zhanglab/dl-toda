@@ -412,7 +412,7 @@ def main():
     if args.dataset_type == "sim":
         create_tfrecords(args)
     elif args.dataset_type == "meta":
-        create_meta_tfrecords(args)
+        prepare_meta_data(args)
 
 
 if __name__ == "__main__":
