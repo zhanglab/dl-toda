@@ -408,12 +408,8 @@ def main():
 
     with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
         outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
-        if args.data_type == 'sim':
-            outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
             outfile.write(f'{args.ckpt}')
-        # else:
-        #     outfile.write(f'model saved at last epoch')
         outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
 
         if len(elapsed_time) > 1:
