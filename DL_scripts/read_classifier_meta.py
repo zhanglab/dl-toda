@@ -184,8 +184,8 @@ def testing_step(model_type, data, model, nvidia_dali=False):
             token_type_ids = data["token_type_ids"]
             position_ids = data["position_ids"]
 
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        # outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
         # logits = model(**data).logits
