@@ -28,38 +28,35 @@ def wrap_weights(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def create_meta_tfrecords(args, kmer_vector, output_tfrec):
+def create_meta_tfrecords(args, kmer_vector, writer):
 
-    with tf.io.TFRecordWriter(output_tfrec) as writer:
+    if args.bert:
+        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
+        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
+        tfrecord_data = \
+            {
+                'input_ids': wrap_vector(input_ids),
+                'attention_mask': wrap_vector(attention_mask),
+                'position_ids': wrap_vector(position_ids),
+                'token_type_ids': wrap_vector(token_type_ids),
+            }
+    else:
+        tfrecord_data = \
+            {
+                'read': wrap_read(kmer_vector),
+            }
 
-        if args.bert:
-            input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
-            print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
-            tfrecord_data = \
-                {
-                    'input_ids': wrap_vector(input_ids),
-                    'attention_mask': wrap_vector(attention_mask),
-                    'position_ids': wrap_vector(position_ids),
-                    'token_type_ids': wrap_vector(token_type_ids),
-                }
-        else:
-            tfrecord_data = \
-                {
-                    'read': wrap_read(kmer_vector),
-                }
-
-        feature = tf.train.Features(feature=tfrecord_data)
-        example = tf.train.Example(features=feature)
-        serialized = example.SerializeToString()
-        writer.write(serialized)
-
+    feature = tf.train.Features(feature=tfrecord_data)
+    example = tf.train.Example(features=feature)
+    serialized = example.SerializeToString()
+    writer.write(serialized)
 
 
 def prepare_meta_data(args):
         output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.inputsplit('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
-        with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
+        with tf.io.TFRecordWriter(output_tfrec) as writer:
             if args.input[-2:] == 'gz':
                 handle = gzip.open(args.input, 'rt')
             else:
@@ -77,12 +74,12 @@ def prepare_meta_data(args):
                     grouped_tokens = [dna_list[i:i+args.kmer_vector_length] for i in range(0, len(dna_list), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
-                        create_meta_tfrecords(args, kmer_vector, output_tfrec)
+                        create_meta_tfrecords(args, kmer_vector, writer)
                     # print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
 
                 else:
-                    create_meta_tfrecords(args, dna_list, output_tfrec)
+                    create_meta_tfrecords(args, dna_list, writer)
                     # print(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
 
