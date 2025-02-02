@@ -28,28 +28,30 @@ def wrap_weights(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def create_meta_tfrecords(args, kmer_vector):
+def create_meta_tfrecords(args, kmer_vector, output_tfrec):
 
-    if args.bert:
-        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
-        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
-        tfrecord_data = \
-            {
-                'input_ids': wrap_vector(input_ids),
-                'attention_mask': wrap_vector(attention_mask),
-                'position_ids': wrap_vector(position_ids),
-                'token_type_ids': wrap_vector(token_type_ids),
-            }
-    else:
-        tfrecord_data = \
-            {
-                'read': wrap_read(kmer_vector),
-            }
+    with tf.io.TFRecordWriter(output_tfrec) as writer:
 
-    feature = tf.train.Features(feature=tfrecord_data)
-    example = tf.train.Example(features=feature)
-    serialized = example.SerializeToString()
-    writer.write(serialized)
+        if args.bert:
+            input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
+            print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
+            tfrecord_data = \
+                {
+                    'input_ids': wrap_vector(input_ids),
+                    'attention_mask': wrap_vector(attention_mask),
+                    'position_ids': wrap_vector(position_ids),
+                    'token_type_ids': wrap_vector(token_type_ids),
+                }
+        else:
+            tfrecord_data = \
+                {
+                    'read': wrap_read(kmer_vector),
+                }
+
+        feature = tf.train.Features(feature=tfrecord_data)
+        example = tf.train.Example(features=feature)
+        serialized = example.SerializeToString()
+        writer.write(serialized)
 
 
 
@@ -75,12 +77,12 @@ def prepare_meta_data(args):
                     grouped_tokens = [kmer_vector[i:i+args.kmer_vector_length] for i in range(0, len(kmer_vector), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
-                        create_meta_tfrecords(args, kmer_vector)
+                        create_meta_tfrecords(args, kmer_vector, output_tfrec)
                     print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t{num_parts}\n')
 
                 else:
-                    create_meta_tfrecords(args, kmer_vector)
+                    create_meta_tfrecords(args, kmer_vector, output_tfrec)
                     print(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
                     outfile.write(f'{read_id}\t{len(read)}\t{len(kmer_vector)}\t1\n')
 
