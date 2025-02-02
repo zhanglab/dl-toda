@@ -126,7 +126,7 @@ class DALIPreprocessor(object):
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
-    def load_tfrecords_with_reads(proto_example):
+    def load_tfrecords_for_dltoda(proto_example):
         data_description = {
             'read': tf.io.VarLenFeature(tf.int64)
         }
@@ -136,7 +136,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         read = tf.sparse.to_dense(read)
         return read
 
-    def load_tfrecords_for_finetuning(proto_example):
+    def load_tfrecords_for_bert(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
@@ -148,7 +148,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask']}
 
     """ Return data in TFRecords """
-    fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning}
+    fn_load_data = {'DLTODA': load_tfrecords_for_dltoda, 'BERT': load_tfrecords_for_bert}
 
     dataset = tf.data.TFRecordDataset([filenames])
 
@@ -156,7 +156,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         dataset = dataset.repeat()
         dataset = dataset.shuffle(buffer_size=10000)
 
-    dataset = dataset.map(map_func=fn_load_data[args.datatype])
+    dataset = dataset.map(map_func=fn_load_data[args.model_type])
     dataset = dataset.batch(args.batch_size, drop_remainder=drop_remainder)
 
 
@@ -343,14 +343,6 @@ def main():
             test_input = test_preprocessor.get_device_dataset()
         else:
             nvidia_dali=False
-            if args.model_type == 'BERT':
-                if args.bert_step == 'finetuning':
-                    args.datatype = 'finetuning'
-                else:
-                    args.datatype = 'pretraining'
-                    args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
-            else:
-                args.datatype = 'reads'
             test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
