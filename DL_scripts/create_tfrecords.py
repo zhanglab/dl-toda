@@ -49,6 +49,7 @@ def create_meta_tfrecords(args):
                     num_parts = math.ceil(len(kmer_vector) / args.kmer_vector_length)
                     grouped_tokens = [input_files[i:i+args.kmer_vector_length] for i in range(0, len(num_parts), args.kmer_vector_length)]
                     print(num_parts, len(grouped_tokens), grouped_tokens[0])
+                    break
 
                 data = \
                     {
