@@ -39,7 +39,6 @@ def create_meta_tfrecords(args, kmer_vector):
                 'attention_mask': wrap_vector(attention_mask),
                 'position_ids': wrap_vector(position_ids),
                 'token_type_ids': wrap_vector(token_type_ids),
-                'labels': wrap_label(label)
             }
     else:
         tfrecord_data = \
