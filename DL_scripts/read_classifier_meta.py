@@ -349,7 +349,6 @@ def main():
         # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         
         for batch, data in enumerate(test_input.take(test_steps), 1):
@@ -357,7 +356,6 @@ def main():
             batch_pred_sp, batch_prob_sp = testing_step(args.model_type, data, model)
 
             if batch == 1:
-                all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
                 all_prob_sp = [batch_prob_sp]
                 # all_prob_labels = [batch_label_prob]
@@ -366,14 +364,12 @@ def main():
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
                 all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
-                all_labels = tf.concat([all_labels, [labels]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
 
         # get list of true species, predicted species and predicted probabilities
         # all_predictions = all_predictions.numpy()
         all_pred_sp = all_pred_sp[0].numpy()
         all_prob_sp = all_prob_sp[0].numpy()
-        all_labels = all_labels[0].numpy()
         # all_prob_labels = all_prob_labels[0].numpy()
         print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
 
@@ -384,9 +380,8 @@ def main():
             # all_predictions = all_predictions[:-num_extra_reads]
             all_pred_sp = all_pred_sp[:-num_extra_reads]
             all_prob_sp = all_prob_sp[:-num_extra_reads]
-            all_labels = all_labels[:-num_extra_reads]
-            print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
-            print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
+            print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\n')
+            print(all_pred_sp[0], all_prob_sp[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
 
         # get dictionary mapping read ids to labels
