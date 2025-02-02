@@ -51,15 +51,15 @@ def create_meta_tfrecords(args):
                     print(num_parts, len(grouped_tokens), grouped_tokens[0])
                     break
 
-                data = \
-                    {
-                        'read': wrap_read(kmer_array),
-                        'label': wrap_label(count)
-                    }
-                feature = tf.train.Features(feature=data)
-                example = tf.train.Example(features=feature)
-                serialized = example.SerializeToString()
-                writer.write(serialized)
+                # data = \
+                #     {
+                #         'read': wrap_read(kmer_array),
+                #         'label': wrap_label(count)
+                #     }
+                # feature = tf.train.Features(feature=data)
+                # example = tf.train.Example(features=feature)
+                # serialized = example.SerializeToString()
+                # writer.write(serialized)
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
