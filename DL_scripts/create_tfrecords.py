@@ -28,28 +28,28 @@ def wrap_weights(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def create_meta_tfrecords(args, grouped_files):
-    for fq_file in grouped_files:
-        """ Converts metagenomic reads to tfrecords """
-        output_prefix = '.'.join(fq_file.split('/')[-1].split('.')[0:-2]) if fq_file[-2:] == 'gz' else '.'.join(fq_file.split('/')[-1].split('.')[0:-1])
+def create_meta_tfrecords(args):
+        output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.inputsplit('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
         with tf.compat.v1.python_io.TFRecordWriter(output_tfrec) as writer:
-            if fq_file[-2:] == 'gz':
-                handle = gzip.open(fq_file, 'rt')
+            if args.input[-2:] == 'gz':
+                handle = gzip.open(args.input, 'rt')
             else:
-                handle = open(fq_file, 'r')
+                handle = open(args.input, 'r')
             # with gzip.open(args.input_fastq, 'rt') as handle:
             content = handle.readlines()
             reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
             for count, rec in enumerate(reads, 1):
-            # for count, rec in enumerate(SeqIO.parse(handle, 'fastq'), 1):
-            #     read = str(rec.seq)
                 read = rec.split('\n')[1].rstrip()
-                # read_id = rec.description
                 read_id = rec.split('\n')[0].rstrip()
-                # outfile.write(f'{read_id}\t{count}\n')
-                kmer_array = get_kmer_arr(args, read)
+                kmer_vector = prepare_input_data(args, read)
+
+                if len(kmer_vector) > args.kmer_vector_length:
+                    num_parts = math.ceil(len(kmer_vector) / args.kmer_vector_length)
+                    grouped_tokens = [input_files[i:i+args.kmer_vector_length] for i in range(0, len(num_parts), args.kmer_vector_length)]
+                    print(num_parts, len(grouped_tokens), grouped_tokens[0])
+
                 data = \
                     {
                         'read': wrap_read(kmer_array),
@@ -384,7 +384,10 @@ def main():
         with open(os.path.join(args.output_dir, f'{args.k_value}-dict.json'), 'w') as f:
             json.dump(args.dict_kmers, f)
 
-    create_tfrecords(args)
+    if args.dataset_type == "sim":
+        create_tfrecords(args)
+    elif args.dataset_type == "meta":
+        create_meta_tfrecords(args)
 
 
 if __name__ == "__main__":
