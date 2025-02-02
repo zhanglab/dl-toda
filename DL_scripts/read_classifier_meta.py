@@ -371,7 +371,7 @@ def main():
         all_pred_sp = all_pred_sp[0].numpy()
         all_prob_sp = all_prob_sp[0].numpy()
         # all_prob_labels = all_prob_labels[0].numpy()
-        print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
+        print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\n')
 
 
         # adjust the list of predicted species and read ids if necessary
