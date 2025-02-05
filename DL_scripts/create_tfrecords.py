@@ -32,7 +32,7 @@ def create_meta_tfrecords(args, kmer_vector, writer):
 
     if args.bert:
         input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
-        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
+        # print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
         tfrecord_data = \
             {
                 'input_ids': wrap_vector(input_ids),
@@ -74,12 +74,12 @@ def prepare_meta_data(args):
                     grouped_tokens = [dna_list[i:i+args.kmer_vector_length] for i in range(0, len(dna_list), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
-                        print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
+                        # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
                         create_meta_tfrecords(args, kmer_vector, writer)
                         outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
 
                 else:
-                    print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
+                    # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
                     create_meta_tfrecords(args, dna_list, writer)
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
 
