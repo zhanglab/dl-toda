@@ -83,9 +83,6 @@ def prepare_meta_data(args):
                     create_meta_tfrecords(args, dna_list, writer)
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
 
-                if count == 5:
-                    break
-
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
 
