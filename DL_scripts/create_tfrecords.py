@@ -53,7 +53,7 @@ def create_meta_tfrecords(args, kmer_vector, writer):
 
 
 def prepare_meta_data(args):
-        output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.inputsplit('/')[-1].split('.')[0:-1])
+        output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.input.split('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
         outfile = open('/'.join([args.output_dir, output_prefix + f'-read_ids.tsv']), 'w')
         with tf.io.TFRecordWriter(output_tfrec) as writer:
