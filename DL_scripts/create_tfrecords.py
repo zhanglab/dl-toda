@@ -32,7 +32,6 @@ def create_meta_tfrecords(args, kmer_vector, writer):
 
     if args.bert:
         input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
-        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
         tfrecord_data = \
             {
                 'input_ids': wrap_vector(input_ids),
