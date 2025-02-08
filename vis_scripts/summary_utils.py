@@ -119,7 +119,7 @@ def get_metrics(args, cm, r_name, r_index):
     micro_average_precision = sum(list_TP)/(sum(list_TP) + sum(list_FP))
     micro_average_recall = sum(list_TP)/(sum(list_TP) + sum(list_FN))
     micro_average_f1_score = sum(list_TP)/(sum(list_TP) + 1/2*(sum(list_FP)+sum(list_FN)))
-    outf_3.write(f'{micro_average_precision}\t{micro_average_recall}\t{micro_average_f1_score}\t{macro_average_precision}\t{macro_average_recall}\t{macro_average_f1_score}\t{accuracy_whole}\t{accuracy_classified}\t{accuracy_w_misclassified}')
+    outf_3.write(f'{micro_average_precision}\t{micro_average_recall}\t{micro_average_f1_score}\t{macro_average_precision}\t{macro_average_recall}\t{macro_average_f1_score}\t{accuracy_whole}\t{accuracy_classified}\t{accuracy_w_misclassified}\n')
 
     outf_1.close()
     outf_2.close()
