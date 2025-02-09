@@ -274,6 +274,9 @@ def create_tfrecords(args):
                         dna_sequence = line.rstrip().split('\t')[1]
                         # parse dna sequence into kmers
                         dna_list = prepare_input_data(args, dna_sequence)
+                        if len(dna_list) < args.kmer_vector_length:
+                            num_padded_values = args.kmer_vector_length-len(dna_list)
+                            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
 
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
