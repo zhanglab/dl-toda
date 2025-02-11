@@ -32,7 +32,7 @@ def create_meta_tfrecords(args, kmer_vector, writer):
 
     if args.bert:
         input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, kmer_vector)
-        # print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
+        print(input_ids, attention_mask, position_ids, token_type_ids, sequence_size)
         tfrecord_data = \
             {
                 'input_ids': wrap_vector(input_ids),
@@ -41,6 +41,7 @@ def create_meta_tfrecords(args, kmer_vector, writer):
                 'token_type_ids': wrap_vector(token_type_ids),
             }
     else:
+        print(kmer_vector, len(kmer_vector))
         tfrecord_data = \
             {
                 'read': wrap_vector(kmer_vector),
@@ -81,6 +82,9 @@ def prepare_meta_data(args):
                 else:
                     print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
                     create_meta_tfrecords(args, dna_list, writer)
+                    if len(dna_list) < args.kmer_vector_length:
+                        num_padded_values = args.kmer_vector_length-len(dna_list)
+                        dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
                 if count == 10:
                     break
