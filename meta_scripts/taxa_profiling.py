@@ -56,12 +56,9 @@ def parse_data(taxa, args, process_id):
             out_f.write(f'{k}\t{v}\n')
 
 
-
-
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, help='output file with predicted species obtained from running DL-TODA')
+    parser.add_argument('--input', type=str, help='output file with classification results obtained from running DL-TODA')
     parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'])
     parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
     parser.add_argument('--binning', help='bin reads', action='store_true')
@@ -71,8 +68,9 @@ if __name__ == "__main__":
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
-    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'])
+    parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='gtdb')
     parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     args = parser.parse_args()
 
     args.ranks = {'phylum': 5, 'class': 4, 'order': 3, 'family': 2, 'genus': 1, 'species': 0}
@@ -87,7 +85,7 @@ if __name__ == "__main__":
         # load reads
         load_reads(args)
 
-    elif args.summarize:
+    if args.summarize:
         input_files = glob.glob(os.path.join(args.input, f'*-taxa_profile'))
         print(len(input_files))
         taxa_count = defaultdict(int)
@@ -101,18 +99,25 @@ if __name__ == "__main__":
                 out_f.write(f'{k}\t{v}\n')
 
     if args.tool == 'dl-toda':
-        # load dl-toda taxonomy
-        args.dl_toda_taxonomy = {}
-        path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
-        with open(path_dl_toda_tax, 'r') as in_f:
-            for line in in_f:
-                line = line.rstrip().split('\t')
-                args.dl_toda_taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
-        taxa = []
-        for i in range(len(args.dl_toda_taxonomy)):
-            if args.dl_toda_taxonomy[i] not in taxa:
-                taxa.append(args.dl_toda_taxonomy[i])
-        print(len(taxa))
+        if args.class_mapping:
+            f = open(args.class_mapping)
+            class_mapping = json.load(f)
+            taxa = [i.split(';')[0] for i in range(len(class_mapping))]
+            print(taxa, len(taxa))
+        else:
+            # load dl-toda taxonomy
+            args.taxonomy = {}
+            path_dl_toda_tax = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+            with open(path_dl_toda_tax, 'r') as in_f:
+                for line in in_f:
+                    line = line.rstrip().split('\t')
+                    args.taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
+            taxa = []
+            for i in range(len(args.taxonomy)):
+                if args.taxonomy[i] not in taxa:
+                    taxa.append(args.taxonomy[i])
+            print(len(taxa))
+        
         # update and create output directory
         args.output_dir = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
