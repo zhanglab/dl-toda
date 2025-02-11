@@ -43,7 +43,7 @@ def create_meta_tfrecords(args, kmer_vector, writer):
     else:
         tfrecord_data = \
             {
-                'read': wrap_read(kmer_vector),
+                'read': wrap_vector(kmer_vector),
             }
 
     feature = tf.train.Features(feature=tfrecord_data)
