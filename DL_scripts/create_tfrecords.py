@@ -32,7 +32,7 @@ def create_meta_tfrecords(args, kmer_vector, writer, outfile):
 
     if args.bert:
         input_ids, attention_mask, position_ids, token_type_ids, kmer_vector_size, input_ids_size = prepare_data_for_bert(args, kmer_vector)
-        print(input_ids, attention_mask, position_ids, token_type_ids, kmer_vector_size, input_ids_size)
+        # print(input_ids, attention_mask, position_ids, token_type_ids, kmer_vector_size, input_ids_size)
         outfile.write(f'{kmer_vector_size}\t{input_ids_size}\n')
         tfrecord_data = \
             {
@@ -46,7 +46,7 @@ def create_meta_tfrecords(args, kmer_vector, writer, outfile):
             num_padded_values = args.kmer_vector_length-len(kmer_vector)
             kmer_vector = kmer_vector + [args.dict_kmers['[PAD]']] * num_padded_values
         outfile.write(f'{len(kmer_vector)}\n')
-        print(kmer_vector, len(kmer_vector))
+        # print(kmer_vector, len(kmer_vector))
         tfrecord_data = \
             {
                 'read': wrap_vector(kmer_vector),
@@ -80,17 +80,17 @@ def prepare_meta_data(args):
                     grouped_tokens = [dna_list[i:i+args.kmer_vector_length] for i in range(0, len(dna_list), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
-                        print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
+                        # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
                         outfile.write(f'{read_id}\t{len(read)}\t{num_parts}\t')
                         create_meta_tfrecords(args, kmer_vector, writer, outfile)
 
                 else:
-                    print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
+                    # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
                     outfile.write(f'{read_id}\t{len(read)}\t1\t')
                     create_meta_tfrecords(args, dna_list, writer, outfile)
                    
-                if count == 10:
-                    break
+                # if count == 10:
+                #     break
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
