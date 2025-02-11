@@ -74,14 +74,16 @@ def prepare_meta_data(args):
                     grouped_tokens = [dna_list[i:i+args.kmer_vector_length] for i in range(0, len(dna_list), args.kmer_vector_length)]
 
                     for kmer_vector in grouped_tokens:
-                        # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
+                        print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t{num_parts}\n')
                         create_meta_tfrecords(args, kmer_vector, writer)
                         outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t{num_parts}\n')
 
                 else:
-                    # print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
+                    print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
                     create_meta_tfrecords(args, dna_list, writer)
                     outfile.write(f'{read_id}\t{len(read)}\t{len(dna_list)}\t1\n')
+            if count == 10:
+                break
 
             with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
                 f.write(f'{count}')
