@@ -86,7 +86,7 @@ def prepare_meta_data(args):
 
                 else:
                     print(f'{read_id}\t{len(read)}\t{read}\t{len(dna_list)}\t1\n')
-                     outfile.write(f'{read_id}\t{len(read)}\t1\t')
+                    outfile.write(f'{read_id}\t{len(read)}\t1\t')
                     create_meta_tfrecords(args, dna_list, writer, outfile)
                    
                 if count == 10:
