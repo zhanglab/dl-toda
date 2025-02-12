@@ -33,40 +33,33 @@ def GetAveQualScore(base_qual_scores):
 def ParseData(args, taxa, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-taxa_profile')
     taxa_count = defaultdict(list)
+
     with open(args.input, 'r') as f:
         for count, line in enumerate(f, 0):
             if float(line.rstrip().split('\t')[1]) >= args.cutoff:
                 if line.rstrip().split('\t')[0] in taxa:
                     taxa_count[line.rstrip().split('\t')[0]].append(count)
 
-    print(len(taxa_count['1']), len(taxa_count['0']))
-
     with open(out_filename, 'w') as out_f:
         for taxon, t_reads_idx in taxa_count.items():
-            
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'bin-{taxon}.fq')
-                sum_filename = os.path.join(args.output_dir, f'summary-{taxon}.tsv')
-                for idx in t_reads_idx:
-                    print(args.reads[idx])
-                    
-                    # get read based quality score
-                    base_qual_scores = args.reads[idx].split('\n')[3]
-                    read_ave_qual_score = GetAveQualScore(base_qual_scores)
-                    print(args.reads[idx].split('\n')[3])
-                    print(read_ave_qual_score)
-                    
-                    # get read length
-                    read_length = len(args.reads[idx].split('\n')[1])
-                    print(args.reads[idx].split('\n')[1])
-                    print(read_length)
-                    
-                    with open(fq_filename, 'a') as out_fq:
-                        out_fq.write(''.join(args.reads[idx]))
+                if taxon in args.labels:
+                    fq_filename = os.path.join(args.output_dir, f'bin-{taxon}.fq')
+                    sum_filename = os.path.join(args.output_dir, f'summary-{taxon}.tsv')
+                    for idx in t_reads_idx:                    
+                        # get read based quality score
+                        base_qual_scores = args.reads[idx].split('\n')[3]
+                        read_ave_qual_score = GetAveQualScore(base_qual_scores)
+                        
+                        # get read length
+                        read_length = len(args.reads[idx].split('\n')[1])
+                        
+                        with open(fq_filename, 'a') as out_fq:
+                            out_fq.write(''.join(args.reads[idx]))
 
-                    with open(sum_filename, 'a') as out_fs:
-                        out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
-                    sys.exit(0)
+                        with open(sum_filename, 'a') as out_fs:
+                            out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
+                        sys.exit(0)
 
             out_f.write(f'{taxon}\t{len(t_reads_idx)}\n')
 
@@ -82,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument('--rank', type=str, help='taxonomic rank at which the analysis should be done', default='species')
     parser.add_argument('--cutoff', type=float, help='cutoff or probability score between 0 and 1 above which reads should be analyzed', default=0.0)
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
-    parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
+    parser.add_argument('--labels', nargs='+', default=[], help='list of labels to bin')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='gtdb')
     parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
@@ -96,13 +89,8 @@ if __name__ == "__main__":
     elif args.tax_db =='gtdb':
         index = 1
 
-    if args.binning:
-        # get reads from fastq file
-        LoadReads(args)
-
     if args.summarize:
         input_files = glob.glob(os.path.join(args.input, f'*-taxa_profile'))
-        print(len(input_files))
         taxa_count = defaultdict(int)
         for i in range(len(input_files)):
             with open(input_files[i], 'r') as f:
@@ -112,6 +100,10 @@ if __name__ == "__main__":
         with open(os.path.join(args.output_dir, f'taxa_profile_{args.rank}'), 'w') as out_f:
             for k, v in taxa_count.items():
                 out_f.write(f'{k}\t{v}\n')
+
+    if args.binning:
+        # get reads from fastq file
+        LoadReads(args)
 
     if args.tool == 'dl-toda':
         if args.class_mapping:
@@ -127,9 +119,11 @@ if __name__ == "__main__":
                     line = line.rstrip().split('\t')
                     args.taxonomy[str(line[0])] = line[index].split(';')[args.ranks[args.rank]]
 
-        print(args.taxonomy)
         taxa = list(args.taxonomy.keys())
-        print(taxa)
+
+        if len(args.labels) == 0:
+            args.labels = taxa
+        
         # update and create output directory
         args.output_dir = os.path.join(args.output_dir, f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
@@ -139,7 +133,6 @@ if __name__ == "__main__":
         # split taxa amongst processes
         chunk_size = math.ceil(len(taxa)/args.processes)
         taxa_groups = [taxa[i:i+chunk_size] for i in range(0,len(taxa),chunk_size)]
-        print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
 
         with mp.Manager() as manager:
             processes = [mp.Process(target=ParseData, args=(args, taxa_groups[i], i)) for i in range(len(taxa_groups))]
