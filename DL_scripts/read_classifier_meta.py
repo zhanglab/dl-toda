@@ -148,7 +148,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask']}
 
     """ Return data in TFRecords """
-    fn_load_data = {'DLTODA': load_tfrecords_for_dltoda, 'BERT': load_tfrecords_for_bert}
+    fn_load_data = load_tfrecords_for_bert if args.model_type == 'BERT' else load_tfrecords
 
     dataset = tf.data.TFRecordDataset([filenames])
 
@@ -156,7 +156,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         dataset = dataset.repeat()
         dataset = dataset.shuffle(buffer_size=10000)
 
-    dataset = dataset.map(map_func=fn_load_data[args.model_type])
+    dataset = dataset.map(map_func=fn_load_data)
     dataset = dataset.batch(args.batch_size, drop_remainder=drop_remainder)
 
 
