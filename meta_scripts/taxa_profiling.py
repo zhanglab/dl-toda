@@ -59,7 +59,7 @@ def ParseData(args, labels, process_id):
                     with open(sum_filename, 'a') as out_fs:
                         out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
 
-            out_f.write(f'{label}\t{len(reads_idx)}\n')
+            out_f.write(f'{label}\t{len(reads_idx)}\t{count}\n')
 
 
 if __name__ == "__main__":
