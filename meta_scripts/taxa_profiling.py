@@ -59,7 +59,6 @@ def ParseData(args, taxa, process_id):
 
                         with open(sum_filename, 'a') as out_fs:
                             out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
-                        sys.exit(0)
 
             out_f.write(f'{taxon}\t{len(t_reads_idx)}\n')
 
