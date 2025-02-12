@@ -27,7 +27,8 @@ def GetAveQualScore(base_qual_scores):
     int_qual_scores = [ord(c)-33 for c in base_qual_scores]
     print('int_qual_scores', int_qual_scores)
     print([10**(q/-10) for q in int_qual_scores])
-
+    print(sum([10**(q/-10) for q in int_qual_scores]))
+    print(-10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10))
     # calculate average quality score by first converting Phred scores to probabilities, calculate the average error probability and convert average back to Phred scale
     return -10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10)
 
