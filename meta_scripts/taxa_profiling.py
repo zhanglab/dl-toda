@@ -53,7 +53,7 @@ def ParseData(args, taxa, process_id):
                     base_qual_scores = args.reads[idx].split('\n')[3]
                     read_ave_qual_score = GetAveQualScore(base_qual_scores)
                     print(args.reads[idx].split('\n')[3])
-                    print(list_qual_scores)
+                    print(read_ave_qual_score)
                     
                     # get read length
                     read_length = len(args.reads[idx].split('\n')[1])
