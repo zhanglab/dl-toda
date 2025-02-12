@@ -57,7 +57,7 @@ def ParseData(args, labels, process_id):
                         out_fq.write(''.join(args.reads[idx]))
 
                     with open(sum_filename, 'a') as out_fs:
-                        out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
+                        out_fs.write(f'{args.reads[idx].split("\n")[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
 
             out_f.write(f'{label}\t{len(reads_idx)}\t{count}\n')
 
