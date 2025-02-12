@@ -131,12 +131,10 @@ if __name__ == "__main__":
         taxa = list(args.taxonomy.keys())
         print(taxa)
         # update and create output directory
-        args.output_dir = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
+        args.output_dir = os.path.join(args.output_dir, f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
-            if args.binning:
-                for i in range(args.processes):
-                    os.makedirs(os.path.join(args.output_dir, f'{i}'))
+
 
         # split taxa amongst processes
         chunk_size = math.ceil(len(taxa)/args.processes)
