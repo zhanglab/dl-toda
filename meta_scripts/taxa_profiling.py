@@ -133,7 +133,7 @@ if __name__ == "__main__":
         labels_groups = [labels_to_analyze[i:i+chunk_size] for i in range(0,len(labels_to_analyze),chunk_size)]
 
         with mp.Manager() as manager:
-            processes = [mp.Process(target=ParseData, args=(args, labels_groups[i], i)) for i in range(len(taxa_groups))]
+            processes = [mp.Process(target=ParseData, args=(args, labels_groups[i], i)) for i in range(len(labels_groups))]
             for p in processes:
                 p.start()
             for p in processes:
