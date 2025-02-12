@@ -25,10 +25,7 @@ def LoadReads(args):
 def GetAveQualScore(base_qual_scores):
     # convert characters to ASCII code
     int_qual_scores = [ord(c)-33 for c in base_qual_scores]
-    print('int_qual_scores', int_qual_scores)
-    print([10**(q/-10) for q in int_qual_scores])
-    print(sum([10**(q/-10) for q in int_qual_scores]))
-    print(-10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10))
+
     # calculate average quality score by first converting Phred scores to probabilities, calculate the average error probability and convert average back to Phred scale
     return -10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10)
 
@@ -42,11 +39,14 @@ def ParseData(args, taxa, process_id):
                 if line.rstrip().split('\t')[0] in taxa:
                     taxa_count[line.rstrip().split('\t')[0]].append(count)
 
+    print(len(taxa_count['1']), len(taxa_count['0']))
+
     with open(out_filename, 'w') as out_f:
         for taxon, t_reads_idx in taxa_count.items():
             
             if args.binning:
                 fq_filename = os.path.join(args.output_dir, f'bin-{taxon}.fq')
+                sum_filename = os.path.join(args.output_dir, f'summary-{taxon}.tsv')
                 for idx in t_reads_idx:
                     print(args.reads[idx])
                     
@@ -63,6 +63,9 @@ def ParseData(args, taxa, process_id):
                     
                     with open(fq_filename, 'a') as out_fq:
                         out_fq.write(''.join(args.reads[idx]))
+
+                    with open(sum_filename, 'a') as out_fs:
+                        out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
                     sys.exit(0)
 
             out_f.write(f'{taxon}\t{len(t_reads_idx)}\n')
