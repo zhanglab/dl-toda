@@ -80,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument('--taxa', nargs='+', default=[], help='list of taxa to bin')
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='gtdb')
     parser.add_argument('--summarize', help='summarize taxa profiles from multiple samples', action='store_true')
-    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
+    parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     args = parser.parse_args()
 
     args.ranks = {'phylum': 5, 'class': 4, 'order': 3, 'family': 2, 'genus': 1, 'species': 0}
