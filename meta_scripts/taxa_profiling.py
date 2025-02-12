@@ -11,49 +11,59 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 from vis_scripts.parse_tool_output import *
 from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 
-def load_reads(args):
+def LoadReads(args):
     if args.fastq[-2:] == 'gz':
         with gzip.open(args.fastq, 'rt') as handle:
             content = handle.readlines()
     else:
         with open(args.fastq, 'r') as handle:
             content = handle.readlines()
-    records = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-    args.reads = {rec.split('\n')[0]: rec for rec in records}
+    args.reads = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
 
-# def parse_data(taxa, data, args, process_id):
-def parse_data(taxa, args, process_id):
-    labels = list(args.taxonomy.keys())
-    print(process_id, len(labels))
+
+def GetAveQualScore(base_qual_scores):
+    # convert characters to ASCII code
+    int_qual_scores = [ord(c)-33 for c in base_qual_scores]
+    print('int_qual_scores', int_qual_scores)
+    print([10**(q/-10) for q in int_qual_scores])
+
+    # calculate average quality score by first converting Phred scores to probabilities, calculate the average error probability and convert average back to Phred scale
+    return -10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10)
+
+
+def ParseData(args, taxa, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-taxa_profile')
-    taxa_count = defaultdict(int)
+    taxa_count = defaultdict(list)
     with open(args.input, 'r') as f:
-        for line in f:
-            if int(line.rstrip().split('\t')[2]) in labels:
-                if float(line.rstrip().split('\t')[3]) >= args.cutoff:
-                    taxa_count[args.taxonomy[int(line.rstrip().split('\t')[2])]] += 1
+        for count, line in enumerate(f, 0):
+            if float(line.rstrip().split('\t')[1]) >= args.cutoff:
+                if line.rstrip().split('\t')[0] in taxa:
+                    taxa_count[args.taxonomy[int(line.rstrip().split('\t')[0])]].append(count)
 
-    # for t in taxa:
-    #     # get label(s)
-    #     l = [k for k, v in args.dl_toda_taxonomy.items() if v == t]
-    #     # get reads
-    #     t_reads_id = []
-    #     for k, v in data.items():
-    #         if int(k) in l:
-    #             for i in range(len(v)):
-    #                 if float(v[i][3]) > args.cutoff:
-    #                     t_reads_id.append(v[i][0])
-    #     taxa_count[t] = len(t_reads_id)
-        # if args.binning:
-        #     t_reads = [args.reads[r] for r in t_reads_id]
-        #     fq_filename = os.path.join(args.output_dir, f'{process_id}', f'bin-{l[0]}.fq') if args.rank == 'species' else os.path.join(args.output_dir, f'{process_id}', f'bin-{t.split(";")[0]}.fq')
-        #     with open(fq_filename, 'a') as out_fq:
-        #         out_fq.write(''.join(t_reads))
-
-    # write tax profile to output file
     with open(out_filename, 'w') as out_f:
-        for k, v in taxa_count.items():
-            out_f.write(f'{k}\t{v}\n')
+        for taxon, t_reads_idx in taxa_count.items():
+            
+            if args.binning:
+                fq_filename = os.path.join(args.output_dir, f'bin-{taxon}.fq')
+                for idx in t_reads_idx:
+                    print(args.reads[idx])
+                    
+                    # get read based quality score
+                    base_qual_scores = args.reads[idx].split('\n')[3]
+                    read_ave_qual_score = GetAveQualScore(base_qual_scores)
+                    print(args.reads[idx].split('\n')[3])
+                    print(list_qual_scores)
+                    
+                    # get read length
+                    read_length = len(args.reads[idx].split('\n')[1])
+                    print(args.reads[idx].split('\n')[1])
+                    print(read_length)
+                    
+                    with open(fq_filename, 'a') as out_fq:
+                        out_fq.write(''.join(args.reads[idx]))
+                    sys.exit(0)
+
+            out_f.write(f'{taxon}\t{len(t_reads_idx)}\n')
 
 
 if __name__ == "__main__":
@@ -82,8 +92,8 @@ if __name__ == "__main__":
         index = 1
 
     if args.binning:
-        # load reads
-        load_reads(args)
+        # get reads from fastq file
+        LoadReads(args)
 
     if args.summarize:
         input_files = glob.glob(os.path.join(args.input, f'*-taxa_profile'))
@@ -103,8 +113,6 @@ if __name__ == "__main__":
             f = open(args.class_mapping)
             class_mapping = json.load(f)
             args.taxonomy = {k: v.split(';')[0] for v in class_mapping.items()} # only get species level
-            taxa = [i.split(';')[0] for i in range(len(class_mapping))]
-            print(taxa, len(taxa))
         else:
             # load dl-toda taxonomy
             args.taxonomy = {}
@@ -112,13 +120,10 @@ if __name__ == "__main__":
             with open(path_dl_toda_tax, 'r') as in_f:
                 for line in in_f:
                     line = line.rstrip().split('\t')
-                    args.taxonomy[int(line[0])] = line[index].split(';')[args.ranks[args.rank]]
-            taxa = []
-            for i in range(len(args.taxonomy)):
-                if args.taxonomy[i] not in taxa:
-                    taxa.append(args.taxonomy[i])
-            print(len(taxa))
-        
+                    args.taxonomy[str(line[0])] = line[index].split(';')[args.ranks[args.rank]]
+
+        taxa = list(args.taxonomy.keys())
+
         # update and create output directory
         args.output_dir = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
@@ -132,20 +137,8 @@ if __name__ == "__main__":
         taxa_groups = [taxa[i:i+chunk_size] for i in range(0,len(taxa),chunk_size)]
         print(chunk_size, len(taxa_groups), len(taxa_groups[0]))
 
-        # load data
-        # data = defaultdict(list)
-        # with open(args.dl_toda_output, 'r') as f:
-        #     for line in f:
-        #         data[line.rstrip().split('\t')[2]].append(line.rstrip().split('\t'))
-        # print(len(data))
-        #
-        # data_toshare = [data[i] for i in taxa_groups[0]]
-        # print(len(data_toshare))
-        # print(len(taxa_groups[0]))
-
         with mp.Manager() as manager:
-            processes = [mp.Process(target=parse_data, args=(taxa_groups[i], args, i)) for i in range(len(taxa_groups))]
-            # processes = [mp.Process(target=parse_data, args=(taxa_groups[i], [data[j] for j in taxa_groups[i]], args, i)) for i in range(len(taxa_groups))]
+            processes = [mp.Process(target=ParseData, args=(args, taxa_groups[i], i)) for i in range(len(taxa_groups))]
             for p in processes:
                 p.start()
             for p in processes:
