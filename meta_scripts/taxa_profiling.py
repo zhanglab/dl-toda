@@ -23,15 +23,15 @@ def load_reads(args):
 
 # def parse_data(taxa, data, args, process_id):
 def parse_data(taxa, args, process_id):
-    labels = [k for k, v in args.dl_toda_taxonomy.items() if v in taxa]
+    labels = list(args.taxonomy.keys())
     print(process_id, len(labels))
     out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-taxa_profile')
     taxa_count = defaultdict(int)
     with open(args.input, 'r') as f:
         for line in f:
             if int(line.rstrip().split('\t')[2]) in labels:
-                if float(line.rstrip().split('\t')[3]) > args.cutoff:
-                    taxa_count[args.dl_toda_taxonomy[int(line.rstrip().split('\t')[2])]] += 1
+                if float(line.rstrip().split('\t')[3]) >= args.cutoff:
+                    taxa_count[args.taxonomy[int(line.rstrip().split('\t')[2])]] += 1
 
     # for t in taxa:
     #     # get label(s)
@@ -102,6 +102,7 @@ if __name__ == "__main__":
         if args.class_mapping:
             f = open(args.class_mapping)
             class_mapping = json.load(f)
+            args.taxonomy = {k: v.split(';')[0] for v in class_mapping.items()} # only get species level
             taxa = [i.split(';')[0] for i in range(len(class_mapping))]
             print(taxa, len(taxa))
         else:
@@ -111,7 +112,7 @@ if __name__ == "__main__":
             with open(path_dl_toda_tax, 'r') as in_f:
                 for line in in_f:
                     line = line.rstrip().split('\t')
-                    args.taxonomy[int(line[0])] = ';'.join(line[index].split(';')[args.ranks[args.rank]:])
+                    args.taxonomy[int(line[0])] = line[index].split(';')[args.ranks[args.rank]]
             taxa = []
             for i in range(len(args.taxonomy)):
                 if args.taxonomy[i] not in taxa:

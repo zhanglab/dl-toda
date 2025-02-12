@@ -126,7 +126,7 @@ class DALIPreprocessor(object):
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
-    def load_tfrecords_for_dltoda(proto_example):
+    def load_tfrecords(proto_example):
         data_description = {
             'read': tf.io.VarLenFeature(tf.int64)
         }
