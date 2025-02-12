@@ -113,7 +113,7 @@ if __name__ == "__main__":
         if args.class_mapping:
             f = open(args.class_mapping)
             class_mapping = json.load(f)
-            args.taxonomy = {k: v.split(';')[0] for v in class_mapping.items()} # only get species level
+            args.taxonomy = {k: v.split(';')[0] for k, v in class_mapping.items()} # only get species level
         else:
             # load dl-toda taxonomy
             args.taxonomy = {}
