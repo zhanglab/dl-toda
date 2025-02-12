@@ -39,7 +39,7 @@ def ParseData(args, taxa, process_id):
         for count, line in enumerate(f, 0):
             if float(line.rstrip().split('\t')[1]) >= args.cutoff:
                 if line.rstrip().split('\t')[0] in taxa:
-                    taxa_count[args.taxonomy[int(line.rstrip().split('\t')[0])]].append(count)
+                    taxa_count[line.rstrip().split('\t')[0]].append(count)
 
     with open(out_filename, 'w') as out_f:
         for taxon, t_reads_idx in taxa_count.items():
@@ -123,8 +123,9 @@ if __name__ == "__main__":
                     line = line.rstrip().split('\t')
                     args.taxonomy[str(line[0])] = line[index].split(';')[args.ranks[args.rank]]
 
+        print(args.taxonomy)
         taxa = list(args.taxonomy.keys())
-
+        print(taxa)
         # update and create output directory
         args.output_dir = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]), f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
