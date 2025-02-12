@@ -30,35 +30,34 @@ def GetAveQualScore(base_qual_scores):
     return -10*math.log(sum([10**(q/-10) for q in int_qual_scores]) / len(int_qual_scores), 10)
 
 
-def ParseData(args, taxa, process_id):
+def ParseData(args, labels, process_id):
     out_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-cutoff-{args.cutoff}-{process_id}-taxa_profile')
-    taxa_count = defaultdict(list)
+    labels_count = defaultdict(list)
 
     with open(args.input, 'r') as f:
         for count, line in enumerate(f, 0):
             if float(line.rstrip().split('\t')[1]) >= args.cutoff:
-                if line.rstrip().split('\t')[0] in taxa:
-                    taxa_count[line.rstrip().split('\t')[0]].append(count)
+                if line.rstrip().split('\t')[0] in labels:
+                    labels_count[line.rstrip().split('\t')[0]].append(count)
 
     with open(out_filename, 'w') as out_f:
-        for taxon, t_reads_idx in taxa_count.items():
+        for label, reads_idx in labels_count.items():
             if args.binning:
-                if taxon in args.labels:
-                    fq_filename = os.path.join(args.output_dir, f'bin-{taxon}.fq')
-                    sum_filename = os.path.join(args.output_dir, f'summary-{taxon}.tsv')
-                    for idx in t_reads_idx:                    
-                        # get read based quality score
-                        base_qual_scores = args.reads[idx].split('\n')[3]
-                        read_ave_qual_score = GetAveQualScore(base_qual_scores)
-                        
-                        # get read length
-                        read_length = len(args.reads[idx].split('\n')[1])
-                        
-                        with open(fq_filename, 'a') as out_fq:
-                            out_fq.write(''.join(args.reads[idx]))
+                fq_filename = os.path.join(args.output_dir, f'bin-{label}.fq')
+                sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
+                for idx in reads_idx:                    
+                    # get read based quality score
+                    base_qual_scores = args.reads[idx].split('\n')[3]
+                    read_ave_qual_score = GetAveQualScore(base_qual_scores)
+                    
+                    # get read length
+                    read_length = len(args.reads[idx].split('\n')[1])
+                    
+                    with open(fq_filename, 'a') as out_fq:
+                        out_fq.write(''.join(args.reads[idx]))
 
-                        with open(sum_filename, 'a') as out_fs:
-                            out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
+                    with open(sum_filename, 'a') as out_fs:
+                        out_fs.write(f'{args.reads[idx].split('\n')[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
 
             out_f.write(f'{taxon}\t{len(t_reads_idx)}\n')
 
@@ -118,23 +117,23 @@ if __name__ == "__main__":
                     line = line.rstrip().split('\t')
                     args.taxonomy[str(line[0])] = line[index].split(';')[args.ranks[args.rank]]
 
-        taxa = list(args.taxonomy.keys())
-
-        if len(args.labels) == 0:
-            args.labels = taxa
+        # update list of labels to investigate
+        if len(args.labels) != 0:
+            labels_to_analyze = args.labels
+        else:
+            labels_to_analyze = list(args.taxonomy.keys())
         
         # update and create output directory
         args.output_dir = os.path.join(args.output_dir, f'cutoff-{args.cutoff}')
         if not os.path.exists(args.output_dir):
             os.makedirs(os.path.join(args.output_dir))
 
-
         # split taxa amongst processes
-        chunk_size = math.ceil(len(taxa)/args.processes)
-        taxa_groups = [taxa[i:i+chunk_size] for i in range(0,len(taxa),chunk_size)]
+        chunk_size = math.ceil(len(labels_to_analyze)/args.processes)
+        labels_groups = [labels_to_analyze[i:i+chunk_size] for i in range(0,len(labels_to_analyze),chunk_size)]
 
         with mp.Manager() as manager:
-            processes = [mp.Process(target=ParseData, args=(args, taxa_groups[i], i)) for i in range(len(taxa_groups))]
+            processes = [mp.Process(target=ParseData, args=(args, labels_groups[i], i)) for i in range(len(taxa_groups))]
             for p in processes:
                 p.start()
             for p in processes:
