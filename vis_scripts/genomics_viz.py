@@ -33,14 +33,14 @@ seed = 42
 random.seed(seed)
 
 def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
-	reads_of_interest = []
+	reads_of_interest = set()
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for begin in genes_of_interest.keys():
 				if pos >= begin and pos <= genes_of_interest[begin][0]:
-					reads_of_interest.append(readid_to_read[readid])
+					reads_of_interest.add(readid_to_read[readid])
 	with open(filename, 'w') as f:
-		f.write(''.join(reads_of_interest))
+		f.write(''.join(list(reads_of_interest)))
 
 def GetAnnotInfo(args, genome_id, input_dir):
 	annot_info = defaultdict(list)
