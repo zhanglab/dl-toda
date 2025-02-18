@@ -172,7 +172,7 @@ def prepare_data_for_bert(args, dna_list):
     if args.bert_step == 'pretraining':
         return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list), len(dna_list), len(input_ids)
     else:
-        return input_ids, attention_mask, position_ids, token_type_ids, len(dna_list), len(input_ids)
+        return input_ids, attention_mask, position_ids, token_type_ids, len(input_ids)
 
 
 def create_tfrecords(args):
