@@ -231,7 +231,7 @@ def main():
             
             # get sum of attention weights by column
             df_kmers_sum = df.sum(axis=0)
-            dict_kmers_sum = dict(zip(df_kmers_sum.column.tolist(), df_kmers_sum.tolist()))
+            dict_kmers_sum = dict(zip(df_kmers_sum.columns.tolist(), df_kmers_sum.tolist()))
             print(df_kmers_sum)
             print(df_kmers_sum)
             print(np.mean(list_kmers_sum), np.median(list_kmers_sum), min(list_kmers_sum), max(list_kmers_sum))
