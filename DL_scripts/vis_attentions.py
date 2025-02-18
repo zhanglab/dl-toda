@@ -230,8 +230,10 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             
             # get sum of attention weights by column
-            kmers_sum = df.sum(axis=1)
+            kmers_sum = df.sum(axis=0).tolist()
+            kmers_sum.sort()
             print(kmers_sum)
+            print(np.mean(kmers_sum), np.median(kmers_sum), min(kmers_sum), max(kmers_sum))
             # get kmers with high attention weights
             filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
             print(f'cutoff value for attentions: {np.mean(df.values.tolist())}')
