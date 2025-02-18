@@ -23,7 +23,6 @@ np.random.seed(seed)
 random.seed(seed)
 
 
-
 dl_toda_dir = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 # disable eager execution
@@ -115,8 +114,8 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
-    parser.add_argument('--ckpt', type=str, help='path to directory containing checkpoint file')
-    parser.add_argument('--model', type=str, help='path to model saved with model.save()')
+    parser.add_argument('--model', type=str, help='path to directory containing keras model saved with .save()')
+    parser.add_argument('--pretrained', type=str, help='path to model saved with .save_pretrained()')
     args = parser.parse_args()
 
 
@@ -148,20 +147,24 @@ def main():
     init_lr = args.init_lr
     opt = tf.keras.optimizers.Adam(init_lr)
 
+
     # load model
     with open(args.bert_config_file, "r") as f:
         args.config_dict = json.load(f)
+
+    if args.model is not None:
+        model = tf.keras.models.load_model(args.model)
+    else:
+        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
     
-    # create BERT config object + model
-    bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
     # make output of attentions possible
     bert_config.output_attentions=True
     print(bert_config)
     
     # load weights from checkpoint file created with tf.train.Checkpoint() and checkpoint.save()
     model = TFBertForSequenceClassification(config=bert_config)
-    checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-    checkpoint.restore(os.path.join(args.ckpt, f'ckpt-best-1')).expect_partial()
+    
 
     # update input vector size
     args.vector_size = args.config_dict['max_position_embeddings']
@@ -189,11 +192,6 @@ def main():
     predictions_label_0 = []
     confidence_scores_label_0 = []
     # labels_0 = []
-
-    attention_weights_label_1 = []
-    # kmers_label_1 = []
-    predictions_label_1 = []
-    confidence_scores_label_1 = []
 
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
@@ -238,89 +236,89 @@ def main():
             else:
                 plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
 
-            if label == 0:
-                attention_weights_label_0.append(df.values.flatten().tolist())
-                # kmers_label_0 += filtered_df.columns.tolist()
-                confidence_scores_label_0.append(pred_probs[i])
-                # labels_0.append(label)
-                if pred_labels[i] == label:
-                    predictions_label_0.append('c') 
-                else:
-                    predictions_label_0.append('i')
-            else:
-                attention_weights_label_1.append(df.values.flatten().tolist())
-                # kmers_label_1 += filtered_df.columns.tolist()
-                confidence_scores_label_1.append(pred_probs[i])
-                if pred_labels[i] == label:
-                    predictions_label_1.append('c') 
-                else:
-                    predictions_label_1.append('i') 
+            # if label == 0:
+            #     attention_weights_label_0.append(df.values.flatten().tolist())
+            #     # kmers_label_0 += filtered_df.columns.tolist()
+            #     confidence_scores_label_0.append(pred_probs[i])
+            #     # labels_0.append(label)
+            #     if pred_labels[i] == label:
+            #         predictions_label_0.append('c') 
+            #     else:
+            #         predictions_label_0.append('i')
+            # else:
+            #     attention_weights_label_1.append(df.values.flatten().tolist())
+            #     # kmers_label_1 += filtered_df.columns.tolist()
+            #     confidence_scores_label_1.append(pred_probs[i])
+            #     if pred_labels[i] == label:
+            #         predictions_label_1.append('c') 
+            #     else:
+            #         predictions_label_1.append('i') 
     
     
 
-    # plot histogram of attention weights for other labels
-    confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
-    confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=confidence_scores_label_0_correct)
-    plt.xlabel('Confidence Scores')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_other.png'))
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=confidence_scores_label_0_incorrect)
-    plt.xlabel('Confidence Scores')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_other.png'))
+    # # plot histogram of attention weights for other labels
+    # confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
+    # confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=confidence_scores_label_0_correct)
+    # plt.xlabel('Confidence Scores')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_other.png'))
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=confidence_scores_label_0_incorrect)
+    # plt.xlabel('Confidence Scores')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_other.png'))
 
-    # plot histogram of attention weights for label investigated
-    confidence_scores_label_1_correct = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'c']
-    confidence_scores_label_1_incorrect = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'i']
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=confidence_scores_label_1_correct)
-    plt.xlabel('Confidence Scores')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_label.png'))
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=confidence_scores_label_1_incorrect)
-    plt.xlabel('Confidence Scores')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_label.png'))
+    # # plot histogram of attention weights for label investigated
+    # confidence_scores_label_1_correct = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'c']
+    # confidence_scores_label_1_incorrect = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'i']
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=confidence_scores_label_1_correct)
+    # plt.xlabel('Confidence Scores')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_label.png'))
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=confidence_scores_label_1_incorrect)
+    # plt.xlabel('Confidence Scores')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_label.png'))
 
-    # plot histogram of confidence scores for other labels
-    attention_weights_label_0_correct = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'c']
-    attention_weights_label_0_incorrect = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'i']
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_0_correct)
-    plt.xlabel('Attention Weights')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_other.png'))
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_0_incorrect)
-    plt.xlabel('Attention Weights')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_other.png'))
+    # # plot histogram of confidence scores for other labels
+    # attention_weights_label_0_correct = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'c']
+    # attention_weights_label_0_incorrect = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'i']
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_0_correct)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_other.png'))
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_0_incorrect)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_other.png'))
 
-    # plot histogram of attention weights for label investigated
-    attention_weights_label_1_correct = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'c']
-    attention_weights_label_1_incorrect = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'i']
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_1_correct)
-    plt.xlabel('Attention Weights')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_label.png'))
-    plt.figure(figsize=(10, 6))
-    sn.histplot(data=attention_weights_label_1_incorrect)
-    plt.xlabel('Attention Weights')
-    plt.ylabel('Frequency')
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_label.png'))
+    # # plot histogram of attention weights for label investigated
+    # attention_weights_label_1_correct = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'c']
+    # attention_weights_label_1_incorrect = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'i']
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_1_correct)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_label.png'))
+    # plt.figure(figsize=(10, 6))
+    # sn.histplot(data=attention_weights_label_1_incorrect)
+    # plt.xlabel('Attention Weights')
+    # plt.ylabel('Frequency')
+    # plt.grid(True)
+    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_label.png'))
 
     # # store list of relevant kmers
     # print(f'# relevant kmers for label 0: {len(set(kmers_label_0))}')
