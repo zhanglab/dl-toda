@@ -221,7 +221,7 @@ def main():
             # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             attentions_weights = attentions[-1][-1][i].numpy()
             df = pd.DataFrame(attentions_weights)
-
+            print(df.shape)
             df.columns = seq_kmers
             # remove columns and rows [PAD]
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
@@ -230,6 +230,7 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             # get kmers with high attention weights
             filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
+            print(f'cutoff value for attentions: {np.mean(df.values.tolist())}')
             print('df')
             print(df)
             print('filtered_df')
