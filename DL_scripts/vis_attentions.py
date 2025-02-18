@@ -221,6 +221,7 @@ def main():
             # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             attentions_weights = attentions[-1][-1][i].numpy()
             df = pd.DataFrame(attentions_weights)
+
             df.columns = seq_kmers
             # remove columns and rows [PAD]
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
@@ -229,11 +230,19 @@ def main():
             df = df.drop('[PAD]', axis='columns')
             # get kmers with high attention weights
             filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
+            print('df')
+            print(df)
+            print('filtered_df')
+            print(filtered_df)
+            print(df.shape)
+            print(filtered_df.shape)
             # plot heatmap of attention weights
-            plt.figure(figsize=(15, 15))
-            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            # plt.figure(figsize=(15, 15))
+            # sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+            # plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            # plt.close()
             break
+        break
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
             #     # kmers_label_0 += filtered_df.columns.tolist()
