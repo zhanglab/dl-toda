@@ -242,10 +242,10 @@ def main():
             print(df.shape)
             print(filtered_df.shape)
             # plot heatmap of attention weights
-            # plt.figure(figsize=(15, 15))
-            # sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            # plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
-            # plt.close()
+            plt.figure(figsize=(15, 15))
+            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            plt.close()
             break
         break
             # if label == 0:
