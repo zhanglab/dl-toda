@@ -152,10 +152,11 @@ def main():
     with open(args.bert_config_file, "r") as f:
         args.config_dict = json.load(f)
 
+    bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
+
     if args.model is not None:
         model = tf.keras.models.load_model(args.model)
     else:
-        bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
     
     # make output of attentions possible
@@ -231,11 +232,8 @@ def main():
             # plot heatmap of attention weights
             plt.figure(figsize=(15, 15))
             sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            if pred_labels[i] == label:
-                plt.savefig(os.path.join(args.output_dir, f'attention_weights_correct_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
-            else:
-                plt.savefig(os.path.join(args.output_dir, f'attention_weights_incorrect_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
-
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            break
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
             #     # kmers_label_0 += filtered_df.columns.tolist()
