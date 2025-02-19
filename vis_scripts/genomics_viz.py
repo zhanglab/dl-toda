@@ -256,7 +256,6 @@ def FNCircosPlot(args, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_sh
 			else:
 				avg_seq_length.append(0)
 		print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
-		print(f'{len(pos_seq_length)}\n{statistics.mean(pos_seq_length)}\n{statistics.median(pos_seq_length)}\n{max(pos_seq_length)}\n{min(pos_seq_length)}')
 		# seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
 		seq_track.line(genome_pos, avg_seq_length, color="green")
 		print(f'added sequence length track')
