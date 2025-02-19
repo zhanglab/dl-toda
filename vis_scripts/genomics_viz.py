@@ -55,7 +55,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 			zip_ref.extractall(os.getcwd())
 		os.chdir(input_dir)
 	else:
-		print(f'{label}\tdownload already done')
+		print(f'{genome_id}\tdownload already done')
 
 	
 	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
