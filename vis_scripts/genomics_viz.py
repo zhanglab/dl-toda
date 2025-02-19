@@ -86,7 +86,7 @@ def GetPosOfInterest(annot_info, alignments, sequence_length):
 	positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
 	for readid, data in alignments.items():
-		for pos in range(data[1], data[2], 1):
+		for pos in range(data[1], data[2]+1, 1):
 			for begin in annot_info.keys():
 				if pos >= begin and pos <= annot_info[begin][0]:
 					positions_count[begin] += 1
@@ -98,8 +98,8 @@ def GetPosOfInterest(annot_info, alignments, sequence_length):
 	for count, (k, v) in enumerate(positions_count_sorted.items(), 1):
 		print(k, v, annot_info[k])
 		genes_of_interest[k] = annot_info[k]
-		if count == 20:
-			break
+		# if count == 20:
+		# 	break
 
 	return positions_seq_length, genes_of_interest
 
@@ -220,36 +220,45 @@ def FNCircosPlot(args, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_sh
 	        track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
-		min_r_pos -= 12
+		# define x-axis vector
+		genome_pos = list(range(target_fasta.full_genome_length))
+
 		# add track for TP reads
+		min_r_pos -= 12
 		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
-			tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+			for pos in range(data[1], data[2], 1):
+				pos_tp_count[pos-1] +=1
+		tp_track.line(genome_pos, pos_tp_count, color="green")
+			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
 		print(min_r_pos, min_r_pos + 10)
 		print(f'added TP track')
 
 		# add tracks for FN reads
 		min_r_pos -= 12
 		fn_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		for read_id, data in fn_alignments_pos_test.items():
-			fn_track.rect(data[1], data[2], color="red", lw=0.1)
+		pos_fn_count = [0]*target_fasta.full_genome_length
+		for data in fn_alignments_pos_test.values():
+			for pos in range(data[1], data[2], 1):
+				pos_fn_count[pos-1] +=1
+		fn_track.line(genome_pos, pos_fn_count, color="green")
+			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
 		print(f'added FN track')
 
 		# add tracks for average sequence length of FN reads
 		min_r_pos -= 12
 		seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		pos_seq_length = []
 		avg_seq_length = []
 		for i in range(1, target_fasta.full_genome_length+1, 1):
 			if i in fn_positions_seq_length:
 				avg_seq_length.append(sum(fn_positions_seq_length[i])/len(fn_positions_seq_length[i]))
 			else:
 				avg_seq_length.append(0)
-			pos_seq_length.append(i)
 		print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
 		print(f'{len(pos_seq_length)}\n{statistics.mean(pos_seq_length)}\n{statistics.median(pos_seq_length)}\n{max(pos_seq_length)}\n{min(pos_seq_length)}')
 		# seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
-		seq_track.line(pos_seq_length, avg_seq_length, color="green")
+		seq_track.line(genome_pos, avg_seq_length, color="green")
 		print(f'added sequence length track')
 
 	# save figure
@@ -348,16 +357,16 @@ if __name__ == "__main__":
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, test_genomes_info[args.label][0], input_dir)
 	fn_positions_seq_length, fn_genes_of_interest = GetPosOfInterest(pos_test_annot_info, fn_alignments_pos_test, sequence_length)
-
-	# # get mapping of true positives to testing genome from label 1
+	print(len(fn_genes_of_interest))
+	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# # # create circos plot with FN reads info
-	# FNCircosPlot(args, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# create circos plot with FN reads info
+	FNCircosPlot(args, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 	# # do FP analysis
 	# # map reads in testing dataset to their corresponding genome

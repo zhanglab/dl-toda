@@ -87,6 +87,7 @@ def get_metrics(args, cm, r_name, r_index):
                     list_FP.append(false_positives)
                     list_FN.append(false_negatives)
                 else:
+                    print(true_taxon)
                     if args.zeros:
                         print(f'{true_taxon} has a precision/recall/F1 scores equal to 0')
                         outf_1.write(f'{true_taxon}\tnot in predicted taxa\t{num_reads}\t0\t0\t0\t0\t0\t{num_reads}\n')
