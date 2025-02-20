@@ -271,14 +271,14 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 	comp_name2color = {}
 	colors = ["black", "gray"]
 	for idx, comp_fasta in enumerate(comp_fasta_list):
-	    align_coords = Blast([target_fasta, comp_fasta]).run()
-	    align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	    # color = ColorCycler()
-	    comp_name2color[comp_fasta.name] = colors[idx]
-	    min_r_pos -= QUERY_TRACK_SIZE
-	    print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
+		align_coords = Blast([target_fasta, comp_fasta]).run()
+		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+		# color = ColorCycler()
+		comp_name2color[comp_fasta.name] = colors[idx]
+		min_r_pos -= QUERY_TRACK_SIZE
+		print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
 		for sector in circos.sectors:
-			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)
+			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
 		for ac in align_coords:
 			print(ac.query_start, ac.query_end)
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
