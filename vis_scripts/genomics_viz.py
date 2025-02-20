@@ -55,9 +55,6 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 					reads_wo_genes.append(readid)
 					f.write('\tNA')
 				f.write('\n')
-				
-	with open(os.path.join(args.output_dir, f'fn_mapped_to_label0_{args.prob_threshold}.fq'), 'w') as f:
-		f.write(''.join([readid_to_read[r] for r in reads_wo_genes]))
 
 	taxa_sorted = dict(sorted(taxa.items(), key=lambda item: item[1], reverse=True))
 	most_mapped_taxon = ''
@@ -138,7 +135,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 	return annot_info
 
-def GetPosOfInterest(args, annot_info, alignments, sequence_length):
+def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_read)):
 	# get count and length of fn sequences per mapped position on the genome investigated
 	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
@@ -155,15 +152,20 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 
 	print(f'# genes of interest: {len(genes_of_interest)}')
 	if len(readid_w_gene) != len(alignments):
-		reads_not_associated_w_genes = []
+		reads_wo_genes = []
 		with open(os.path.join(args.output_dir, 'test_reads_wo_gene.tsv'), 'w') as f:
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
 					print(readid, data)
 					f.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\t{data[4]}\n')
-					reads_not_associated_w_genes.append(readid)
+					reads_wo_genes.append(readid)
+
+		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
+			f.write(''.join([readid_to_read[r] for r in reads_wo_genes]))
+
 	else:
 		print('all reads were found a gene')
+
 
 	# sort positions_count by values
 	# genes_of_interest = defaultdict(list)
