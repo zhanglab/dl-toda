@@ -135,7 +135,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 	return annot_info
 
-def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_read)):
+def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_read):
 	# get count and length of fn sequences per mapped position on the genome investigated
 	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
