@@ -98,22 +98,22 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		with open(annot_file[0], 'r') as f:
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
-				if content[i].rstrip().split('\t')[2] == 'gene':
-					begin = int(content[i].rstrip().split('\t')[3])
-					end = int(content[i].rstrip().split('\t')[4])
-					strand = content[i].rstrip().split('\t')[6]
-					gene_id = ''
-					gene = ''
-					for e in content[i].rstrip().split('\t')[8].split(';'):
-						e = e.replace('"', '')
-						if 'product' in e:
-							gene = ' '.join(e.split(' ')[2:])
-						if 'gene_id' in e:
-							gene_id = e.split(' ')[1]
-					if gene_id == '':
-						assert gene_id != None, 'gene id should not be unknown'
-					if gene != '':
-						annot_info[gene_id] = [begin, end, strand, gene]
+				# if content[i].rstrip().split('\t')[2] == 'gene':
+				begin = int(content[i].rstrip().split('\t')[3])
+				end = int(content[i].rstrip().split('\t')[4])
+				strand = content[i].rstrip().split('\t')[6]
+				gene_id = ''
+				gene = ''
+				for e in content[i].rstrip().split('\t')[8].split(';'):
+					e = e.replace('"', '')
+					if 'product' in e:
+						gene = ' '.join(e.split(' ')[2:])
+					if 'gene_id' in e:
+						gene_id = e.split(' ')[1]
+				if gene_id == '':
+					assert gene_id != None, 'gene id should not be unknown'
+				if gene != '':
+					annot_info[gene_id] = [begin, end, strand, gene]
 	print('ANNOT INFO')
 	print(annot_info)
 	return annot_info
