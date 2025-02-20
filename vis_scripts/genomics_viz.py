@@ -84,7 +84,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		with open(annot_file[0], 'r') as f:
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
-				if content[i].rstrip().split('\t')[2] == 'CDS':
+				if content[i].rstrip().split('\t')[2] == 'gene':
 					begin = int(content[i].rstrip().split('\t')[3])
 					end = int(content[i].rstrip().split('\t')[4])
 					strand = content[i].rstrip().split('\t')[6]
@@ -273,13 +273,14 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(min_r_pos, min_r_pos + 10)
 		print(f'added TP track')
 
-		# add tracks for al FN reads 
+		# add tracks for FN reads that didn't map to any training genomes 
 		min_r_pos -= 12
 		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
-		for data in fn_alignments_pos_test.values():
-			for pos in range(data[1], data[2], 1):
-				pos_fn_1_count[pos-1] +=1
+		for readid, data in fn_alignments_pos_test.items():
+			if readid not in most_mapped_reads_id:
+				for pos in range(data[1], data[2], 1):
+					pos_fn_1_count[pos-1] +=1
 		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track_1.yticks(y_values, y_labels)
