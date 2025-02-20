@@ -92,7 +92,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
 				if content[i].rstrip().split('\t')[2] == 'gene':
-=					begin = int(content[i].rstrip().split('\t')[3])
+					begin = int(content[i].rstrip().split('\t')[3])
 					end = int(content[i].rstrip().split('\t')[4])
 					strand = content[i].rstrip().split('\t')[6]
 					gene_id = ''
