@@ -41,11 +41,13 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 			taxa[data[0]] += 1
 			list_reads_id.append(readid)
 			if readid in pos_test_alignments:
+				print('read present!')
 				genes = []
 				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[0] and pos <= annot[1]:
 							genes.append(annot[3])
+				print(genes)
 				f.write(f"{readid}\t{data[0]}")
 				for g in genes:
 					f.write(f'\t{g}')
