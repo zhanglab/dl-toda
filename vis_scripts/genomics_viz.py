@@ -112,9 +112,10 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					gene_id = e.split(' ')[1]
 				if 'gene_biotype' in e:
 					biotype = e.split(' ')[1]
+					print(e)
+					print(biotype)
 			if content[i].rstrip().split('\t')[2] == 'gene':
 				genes_type[gene_id] = biotype
-				print(content[i].rstrip().split('\t')[2], biotype, i)
 			elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 				annot_info[gene_id] = ['protein_coding', begin, end, strand, gene]
 			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
