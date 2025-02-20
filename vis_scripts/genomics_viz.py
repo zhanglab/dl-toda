@@ -191,7 +191,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 				f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
 			else:
 				location = FeatureLocation(start=begin, end=cds_to_show[begin][0], strand=-1)
-				feature = SeqFeature(location=location, type=cds_to_show[begin][3], qualifiers={"gene_id": [cds_to_show[begin][3]], "gene_name": [cds_to_show[begin][2], "strand": ["minus"]]})
+				feature = SeqFeature(location=location, type=cds_to_show[begin][3], qualifiers={"gene_id": [cds_to_show[begin][3]], "gene_name": [cds_to_show[begin][2]], "strand": ["minus"]})
 				r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
 			features.append(feature)
 		
