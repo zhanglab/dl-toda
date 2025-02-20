@@ -121,7 +121,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
 					print(readid, data)
-					f.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
+					f.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\t{data[4]}\n')
 
 	else:
 		print('all reads were found a gene')
@@ -312,7 +312,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 			else:
 				avg_seq_length.append(0)
 		print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
-		y_values = list(range(min(avg_seq_length), max(avg_seq_length), 200))
+		y_values = list(range(min([math.ceil(x) for x in avg_seq_length]), max(math.ceil(x) for x in avg_seq_length), 200))
 		y_labels = list(map(str, y_values))
 		seq_track.yticks(y_values, y_labels)
 		# seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
