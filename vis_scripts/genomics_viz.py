@@ -462,8 +462,7 @@ if __name__ == "__main__":
 	# get mapping of false negatives to training genomes from other species
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_neg_train)
-
+	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info)
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
