@@ -202,7 +202,7 @@ def GetSeqLength(sequences_id, sequence_length, type):
 		seq_length_info = [sequence_length[s] for s in sequences_id]
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
-def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, fn_not_associated_w_genes, outfilepath, outfigpath):
+def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, outfilepath, outfigpath):
 
 	# load data from training and testing genomes of label 1
 	target_fasta = Fasta(args.test_genomes_info[args.label][1]) # ref/subject --> target --> testing genome
@@ -304,17 +304,11 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		for sector in circos.sectors:
 			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
 		for ac in align_coords:
-			print(ac)
-			print('blast results', ac.query_start, ac.query_end)
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
-		# add track for coverage of training genome
-
-
-
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(target_fasta.full_genome_length))
 
@@ -499,7 +493,7 @@ if __name__ == "__main__":
 	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
-	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 	# # do FP analysis
 	# # map reads in testing dataset to their corresponding genome
