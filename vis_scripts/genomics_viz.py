@@ -46,7 +46,6 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[1] and pos <= annot[2]:
 							genes[gene_id] = annot[4]
-				assert len(genes) != 0, "no genes picked up"
 				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
 				for gene_id in genes.keys():
 					f.write(f'\t{gene_id}\t{genes[gene_id]}')
@@ -124,7 +123,11 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
 			
 			assert gene_id != '', 'gene id should not be unknown'
-				
+	
+	print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
+	print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
+	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
+
 	return annot_info
 
 def GetPosOfInterest(args, annot_info, alignments, sequence_length):
@@ -475,7 +478,6 @@ if __name__ == "__main__":
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length)
 	print(len(fn_genes_of_interest))
-	print(pos_test_annot_info)
 
 	# get mapping of false negatives to training genomes from other species
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
