@@ -33,9 +33,10 @@ seed = 42
 random.seed(seed)
 
 
-def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length):
+def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
 	taxa = defaultdict(int)
 	list_reads_id = []
+	reads_wo_genes = []
 	with open(os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_summary.tsv'), 'w') as f:
 		for readid, data in neg_train_alignments.items():
 			taxa[data[0]] += 1
@@ -51,9 +52,13 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 					for gene_id in genes.keys():
 						f.write(f'\t{gene_id}\t{genes[gene_id]}')
 				else:
+					reads_wo_genes.append(readid)
 					f.write('\tNA')
 				f.write('\n')
 				
+	with open(os.path.join(args.output_dir, f'fn_mapped_to_label0_{args.prob_threshold}.fq'), 'w') as f:
+		f.write(''.join([readid_to_read[r] for r in reads_wo_genes]))
+
 	taxa_sorted = dict(sorted(taxa.items(), key=lambda item: item[1], reverse=True))
 	most_mapped_taxon = ''
 	with open(os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapped_taxa.tsv'), 'w') as f:
@@ -61,6 +66,7 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 			if count == 0:
 				most_mapped_taxon = k
 			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+
 
 	return most_mapped_taxon, list_reads_id
 
@@ -114,8 +120,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					gene_id = e.split(' ')[1]
 				if 'gene_biotype' in e:
 					biotype = e.split(' ')[2]
-					print(e, len(e.split(' ')))
-					print(biotype)
+
 			if content[i].rstrip().split('\t')[2] == 'gene':
 				genes_type[gene_id] = biotype
 			elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
@@ -484,7 +489,7 @@ if __name__ == "__main__":
 	# get mapping of false negatives to training genomes from other species
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length)
+	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
@@ -493,7 +498,7 @@ if __name__ == "__main__":
 	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
-	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 	# # do FP analysis
 	# # map reads in testing dataset to their corresponding genome
