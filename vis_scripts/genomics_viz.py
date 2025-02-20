@@ -226,6 +226,8 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		for readid, data in fn_alignments_pos_test.items()
 			if readid in fn_not_associated_w_genes:
 				ukn_track.rect(data[1], data[2], color="red")
+			if readid in most_mapped_reads_id:
+				print(f'read id mapped to {most_mapped_taxon}: {readid}\t{data}')
 		
 
 		# Plot gene label if it exists
@@ -450,8 +452,6 @@ if __name__ == "__main__":
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
 	most_mapped_taxon, most_mapped_reads_id = GetFNOtherTaxonomy(args, fn_alignments_pos_neg_train, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapped_taxa.tsv'))
-
-
 
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
