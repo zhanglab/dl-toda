@@ -46,7 +46,8 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[1] and pos <= annot[2]:
 							genes[gene_id] = annot[4]
-				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}\t")
+				assert len(genes) != 0, "no genes picked up"
+				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
 				for gene_id in genes.keys():
 					f.write(f'\t{gene_id}\t{genes[gene_id]}')
 				f.write('\n')
@@ -205,7 +206,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 	circos = Circos(
 	    sectors=target_fasta.get_seqid2size(),
 	    # space=0 if len(target_fasta.get_seqid2size()) == 1 else 2,
-		space=8,
+		space=10,
 	)
 	print('define space', len(target_fasta.get_seqid2size()))
 	# circos.text(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)", size=13)
@@ -305,9 +306,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
-		min_r_pos -= 10
-		tp_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
-		tp_track.axis()
+		min_r_pos -= 12
+		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
 			for pos in range(data[1], data[2], 1):
@@ -321,9 +322,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added TP track')
 
 		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 10
-		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
-		fn_track_1.axis()
+		min_r_pos -= 12
+		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		fn_track_1.axis(ec="red")
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid not in most_mapped_reads_id:
@@ -337,9 +338,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added FN track')
 
 		# add tracks for FN reads that were mapped to a taxon from label 0
-		min_r_pos -= 10
-		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
-		fn_track_2.axis()
+		min_r_pos -= 12
+		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		fn_track_2.axis(ec="orange")
 		pos_fn_2_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid in most_mapped_reads_id:
@@ -353,9 +354,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added FN track')
 
 		# add tracks for average sequence length of FN reads
-		min_r_pos -= 10
+		min_r_pos -= 12
 		seq_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
-		seq_track.axis()
+		seq_track.axis(ec="green")
 		avg_seq_length = []
 		for i in range(1, target_fasta.full_genome_length+1, 1):
 			if i in fn_positions_seq_length:
