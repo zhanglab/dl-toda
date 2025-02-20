@@ -101,18 +101,27 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					annot_info[begin] = [end, strand, gene, gene_id]
 	return annot_info
 
-def GetPosOfInterest(annot_info, alignments, sequence_length):
+def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 	# get count and length of fn sequences per mapped position on the genome investigated
 	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
 	genes_of_interest = defaultdict(list)
+	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for begin in annot_info.keys():
 				if pos >= begin and pos <= annot_info[begin][0]:
 					# positions_count[begin] += 1
 					genes_of_interest[begin] = annot_info[begin]
+					readid_w_gene[readid] = [data[1], data[2]]						
 			positions_seq_length[pos].append(sequence_length[readid])
+
+	if len(readid_w_gene) != len(alignments):
+		for readid, data in alignments.items():
+			if readid not in readid_w_gene:
+				print(readid, data)
+	else:
+		print('all reads were found a gene')
 
 	# sort positions_count by values
 	# genes_of_interest = defaultdict(list)
@@ -247,12 +256,15 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
-		min_r_pos -= 17
+		min_r_pos -= 15
 		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
 			for pos in range(data[1], data[2], 1):
 				pos_tp_count[pos-1] +=1
+		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 2))
+		y_labels = list(map(str, y_values))
+		tp_track.yticks(y_values, y_labels)
 		tp_track.line(genome_pos, pos_tp_count, color="orange")
 			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
 		print(min_r_pos, min_r_pos + 10)
@@ -265,6 +277,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		for data in fn_alignments_pos_test.values():
 			for pos in range(data[1], data[2], 1):
 				pos_fn_1_count[pos-1] +=1
+		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
+		y_labels = list(map(str, y_values))
+		fn_track_1.yticks(y_values, y_labels)
 		fn_track_1.line(genome_pos, pos_fn_1_count, color="red")
 			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
 		print(f'added FN track')
@@ -277,6 +292,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 			if readid in most_mapped_reads_id:
 				for pos in range(data[1], data[2], 1):
 					pos_fn_2_count[pos-1] +=1
+		y_values = list(range(min(pos_fn_2_count), max(pos_fn_2_count), 2))
+		y_labels = list(map(str, y_values))
+		fn_track_2.yticks(y_values, y_labels)
 		fn_track_2.line(genome_pos, pos_fn_2_count, color="blue")
 			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
 		print(f'added FN track')
@@ -291,6 +309,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 			else:
 				avg_seq_length.append(0)
 		print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
+		y_values = list(range(min(avg_seq_length), max(avg_seq_length), 200))
+		y_labels = list(map(str, y_values))
+		seq_track.yticks(y_values, y_labels)
 		# seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
 		seq_track.line(genome_pos, avg_seq_length, color="green")
 		print(f'added sequence length track')
