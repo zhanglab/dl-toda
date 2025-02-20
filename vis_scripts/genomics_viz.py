@@ -101,7 +101,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					annot_info[begin] = [end, strand, gene, gene_id]
 	return annot_info
 
-def GetPosOfInterest(annot_info, alignments, sequence_length):
+def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 	# get count and length of fn sequences per mapped position on the genome investigated
 	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
@@ -117,9 +117,12 @@ def GetPosOfInterest(annot_info, alignments, sequence_length):
 			positions_seq_length[pos].append(sequence_length[readid])
 
 	if len(readid_w_gene) != len(alignments):
-		for readid, data in alignments.items():
-			if readid not in readid_w_gene:
-				print(readid, data)
+		with open(os.path.join(args.output_dir, 'test_reads_wo_gene.tsv'), 'w') as f:
+			for readid, data in alignments.items():
+				if readid not in readid_w_gene:
+					print(readid, data)
+					f.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
+
 	else:
 		print('all reads were found a gene')
 
@@ -416,7 +419,7 @@ if __name__ == "__main__":
 	
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_positions_seq_length, fn_genes_of_interest = GetPosOfInterest(pos_test_annot_info, fn_alignments_pos_test, sequence_length)
+	fn_positions_seq_length, fn_genes_of_interest = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length)
 	print(len(fn_genes_of_interest))
 
 	# get mapping of false negatives to training genomes from other species
