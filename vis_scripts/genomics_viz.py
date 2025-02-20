@@ -271,7 +271,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		min_r_pos -= 12
 		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
 		pos_fn_2_count = [0]*target_fasta.full_genome_length
-		for readid, data in fn_alignments_pos_test.values():
+		for readid, data in fn_alignments_pos_test.items():
 			if readid in most_mapped_reads_id:
 				for pos in range(data[1], data[2], 1):
 					pos_fn_2_count[pos-1] +=1
