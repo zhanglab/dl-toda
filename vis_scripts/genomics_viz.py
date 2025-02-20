@@ -151,8 +151,8 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_re
 			positions_seq_length[pos].append(sequence_length[readid])
 
 	print(f'# genes of interest: {len(genes_of_interest)}')
+	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
-		reads_wo_genes = []
 		with open(os.path.join(args.output_dir, 'test_reads_wo_gene.tsv'), 'w') as f:
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
@@ -176,7 +176,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_re
 		# if count == 20:
 		# 	break
 	
-	return positions_seq_length, genes_of_interest, reads_not_associated_w_genes
+	return positions_seq_length, genes_of_interest, reads_wo_genes
 
 
 def GetAlignmentsInfo(sequences, samfile, sequence_length, seq_to_labels, outfilename=None):
