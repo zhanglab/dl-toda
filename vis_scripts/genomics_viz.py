@@ -41,14 +41,13 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 			taxa[data[0]] += 1
 			list_reads_id.append(readid)
 			if readid in pos_test_alignments:
-				print('read present!')
-				genes = []
+				genes = set()
 				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[0] and pos <= annot[1]:
-							genes.append(annot[3])
+							genes.add(annot[3])
 				f.write(f"{readid}\t{data[0]}")
-				for g in genes:
+				for g in list(genes):
 					f.write(f'\t{g}')
 				f.write('\n')
 				
@@ -225,12 +224,12 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		features = []
 		for gene_id in cds_to_show.keys():
 			if cds_to_show[gene_id][2] == 'plus':
-				location = FeatureLocation(start=cds_to_show[gene][0], end=cds_to_show[gene][1], strand=+1)
+				location = FeatureLocation(start=cds_to_show[gene_id][0], end=cds_to_show[gene_id][1], strand=+1)
 				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][3]], "strand": ["plus"]})
 		# 		f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
 				cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
 			else:
-				location = FeatureLocation(start=begin, end=cds_to_show[begin][0], strand=-1)
+				location = FeatureLocation(start=cds_to_show[gene_id][0], end=cds_to_show[gene_id][1], strand=-1)
 				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][3]], "strand": ["minus"]})
 		# 		r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
 				cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
