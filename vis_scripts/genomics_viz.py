@@ -45,10 +45,8 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 				genes = []
 				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
 					for gene_id, annot in annot_info.items():
-						print(gene_id, annot)
 						if pos >= annot[0] and pos <= annot[1]:
 							genes.append(annot[3])
-				print(genes)
 				f.write(f"{readid}\t{data[0]}")
 				for g in genes:
 					f.write(f'\t{g}')
