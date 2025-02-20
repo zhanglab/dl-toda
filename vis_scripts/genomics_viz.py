@@ -277,13 +277,13 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 	    comp_name2color[comp_fasta.name] = colors[idx]
 	    min_r_pos -= QUERY_TRACK_SIZE
 	    print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
-	    for sector in circos.sectors:
-	        sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)
-	    for ac in align_coords:
-	    	print(ac.query_start, ac.query_end)
-	        track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-	        rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-	        track.rect(ac.query_start, ac.query_end, color=rect_color)
+		for sector in circos.sectors:
+			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)
+		for ac in align_coords:
+			print(ac.query_start, ac.query_end)
+			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+			track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
 		# define x-axis vector
