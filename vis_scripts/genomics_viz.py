@@ -58,15 +58,15 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 	return most_mapped_taxon, list_reads_id
 
 
-# def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
-# 	reads_of_interest = set()
-# 	for readid, data in alignments.items():
-# 		for pos in range(data[1], data[2]+1, 1):
-# 			for gene_id, annot in genes_of_interest.items():
-# 				if pos >= annot[0] and pos <= annot[1]:
-# 					reads_of_interest.add(readid_to_read[readid])
-# 	with open(filename, 'w') as f:
-# 		f.write(''.join(list(reads_of_interest)))
+def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
+	reads_of_interest = set()
+	for readid, data in alignments.items():
+		for pos in range(data[1], data[2]+1, 1):
+			for gene_id, annot in genes_of_interest.items():
+				if pos >= annot[0] and pos <= annot[1]:
+					reads_of_interest.add(readid_to_read[readid])
+	with open(filename, 'w') as f:
+		f.write(''.join(list(reads_of_interest)))
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
