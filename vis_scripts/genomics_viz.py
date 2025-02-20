@@ -33,7 +33,7 @@ seed = 42
 random.seed(seed)
 
 
-def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
+def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length):
 	taxa = defaultdict(int)
 	list_reads_id = []
 	with open(os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_summary.tsv'), 'w') as f:
@@ -46,9 +46,12 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[1] and pos <= annot[2]:
 							genes[gene_id] = annot[4]
-				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
-				for gene_id in genes.keys():
-					f.write(f'\t{gene_id}\t{genes[gene_id]}')
+				f.write(f"{readid}\t{sequence_length[readid]}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
+				if len(genes) != 0:
+					for gene_id in genes.keys():
+						f.write(f'\t{gene_id}\t{genes[gene_id]}')
+				else:
+					f.write('\tNA')
 				f.write('\n')
 				
 	taxa_sorted = dict(sorted(taxa.items(), key=lambda item: item[1], reverse=True))
@@ -250,14 +253,14 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 				cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
 			features.append(feature)
 
-		# Add regions not associated with genes and mapped by FN reads
-		min_r_pos -= 5
-		ukn_track = sector.add_track((min_r_pos-5, min_r_pos))
-		for readid, data in fn_alignments_pos_test.items():
-			if readid in fn_not_associated_w_genes:
-				ukn_track.rect(data[1], data[2], color="red")
-				if readid in most_mapped_reads_id:
-					print(f'read id mapped to {most_mapped_taxon}: {readid}\t{data}')
+		# # Add regions not associated with genes and mapped by FN reads
+		# min_r_pos -= 5
+		# ukn_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# for readid, data in fn_alignments_pos_test.items():
+		# 	if readid in fn_not_associated_w_genes:
+		# 		ukn_track.rect(data[1], data[2], color="red")
+		# 		if readid in most_mapped_reads_id:
+		# 			print(f'read id mapped to {most_mapped_taxon}: {readid}\t{data}')
 		
 
 		# Plot gene label if it exists
@@ -301,13 +304,18 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		for sector in circos.sectors:
 			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
 		for ac in align_coords:
+			print(ac)
 			print('blast results', ac.query_start, ac.query_end)
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
-		# define x-axis vector
+		# add track for coverage of training genome
+
+
+
+		# define x-axis vector for the next tracks
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
@@ -360,7 +368,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 
 		# add tracks for average sequence length of FN reads
 		min_r_pos -= 12
-		seq_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
+		seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
 		seq_track.axis(ec="green")
 		avg_seq_length = []
 		for i in range(1, target_fasta.full_genome_length+1, 1):
@@ -482,7 +490,7 @@ if __name__ == "__main__":
 	# get mapping of false negatives to training genomes from other species
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info)
+	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length)
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
