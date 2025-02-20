@@ -473,6 +473,7 @@ if __name__ == "__main__":
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length)
 	print(len(fn_genes_of_interest))
+	print(pos_test_annot_info)
 
 	# get mapping of false negatives to training genomes from other species
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
