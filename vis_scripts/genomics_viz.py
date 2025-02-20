@@ -189,26 +189,36 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 
 	min_r_pos = 100
 	for sector in circos.sectors:
+		# Setup outer track
+	    outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+	    outer_track.axis(fc="black")
+	    outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
+	    outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		# create tracks for genomics features
-		f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-		min_r_pos -= 5
-		r_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-		min_r_pos -= 5
+		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
+		# min_r_pos -= 5
+		# r_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
+		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
+		min_r_pos -= 2
+    	cds_track = sector.add_track((min_r_pos-5, min_r_pos))
 		features = []
 		for begin in cds_to_show.keys():
 			if cds_to_show[begin][1] == 'plus':
 				location = FeatureLocation(start=begin, end=cds_to_show[begin][0], strand=+1)
 				feature = SeqFeature(location=location, type=cds_to_show[begin][3], qualifiers={"gene_id": [cds_to_show[begin][3]], "gene_name": [cds_to_show[begin][2]], "strand": ["plus"]})
-				f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
+		# 		f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
+				cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
 			else:
 				location = FeatureLocation(start=begin, end=cds_to_show[begin][0], strand=-1)
 				feature = SeqFeature(location=location, type=cds_to_show[begin][3], qualifiers={"gene_id": [cds_to_show[begin][3]], "gene_name": [cds_to_show[begin][2]], "strand": ["minus"]})
-				r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
+		# 		r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
+				cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
 			features.append(feature)
 		
+
 		# Plot gene label if it exists
 		# labels, label_pos_list = [], []
 		for feature in features:
@@ -229,15 +239,15 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 
 		# f_cds_track.xticks(label_pos_list, labels, label_size=8, label_orientation="vertical")
 
-		if sector.size >= TICKS_INTERVAL:
-			r_cds_track.xticks_by_interval(
-				TICKS_INTERVAL,
-				outer=False,
-				label_formatter=lambda v: f"{v/1000000:.1f} Mb"
-			)
+		# if sector.size >= TICKS_INTERVAL:
+		# 	r_cds_track.xticks_by_interval(
+		# 		TICKS_INTERVAL,
+		# 		outer=False,
+		# 		label_formatter=lambda v: f"{v/1000000:.1f} Mb"
+		# 	)
 
 	# Blast genome comparison & plot match blocks
-	min_r_pos -= 6
+	min_r_pos -= 5
 	comp_name2color = {}
 	colors = ["black", "gray"]
 	for idx, comp_fasta in enumerate(comp_fasta_list):
@@ -259,8 +269,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
-		min_r_pos -= 15
-		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		min_r_pos -= 10
+		tp_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
+		tp_track.axis()
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
 			for pos in range(data[1], data[2], 1):
@@ -274,8 +285,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added TP track')
 
 		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 12
-		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		min_r_pos -= 10
+		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
+		fn_track_1.axis()
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid not in most_mapped_reads_id:
@@ -289,8 +301,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added FN track')
 
 		# add tracks for FN reads that were mapped to a taxon from label 0
-		min_r_pos -= 12
-		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		min_r_pos -= 10
+		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
+		fn_track_2.axis()
 		pos_fn_2_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid in most_mapped_reads_id:
@@ -304,8 +317,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		print(f'added FN track')
 
 		# add tracks for average sequence length of FN reads
-		min_r_pos -= 12
-		seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		min_r_pos -= 10
+		seq_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
+		seq_track.axis()
 		avg_seq_length = []
 		for i in range(1, target_fasta.full_genome_length+1, 1):
 			if i in fn_positions_seq_length:
