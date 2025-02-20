@@ -203,7 +203,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 2
-    	cds_track = sector.add_track((min_r_pos-5, min_r_pos))
+		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
 		features = []
 		for begin in cds_to_show.keys():
 			if cds_to_show[begin][1] == 'plus':
