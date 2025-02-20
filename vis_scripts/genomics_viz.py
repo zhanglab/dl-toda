@@ -407,8 +407,8 @@ if __name__ == "__main__":
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, train_genome_most_mapped_taxon, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, train_genome_most_mapped_taxon, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
 	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
