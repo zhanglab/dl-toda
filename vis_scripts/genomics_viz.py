@@ -91,37 +91,38 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 	
 	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	assert len(annot_file) != 0, f"no annotation file for genome {genome_id}"
+
 	genes_type = defaultdict(str)
 	annot_info = defaultdict(list)
-	if len(annot_file) != 0:
-		print(annot_file)
-		with open(annot_file[0], 'r') as f:
-			content = f.readlines()
-			for i in range(5,len(content)-1,1):
-				begin = int(content[i].rstrip().split('\t')[3])
-				end = int(content[i].rstrip().split('\t')[4])
-				strand = content[i].rstrip().split('\t')[6]
-				gene_id = ''
-				gene = ''
-				biotype = ''
-				for e in content[i].rstrip().split('\t')[8].split(';'):
-					e = e.replace('"', '')
-					if 'product' in e:
-						gene = ' '.join(e.split(' ')[2:])
-					if 'gene_id' in e:
-						gene_id = e.split(' ')[1]
-					if 'gene_biotype' in e:
-						biotype = e.split(' ')[1]
-				if content[i].rstrip().split('\t')[2] == 'gene':
-					genes_type[gene_id] = biotype
-				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
-					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene]
-				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
-					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
-				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
-					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
-				if gene_id == '':
-					assert gene_id != None, 'gene id should not be unknown'
+	with open(annot_file[0], 'r') as f:
+		content = f.readlines()
+		for i in range(5,len(content)-1,1):
+			begin = int(content[i].rstrip().split('\t')[3])
+			end = int(content[i].rstrip().split('\t')[4])
+			strand = content[i].rstrip().split('\t')[6]
+			gene_id = ''
+			gene = ''
+			biotype = ''
+			for e in content[i].rstrip().split('\t')[8].split(';'):
+				e = e.replace('"', '')
+				if 'product' in e:
+					gene = ' '.join(e.split(' ')[2:])
+				if 'gene_id' in e:
+					gene_id = e.split(' ')[1]
+				if 'gene_biotype' in e:
+					biotype = e.split(' ')[1]
+			if content[i].rstrip().split('\t')[2] == 'gene':
+				genes_type[gene_id] = biotype
+				print(content[i].rstrip().split('\t')[2], biotype, i)
+			elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+				annot_info[gene_id] = ['protein_coding', begin, end, strand, gene]
+			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+				annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+				annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+			
+			assert gene_id != '', 'gene id should not be unknown'
 				
 	return annot_info
 
