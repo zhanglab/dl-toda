@@ -293,14 +293,13 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		min_r_pos -= 10
 		tp_track = sector.add_track((min_r_pos, min_r_pos + 8), r_pad_ratio=0.1)
 		tp_track.axis()
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
 			for pos in range(data[1], data[2], 1):
 				pos_tp_count[pos-1] +=1
-		# tp_track.fill_between()
+		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
+		y_labels = list(map(str, y_values))
+		tp_track.yticks(y_values, y_labels)
 		tp_track.line(genome_pos, pos_tp_count, color="blue")
 			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
 		print(min_r_pos, min_r_pos + 10)
