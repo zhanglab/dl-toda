@@ -157,8 +157,8 @@ def GetSeqLength(sequences_id, sequence_length, type):
 def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, outfilepath, outfigpath):
 
 	# load data from training and testing genomes of label 1
-	target_fasta = Fasta(args.test_genomes_info[args.label]) # ref/subject --> target --> testing genome
-	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label], args.train_genomes_info[most_mapped_taxon]])) # query --> training genome
+	target_fasta = Fasta(args.test_genomes_info[args.label][1]) # ref/subject --> target --> testing genome
+	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
 	# print(target_fasta.__dict__)
 
 	# Initialize circos instance
