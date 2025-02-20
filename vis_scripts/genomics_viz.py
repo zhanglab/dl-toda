@@ -85,6 +85,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
 				if content[i].rstrip().split('\t')[2] == 'gene':
+					print(content[i])
 					begin = int(content[i].rstrip().split('\t')[3])
 					end = int(content[i].rstrip().split('\t')[4])
 					strand = content[i].rstrip().split('\t')[6]
@@ -98,6 +99,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 							gene = ' '.join(e.split(' ')[2:])
 					if gene_id == '':
 						gene_id = None
+					if gene == '':
+						print(gene_id)
 					annot_info[begin] = [end, strand, gene, gene_id]
 	return annot_info
 
@@ -174,7 +177,8 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 
 	# load data from training and testing genomes of label 1
 	target_fasta = Fasta(args.test_genomes_info[args.label][1]) # ref/subject --> target --> testing genome
-	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
+	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
+	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
 	# print(target_fasta.__dict__)
 
 	# Initialize circos instance
