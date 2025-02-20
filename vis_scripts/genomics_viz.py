@@ -223,7 +223,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		# Add regions not associated with genes and mapped by FN reads
 		min_r_pos -= 5
 		ukn_track = sector.add_track((min_r_pos-5, min_r_pos))
-		for readid, data in fn_alignments_pos_test.items()
+		for readid, data in fn_alignments_pos_test.items():
 			if readid in fn_not_associated_w_genes:
 				ukn_track.rect(data[1], data[2], color="red")
 			if readid in most_mapped_reads_id:
