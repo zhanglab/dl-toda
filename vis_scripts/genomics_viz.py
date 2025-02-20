@@ -392,7 +392,7 @@ if __name__ == "__main__":
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get annotations info
-	pos_test_annot_info = GetAnnotInfo(args, test_genomes_info[args.label][0], input_dir)
+	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	fn_positions_seq_length, fn_genes_of_interest = GetPosOfInterest(pos_test_annot_info, fn_alignments_pos_test, sequence_length)
 	print(len(fn_genes_of_interest))
 
@@ -421,8 +421,8 @@ if __name__ == "__main__":
 	# outf = open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
 	# outf_problem = open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
 	# for label in fp_labels:
-	# 	label_testing_fasta = test_genomes_info[label][1]
-	# 	label_testing_genome = test_genomes_info[label][0]
+	# 	label_testing_fasta = args.test_genomes_info[label][1]
+	# 	label_testing_genome = args.test_genomes_info[label][0]
 		
 	# 	mapping_output_dir = f'{output_dir}/mapping/label0/testing-genome/{label}'
 	# 	if not os.path.isdir(mapping_output_dir):
