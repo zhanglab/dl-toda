@@ -114,6 +114,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 						assert gene_id != None, 'gene id should not be unknown'
 					if gene != '':
 						annot_info[gene_id] = [begin, end, strand, gene]
+	print('ANNOT INFO')
+	print(annot_info)
 	return annot_info
 
 def GetPosOfInterest(args, annot_info, alignments, sequence_length):
