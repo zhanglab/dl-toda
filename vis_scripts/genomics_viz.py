@@ -348,9 +348,9 @@ if __name__ == "__main__":
 	input_dir = os.getcwd()
 
 	# create output directory
-	output_dir = os.path.join(os.getcwd(), args.label)
-	if not os.path.isdir(output_dir):
-		os.makedirs(output_dir)
+	args.output_dir = os.path.join(os.getcwd(), args.label)
+	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
 	
 	# get dltoda taxonomy
 	path_dl_toda_tax = '/'.join(
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 	
 	# do FN analysis
 	# get mapping of false negatives to testing genome from label 1
-	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
@@ -423,34 +423,34 @@ if __name__ == "__main__":
 	print(len(fn_genes_of_interest))
 
 	# get mapping of false negatives to training genomes from other species
-	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, most_mapped_reads_id = GetFNOtherTaxonomy(args, fn_alignments_pos_neg_train, os.path.join(output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapped_taxa.tsv'))
+	most_mapped_taxon, most_mapped_reads_id = GetFNOtherTaxonomy(args, fn_alignments_pos_neg_train, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapped_taxa.tsv'))
 
 
 
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
-	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 	# # do FP analysis
 	# # map reads in testing dataset to their corresponding genome
 	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
 	# fp_taxa = defaultdict(int)
 	# print(f'# labels: {len(fp_labels)}')
-	# outf = open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	# outf_problem = open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
+	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
+	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
 	# for label in fp_labels:
 	# 	label_testing_fasta = args.test_genomes_info[label][1]
 	# 	label_testing_genome = args.test_genomes_info[label][0]
 		
-	# 	mapping_output_dir = f'{output_dir}/mapping/label0/testing-genome/{label}'
+	# 	mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
 	# 	if not os.path.isdir(mapping_output_dir):
 	# 		os.makedirs(mapping_output_dir)
 		
@@ -495,12 +495,12 @@ if __name__ == "__main__":
 	# 	fp_taxa[label] = len(label_sequences)
 	
 	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	# with open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
 	# 	for k, v in fp_taxa_sorted.items():
 	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
 	# fp_reads = [readid_to_read[r] for r in fp_sequences]
-	# with open(os.path.join(output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
 	# 	f.write(''.join(fp_reads))
 	
 
