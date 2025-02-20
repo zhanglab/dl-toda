@@ -41,14 +41,14 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 			taxa[data[0]] += 1
 			list_reads_id.append(readid)
 			if readid in pos_test_alignments:
-				genes = set()
+				genes = defaultdict(str)
 				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[0] and pos <= annot[1]:
-							genes.add(annot[3])
-				f.write(f"{readid}\t{data[0]}")
-				for g in list(genes):
-					f.write(f'\t{g}')
+							genes[gene_id] = annot[3]
+				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}\t")
+				for gene_id in genes.keys():
+					f.write(f'\t{gene_id}\t{genes[gene_id]}')
 				f.write('\n')
 				
 	taxa_sorted = dict(sorted(taxa.items(), key=lambda item: item[1], reverse=True))
@@ -111,8 +111,6 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					assert gene_id != None, 'gene id should not be unknown'
 				if gene != '':
 					annot_info[gene_id] = [begin, end, strand, gene]
-	print('ANNOT INFO')
-	print(annot_info)
 	return annot_info
 
 def GetPosOfInterest(args, annot_info, alignments, sequence_length):
