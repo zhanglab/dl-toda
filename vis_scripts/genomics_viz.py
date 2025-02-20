@@ -147,7 +147,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_re
 				if pos >= annot[1] and pos <= annot[2]:
 					# positions_count[begin] += 1
 					genes_of_interest[gene_id] = annot_info[gene_id]
-					readid_w_gene[readid] = [data[1], data[2]]				
+					readid_w_gene[readid] = [data[1], data[2]]
 			positions_seq_length[pos].append(sequence_length[readid])
 
 	print(f'# genes of interest: {len(genes_of_interest)}')
@@ -157,7 +157,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_re
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
 					print(readid, data)
-					f.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\t{data[4]}\n')
+					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\t{data[4]}\n')
 					reads_wo_genes.append(readid)
 
 		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
@@ -485,7 +485,7 @@ if __name__ == "__main__":
 	
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length)
+	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
 	print(len(fn_genes_of_interest))
 
 	# get mapping of false negatives to training genomes from other species
