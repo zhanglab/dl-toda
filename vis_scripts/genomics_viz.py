@@ -44,8 +44,8 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info):
 				genes = defaultdict(str)
 				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
 					for gene_id, annot in annot_info.items():
-						if pos >= annot[0] and pos <= annot[1]:
-							genes[gene_id] = annot[3]
+						if pos >= annot[1] and pos <= annot[2]:
+							genes[gene_id] = annot[4]
 				f.write(f"{readid}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}\t")
 				for gene_id in genes.keys():
 					f.write(f'\t{gene_id}\t{genes[gene_id]}')
@@ -67,14 +67,14 @@ def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for gene_id, annot in genes_of_interest.items():
-				if pos >= annot[0] and pos <= annot[1]:
+				if pos >= annot[1] and pos <= annot[2]:
 					reads_of_interest.add(readid_to_read[readid])
 	with open(filename, 'w') as f:
 		f.write(''.join(list(reads_of_interest)))
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
-	annot_info = defaultdict(list)
+	
 	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
 		annot_output_dir = os.path.join(args.annotations_dir, f'{genome_id}_gtf')
 		os.makedirs(annot_output_dir)
@@ -90,27 +90,38 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 	
 	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	genes_type = defaultdict(str)
+	annot_info = defaultdict(list)
 	if len(annot_file) != 0:
 		print(annot_file)
 		with open(annot_file[0], 'r') as f:
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
-				# if content[i].rstrip().split('\t')[2] == 'gene':
 				begin = int(content[i].rstrip().split('\t')[3])
 				end = int(content[i].rstrip().split('\t')[4])
 				strand = content[i].rstrip().split('\t')[6]
 				gene_id = ''
 				gene = ''
+				biotype = ''
 				for e in content[i].rstrip().split('\t')[8].split(';'):
 					e = e.replace('"', '')
 					if 'product' in e:
 						gene = ' '.join(e.split(' ')[2:])
 					if 'gene_id' in e:
 						gene_id = e.split(' ')[1]
+					if 'gene_biotype' in e:
+						biotype = e.split(' ')[1]
+				if content[i].rstrip().split('\t')[2] == 'gene':
+					genes_type[gene_id] = biotype
+				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
 				if gene_id == '':
 					assert gene_id != None, 'gene id should not be unknown'
-				if gene != '':
-					annot_info[gene_id] = [begin, end, strand, gene]
+				
 	return annot_info
 
 def GetPosOfInterest(args, annot_info, alignments, sequence_length):
@@ -122,7 +133,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for gene_id, annot in annot_info.items():
-				if pos >= annot[0] and pos <= annot[1]:
+				if pos >= annot[1] and pos <= annot[2]:
 					# positions_count[begin] += 1
 					genes_of_interest[gene_id] = annot_info[gene_id]
 					readid_w_gene[readid] = [data[1], data[2]]				
@@ -221,14 +232,14 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
 		features = []
 		for gene_id in cds_to_show.keys():
-			if cds_to_show[gene_id][2] == 'plus':
-				location = FeatureLocation(start=cds_to_show[gene_id][0], end=cds_to_show[gene_id][1], strand=+1)
-				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][3]], "strand": ["plus"]})
+			if cds_to_show[gene_id][3] == 'plus':
+				location = FeatureLocation(start=cds_to_show[gene_id][1], end=cds_to_show[gene_id][2], strand=+1)
+				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][4]], "strand": ["plus"]})
 		# 		f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
 				cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
 			else:
-				location = FeatureLocation(start=cds_to_show[gene_id][0], end=cds_to_show[gene_id][1], strand=-1)
-				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][3]], "strand": ["minus"]})
+				location = FeatureLocation(start=cds_to_show[gene_id][1], end=cds_to_show[gene_id][2], strand=-1)
+				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][4]], "strand": ["minus"]})
 		# 		r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
 				cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
 			features.append(feature)
@@ -284,7 +295,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		for sector in circos.sectors:
 			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
 		for ac in align_coords:
-			print(ac.query_start, ac.query_end)
+			print('blast results', ac.query_start, ac.query_end)
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
@@ -458,8 +469,8 @@ if __name__ == "__main__":
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get annotations info
-	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length)
+	annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, annot_info, fn_alignments_pos_test, sequence_length)
 	print(len(fn_genes_of_interest))
 
 	# get mapping of false negatives to training genomes from other species
