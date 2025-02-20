@@ -117,7 +117,7 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length):
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
-			for gene_id, annot in annot_info.items()():
+			for gene_id, annot in annot_info.items():
 				if pos >= annot[0] and pos <= annot[1]:
 					# positions_count[begin] += 1
 					genes_of_interest[gene_id] = annot_info[gene_id]
