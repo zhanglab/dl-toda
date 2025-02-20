@@ -190,7 +190,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 	min_r_pos = 100
 	for sector in circos.sectors:
 		# Setup outer track
-	    outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 	    outer_track.axis(fc="black")
 	    outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
 	    outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
