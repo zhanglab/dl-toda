@@ -111,8 +111,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				if 'gene_id' in e:
 					gene_id = e.split(' ')[1]
 				if 'gene_biotype' in e:
-					biotype = e.split(' ')[1]
-					print(e)
+					biotype = e.split(' ')[2]
+					print(e, len(e.split(' ')))
 					print(biotype)
 			if content[i].rstrip().split('\t')[2] == 'gene':
 				genes_type[gene_id] = biotype
