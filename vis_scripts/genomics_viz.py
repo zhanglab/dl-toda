@@ -103,24 +103,26 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 def GetPosOfInterest(annot_info, alignments, sequence_length):
 	# get count and length of fn sequences per mapped position on the genome investigated
-	positions_count = defaultdict(int)
+	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
+	genes_of_interest = defaultdict(list)
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for begin in annot_info.keys():
 				if pos >= begin and pos <= annot_info[begin][0]:
-					positions_count[begin] += 1
+					# positions_count[begin] += 1
+					genes_of_interest[begin] = annot_info[begin]
 			positions_seq_length[pos].append(sequence_length[readid])
 
 	# sort positions_count by values
-	genes_of_interest = defaultdict(list)
-	positions_count_sorted = dict(sorted(positions_count.items(), key=lambda item: item[1], reverse=True))
-	for count, (k, v) in enumerate(positions_count_sorted.items(), 1):
-		print(k, v, annot_info[k])
-		genes_of_interest[k] = annot_info[k]
+	# genes_of_interest = defaultdict(list)
+	# positions_count_sorted = dict(sorted(positions_count.items(), key=lambda item: item[1], reverse=True))
+	# for count, (k, v) in enumerate(positions_count_sorted.items(), 1):
+	# 	print(k, v, annot_info[k])
+	# 	genes_of_interest[k] = annot_info[k]
 		# if count == 20:
 		# 	break
-
+	print(f'# genes of interest: {len(genes_of_interest)}')
 	return positions_seq_length, genes_of_interest
 
 
