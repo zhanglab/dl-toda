@@ -499,72 +499,72 @@ if __name__ == "__main__":
 	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# create circos plot with FN reads info
-	# FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	create circos plot with FN reads info
+	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
-	# # do FP analysis
-	# # map reads in testing dataset to their corresponding genome
-	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	# fp_taxa = defaultdict(int)
-	# print(f'# labels: {len(fp_labels)}')
-	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
-	# for label in fp_labels:
-	# 	label_testing_fasta = args.test_genomes_info[label][1]
-	# 	label_testing_genome = args.test_genomes_info[label][0]
+	# do FP analysis
+	# map reads in testing dataset to their corresponding genome
+	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	fp_taxa = defaultdict(int)
+	print(f'# labels: {len(fp_labels)}')
+	outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
+	outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
+	for label in fp_labels:
+		label_testing_fasta = args.test_genomes_info[label][1]
+		label_testing_genome = args.test_genomes_info[label][0]
 		
-	# 	mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
-	# 	if not os.path.isdir(mapping_output_dir):
-	# 		os.makedirs(mapping_output_dir)
+		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+		if not os.path.isdir(mapping_output_dir):
+			os.makedirs(mapping_output_dir)
 		
-	# 	if 'results.sam' not in os.listdir(mapping_output_dir):
-	# 		# build bowtie2 index 
-	# 		result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
-	# 		# map reads
-	# 		result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
-	# 	else:
-	# 		print(f'{label}\talignment already done')
+		if 'results.sam' not in os.listdir(mapping_output_dir):
+			# build bowtie2 index 
+			result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
+			# map reads
+			result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
+		else:
+			print(f'{label}\talignment already done')
 		
-	# 	# get fp sequences of label
-	# 	label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
-	# 	print(label, len(label_sequences))
+		# get fp sequences of label
+		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
+		print(label, len(label_sequences))
 
-	# 	# get alignments info
-	# 	samfile = os.path.join(mapping_output_dir, 'results.sam')
-	# 	fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels)
+		# get alignments info
+		samfile = os.path.join(mapping_output_dir, 'results.sam')
+		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels)
 		
-	# 	print(label_testing_genome)
-	# 	# get gene associated with sequences
-	# 	neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
-	# 	if len(neg_test_annot_info) > 0:
-	# 		neg_genes_mapped = defaultdict(int)
-	# 		neg_genes_strand = defaultdict(str)
-	# 		for seq_id in label_sequences:
-	# 			start_mapping = fp_alignments[seq_id][1]
-	# 			end_mapping = fp_alignments[seq_id][2]
-	# 			for pos in range(start_mapping, end_mapping+1, 1):
-	# 				for begin in neg_test_annot_info.keys():
-	# 					if pos >= begin and pos <= neg_test_annot_info[begin][0]:
-	# 						neg_genes_mapped[neg_test_annot_info[begin][2]] += 1
-	# 						neg_genes_strand[neg_test_annot_info[begin][2]] = neg_test_annot_info[begin][1]
+		print(label_testing_genome)
+		# get gene associated with sequences
+		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+		if len(neg_test_annot_info) > 0:
+			neg_genes_mapped = defaultdict(int)
+			neg_genes_strand = defaultdict(str)
+			for seq_id in label_sequences:
+				start_mapping = fp_alignments[seq_id][1]
+				end_mapping = fp_alignments[seq_id][2]
+				for pos in range(start_mapping, end_mapping+1, 1):
+					for begin in neg_test_annot_info.keys():
+						if pos >= begin and pos <= neg_test_annot_info[begin][0]:
+							neg_genes_mapped[neg_test_annot_info[begin][2]] += 1
+							neg_genes_strand[neg_test_annot_info[begin][2]] = neg_test_annot_info[begin][1]
 
-	# 		neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
-	# 		for k, v in neg_genes_mapped_sorted.items():
-	# 			outf.write(f'{label}\t{k}\t{v}\t{neg_genes_strand[k]}\n')
-	# 	else:
-	# 		outf_problem.write(f'{label}\t{label_testing_genome}\n')
+			neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
+			for k, v in neg_genes_mapped_sorted.items():
+				outf.write(f'{label}\t{k}\t{v}\t{neg_genes_strand[k]}\n')
+		else:
+			outf_problem.write(f'{label}\t{label_testing_genome}\n')
 			
-	# 	# monitor number of sequences per label
-	# 	fp_taxa[label] = len(label_sequences)
+		# monitor number of sequences per label
+		fp_taxa[label] = len(label_sequences)
 	
-	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
-	# 	for k, v in fp_taxa_sorted.items():
-	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+		for k, v in fp_taxa_sorted.items():
+			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
-	# fp_reads = [readid_to_read[r] for r in fp_sequences]
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
-	# 	f.write(''.join(fp_reads))
+	fp_reads = [readid_to_read[r] for r in fp_sequences]
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
+		f.write(''.join(fp_reads))
 	
 
 	
