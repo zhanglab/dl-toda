@@ -325,7 +325,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
-			for pos in range(data[1], data[2], 1):
+			for pos in range(data[1], data[2]+1, 1):
 				pos_tp_count[pos-1] +=1
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
 		y_labels = list(map(str, y_values))
@@ -342,7 +342,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid not in most_mapped_reads_id:
-				for pos in range(data[1], data[2], 1):
+				for pos in range(data[1], data[2]+1, 1):
 					pos_fn_1_count[pos-1] +=1
 		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
 		y_labels = list(map(str, y_values))
@@ -358,7 +358,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		pos_fn_2_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			if readid in most_mapped_reads_id:
-				for pos in range(data[1], data[2], 1):
+				for pos in range(data[1], data[2]+1, 1):
 					pos_fn_2_count[pos-1] +=1
 		y_values = list(range(min(pos_fn_2_count), max(pos_fn_2_count), 2))
 		y_labels = list(map(str, y_values))
@@ -520,7 +520,7 @@ if __name__ == "__main__":
 		if 'results.sam' not in os.listdir(mapping_output_dir):
 			# build bowtie2 index 
 			result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
-			# map reads
+			# map testing reads to testing genome
 			result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
 		else:
 			print(f'{label}\talignment already done')
@@ -531,7 +531,7 @@ if __name__ == "__main__":
 
 		# get alignments info
 		samfile = os.path.join(mapping_output_dir, 'results.sam')
-		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels)
+		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
 		
 		print(label_testing_genome)
 		# get gene associated with sequences
@@ -540,17 +540,18 @@ if __name__ == "__main__":
 			neg_genes_mapped = defaultdict(int)
 			neg_genes_strand = defaultdict(str)
 			for seq_id in label_sequences:
-				start_mapping = fp_alignments[seq_id][1]
-				end_mapping = fp_alignments[seq_id][2]
-				for pos in range(start_mapping, end_mapping+1, 1):
-					for begin in neg_test_annot_info.keys():
-						if pos >= begin and pos <= neg_test_annot_info[begin][0]:
-							neg_genes_mapped[neg_test_annot_info[begin][2]] += 1
-							neg_genes_strand[neg_test_annot_info[begin][2]] = neg_test_annot_info[begin][1]
+				if seq_id in fp_alignments:
+					start_mapping = fp_alignments[seq_id][1]
+					end_mapping = fp_alignments[seq_id][2]
+					for pos in range(start_mapping, end_mapping+1, 1):
+						for gene_id, annot_info in neg_test_annot_info.keys():
+							if pos >= annot_info[1] and pos <= annot_info[2]:
+								neg_genes_mapped[gene_id] += 1
+								neg_genes_strand[gene_id] = annot_info[3]
 
 			neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
 			for k, v in neg_genes_mapped_sorted.items():
-				outf.write(f'{label}\t{k}\t{v}\t{neg_genes_strand[k]}\n')
+				outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
 		else:
 			outf_problem.write(f'{label}\t{label_testing_genome}\n')
 			
@@ -565,8 +566,6 @@ if __name__ == "__main__":
 	fp_reads = [readid_to_read[r] for r in fp_sequences]
 	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
 		f.write(''.join(fp_reads))
-	
-
 	
 
 
