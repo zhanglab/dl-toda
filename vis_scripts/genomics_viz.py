@@ -326,6 +326,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for data in tp_alignments_pos_test.values():
 			for pos in range(data[1], data[2]+1, 1):
+				assert pos-1 in list(range(target_fasta.full_genome_length)), f'TP base position not found in genome: {pos}\t{pos-1}\t{data}\t{target_fasta.full_genome_length}'
 				pos_tp_count[pos-1] +=1
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
 		y_labels = list(map(str, y_values))
