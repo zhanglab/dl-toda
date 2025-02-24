@@ -68,21 +68,21 @@ def LoadFnaFile(fasta_file):
 def RunBlast(args, query, subject):
 	if len(subject) > 1:
 		# put all training genomes into one fasta file
-		with open(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'), 'w') as outf:
-			for count, fasta in enumerate(subject, 1):
-				print(f'{count}\t{fasta}')
-				with open(fasta, 'r') as inf:
-					outf.write(inf.read())
+		if not os.path.exists(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna')):
+			with open(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'), 'w') as outf:
+				for count, fasta in enumerate(subject, 1):
+					print(f'{count}\t{fasta}')
+					with open(fasta, 'r') as inf:
+						outf.write(inf.read())
 		
 		# create database with all genomes
 		result = subprocess.run([makeblastdb_exec, '-in', f'{args.output_dir}/mapping/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/blastdb'])
 		
 		# remove fasta file
-		if os.path.exists(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna')):
-			os.remove(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'))
+		# os.remove(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'))
 
 		# align reads to database or fasta file
-		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/blastdb', '-out' f'{args.output_dir}/mapping/test_train_blastn.out',
+		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/blastdb', '-out', f'{args.output_dir}/mapping/test_train_blastn.out',
 			 '-outfmt', "10 delim=, qstart qend sstart send qseqid sseqid evalue pident qseq sseq length",
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
@@ -91,16 +91,12 @@ def RunBlast(args, query, subject):
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{args.output_dir}/mapping/test_test_blastn.out',
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
-		if result.returncode == 0:
-			stdout = result.stdout
-			print("stdout:", stdout)
-		else:
-			print("Error:", result.stderr)
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
+	""" get genes on testing genome associated wth FN reads and taxa that were mapped by FN reads """
 	taxa = defaultdict(int)
-	list_reads_id = []
+	list_reads_id = [] # store id of FN reads mapped to training genomes from the label 0
 	reads_wo_genes = []
 	with open(os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_summary.tsv'), 'w') as f:
 		for readid, data in neg_train_alignments.items():
@@ -108,11 +104,11 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 			list_reads_id.append(readid)
 			if readid in pos_test_alignments:
 				genes = defaultdict(str)
-				for pos in range(pos_test_alignments[readid][1], pos_test_alignments[readid][2]+1, 1):
+				for pos in range(pos_test_alignments[readid][2], pos_test_alignments[readid][3]+1, 1):
 					for gene_id, annot in annot_info.items():
 						if pos >= annot[1] and pos <= annot[2]:
 							genes[gene_id] = annot[4]
-				f.write(f"{readid}\t{sequence_length[readid]}\t{pos_test_alignments[readid][1]}\t{pos_test_alignments[readid][2]+1}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
+				f.write(f"{readid}\t{sequence_length[readid]}\t{pos_test_alignments[readid][2]}\t{pos_test_alignments[readid][3]+1}\t{data[1]}\t{data[0]}\t{args.dl_toda_tax[data[0]]}")
 				if len(genes) != 0:
 					for gene_id in genes.keys():
 						f.write(f'\t{gene_id}\t{genes[gene_id]}')
@@ -136,7 +132,7 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 	reads_of_interest = set()
 	for readid, data in alignments.items():
-		for pos in range(data[1], data[2]+1, 1):
+		for pos in range(data[2], data[3]+1, 1):
 			for gene_id, annot in genes_of_interest.items():
 				if pos >= annot[1] and pos <= annot[2]:
 					reads_of_interest.add(readid_to_read[readid])
@@ -213,12 +209,12 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	fn_of_interest = defaultdict(list)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
-		for pos in range(data[1], data[2]+1, 1):
+		for pos in range(data[2], data[3]+1, 1):
 			for gene_id, annot in annot_info.items():
 				if pos >= annot[1] and pos <= annot[2]:
 					# positions_count[begin] += 1
 					fn_of_interest[gene_id] = annot_info[gene_id]
-					readid_w_gene[readid] = [data[1], data[2]]
+					readid_w_gene[readid] = [data[2], data[3]]
 			positions_seq_length[pos].append(sequence_length[readid])
 
 	reads_wo_genes = []
@@ -226,8 +222,7 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 		with open(os.path.join(args.output_dir, 'test_reads_wo_gene.tsv'), 'w') as f:
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
-					print(readid, data)
-					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\n')
+					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
 					reads_wo_genes.append(readid)
 
 		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
@@ -278,13 +273,13 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 	alignments = defaultdict(list)
 	with open(input_file, 'r') as f:
 		for line in f:
-			print(line)
 			readid = line.rstrip().split(',')[0]
 			if readid in sequences:
 				sstart = int(line.rstrip().split(',')[2])
-				ssend = int(line.rstrip().split(',')[3])
+				send = int(line.rstrip().split(',')[3])
 				seq_id = line.rstrip().split(',')[1]
-				alignments[readid] = [seq_id, sstart, ssend]
+				seq_label = seq_to_labels[seq_id]
+				alignments[readid] = [seq_label, seq_id, sstart, send]
 
 	if outfilename:
 		unmapped_reads_id = list(sequences.difference(set(alignments.keys())))
@@ -585,15 +580,17 @@ if __name__ == "__main__":
 	# blast testing reads to training genomes from other species
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
 	RunBlast(args, args.testing_fna_file, training_genomes)
-	# fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out' sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out' sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	# most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
+	most_mapped_taxon, mapped_fn_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
+	
+	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	# tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences,f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	# CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	# CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
 	# FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
