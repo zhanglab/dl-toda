@@ -239,7 +239,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes_of_interest = defaultdict(list)
-	functions = defaultdict(str)
+	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
