@@ -41,8 +41,8 @@ def GetGCSkew(sequence):
 	
 	all_gc_skew = []
 
-	window_size = len(sequence) / 500
-	step_size = len(sequence) / 1000
+	window_size = int(len(sequence) / 500)
+	step_size = int(len(sequence) / 1000)
 
 	pos_list = list(range(0, len(sequence), step_size)) + [len(sequence)]
 	for pos in pos_list:
@@ -339,7 +339,10 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
 		with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
-			f.write(f'mean\t{statistics.mean(seq_length_info)}\nmedian\t{statistics.median(seq_length_info)}\nmax\t{max(seq_length_info)}\nmin\t{min(seq_length_info)}')
+			line = "\t".join(seq_length_info)
+			f.write(f'{args.label}\t{line}\n')
+
+			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
 
 def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfilepath, outfigpath):
