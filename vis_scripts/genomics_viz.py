@@ -698,7 +698,7 @@ if __name__ == "__main__":
 
 	# do FP analysis
 	# blast FP reads
-	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf
+	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
 		for k, v in readid_to_read,.items():
 			if k in fp_sequences:
 				outf.write(f'>{k}\n{v}\n')
