@@ -464,7 +464,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
 		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
 		abs_max_gcskew = np.max(np.abs(gcskews))
-		vmin, vmax = -abs_max_gcskew, abs_maxgc_skew
+		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
 		gcskew_track.fill_between(
 			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="olive"
 		)
