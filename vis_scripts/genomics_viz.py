@@ -103,7 +103,7 @@ def LoadFnaFile(fasta_file):
 def RunBlast(args, query, subject=None, db=False):
 	if db:
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out',
-				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5'])
+				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 	else:
 		if len(subject) > 1:
 			# put all training genomes into one fasta file
