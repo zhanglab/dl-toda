@@ -197,7 +197,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	
 	print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
 	print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
-	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))=
+	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
 
 	return annot_info
 
