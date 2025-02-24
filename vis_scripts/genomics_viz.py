@@ -90,7 +90,7 @@ def RunBlast(args, query, subject):
 		print(f'run blast with {subject[0]}')
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{args.output_dir}/mapping/test_test_blastn.out',
-			 '-outfmt', "10 delim=, sstart ssend sseqid", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity' '100' ])
+			 '-outfmt', "10 delim=, sstart ssend sseqid", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
 
 
 
