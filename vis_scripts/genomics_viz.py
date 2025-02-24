@@ -452,15 +452,15 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gcskews = GetGCSkew(record_seq)
 		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-    	negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-    	abs_max_gcskew = np.max(np.abs(gcskews))
-    	vmin, vmax = -abs_max_gcskew, abs_maxgc_skew
-    	gcskew_track.fill_between(
-        	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="olive"
-    	)
-    	gcskew_track.fill_between(
-        	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="purple"
-    	)
+		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		abs_max_gcskew = np.max(np.abs(gcskews))
+		vmin, vmax = -abs_max_gcskew, abs_maxgc_skew
+		gcskew_track.fill_between(
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="olive"
+		)
+		gcskew_track.fill_between(
+			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="purple"
+		)
 
 
 	# # Blast genome comparison & plot match blocks
