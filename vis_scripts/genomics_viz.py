@@ -249,7 +249,9 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 					genes_of_interest[gene_id] = annot_info[gene_id]
 					if annot_info[gene_id][0] == 'protein_coding':
 						functions[annot_info[gene_id][5]] += 1
-						genestype[annot_info[gene_id][0]] += 1
+						if functions[annot_info[gene_id][5]] == '':
+							print(gene_id, annot_info[gene_id])
+					genestype[annot_info[gene_id][0]] += 1
 					readid_w_gene[readid] = [data[2], data[3]]
 
 	reads_wo_genes = []
