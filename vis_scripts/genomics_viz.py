@@ -83,14 +83,14 @@ def RunBlast(args, query, subject):
 
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/blastdb', '-out', f'{args.output_dir}/mapping/test_train_blastn.out',
-			 '-outfmt', "10 delim=, qstart qend sstart send qseqid sseqid evalue pident qseq sseq length",
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident",
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 	else:
 		print(f'run blast with {subject[0]}')
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{args.output_dir}/mapping/test_test_blastn.out',
-			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
@@ -135,9 +135,10 @@ def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 		for pos in range(data[2], data[3]+1, 1):
 			for gene_id, annot in genes_of_interest.items():
 				if pos >= annot[1] and pos <= annot[2]:
-					reads_of_interest.add(readid_to_read[readid])
+					reads_of_interest.add(readid)
+	
 	with open(filename, 'w') as f:
-		f.write(''.join(list(reads_of_interest)))
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_of_interest)]))
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
@@ -226,7 +227,7 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 					reads_wo_genes.append(readid)
 
 		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
-			f.write(''.join([readid_to_read[r] for r in reads_wo_genes]))
+			f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in reads_wo_genes]))
 
 	else:
 		print('all reads were found a gene')
