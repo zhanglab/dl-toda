@@ -72,7 +72,7 @@ def GetGCSkew(sequence):
 
 def GetTrainCoverage(args):
 	# get reads in training set fasta file
-	_, sequence_length = LoadFnaFile(args.training_fna_file)
+	_, sequence_length, _ = LoadFnaFile(args.training_fna_file)
 
 	# get size of training genome
 	genome_fasta = args.train_genomes_info[args.label][1]
@@ -244,17 +244,19 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read, type
 	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
-	for readid, data in alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for gene_id, annot in annot_info.items():
-			if (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
-				genes_of_interest[gene_id] = annot_info[gene_id]
-				readid_w_gene[readid] = [data[2], data[3]]
-				if annot_info[gene_id][0] == 'protein_coding':
-					functions[annot_info[gene_id][5]] += 1
-					print('function:', annot_info[gene_id][5], gene_id)
-				genestype[annot_info[gene_id][0]] += 1
+	
+		for readid, data in alignments.items():
+			start_pos = data[2]
+			end_pos = data[3]
+			for gene_id, annot in annot_info.items():
+				if (start_pos <= annot[1] and end_pos >= annot[1]) or 
+						(start_pos >= annot[1] and end_pos <= annot[2]) or 
+						(start_pos <= annot[2] and end_pos >= annot[2]):
+					if annot[0] == 'protein_coding':
+						functions[annot[5]] += 1
+					genes_of_interest[gene_id] = annot_info[gene_id]
+					readid_w_gene[readid] = [data[2], data[3]]
+					genestype[annot_info[gene_id][0]] += 1
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
@@ -266,21 +268,30 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read, type
 
 		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
 			f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in reads_wo_genes]))
-
 	else:
 		print('all reads were found a gene')
+
+	with open(os.path.join(args.output_dir, f'{args.label}_{type}_genes_info_{args.prob_threshold}.tsv')) as outf:
+		for gene_id, annot in genes_of_interest.items():
+			if annot[0] == 'protein_coding':
+				functions[annot[5]] += 1
+						print('function:', annot[5], gene_id)
+						outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\n')
+					else:
+						outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\n')
+
 
 	print(genestype)
 	print('# functions', len(functions))
 	print(functions)
 
 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
 	genestype_sorted = dict(sorted(genestype.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.label}_{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
 
 	return genes_of_interest
@@ -429,21 +440,21 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 
 		# Plot info about genes
 		# labels, label_pos_list = [], []
-		for feature in features:
-			start = int(feature.location.start)
-			end = int(feature.location.end)
-			label_pos = (start + end) / 2
-			gene_id = feature.qualifiers.get("gene_id", [None])[0]
-			label = feature.qualifiers.get("gene_name", [None])[0]
-			strand = feature.qualifiers.get("strand", [None])[0]
-			gene_type = feature.qualifiers.get("gene_type", [None])[0]
-			if gene_type == 'protein_coding':
-				function = feature.qualifiers.get("function", [None])[0]
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
-			else:
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+		# for feature in features:
+		# 	start = int(feature.location.start)
+		# 	end = int(feature.location.end)
+		# 	label_pos = (start + end) / 2
+		# 	gene_id = feature.qualifiers.get("gene_id", [None])[0]
+		# 	label = feature.qualifiers.get("gene_name", [None])[0]
+		# 	strand = feature.qualifiers.get("strand", [None])[0]
+		# 	gene_type = feature.qualifiers.get("gene_type", [None])[0]
+		# 	if gene_type == 'protein_coding':
+		# 		function = feature.qualifiers.get("function", [None])[0]
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+		# 	else:
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
 
-			print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+		# 	print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
 			# if label == None:
 			# 	continue
 			# if gene_id is not None:
@@ -718,10 +729,10 @@ if __name__ == "__main__":
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 	# # do FP analysis
-	# # map reads in testing dataset to their corresponding genome
-	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	# fp_taxa = defaultdict(int)
-	# print(f'# labels: {len(fp_labels)}')
+	# # blast FP reads
+	# # fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	# # fp_taxa = defaultdict(int)
+	# # print(f'# labels: {len(fp_labels)}')
 	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
 	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
 	# for label in fp_labels:
