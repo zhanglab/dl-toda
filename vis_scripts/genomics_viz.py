@@ -239,20 +239,19 @@ def GetAnnotInfo(args, genome_id, input_dir):
 def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes_of_interest = defaultdict(list)
-	functions = defaultdict(int)
+	functions = defaultdict(str)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
-		for pos in range(data[2], data[3]+1, 1):
-			for gene_id, annot in annot_info.items():
-				if pos >= annot[1] and pos <= annot[2]:
-					genes_of_interest[gene_id] = annot_info[gene_id]
-					if annot_info[gene_id][0] == 'protein_coding':
-						functions[annot_info[gene_id][5]] += 1
-						if functions[annot_info[gene_id][5]] == ' ':
-							print(gene_id, annot_info[gene_id])
-					genestype[annot_info[gene_id][0]] += 1
-					readid_w_gene[readid] = [data[2], data[3]]
+		start_pos = data[2]
+		end_pos = data[3]
+		for gene_id, annot in annot_info.items():
+			if (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+				genes_of_interest[gene_id] = annot_info[gene_id]
+				readid_w_gene[readid] = [data[2], data[3]]
+				if annot_info[gene_id][0] == 'protein_coding':
+					functions[annot_info[gene_id][5]] += 1
+				genestype[annot_info[gene_id][0]] += 1
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
