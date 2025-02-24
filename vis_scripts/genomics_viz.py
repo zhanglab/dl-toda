@@ -561,7 +561,7 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
 	parser.add_argument('--label', type=str, help='label of species investigated', required=True)
-	parser.add_argument('--circos', type=str, help='if selected, this option will create a circos plot', action='store_true', default=False)
+	parser.add_argument('--circos', help='if selected, this option will create a circos plot', action='store_true', default=False)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
