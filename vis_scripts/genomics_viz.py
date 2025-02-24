@@ -330,11 +330,6 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			f.write(f'mean\t{statistics.mean(seq_length_info)}\nmedian\t{statistics.median(seq_length_info)}\nmax\t{max(seq_length_info)}\nmin\t{min(seq_length_info)}')
 
 
-		FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
-
-
 def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfilepath, outfigpath):
 	
 	# load data from training and testing genomes of label 1
