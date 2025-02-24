@@ -153,11 +153,8 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 				f.write('\n')
 
 	taxa_sorted = dict(sorted(taxa.items(), key=lambda item: item[1], reverse=True))
-	most_mapped_taxon = ''
 	with open(os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapped_taxa.tsv'), 'w') as f:
 		for count, (k, v) in enumerate(taxa_sorted.items()):
-			if count == 0:
-				most_mapped_taxon = k
 			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 
 
@@ -214,8 +211,6 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					fn = e.split('|')[0].split(' ')[2:]
 					if len(fn) > len(function):
 						function = ' '.join(fn)
-						if function == '':
-							print(content[i])
 				if 'product' in e:
 					gene = ' '.join(e.split(' ')[2:])
 				if 'gene_id' in e:
@@ -244,7 +239,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes_of_interest = defaultdict(list)
-	functions = set()
+	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
@@ -253,7 +248,7 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 				if pos >= annot[1] and pos <= annot[2]:
 					genes_of_interest[gene_id] = annot_info[gene_id]
 					if annot_info[gene_id][0] == 'protein_coding':
-						functions.add(annot_info[gene_id][5])
+						functions[annot_info[gene_id][5]] += 1
 						genestype[annot_info[gene_id][0]] += 1
 					readid_w_gene[readid] = [data[2], data[3]]
 
@@ -274,6 +269,16 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	print(genestype)
 	print('# functions', len(functions))
 	print(functions)
+
+	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'fn_functions_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in functions_sorted.items():
+			f.write(f'{k}\t{v}\n')
+
+	genestype_sorted = dict(sorted(genestype.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'fn_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in genestype_sorted.items():
+			f.write(f'{k}\t{v}\n')
 
 	return genes_of_interest
 
@@ -690,70 +695,70 @@ if __name__ == "__main__":
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), 
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
-	# do FP analysis
-	# map reads in testing dataset to their corresponding genome
-	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	fp_taxa = defaultdict(int)
-	print(f'# labels: {len(fp_labels)}')
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
-	for label in fp_labels:
-		label_testing_fasta = args.test_genomes_info[label][1]
-		label_testing_genome = args.test_genomes_info[label][0]
+	# # do FP analysis
+	# # map reads in testing dataset to their corresponding genome
+	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	# fp_taxa = defaultdict(int)
+	# print(f'# labels: {len(fp_labels)}')
+	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
+	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
+	# for label in fp_labels:
+	# 	label_testing_fasta = args.test_genomes_info[label][1]
+	# 	label_testing_genome = args.test_genomes_info[label][0]
 		
-		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
-		if not os.path.isdir(mapping_output_dir):
-			os.makedirs(mapping_output_dir)
+	# 	mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+	# 	if not os.path.isdir(mapping_output_dir):
+	# 		os.makedirs(mapping_output_dir)
 		
-		if 'results.sam' not in os.listdir(mapping_output_dir):
-			# build bowtie2 index 
-			result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
-			# map testing reads to testing genome
-			result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
-		else:
-			print(f'{label}\talignment already done')
+	# 	if 'results.sam' not in os.listdir(mapping_output_dir):
+	# 		# build bowtie2 index 
+	# 		result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
+	# 		# map testing reads to testing genome
+	# 		result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
+	# 	else:
+	# 		print(f'{label}\talignment already done')
 		
-		# get fp sequences of label
-		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
-		print(label, len(label_sequences))
+	# 	# get fp sequences of label
+	# 	label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
+	# 	print(label, len(label_sequences))
 
-		# get alignments info
-		samfile = os.path.join(mapping_output_dir, 'results.sam')
-		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
+	# 	# get alignments info
+	# 	samfile = os.path.join(mapping_output_dir, 'results.sam')
+	# 	fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
 		
-		print(label_testing_genome)
-		# get gene associated with sequences
-		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
-		if len(neg_test_annot_info) > 0:
-			neg_genes_mapped = defaultdict(int)
-			neg_genes_strand = defaultdict(str)
-			for seq_id in label_sequences:
-				if seq_id in fp_alignments:
-					start_mapping = fp_alignments[seq_id][1]
-					end_mapping = fp_alignments[seq_id][2]
-					for pos in range(start_mapping, end_mapping+1, 1):
-						for gene_id, annot_info in neg_test_annot_info.keys():
-							if pos >= annot_info[1] and pos <= annot_info[2]:
-								neg_genes_mapped[gene_id] += 1
-								neg_genes_strand[gene_id] = annot_info[3]
+	# 	print(label_testing_genome)
+	# 	# get gene associated with sequences
+	# 	neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+	# 	if len(neg_test_annot_info) > 0:
+	# 		neg_genes_mapped = defaultdict(int)
+	# 		neg_genes_strand = defaultdict(str)
+	# 		for seq_id in label_sequences:
+	# 			if seq_id in fp_alignments:
+	# 				start_mapping = fp_alignments[seq_id][1]
+	# 				end_mapping = fp_alignments[seq_id][2]
+	# 				for pos in range(start_mapping, end_mapping+1, 1):
+	# 					for gene_id, annot_info in neg_test_annot_info.keys():
+	# 						if pos >= annot_info[1] and pos <= annot_info[2]:
+	# 							neg_genes_mapped[gene_id] += 1
+	# 							neg_genes_strand[gene_id] = annot_info[3]
 
-			neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
-			for k, v in neg_genes_mapped_sorted.items():
-				outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
-		else:
-			outf_problem.write(f'{label}\t{label_testing_genome}\n')
+	# 		neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
+	# 		for k, v in neg_genes_mapped_sorted.items():
+	# 			outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
+	# 	else:
+	# 		outf_problem.write(f'{label}\t{label_testing_genome}\n')
 			
-		# monitor number of sequences per label
-		fp_taxa[label] = len(label_sequences)
+	# 	# monitor number of sequences per label
+	# 	fp_taxa[label] = len(label_sequences)
 	
-	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
-		for k, v in fp_taxa_sorted.items():
-			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+	# 	for k, v in fp_taxa_sorted.items():
+	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
-	fp_reads = [readid_to_read[r] for r in fp_sequences]
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
-		f.write(''.join(fp_reads))
+	# fp_reads = [readid_to_read[r] for r in fp_sequences]
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
+	# 	f.write(''.join(fp_reads))
 	
 
 
