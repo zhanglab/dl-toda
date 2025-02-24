@@ -505,7 +505,7 @@ if __name__ == "__main__":
 	# create output directory
 	args.output_dir = os.path.join(os.getcwd(), args.label)
 	if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
+		os.makedirs(os.path.join(args.output_dir, 'mapping'))
 	
 	# get dltoda taxonomy
 	path_dl_toda_tax = '/'.join(
