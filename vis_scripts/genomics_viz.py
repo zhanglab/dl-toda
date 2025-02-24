@@ -138,8 +138,6 @@ def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 		f.write(''.join(list(reads_of_interest)))
 
 
-args, args.test_genomes_info[args.label][0], input_dir
-
 def GetAnnotInfo(args, genome_id, input_dir):
 	
 	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
