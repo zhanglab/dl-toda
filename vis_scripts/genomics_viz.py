@@ -100,7 +100,7 @@ def LoadFnaFile(fasta_file):
 	return readsid_to_seq, readsid_to_length, ordered_reads_id
 
 
-def RunBlast(args, query, genomes=subject, db=False):
+def RunBlast(args, query, subject=None, db=False):
 	if db:
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out',
 				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5'])
@@ -651,7 +651,7 @@ if __name__ == "__main__":
 	
 	# # do FN analysis
 	# # blast testing reads to testing genome
-	# RunBlast(args, args.testing_fna_file, genomes=[args.test_genomes_info[args.label][1]])
+	# RunBlast(args, args.testing_fna_file, subject=[args.test_genomes_info[args.label][1]])
 	# # get mapping of false negatives to testing genome from label 1
 	# fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# # get annotations info
@@ -660,7 +660,7 @@ if __name__ == "__main__":
 
 	# # blast testing reads to training genomes from other species
 	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	# RunBlast(args, args.testing_fna_file, genomes=training_genomes)
+	# RunBlast(args, args.testing_fna_file, subject=training_genomes)
 	# fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# # get taxonomy of mapped training genomes and taxon with most reads mapped
 	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
