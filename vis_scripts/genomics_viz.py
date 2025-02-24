@@ -58,10 +58,11 @@ def LoadFnaFile(fasta_file):
 	with open(fasta_file, 'r') as f:
 		content = f.readlines()
 
+	ordered_reads_id = [content[i].rstrip()[1:] for i in range(0,len(content),2)]
 	readsid_to_seq = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [content[i].rstrip() for i in range(1, len(content), 2)]))
 	readsid_to_length = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [len(content[i].rstrip()) for i in range(1, len(content), 2)]))
 
-	return readsid_to_seq, readsid_to_length
+	return readsid_to_seq, readsid_to_length, ordered_reads_id
 
 
 def RunBlast(args, query, subject):
@@ -523,7 +524,7 @@ if __name__ == "__main__":
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	# get reads in testing set fasta file
-	readid_to_read, sequence_length = LoadFnaFile(args.testing_fna_file)
+	readid_to_read, sequence_length, ordered_reads_id = LoadFnaFile(args.testing_fna_file)
 
 	# get FN, FP and TP sequences
 	fn_sequences = set()
@@ -535,11 +536,11 @@ if __name__ == "__main__":
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
-					fn_sequences.add(sequences[count].split('\n')[0][1:])
+					fn_sequences.add(ordered_reads_id[count])
 				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
-					fp_sequences.add(sequences[count].split('\n')[0][1:])
+					fp_sequences.add(ordered_reads_id[count])
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
-					tp_sequences.add(sequences[count].split('\n')[0][1:])
+					tp_sequences.add(ordered_reads_id[count])
 
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
 	print(f'#FP for label {args.label}: {len(fp_sequences)}')
