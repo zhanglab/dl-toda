@@ -7,7 +7,7 @@ import zipfile
 import subprocess
 import random
 import statistics
-# from Bio.SeqUtils import GC_skew, GC
+import numpy as np
 from Bio import SeqIO
 from collections import defaultdict
 from pycirclize import Circos, config
