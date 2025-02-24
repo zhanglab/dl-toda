@@ -272,11 +272,9 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read, type
 	with open(os.path.join(args.output_dir, f'{args.label}_{type}_genes_info_{args.prob_threshold}.tsv')) as outf:
 		for gene_id, annot in genes_of_interest.items():
 			if annot[0] == 'protein_coding':
-				functions[annot[5]] += 1
-						print('function:', annot[5], gene_id)
-						outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\n')
-					else:
-						outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\n')
+				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\n')
+			else:
+				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\n')
 
 
 	print(genestype)
