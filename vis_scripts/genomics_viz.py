@@ -67,7 +67,7 @@ def GetGCSkew(sequence):
 
 		all_gc_skew.append(gcskew)
 
-	return pos_list, all_gc_skew
+	return np.array(pos_list).astype(np.int64), np.array(all_gc_skew).astype(np.float64)
 
 
 def GetCoverage(args):
