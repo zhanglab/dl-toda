@@ -92,10 +92,10 @@ def RunBlast(args, query, subject):
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{args.output_dir}/mapping/test_test_blastn.out',
 			 '-outfmt', "10 delim=, qseqid sseqid sstart ssend", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
 		if result.returncode == 0:
-    		stdout = result.stdout
-    		print("stdout:", stdout)
+			stdout = result.stdout
+			print("stdout:", stdout)
 		else:
-    		print("Error:", result.stderr)
+			print("Error:", result.stderr)
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
