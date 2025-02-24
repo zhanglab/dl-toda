@@ -23,14 +23,73 @@ ColorCycler.set_cmap("Set1")
 QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
 TICKS_INTERVAL = 100000
-bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
-bowtie2_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2"
+# bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
+# bowtie2_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2"
+blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
+makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
 # set seed
 seed = 42
 # set the global python random seed
 random.seed(seed)
+
+
+def GetCoverage(args):
+	# get reads in training set fasta file
+	_, sequence_length = LoadFnaFile(args.training_fna_file)
+
+	# get size of training genome
+	genome_fasta = args.train_genomes_info[args.label][1]
+	genome_size = 0
+	with open(genome_fasta, 'r') as f:
+		f.readline()
+		for line in f:
+			genome_size += len(line.rstrip())
+
+	total_bases = sum(sequence_length.values())
+	coverage = round(total_bases / genome_size, 3)
+
+	with open(os.path.join(args.output_dir, f'{args.label}_train_coverage.tsv'), 'w') as f:
+		f.write(f'total bases\t{total_bases}\ngenome size\t{genome_size}\ncoverage of training genome\t{coverage}')
+	
+
+def LoadFnaFile(fasta_file):
+	with open(fasta_file, 'r') as f:
+		content = f.readlines()
+
+	readsid_to_seq = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [content[i].rstrip() for i in range(1, len(content), 2)]))
+	readsid_to_length = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [len(content[i].rstrip()) for i in range(1, len(content), 2)]))
+
+	return readsid_to_seq, readsid_to_length
+
+
+def RunBlast(args, query, subject):
+	if len(subject) > 1:
+		# put all training genomes into one fasta file
+		with open(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'), 'w') as outf:
+			for fasta in subject:
+				with open(fasta, 'r') as inf:
+					content = inf.readlines()
+					outf.write(content)
+		
+		# create database with all genomes
+		result = subprocess.run([makeblastdb_exec, '-in', f'{args.output_dir}/mapping/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/blastdb'])
+		
+		# remove fasta file
+		if os.path.exists(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna')):
+			os.remove(os.path.join(args.output_dir, 'mapping/all_training_genomes.fna'))
+
+		# align reads to database or fasta file
+		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/blastdb', '-out' f'{args.output_dir}/mapping/test_train_blastn.out',
+			 '-outfmt', "10 delim=, qstart qend sstart ssend qseqid sseqid evalue pident qseq sseq length",
+			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+
+	else:
+		# align reads to database or fasta file
+		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject}', '-out' f'{args.output_dir}/mapping/test_test_blastn.out',
+			 '-outfmt', "10 delim=, sstart ssend sseqid", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity' '100' ])
+
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
@@ -79,6 +138,8 @@ def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 		f.write(''.join(list(reads_of_interest)))
 
 
+args, args.test_genomes_info[args.label][0], input_dir
+
 def GetAnnotInfo(args, genome_id, input_dir):
 	
 	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
@@ -109,8 +170,13 @@ def GetAnnotInfo(args, genome_id, input_dir):
 			gene_id = ''
 			gene = ''
 			biotype = ''
+			function = ''
 			for e in content[i].rstrip().split('\t')[8].split(';'):
 				e = e.replace('"', '')
+				# get all go_function entries and choose go_function with the most details
+				if 'go_function' in e:
+					if len(e.split(' ')[2].split('|')[0]) > len(function):
+						function = e.split(' ')[2].split('|')[0]
 				if 'product' in e:
 					gene = ' '.join(e.split(' ')[2:])
 				if 'gene_id' in e:
@@ -121,7 +187,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 			if content[i].rstrip().split('\t')[2] == 'gene':
 				genes_type[gene_id] = biotype
 			elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
-				annot_info[gene_id] = ['protein_coding', begin, end, strand, gene]
+				annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
 			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
 				annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
 			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
@@ -131,33 +197,33 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	
 	print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
 	print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
-	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
+	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))=
 
 	return annot_info
 
-def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_read):
-	# get count and length of fn sequences per mapped position on the genome investigated
+
+def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
+	# get length and function of fn sequences per mapped position on the genome investigated
 	# positions_count = defaultdict(int)
 	positions_seq_length = defaultdict(list)
-	genes_of_interest = defaultdict(list)
+	fn_of_interest = defaultdict(list)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
 		for pos in range(data[1], data[2]+1, 1):
 			for gene_id, annot in annot_info.items():
 				if pos >= annot[1] and pos <= annot[2]:
 					# positions_count[begin] += 1
-					genes_of_interest[gene_id] = annot_info[gene_id]
+					fn_of_interest[gene_id] = annot_info[gene_id]
 					readid_w_gene[readid] = [data[1], data[2]]
 			positions_seq_length[pos].append(sequence_length[readid])
 
-	print(f'# genes of interest: {len(genes_of_interest)}')
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
 		with open(os.path.join(args.output_dir, 'test_reads_wo_gene.tsv'), 'w') as f:
 			for readid, data in alignments.items():
 				if readid not in readid_w_gene:
 					print(readid, data)
-					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\t{data[4]}\n')
+					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\n')
 					reads_wo_genes.append(readid)
 
 		with open(os.path.join(args.output_dir, f'all_fn_wo_gene_{args.prob_threshold}.fq'), 'w') as f:
@@ -176,31 +242,52 @@ def GetPosOfInterest(args, annot_info, alignments, sequence_length, readid_to_re
 		# if count == 20:
 		# 	break
 	
-	return positions_seq_length, genes_of_interest, reads_wo_genes
+	return positions_seq_length, fn_of_interest
 
 
-def GetAlignmentsInfo(sequences, samfile, sequence_length, seq_to_labels, outfilename=None):
+# def GetAlignmentsInfo(sequences, samfile, sequence_length, seq_to_labels, outfilename=None):
+
+	# alignments = defaultdict(list)
+	# mapped_reads_id = []
+	# unmapped_reads_id = []
+	# with open(samfile, 'r') as f:
+	# 	for line in f:
+	# 		if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD']:
+	# 			read_id = line.rstrip().split('\t')[0]
+	# 			if read_id in sequences:
+	# 				if line.rstrip().split('\t')[5] != '*':
+	# 					seq_id = line.rstrip().split('\t')[2]
+	# 					seq_label = seq_to_labels[seq_id]
+	# 					start_pos = int(line.rstrip().split('\t')[3])
+	# 					mapping_score = int(line.rstrip().split('\t')[4])
+	# 					alignments[read_id] = [seq_label, start_pos, start_pos+sequence_length[read_id], mapping_score, seq_id]
+	# 					mapped_reads_id.append(read_id)
+	# 				else:
+	# 					unmapped_reads_id.append(read_id)
+	# if outfilename:
+	# 	with open(outfilename, 'w') as f:
+	# 		f.write(f'# mapped reads:\t{len(mapped_reads_id)}\n# unmapped reads:\t{len(unmapped_reads_id)}')
+
+	# return alignments
+
+def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
 	alignments = defaultdict(list)
-	mapped_reads_id = []
-	unmapped_reads_id = []
-	with open(samfile, 'r') as f:
+	with open(input_file, 'r') as f:
 		for line in f:
-			if line.rstrip().split('\t')[0][:3] not in ['@PG', '@SQ', '@HD']:
-				read_id = line.rstrip().split('\t')[0]
-				if read_id in sequences:
-					if line.rstrip().split('\t')[5] != '*':
-						seq_id = line.rstrip().split('\t')[2]
-						seq_label = seq_to_labels[seq_id]
-						start_pos = int(line.rstrip().split('\t')[3])
-						mapping_score = int(line.rstrip().split('\t')[4])
-						alignments[read_id] = [seq_label, start_pos, start_pos+sequence_length[read_id], mapping_score, seq_id]
-						mapped_reads_id.append(read_id)
-					else:
-						unmapped_reads_id.append(read_id)
-	if outfilename:
-		with open(outfilename, 'w') as f:
-			f.write(f'# mapped reads:\t{len(mapped_reads_id)}\n# unmapped reads:\t{len(unmapped_reads_id)}')
+			readid = line.rstrip().split(',')[0]
+			if readid in sequences:
+				sstart = int(line.rstrip().split(',')[0])
+				ssend = int(line.rstrip().split(',')[1])
+				seq_id = line.rstrip().split(',')[2]
+				mapped_reads_id.append(read)
+				alignments[readid] = [seq_id, sstart, ssend]
 
+	if outfilename:
+		unmapped_reads_id = list(set(sequences.keys().difference(alignments.keys())))
+		unmapped_reads_length = [sequence_length[r] for r in unmapped_reads_id]
+		with open(outfilename, 'w') as f:
+			f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\t{statistics.mean(unmapped_reads_length)}\nmedian reads length:\t{statistics.median(unmapped_reads_length)}\nmin reads length:\t{min(unmapped_reads_length)}\nmax reads length:\t{max(unmapped_reads_length)}')
+		
 	return alignments
 
 
@@ -209,7 +296,7 @@ def GetSeqLength(sequences_id, sequence_length, type):
 		seq_length_info = [sequence_length[s] for s in sequences_id]
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
-def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, outfilepath, outfigpath):
+def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, train_train_coverage, outfilepath, outfigpath):
 
 	# load data from training and testing genomes of label 1
 	target_fasta = Fasta(args.test_genomes_info[args.label][1]) # ref/subject --> target --> testing genome
@@ -396,20 +483,22 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--pos_test_neg_train', type=str, help='path to sam file with mapping of testing sequences from label 1 to training genomes from label 0 - get info about FN sequences')
-	parser.add_argument('--pos_test_pos_test', type=str, help='path to sam file with mapping of testing sequences from label 1 to testing genome from label 1')
-	parser.add_argument('--pos_train_pos_train', type=str, help='path to sam file with mapping of training sequences from 1 to training genome from label 1 - get info about coverage')
+	# parser.add_argument('--pos_test_neg_train', type=str, help='path to sam file with mapping of testing sequences from label 1 to training genomes from label 0 - get info about FN sequences')
+	# parser.add_argument('--pos_test_pos_test', type=str, help='path to sam file with mapping of testing sequences from label 1 to testing genome from label 1')
+	# parser.add_argument('--pos_train_pos_train', type=str, help='path to sam file with mapping of training sequences from 1 to training genome from label 1 - get info about coverage')
 	# parser.add_argument('--pos_train_fasta', type=str, help='path to training genome fasta file from label 1')
 	# parser.add_argument('--pos_test_fasta', type=str, help='path to testing genome fasta file from label 1')
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files')
-	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
-	parser.add_argument('--testing_fq_file', type=str, help='path to fastq file containing all testing reads (label 1 and 0)')
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of training genomes')
+	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
+	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
+	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
 	parser.add_argument('--label', type=str, help='label of species investigated', required=True)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
+	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
 
 	input_dir = os.getcwd()
@@ -426,7 +515,7 @@ if __name__ == "__main__":
 		content = in_f.readlines()
 		args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# retrieve accession and fasta files of testing and tranining genomes associated with each label
+	# retrieve accession and fasta files of testing and training genomes associated with each label
 	with open(args.testing_fasta, 'r') as f:
 		content = f.readlines()
 		args.test_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
@@ -435,10 +524,8 @@ if __name__ == "__main__":
 		content = f.readlines()
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
-	# get reads in testing set fastq file
-	sequences = load_fq_file(args.testing_fq_file, 4)
-	readid_to_read = {line.split('\n')[0][1:]: line for line in sequences}
-	sequence_length = {line.split('\n')[0][1:]: len(line.split('\n')[1]) for line in sequences}
+	# get reads in testing set fasta file
+	readid_to_read, sequence_length = LoadFnaFile(args.testing_fna_file)
 
 	# get FN, FP and TP sequences
 	fn_sequences = set()
@@ -469,104 +556,106 @@ if __name__ == "__main__":
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
 	# get coverage of training genome with training sequences for label 1
-	train_ref_info, train_train_alignments = LoadData(args.pos_train_pos_train)
-	training_genome_size = train_ref_info[0][1]
-	train_train_dict_coverage, train_train_reads_info = GetCoverageOfSample(train_train_alignments[train_ref_info[0][0]], training_genome_size, label=args.label)
-	train_train_coverage = [train_train_dict_coverage[i] for i in range(training_genome_size)]
-	positions_w_zero = 0
-	for i in range(len(train_train_coverage)):
-		if train_train_coverage[i] == 0:
-			positions_w_zero += 1
-	print(f'train-train coverage: {positions_w_zero}\ntraining_genome_size: {training_genome_size}')
-	print(f'mean: {statistics.mean(train_train_coverage)}\tmedian: {statistics.median(train_train_coverage)}\tmin: {min(train_train_coverage)}\tmax: {max(train_train_coverage)}')
+	# train_ref_info, train_train_alignments = LoadData(args.pos_train_pos_train)
+	# training_genome_size = train_ref_info[0][1]
+	# train_train_dict_coverage, train_train_reads_info = GetCoverageOfSample(train_train_alignments[train_ref_info[0][0]], training_genome_size, label=args.label)
+	# train_train_coverage = [train_train_dict_coverage[i] for i in range(training_genome_size)]
+	# positions_w_zero = 0
+	# for i in range(len(train_train_coverage)):
+	# 	if train_train_coverage[i] == 0:
+	# 		positions_w_zero += 1
+	# print(f'train-train coverage: {positions_w_zero}\ntraining_genome_size: {training_genome_size}')
+	# print(f'mean: {statistics.mean(train_train_coverage)}\tmedian: {statistics.median(train_train_coverage)}\tmin: {min(train_train_coverage)}\tmax: {max(train_train_coverage)}')
 	
 	# do FN analysis
+	# blast testing reads to testing genome
+	RunBlast(args, args.testing_fna_file, [args.test_genomes_info[args.label][1]])
 	# get mapping of false negatives to testing genome from label 1
-	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	
+	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_positions_seq_length, fn_genes_of_interest, fn_not_associated_w_genes = GetPosOfInterest(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
-	print(len(fn_genes_of_interest))
+	fn_positions_seq_length, fn_genes_of_interest = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
 
-	# get mapping of false negatives to training genomes from other species
-	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, args.pos_test_neg_train, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	# blast testing reads to training genomes from other species
+	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
+	RunBlast(args, args.testing_fna_file, training_genomes)
+	# fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out' sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
+	# most_mapped_taxon, most_mapped_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, args.pos_test_pos_test, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	# CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	# CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# create circos plot with FN reads info
-	FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, fn_not_associated_w_genes, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
-	# do FP analysis
-	# map reads in testing dataset to their corresponding genome
-	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	fp_taxa = defaultdict(int)
-	print(f'# labels: {len(fp_labels)}')
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
-	for label in fp_labels:
-		label_testing_fasta = args.test_genomes_info[label][1]
-		label_testing_genome = args.test_genomes_info[label][0]
+	# # do FP analysis
+	# # map reads in testing dataset to their corresponding genome
+	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	# fp_taxa = defaultdict(int)
+	# print(f'# labels: {len(fp_labels)}')
+	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
+	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
+	# for label in fp_labels:
+	# 	label_testing_fasta = args.test_genomes_info[label][1]
+	# 	label_testing_genome = args.test_genomes_info[label][0]
 		
-		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
-		if not os.path.isdir(mapping_output_dir):
-			os.makedirs(mapping_output_dir)
+	# 	mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+	# 	if not os.path.isdir(mapping_output_dir):
+	# 		os.makedirs(mapping_output_dir)
 		
-		if 'results.sam' not in os.listdir(mapping_output_dir):
-			# build bowtie2 index 
-			result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
-			# map testing reads to testing genome
-			result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
-		else:
-			print(f'{label}\talignment already done')
+	# 	if 'results.sam' not in os.listdir(mapping_output_dir):
+	# 		# build bowtie2 index 
+	# 		result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
+	# 		# map testing reads to testing genome
+	# 		result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
+	# 	else:
+	# 		print(f'{label}\talignment already done')
 		
-		# get fp sequences of label
-		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
-		print(label, len(label_sequences))
+	# 	# get fp sequences of label
+	# 	label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
+	# 	print(label, len(label_sequences))
 
-		# get alignments info
-		samfile = os.path.join(mapping_output_dir, 'results.sam')
-		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
+	# 	# get alignments info
+	# 	samfile = os.path.join(mapping_output_dir, 'results.sam')
+	# 	fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
 		
-		print(label_testing_genome)
-		# get gene associated with sequences
-		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
-		if len(neg_test_annot_info) > 0:
-			neg_genes_mapped = defaultdict(int)
-			neg_genes_strand = defaultdict(str)
-			for seq_id in label_sequences:
-				if seq_id in fp_alignments:
-					start_mapping = fp_alignments[seq_id][1]
-					end_mapping = fp_alignments[seq_id][2]
-					for pos in range(start_mapping, end_mapping+1, 1):
-						for gene_id, annot_info in neg_test_annot_info.keys():
-							if pos >= annot_info[1] and pos <= annot_info[2]:
-								neg_genes_mapped[gene_id] += 1
-								neg_genes_strand[gene_id] = annot_info[3]
+	# 	print(label_testing_genome)
+	# 	# get gene associated with sequences
+	# 	neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+	# 	if len(neg_test_annot_info) > 0:
+	# 		neg_genes_mapped = defaultdict(int)
+	# 		neg_genes_strand = defaultdict(str)
+	# 		for seq_id in label_sequences:
+	# 			if seq_id in fp_alignments:
+	# 				start_mapping = fp_alignments[seq_id][1]
+	# 				end_mapping = fp_alignments[seq_id][2]
+	# 				for pos in range(start_mapping, end_mapping+1, 1):
+	# 					for gene_id, annot_info in neg_test_annot_info.keys():
+	# 						if pos >= annot_info[1] and pos <= annot_info[2]:
+	# 							neg_genes_mapped[gene_id] += 1
+	# 							neg_genes_strand[gene_id] = annot_info[3]
 
-			neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
-			for k, v in neg_genes_mapped_sorted.items():
-				outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
-		else:
-			outf_problem.write(f'{label}\t{label_testing_genome}\n')
+	# 		neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
+	# 		for k, v in neg_genes_mapped_sorted.items():
+	# 			outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
+	# 	else:
+	# 		outf_problem.write(f'{label}\t{label_testing_genome}\n')
 			
-		# monitor number of sequences per label
-		fp_taxa[label] = len(label_sequences)
+	# 	# monitor number of sequences per label
+	# 	fp_taxa[label] = len(label_sequences)
 	
-	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
-		for k, v in fp_taxa_sorted.items():
-			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+	# 	for k, v in fp_taxa_sorted.items():
+	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
-	fp_reads = [readid_to_read[r] for r in fp_sequences]
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
-		f.write(''.join(fp_reads))
+	# fp_reads = [readid_to_read[r] for r in fp_sequences]
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
+	# 	f.write(''.join(fp_reads))
 	
 
 
