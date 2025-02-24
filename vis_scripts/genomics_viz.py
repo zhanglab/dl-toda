@@ -580,7 +580,7 @@ if __name__ == "__main__":
 	# blast testing reads to training genomes from other species
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
 	RunBlast(args, args.testing_fna_file, training_genomes)
-	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out' sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
 	most_mapped_taxon, mapped_fn_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
 	
