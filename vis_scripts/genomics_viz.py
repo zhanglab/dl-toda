@@ -245,18 +245,18 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read, type
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
 	
-		for readid, data in alignments.items():
-			start_pos = data[2]
-			end_pos = data[3]
-			for gene_id, annot in annot_info.items():
-				if (start_pos <= annot[1] and end_pos >= annot[1]) or 
-						(start_pos >= annot[1] and end_pos <= annot[2]) or 
-						(start_pos <= annot[2] and end_pos >= annot[2]):
-					if annot[0] == 'protein_coding':
-						functions[annot[5]] += 1
-					genes_of_interest[gene_id] = annot_info[gene_id]
-					readid_w_gene[readid] = [data[2], data[3]]
-					genestype[annot_info[gene_id][0]] += 1
+	for readid, data in alignments.items():
+		start_pos = data[2]
+		end_pos = data[3]
+		for gene_id, annot in annot_info.items():
+			if (start_pos <= annot[1] and end_pos >= annot[1]) or 
+					(start_pos >= annot[1] and end_pos <= annot[2]) or 
+					(start_pos <= annot[2] and end_pos >= annot[2]):
+				if annot[0] == 'protein_coding':
+					functions[annot[5]] += 1
+				genes_of_interest[gene_id] = annot_info[gene_id]
+				readid_w_gene[readid] = [data[2], data[3]]
+				genestype[annot_info[gene_id][0]] += 1
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
