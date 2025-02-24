@@ -72,7 +72,7 @@ def RunBlast(args, query, subject):
 			for count, fasta in enumerate(subject, 1):
 				print(f'{count}\t{fasta}')
 				with open(fasta, 'r') as inf:
-					outf.write(inf.readlines())
+					outf.write(inf.read())
 		
 		# create database with all genomes
 		result = subprocess.run([makeblastdb_exec, '-in', f'{args.output_dir}/mapping/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/blastdb'])
@@ -83,14 +83,14 @@ def RunBlast(args, query, subject):
 
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/blastdb', '-out' f'{args.output_dir}/mapping/test_train_blastn.out',
-			 '-outfmt', "10 delim=, qstart qend sstart ssend qseqid sseqid evalue pident qseq sseq length",
+			 '-outfmt', "10 delim=, qstart qend sstart send qseqid sseqid evalue pident qseq sseq length",
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 	else:
 		print(f'run blast with {subject[0]}')
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{args.output_dir}/mapping/test_test_blastn.out',
-			 '-outfmt', "10 delim=, qseqid sseqid sstart ssend qstart qend", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
 		if result.returncode == 0:
 			stdout = result.stdout
 			print("stdout:", stdout)
