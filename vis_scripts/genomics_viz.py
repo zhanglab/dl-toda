@@ -72,7 +72,7 @@ def RunBlast(args, query, subject):
 			for fasta in subject:
 				with open(fasta, 'r') as inf:
 					content = inf.readlines()
-					outf.write(content)
+					outf.write(''.join(content))
 		
 		# create database with all genomes
 		result = subprocess.run([makeblastdb_exec, '-in', f'{args.output_dir}/mapping/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/blastdb'])
