@@ -7,6 +7,8 @@ import zipfile
 import subprocess
 import random
 import statistics
+# from Bio.SeqUtils import GC_skew, GC
+from Bio import SeqIO
 from collections import defaultdict
 from pycirclize import Circos, config
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -33,6 +35,39 @@ ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 seed = 42
 # set the global python random seed
 random.seed(seed)
+
+
+def GetGCSkew(sequence):
+	
+	all_gc_skew = []
+
+	window_size = len(sequence) / 500
+	step_size = len(sequence) / 1000
+
+	pos_list = list(range(0, len(sequence), step_size)) + [len(sequence)]
+	for pos in pos_list:
+		start = pos - int(window_size / 2)
+		end = pos + int(window_size / 2)
+		
+		# update start and end of window according to the size of the sequence
+		if start < 0:
+			start = 0
+
+		if end > len(sequence):
+			end = len(sequence)
+
+		gcskew_seq = sequence[start:end]
+		g_count = gcskew_seq.upper().count("G")
+		c_count = gcskew_seq.upper().count("C")
+
+		if float(g_count + c_count) == 0.0:
+			gcskew = 0.0
+		else:
+			gcskew = (g_count - c_count) / float(g_count + c_count)
+
+		all_gc_skew.append(gcskew)
+
+	return pos_list, all_gc_skew
 
 
 def GetCoverage(args):
@@ -126,7 +161,7 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 
 
-	return most_mapped_taxon, list_reads_id
+	return list_reads_id
 
 
 def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
@@ -205,18 +240,19 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	# get length and function of fn sequences per mapped position on the genome investigated
-	# positions_count = defaultdict(int)
-	positions_seq_length = defaultdict(list)
-	fn_of_interest = defaultdict(list)
+	genes_of_interest = defaultdict(list)
+	functions = set()
+	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
 	for readid, data in alignments.items():
 		for pos in range(data[2], data[3]+1, 1):
 			for gene_id, annot in annot_info.items():
 				if pos >= annot[1] and pos <= annot[2]:
-					# positions_count[begin] += 1
-					fn_of_interest[gene_id] = annot_info[gene_id]
+					genes_of_interest[gene_id] = annot_info[gene_id]
+					if annot_info[gene_id][0] == 'protein_coding':
+						functions.add(annot_info[gene_id][5])
+						genestype[annot_info[gene_id][0]] += 1
 					readid_w_gene[readid] = [data[2], data[3]]
-			positions_seq_length[pos].append(sequence_length[readid])
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
@@ -232,17 +268,11 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	else:
 		print('all reads were found a gene')
 
+	print(genestype)
+	print('# functions', len(functions))
+	print(functions)
 
-	# sort positions_count by values
-	# genes_of_interest = defaultdict(list)
-	# positions_count_sorted = dict(sorted(positions_count.items(), key=lambda item: item[1], reverse=True))
-	# for count, (k, v) in enumerate(positions_count_sorted.items(), 1):
-	# 	print(k, v, annot_info[k])
-	# 	genes_of_interest[k] = annot_info[k]
-		# if count == 20:
-		# 	break
-	
-	return positions_seq_length, fn_of_interest
+	return genes_of_interest
 
 
 # def GetAlignmentsInfo(sequences, samfile, sequence_length, seq_to_labels, outfilename=None):
@@ -291,17 +321,26 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 	return alignments
 
 
-def GetSeqLength(sequences_id, sequence_length, type):
+def GetSeqLength(args, sequences_id, sequence_length, type):
 	if len(sequences_id) != 0:
 		seq_length_info = [sequence_length[s] for s in sequences_id]
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
-def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, cds_to_show, fn_positions_seq_length, train_train_coverage, outfilepath, outfigpath):
+		with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
+			f.write(f'mean\t{statistics.mean(seq_length_info)}\nmedian\t{statistics.median(seq_length_info)}\nmax\t{max(seq_length_info)}\nmin\t{min(seq_length_info)}')
 
+
+		FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+
+
+def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfilepath, outfigpath):
+	
 	# load data from training and testing genomes of label 1
-	target_fasta = Fasta(args.test_genomes_info[args.label][1]) # ref/subject --> target --> testing genome
+	target_fasta = Fasta(record_fasta) # ref/subject --> target --> testing genome
 	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
-	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
+	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
 	# print(target_fasta.__dict__)
 
 	# Initialize circos instance
@@ -333,18 +372,36 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 1
 		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
+		min_r_pos-5
+		rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
+		min_r_pos-5
+		trna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		features = []
-		for gene_id in cds_to_show.keys():
-			if cds_to_show[gene_id][3] == 'plus':
-				location = FeatureLocation(start=cds_to_show[gene_id][1], end=cds_to_show[gene_id][2], strand=+1)
-				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][4]], "strand": ["plus"]})
-		# 		f_cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon", lw=0.5)
-				cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
+		for gene_id in genes_of_interest.keys():
+			if genes_of_interest[gene_id][3] == 'plus':
+				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
+				if genes_of_interest[gene_id][0] == 'protein_coding':
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
+				else:
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
+					if genes_of_interest[gene_id][0] == 'rRNA':
+						rrna_track.genomic_features(feature, fc="green")
+					elif genes_of_interest[gene_id][0] == 'rRNA':
+						trna_track.genomic_features(feature, fc="magenta")
+				
 			else:
-				location = FeatureLocation(start=cds_to_show[gene_id][1], end=cds_to_show[gene_id][2], strand=-1)
-				feature = SeqFeature(location=location, qualifiers={"gene_id": [gene_id], "gene_name": [cds_to_show[gene_id][4]], "strand": ["minus"]})
-		# 		r_cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue", lw=0.5)
-				cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
+				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
+				if genes_of_interest[gene_id][0] == 'protein_coding':
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
+				else:
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
+					if genes_of_interest[gene_id][0] == 'rRNA':
+						rrna_track.genomic_features(feature, fc="green")
+					elif genes_of_interest[gene_id][0] == 'rRNA':
+						trna_track.genomic_features(feature, fc="magenta")
+
 			features.append(feature)
 
 		# # Add regions not associated with genes and mapped by FN reads
@@ -357,7 +414,7 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		# 			print(f'read id mapped to {most_mapped_taxon}: {readid}\t{data}')
 		
 
-		# Plot gene label if it exists
+		# Plot info about genes
 		# labels, label_pos_list = [], []
 		for feature in features:
 			start = int(feature.location.start)
@@ -366,10 +423,16 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 			gene_id = feature.qualifiers.get("gene_id", [None])[0]
 			label = feature.qualifiers.get("gene_name", [None])[0]
 			strand = feature.qualifiers.get("strand", [None])[0]
-			outf.write(f'{gene_id}\t{strand}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{start}\t{end}\n')
-			print(f'{gene_id}\t{strand}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{start}\t{end}\n')
-			if label == None:
-				continue
+			gene_type = feature.qualifiers.get("gene_type", [None])[0]
+			if gene_type == 'protein_coding':
+				function = feature.qualifiers.get("function", [None])[0]
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+			else:
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+
+			print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+			# if label == None:
+			# 	continue
 			# if gene_id is not None:
 			# 	labels.append(gene_id)
 			# 	label_pos_list.append(label_pos)
@@ -384,23 +447,39 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		# 		label_formatter=lambda v: f"{v/1000000:.1f} Mb"
 		# 	)
 
-	# Blast genome comparison & plot match blocks
-	min_r_pos -= 5
-	comp_name2color = {}
-	colors = ["black", "gray"]
-	for idx, comp_fasta in enumerate(comp_fasta_list):
-		align_coords = Blast([target_fasta, comp_fasta]).run()
-		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-		# color = ColorCycler()
-		comp_name2color[comp_fasta.name] = colors[idx]
-		min_r_pos -= QUERY_TRACK_SIZE
-		print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
-		for sector in circos.sectors:
-			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
-		for ac in align_coords:
-			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-			track.rect(ac.query_start, ac.query_end, color=rect_color)
+		# Plot GC skew
+		min_r_pos -= 5
+		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gcskews = GetGCSkew(record_seq)
+		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+    	negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+    	abs_max_gcskew = np.max(np.abs(gcskews))
+    	vmin, vmax = -abs_max_gcskew, abs_maxgc_skew
+    	gcskew_track.fill_between(
+        	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="olive"
+    	)
+    	gcskew_track.fill_between(
+        	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="purple"
+    	)
+
+
+	# # Blast genome comparison & plot match blocks
+	# min_r_pos -= 5
+	# comp_name2color = {}
+	# colors = ["black", "gray"]
+	# for idx, comp_fasta in enumerate(comp_fasta_list):
+	# 	align_coords = Blast([target_fasta, comp_fasta]).run()
+	# 	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# 	# color = ColorCycler()
+	# 	comp_name2color[comp_fasta.name] = colors[idx]
+	# 	min_r_pos -= QUERY_TRACK_SIZE
+	# 	print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
+	# 	for sector in circos.sectors:
+	# 		sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
+	# 	for ac in align_coords:
+	# 		track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+	# 		rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+	# 		track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
@@ -429,9 +508,9 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 		fn_track_1.axis(ec="red")
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
-			if readid not in most_mapped_reads_id:
-				for pos in range(data[1], data[2]+1, 1):
-					pos_fn_1_count[pos-1] +=1
+			# if readid not in most_mapped_reads_id:
+			for pos in range(data[2], data[3]+1, 1):
+				pos_fn_1_count[pos-1] +=1
 		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track_1.yticks(y_values, y_labels)
@@ -439,39 +518,39 @@ def FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_po
 			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
 		print(f'added FN track')
 
-		# add tracks for FN reads that were mapped to a taxon from label 0
-		min_r_pos -= 12
-		fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		fn_track_2.axis(ec="orange")
-		pos_fn_2_count = [0]*target_fasta.full_genome_length
-		for readid, data in fn_alignments_pos_test.items():
-			if readid in most_mapped_reads_id:
-				for pos in range(data[1], data[2]+1, 1):
-					pos_fn_2_count[pos-1] +=1
-		y_values = list(range(min(pos_fn_2_count), max(pos_fn_2_count), 2))
-		y_labels = list(map(str, y_values))
-		fn_track_2.yticks(y_values, y_labels)
-		fn_track_2.line(genome_pos, pos_fn_2_count, color="orange")
-			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
-		print(f'added FN track')
+		# # add tracks for FN reads that were mapped to a taxon from label 0
+		# min_r_pos -= 12
+		# fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		# fn_track_2.axis(ec="orange")
+		# pos_fn_2_count = [0]*target_fasta.full_genome_length
+		# for readid, data in fn_alignments_pos_test.items():
+		# 	if readid in most_mapped_reads_id:
+		# 		for pos in range(data[1], data[2]+1, 1):
+		# 			pos_fn_2_count[pos-1] +=1
+		# y_values = list(range(min(pos_fn_2_count), max(pos_fn_2_count), 2))
+		# y_labels = list(map(str, y_values))
+		# fn_track_2.yticks(y_values, y_labels)
+		# fn_track_2.line(genome_pos, pos_fn_2_count, color="orange")
+		# 	# fn_track.rect(data[1], data[2], color="red", lw=0.1)
+		# print(f'added FN track')
 
-		# add tracks for average sequence length of FN reads
-		min_r_pos -= 12
-		seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		seq_track.axis(ec="green")
-		avg_seq_length = []
-		for i in range(1, target_fasta.full_genome_length+1, 1):
-			if i in fn_positions_seq_length:
-				avg_seq_length.append(sum(fn_positions_seq_length[i])/len(fn_positions_seq_length[i]))
-			else:
-				avg_seq_length.append(0)
-		print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
-		y_values = list(range(min([math.ceil(x) for x in avg_seq_length]), max(math.ceil(x) for x in avg_seq_length), 200))
-		y_labels = list(map(str, y_values))
-		seq_track.yticks(y_values, y_labels)
-		# seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
-		seq_track.line(genome_pos, avg_seq_length, color="green")
-		print(f'added sequence length track')
+		# # add tracks for average sequence length of FN reads
+		# min_r_pos -= 12
+		# seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		# seq_track.axis(ec="green")
+		# avg_seq_length = []
+		# for i in range(1, target_fasta.full_genome_length+1, 1):
+		# 	if i in fn_positions_seq_length:
+		# 		avg_seq_length.append(sum(fn_positions_seq_length[i])/len(fn_positions_seq_length[i]))
+		# 	else:
+		# 		avg_seq_length.append(0)
+		# print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
+		# y_values = list(range(min([math.ceil(x) for x in avg_seq_length]), max(math.ceil(x) for x in avg_seq_length), 200))
+		# y_labels = list(map(str, y_values))
+		# seq_track.yticks(y_values, y_labels)
+		# # seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
+		# seq_track.line(genome_pos, avg_seq_length, color="green")
+		# print(f'added sequence length track')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
@@ -548,9 +627,9 @@ if __name__ == "__main__":
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
 	print(f'#FP for label {args.label}: {len(fp_sequences)}')
 	print(f'#TP for label {args.label}: {len(tp_sequences)}')
-	GetSeqLength(list(fn_sequences), sequence_length, f'label {args.label} testing FN sequences')
-	GetSeqLength(list(fp_sequences), sequence_length, f'label {args.label} testing FP sequences')
-	GetSeqLength(list(tp_sequences), sequence_length, f'label {args.label} testing TP sequences')
+	GetSeqLength(args, list(fn_sequences), sequence_length, f'FN')
+	GetSeqLength(args, list(fp_sequences), sequence_length, f'FP')
+	GetSeqLength(args, list(tp_sequences), sequence_length, f'TP')
 
 	# get association between sequences in training set and labels
 	with open(args.sequences_info, 'r') as f:
@@ -576,90 +655,107 @@ if __name__ == "__main__":
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_positions_seq_length, fn_genes_of_interest = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
+	fn_genes_of_interest = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
 
 	# blast testing reads to training genomes from other species
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
 	RunBlast(args, args.testing_fna_file, training_genomes)
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	most_mapped_taxon, mapped_fn_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
+	mapped_fn_reads_id = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences,f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	CreateFqFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# create circos plot with FN reads info
-	# FNCircosPlot(args, most_mapped_taxon, most_mapped_reads_id, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, fn_positions_seq_length, train_train_coverage, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# load testing fasta file
+	with open(args.test_genomes_info[args.label][1], "r") as handle:
+		records = list(SeqIO.parse(handle, "fasta"))
 
-	# # do FP analysis
-	# # map reads in testing dataset to their corresponding genome
-	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	# fp_taxa = defaultdict(int)
-	# print(f'# labels: {len(fp_labels)}')
-	# outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	# outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
-	# for label in fp_labels:
-	# 	label_testing_fasta = args.test_genomes_info[label][1]
-	# 	label_testing_genome = args.test_genomes_info[label][0]
-		
-	# 	mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
-	# 	if not os.path.isdir(mapping_output_dir):
-	# 		os.makedirs(mapping_output_dir)
-		
-	# 	if 'results.sam' not in os.listdir(mapping_output_dir):
-	# 		# build bowtie2 index 
-	# 		result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
-	# 		# map testing reads to testing genome
-	# 		result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
-	# 	else:
-	# 		print(f'{label}\talignment already done')
-		
-	# 	# get fp sequences of label
-	# 	label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
-	# 	print(label, len(label_sequences))
+	# create circos plot with FN reads info for each sequence in the genome
+	if len(records) == 1:
+		args.test_genomes_info[args.label][1]
+	for rec in records:
+		# create fasta file for each record
+		if len(records) == 1:
+			record_fasta = args.test_genomes_info[args.label][1]
+		else:
+			with open(os.path.join(args.output_dir, f'{rec.id}.fna'), "w") as output_handle:
+				SeqIO.write(rec, output_handle, "fasta")
+			record_fasta = os.path.join(args.output_dir, f'{rec.id}.fna')
 
-	# 	# get alignments info
-	# 	samfile = os.path.join(mapping_output_dir, 'results.sam')
-	# 	fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
-		
-	# 	print(label_testing_genome)
-	# 	# get gene associated with sequences
-	# 	neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
-	# 	if len(neg_test_annot_info) > 0:
-	# 		neg_genes_mapped = defaultdict(int)
-	# 		neg_genes_strand = defaultdict(str)
-	# 		for seq_id in label_sequences:
-	# 			if seq_id in fp_alignments:
-	# 				start_mapping = fp_alignments[seq_id][1]
-	# 				end_mapping = fp_alignments[seq_id][2]
-	# 				for pos in range(start_mapping, end_mapping+1, 1):
-	# 					for gene_id, annot_info in neg_test_annot_info.keys():
-	# 						if pos >= annot_info[1] and pos <= annot_info[2]:
-	# 							neg_genes_mapped[gene_id] += 1
-	# 							neg_genes_strand[gene_id] = annot_info[3]
+		FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes.tsv'), 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
-	# 		neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
-	# 		for k, v in neg_genes_mapped_sorted.items():
-	# 			outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
-	# 	else:
-	# 		outf_problem.write(f'{label}\t{label_testing_genome}\n')
+	# do FP analysis
+	# map reads in testing dataset to their corresponding genome
+	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	fp_taxa = defaultdict(int)
+	print(f'# labels: {len(fp_labels)}')
+	outf = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
+	outf_problem = open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
+	for label in fp_labels:
+		label_testing_fasta = args.test_genomes_info[label][1]
+		label_testing_genome = args.test_genomes_info[label][0]
+		
+		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+		if not os.path.isdir(mapping_output_dir):
+			os.makedirs(mapping_output_dir)
+		
+		if 'results.sam' not in os.listdir(mapping_output_dir):
+			# build bowtie2 index 
+			result = subprocess.run([bowtie2_build_exec, '--threads', '1', f'{label_testing_fasta}', f'{mapping_output_dir}/ref'])
+			# map testing reads to testing genome
+			result = subprocess.run([bowtie2_exec, '-x', f'{mapping_output_dir}/ref', '-U', f'{args.testing_fq_file}', '-S', f'{mapping_output_dir}/results.sam' ])
+		else:
+			print(f'{label}\talignment already done')
+		
+		# get fp sequences of label
+		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
+		print(label, len(label_sequences))
+
+		# get alignments info
+		samfile = os.path.join(mapping_output_dir, 'results.sam')
+		fp_alignments = GetAlignmentsInfo(label_sequences, samfile, sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{label}_{args.prob_threshold}_mapping_info.tsv'))
+		
+		print(label_testing_genome)
+		# get gene associated with sequences
+		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+		if len(neg_test_annot_info) > 0:
+			neg_genes_mapped = defaultdict(int)
+			neg_genes_strand = defaultdict(str)
+			for seq_id in label_sequences:
+				if seq_id in fp_alignments:
+					start_mapping = fp_alignments[seq_id][1]
+					end_mapping = fp_alignments[seq_id][2]
+					for pos in range(start_mapping, end_mapping+1, 1):
+						for gene_id, annot_info in neg_test_annot_info.keys():
+							if pos >= annot_info[1] and pos <= annot_info[2]:
+								neg_genes_mapped[gene_id] += 1
+								neg_genes_strand[gene_id] = annot_info[3]
+
+			neg_genes_mapped_sorted = dict(sorted(neg_genes_mapped.items(), key=lambda item: item[1], reverse=True))
+			for k, v in neg_genes_mapped_sorted.items():
+				outf.write(f'{label}\t{k}\t{neg_test_annot_info[k]}\t{neg_genes_strand[k]}\t{v}\n')
+		else:
+			outf_problem.write(f'{label}\t{label_testing_genome}\n')
 			
-	# 	# monitor number of sequences per label
-	# 	fp_taxa[label] = len(label_sequences)
+		# monitor number of sequences per label
+		fp_taxa[label] = len(label_sequences)
 	
-	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
-	# 	for k, v in fp_taxa_sorted.items():
-	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+		for k, v in fp_taxa_sorted.items():
+			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
-	# fp_reads = [readid_to_read[r] for r in fp_sequences]
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
-	# 	f.write(''.join(fp_reads))
+	fp_reads = [readid_to_read[r] for r in fp_sequences]
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.fq'), 'w') as f:
+		f.write(''.join(fp_reads))
 	
 
 
