@@ -87,6 +87,7 @@ def RunBlast(args, query, subject):
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 	else:
+		print(f'run blast with {subject}')
 		# align reads to database or fasta file
 		result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject}', '-out' f'{args.output_dir}/mapping/test_test_blastn.out',
 			 '-outfmt', "10 delim=, sstart ssend sseqid", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity' '100' ])
@@ -505,6 +506,8 @@ if __name__ == "__main__":
 	# create output directory
 	args.output_dir = os.path.join(os.getcwd(), args.label)
 	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
+	if not os.path.isdir(os.path.join(args.output_dir, 'mapping')):
 		os.makedirs(os.path.join(args.output_dir, 'mapping'))
 	
 	# get dltoda taxonomy
