@@ -339,7 +339,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
 		with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
-			line = "\t".join(seq_length_info)
+			line = "\t".join([str(x) for x in seq_length_info])
 			f.write(f'{args.label}\t{line}\n')
 
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
