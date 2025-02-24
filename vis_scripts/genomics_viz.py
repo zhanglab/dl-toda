@@ -70,7 +70,7 @@ def GetGCSkew(sequence):
 	return np.array(pos_list).astype(np.int64), np.array(all_gc_skew).astype(np.float64)
 
 
-def GetCoverage(args):
+def GetTrainCoverage(args):
 	# get reads in training set fasta file
 	_, sequence_length = LoadFnaFile(args.training_fna_file)
 
@@ -86,7 +86,7 @@ def GetCoverage(args):
 	coverage = round(total_bases / genome_size, 3)
 
 	with open(os.path.join(args.output_dir, f'{args.label}_train_coverage.tsv'), 'w') as f:
-		f.write(f'total bases\t{total_bases}\ngenome size\t{genome_size}\ncoverage of training genome\t{coverage}')
+		f.write(f'{total_bases}\t{genome_size}\t{coverage}')
 	
 
 def LoadFnaFile(fasta_file):
@@ -238,7 +238,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	return annot_info
 
 
-def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
+def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes_of_interest = defaultdict(list)
 	functions = defaultdict(int)
@@ -275,14 +275,13 @@ def GetGenes(args, annot_info, alignments, sequence_length, readid_to_read):
 	print(functions)
 
 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'fn_functions_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
 	genestype_sorted = dict(sorted(genestype.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'fn_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
-		for k, v in genestype_sorted.items():
-			f.write(f'{k}\t{v}\n')
+	with open(os.path.join(args.output_dir, f'{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
 
 	return genes_of_interest
 
@@ -333,14 +332,18 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 	return alignments
 
 
+def StoreCS(args, list_cs, type):
+	with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join([str(x) for x in list_cs]))
+
+
 def GetSeqLength(args, sequences_id, sequence_length, type):
 	if len(sequences_id) != 0:
 		seq_length_info = [sequence_length[s] for s in sequences_id]
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
 		with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
-			line = "\t".join([str(x) for x in seq_length_info])
-			f.write(f'{args.label}\t{line}\n')
+			f.write('\n'.join([str(x) for x in seq_length_info]))
 
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
@@ -502,7 +505,6 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for readid, data in tp_alignments_pos_test.items():
 			for pos in range(data[2], data[3]+1, 1):
-				print(pos, target_fasta.full_genome_length, readid)
 				pos_tp_count[pos-1] +=1
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
 		y_labels = list(map(str, y_values))
@@ -622,6 +624,9 @@ if __name__ == "__main__":
 	fn_sequences = set()
 	fp_sequences = set()
 	tp_sequences = set()
+	fn_cs = []
+	fp_cs = []
+	tp_cs = []
 
 	with open(args.testing_results, 'r') as f:
 		for count, line in enumerate(f):
@@ -629,22 +634,31 @@ if __name__ == "__main__":
 			if prob >= args.prob_threshold:
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
 					fn_sequences.add(ordered_reads_id[count])
+					fn_cs.append(prob)
 				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
 					fp_sequences.add(ordered_reads_id[count])
+					fp_cs.append(prob)
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
 					tp_sequences.add(ordered_reads_id[count])
+					tp_cs.append(prob)
 
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
 	print(f'#FP for label {args.label}: {len(fp_sequences)}')
 	print(f'#TP for label {args.label}: {len(tp_sequences)}')
-	GetSeqLength(args, list(fn_sequences), sequence_length, f'FN')
-	GetSeqLength(args, list(fp_sequences), sequence_length, f'FP')
-	GetSeqLength(args, list(tp_sequences), sequence_length, f'TP')
+	GetSeqLength(args, list(fn_sequences), sequence_length, 'FN')
+	GetSeqLength(args, list(fp_sequences), sequence_length, 'FP')
+	GetSeqLength(args, list(tp_sequences), sequence_length, 'TP')
+	StoreCS(args, fn_cs, 'FN')
+	StoreCS(args, fp_cs, 'FP')
+	StoreCS(args, tp_cs, 'TP')
 
 	# get association between sequences in training set and labels
 	with open(args.sequences_info, 'r') as f:
 		content = f.readlines()
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+
+	# calculate coverage of training genome
+	GetTrainCoverage(args)
 
 	# get coverage of training genome with training sequences for label 1
 	# train_ref_info, train_train_alignments = LoadData(args.pos_train_pos_train)
@@ -665,7 +679,7 @@ if __name__ == "__main__":
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_genes_of_interest = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read)
+	fn_genes_of_interest = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read, 'FN')
 
 	# blast testing reads to training genomes from other species
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
@@ -677,6 +691,7 @@ if __name__ == "__main__":
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	_ = GetGenes(args, pos_test_annot_info, tp_alignments_pos_test, sequence_length, readid_to_read, 'TP')
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	CreateFqFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
