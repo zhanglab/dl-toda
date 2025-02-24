@@ -276,9 +276,9 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 		for line in f:
 			readid = line.rstrip().split(',')[0]
 			if readid in sequences:
-				sstart = int(line.rstrip().split(',')[0])
-				ssend = int(line.rstrip().split(',')[1])
-				seq_id = line.rstrip().split(',')[2]
+				sstart = int(line.rstrip().split(',')[2])
+				ssend = int(line.rstrip().split(',')[3])
+				seq_id = line.rstrip().split(',')[1]
 				mapped_reads_id.append(read)
 				alignments[readid] = [seq_id, sstart, ssend]
 
