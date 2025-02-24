@@ -212,7 +212,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				# get all go_function entries and choose go_function with the most details
 				if 'go_function' in e:
 					print(e)
-					print(e.split(' ')[2])
+					print(e.split('|')[0].split(' ')[2:])
 					if len(e.split(' ')[2].split('|')[0]) > len(function):
 						print(e.split(' ')[2].split('|')[0])
 						function = e.split(' ')[2].split('|')[0]
