@@ -730,16 +730,16 @@ if __name__ == "__main__":
 
 		# get fp sequences of label and create fasta file
 		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
-		print(label, len(label_sequences))
-
-		with open(os.path.join(args.output_dir, 'FP_analysis', f'{label}_FP_reads.fna'), 'w') as outf:
-			for k, v in readid_to_read.items():
-				if k in label_sequences:
-					outf.write(f'>{k}\n{v}\n')			
+		print(label, len(label_sequences))		
 		
 		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
 		if not os.path.isdir(mapping_output_dir):
 			os.makedirs(mapping_output_dir)
+
+		with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
+			for k, v in readid_to_read.items():
+				if k in label_sequences:
+					outf.write(f'>{k}\n{v}\n')
 
 		if not os.path.exists(os.path.join(mapping_output_dir, 'test_test_blastn.out')):
 			# run blast
