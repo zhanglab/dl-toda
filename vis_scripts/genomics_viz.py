@@ -317,11 +317,14 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 				alignments[readid] = [seq_label, seq_id, sstart, send]
 
 	if outfilename:
-		unmapped_reads_id = list(sequences.difference(set(alignments.keys())))
-		unmapped_reads_length = [sequence_length[r] for r in unmapped_reads_id]
 		with open(outfilename, 'w') as f:
-			f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\t{statistics.mean(unmapped_reads_length)}\nmedian reads length:\t{statistics.median(unmapped_reads_length)}\nmin reads length:\t{min(unmapped_reads_length)}\nmax reads length:\t{max(unmapped_reads_length)}')
-		
+			unmapped_reads_id = list(sequences.difference(set(alignments.keys())))
+			if len(unmapped_reads_id) != 0:
+				unmapped_reads_length = [sequence_length[r] for r in unmapped_reads_id]
+				f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\t{statistics.mean(unmapped_reads_length)}\nmedian reads length:\t{statistics.median(unmapped_reads_length)}\nmin reads length:\t{min(unmapped_reads_length)}\nmax reads length:\t{max(unmapped_reads_length)}')
+			else:
+				f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\tNA\nmedian reads length:\tNA\nmin reads length:\tNA\nmax reads length:\tNA')
+
 	return alignments
 
 
