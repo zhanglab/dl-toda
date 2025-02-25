@@ -102,7 +102,8 @@ def LoadFnaFile(fasta_file):
 
 def RunBlast(args, query, subject=None, db=False):
 	if db:
-		process = subprocess.run(['cat', query, '|', parallel_exec, '--colsep', ',', '-j', f'{args.num_processes}', blastn_exec, '-query', '{2}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', '{1}',
+		sys.executable = blast_exec
+		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', 'blast_test.out',
 		 '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', '1'], shell=True, check=True)
 		# process = subprocess.Popen(f'cat query | parallel_exec --colsep "," -j {args.num_processes} {blastn_exec} -query {{2}} -db /datasets/bio/ncbi-db/2025-01-26/nt -out {{1}} -outfmt 10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle -max_target_seqs 5 -num_threads 1', shell=True, executable="/bin/bash")
 		# stdout, stderr = process.communicate()
@@ -714,7 +715,8 @@ if __name__ == "__main__":
 					outf.write(f'>{k}\n{v}\n')
 			file_w_paths.write(f'{args.output_dir}/mapping/fp_blastn_{i}.out,{proc_filename}\n')
 
-	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), db=True)
+	# RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), db=True)
+	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_reads_0.fna'), db=True)
 
 
 	# # do FP analysis
