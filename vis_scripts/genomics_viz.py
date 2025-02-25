@@ -5,6 +5,7 @@ import argparse
 import math
 import zipfile
 import subprocess
+import multiprocessing
 import random
 import statistics
 import numpy as np
@@ -103,7 +104,7 @@ def LoadFnaFile(fasta_file):
 def RunBlast(args, query, subject=None, db=False):
 	if db:
 		sys.executable = blastn_exec
-		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', 'blast_test.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', '1'])
+		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', 'blast_test.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 		# process = subprocess.Popen(f'cat query | parallel_exec --colsep "," -j {args.num_processes} {blastn_exec} -query {{2}} -db /datasets/bio/ncbi-db/2025-01-26/nt -out {{1}} -outfmt 10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle -max_target_seqs 5 -num_threads 1', shell=True, executable="/bin/bash")
 		# stdout, stderr = process.communicate()
 		# print(stdout.decode())
@@ -703,19 +704,20 @@ if __name__ == "__main__":
 
 	# do FP analysis
 	# blast FP reads
-	num_seq_per_process = int(len(fp_sequences)/args.num_processes)
-	fp_seq_per_process = [list(fp_sequences)[i:i+num_seq_per_process] for i in range(0, len(fp_sequences), num_seq_per_process)]
-	file_w_paths = open(os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), 'w')
-	for i in range(len(fp_seq_per_process)):
-		proc_filename = os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')
-		with open(proc_filename, "w") as outf:
-			for k, v in readid_to_read.items():
-				if k in fp_seq_per_process[i]:
-					outf.write(f'>{k}\n{v}\n')
-			file_w_paths.write(f'{args.output_dir}/mapping/fp_blastn_{i}.out,{proc_filename}\n')
+	# num_seq_per_process = int(len(fp_sequences)/args.num_processes)
+	# fp_seq_per_process = [list(fp_sequences)[i:i+num_seq_per_process] for i in range(0, len(fp_sequences), num_seq_per_process)]
+	# file_w_paths = open(os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), 'w')
+	# for i in range(len(fp_seq_per_process)):
+	# 	proc_filename = os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')
+	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
+		for k, v in readid_to_read.items():
+			if k in fp_seq_per_process[i]:
+				outf.write(f'>{k}\n{v}\n')
+		# file_w_paths.write(f'{args.output_dir}/mapping/fp_blastn_{i}.out,{proc_filename}\n')
 
-	# RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), db=True)
-	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_reads_0.fna'), db=True)
+	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)
+
+		
 
 
 	# # do FP analysis
