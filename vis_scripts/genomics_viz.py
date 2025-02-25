@@ -729,7 +729,7 @@ if __name__ == "__main__":
 		label_testing_genome = args.test_genomes_info[label][0]
 
 		# get fp sequences of label and create fasta file
-		label_sequences = [seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label]
+		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
 		print(label, len(label_sequences))		
 		
 		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
