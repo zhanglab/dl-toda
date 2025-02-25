@@ -711,7 +711,7 @@ if __name__ == "__main__":
 	# 	proc_filename = os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')
 	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
 		for k, v in readid_to_read.items():
-			if k in fp_seq_per_process[i]:
+			if k in fp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 		# file_w_paths.write(f'{args.output_dir}/mapping/fp_blastn_{i}.out,{proc_filename}\n')
 
