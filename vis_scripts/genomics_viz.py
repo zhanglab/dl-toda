@@ -204,52 +204,51 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	if len(annot_file) == 0:
 		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
 		f.close()
+	else:
+		genes_type = defaultdict(str)
+		annot_info = defaultdict(list)
+		with open(annot_file[0], 'r') as f:
+			content = f.readlines()
+			for i in range(5,len(content)-1,1):
+				begin = int(content[i].rstrip().split('\t')[3])
+				end = int(content[i].rstrip().split('\t')[4])
+				strand = content[i].rstrip().split('\t')[6]
+				gene_id = ''
+				gene = ''
+				biotype = ''
+				function = ''
+				for e in content[i].rstrip().split('\t')[8].split(';'):
+					e = e.replace('"', '')
+					# get all go_function entries and choose go_function with the most details
+					if 'go_function' in e:
+						fn = e.split('|')[0].split(' ')[2:]
+						if len(fn) > len(function):
+							function = ' '.join(fn)
+					if 'product' in e:
+						gene = ' '.join(e.split(' ')[2:])
+					if 'gene_id' in e:
+						gene_id = e.split(' ')[1]
+					if 'gene_biotype' in e:
+						biotype = e.split(' ')[2]
 
+				if content[i].rstrip().split('\t')[2] == 'gene':
+					genes_type[gene_id] = biotype
+				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+					if function == '':
+						function = gene
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+				
+				assert gene_id != '', 'gene id should not be unknown'
+		
+		print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
 
-	genes_type = defaultdict(str)
-	annot_info = defaultdict(list)
-	with open(annot_file[0], 'r') as f:
-		content = f.readlines()
-		for i in range(5,len(content)-1,1):
-			begin = int(content[i].rstrip().split('\t')[3])
-			end = int(content[i].rstrip().split('\t')[4])
-			strand = content[i].rstrip().split('\t')[6]
-			gene_id = ''
-			gene = ''
-			biotype = ''
-			function = ''
-			for e in content[i].rstrip().split('\t')[8].split(';'):
-				e = e.replace('"', '')
-				# get all go_function entries and choose go_function with the most details
-				if 'go_function' in e:
-					fn = e.split('|')[0].split(' ')[2:]
-					if len(fn) > len(function):
-						function = ' '.join(fn)
-				if 'product' in e:
-					gene = ' '.join(e.split(' ')[2:])
-				if 'gene_id' in e:
-					gene_id = e.split(' ')[1]
-				if 'gene_biotype' in e:
-					biotype = e.split(' ')[2]
-
-			if content[i].rstrip().split('\t')[2] == 'gene':
-				genes_type[gene_id] = biotype
-			elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
-				if function == '':
-					function = gene
-				annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
-			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
-				annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
-			elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
-				annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
-			
-			assert gene_id != '', 'gene id should not be unknown'
-	
-	print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
-	print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
-	print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
-
-	return annot_info
+		return annot_info
 
 
 def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
