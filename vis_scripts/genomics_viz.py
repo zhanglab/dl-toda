@@ -103,7 +103,7 @@ def LoadFnaFile(fasta_file):
 def RunBlast(args, query, subject=None, db=False):
 	if db:
 		process = subprocess.run(['cat', query, '|', parallel_exec, '--colsep', ',', '-j', f'{args.num_processes}', blastn_exec, '-query', '{2}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', '{1}',
-		 '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', '1'], shell=True)
+		 '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', '1'], shell=True, check=True)
 		# process = subprocess.Popen(f'cat query | parallel_exec --colsep "," -j {args.num_processes} {blastn_exec} -query {{2}} -db /datasets/bio/ncbi-db/2025-01-26/nt -out {{1}} -outfmt 10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle -max_target_seqs 5 -num_threads 1', shell=True, executable="/bin/bash")
 		# stdout, stderr = process.communicate()
 		# print(stdout.decode())
