@@ -30,7 +30,7 @@ TICKS_INTERVAL = 100000
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
-
+parallel_exec = "/modules/spack/packages/linux-ubuntu24.04-x86_64_v3/gcc-13.2.0/parallel-20240822-uwvjfxdji5ltqgl6vdu4in522ymhbhz7/bin/parallel"
 # set seed
 seed = 42
 # set the global python random seed
@@ -102,8 +102,11 @@ def LoadFnaFile(fasta_file):
 
 def RunBlast(args, query, subject=None, db=False):
 	if db:
-		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out',
-				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+		result = subprocess.run(['cat', query, '|', parallel_exec, '-j', f'{args.num_processes}', blastn_exec, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out',
+		 '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', '1'])
+
+		# result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out',
+				 # '-outfmt', "10 delim=, qseqid sseqid evalue pident qseq sseq length ssciname stitle", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 	else:
 		if len(subject) > 1:
 			# put all training genomes into one fasta file
@@ -178,7 +181,6 @@ def CreateFqFile(genes_of_interest, alignments, readid_to_read, filename):
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
-	
 	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
 		annot_output_dir = os.path.join(args.annotations_dir, f'{genome_id}_gtf')
 		os.makedirs(annot_output_dir)
@@ -698,11 +700,17 @@ if __name__ == "__main__":
 
 	# do FP analysis
 	# blast FP reads
-	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
-		for k, v in readid_to_read.items():
-			if k in fp_sequences:
-				outf.write(f'>{k}\n{v}\n')
-	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)
+	num_seq_per_process = int(len(fp_sequences)/args.num_processes)
+	fp_seq_per_process = [list(fp_sequences)[i:i+num_seq_per_process] for i in range(0, len(fp_sequences), num_seq_per_process)]
+	file_w_paths = open(os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), 'w')
+	for i in range(len(fp_seq_per_process)):
+		with open(os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna'), "w") as outf:
+			for k, v in readid_to_read.items():
+				if k in fp_seq_per_process[i]:
+					outf.write(f'>{k}\n{v}\n')
+			file_w_paths.write(f'{os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')}\n')
+
+	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), db=True)
 
 
 	# # do FP analysis
