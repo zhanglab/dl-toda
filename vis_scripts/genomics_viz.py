@@ -658,12 +658,13 @@ if __name__ == "__main__":
 	GetTrainCoverage(args)
 
 	# do FN analysis
-	# blast testing reads to testing genome
-	with open(os.path.join(mapping_output_dir, f'{label}_test_reads.fna'), 'w') as outf:
+	# create fasta file with testing reads from label 1
+	with open(os.path.join(args.output_dir, f'{label}_test_reads.fna'), 'w') as outf:
 		for k, v in readid_to_read.items():
 			if k in fn_sequences or k in tp_sequences:
 				outf.write(f'>{k}\n{v}\n')
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(mapping_output_dir, f'{label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]])
+	# blast testing reads to testing genome		
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]])
 	# get mapping of false negatives to testing genome from label 1
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
@@ -672,7 +673,7 @@ if __name__ == "__main__":
 
 	# blast testing reads to training genomes from other species
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(mapping_output_dir, f'{label}_test_reads.fna'), subject=training_genomes)
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{label}_test_reads.fna'), subject=training_genomes)
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
 	_ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
