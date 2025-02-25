@@ -204,6 +204,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	if len(annot_file) == 0:
 		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
 		f.close()
+		return {}
 	else:
 		genes_type = defaultdict(str)
 		annot_info = defaultdict(list)
@@ -753,8 +754,12 @@ if __name__ == "__main__":
 		print(label_testing_genome)
 		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
 
-		# get genes 
-		_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, sequence_length, readid_to_read, 'FP')
+		if len(neg_test_annot_info) != 0:
+			# get genes 
+			_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, sequence_length, readid_to_read, 'FP')
+
+		else:
+			print(f'No annotations for genome {label_testing_genome}')
 
 		# monitor number of sequences per label
 		fp_taxa[label] = len(label_sequences)
