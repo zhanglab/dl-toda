@@ -704,11 +704,12 @@ if __name__ == "__main__":
 	fp_seq_per_process = [list(fp_sequences)[i:i+num_seq_per_process] for i in range(0, len(fp_sequences), num_seq_per_process)]
 	file_w_paths = open(os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), 'w')
 	for i in range(len(fp_seq_per_process)):
-		with open(os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna'), "w") as outf:
+		proc_filename = os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')
+		with open(proc_filename, "w") as outf:
 			for k, v in readid_to_read.items():
 				if k in fp_seq_per_process[i]:
 					outf.write(f'>{k}\n{v}\n')
-			file_w_paths.write(f'{os.path.join(args.output_dir, f'{args.label}_FP_reads_{i}.fna')}\n')
+			file_w_paths.write(f'{proc_filename}\n')
 
 	RunBlast(args, os.path.join(args.output_dir, f'{args.label}_FP_filepaths'), db=True)
 
