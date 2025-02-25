@@ -746,10 +746,13 @@ if __name__ == "__main__":
 			RunBlast(args, mapping_output_dir, label_testing_fasta, subject=[os.path.join(mapping_output_dir, f'{label}_FP_reads.fna')])
 
 		# get alignments info
-		fp_alignments_neg_neg_test = GetAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+		fp_alignments = GetAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 		
+		# get annotations info
+		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+
 		# get genes 
-		_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), pos_test_annot_info, tp_alignments_pos_test, sequence_length, readid_to_read, 'FP')
+		_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, sequence_length, readid_to_read, 'FP')
 
 		# monitor number of sequences per label
 		fp_taxa[label] = len(label_sequences)
