@@ -375,10 +375,11 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 1
 		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos-5
+		min_r_pos -= 5
 		rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos-5
+		min_r_pos -= 5
 		trna_track = sector.add_track((min_r_pos-5, min_r_pos))
+		min_r_pos -= 5
 		features = []
 		for gene_id in genes_of_interest.keys():
 			if genes_of_interest[gene_id][3] == 'plus':
@@ -489,7 +490,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
-		min_r_pos -= 12
+		min_r_pos -= 5
 		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
 		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
@@ -731,9 +732,8 @@ if __name__ == "__main__":
 				if k in label_sequences:
 					outf.write(f'>{k}\n{v}\n')
 
-		if not os.path.exists(os.path.join(mapping_output_dir, 'test_test_blastn.out')):
-			# run blast
-			RunBlast(args, mapping_output_dir, label_testing_fasta, subject=[os.path.join(mapping_output_dir, f'{label}_FP_reads.fna')])
+		# run blast
+		RunBlast(args, mapping_output_dir, label_testing_fasta, subject=[os.path.join(mapping_output_dir, f'{label}_FP_reads.fna')])
 
 		# get alignments info
 		fp_alignments = GetAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
