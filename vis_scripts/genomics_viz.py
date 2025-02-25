@@ -577,7 +577,6 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	input_dir = os.getcwd()
-	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
 
 	# create output directory
 	args.output_dir = os.path.join(os.getcwd(), args.label)
@@ -587,6 +586,8 @@ if __name__ == "__main__":
 		os.makedirs(os.path.join(args.output_dir, 'mapping'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
 		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
+
+	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
 	
 	# get dltoda taxonomy
 	path_dl_toda_tax = '/'.join(
