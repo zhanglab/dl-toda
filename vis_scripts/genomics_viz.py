@@ -721,8 +721,6 @@ if __name__ == "__main__":
 	fp_taxa = defaultdict(int)
 	print(f'# labels: {len(fp_labels)}')
 	outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_fp_neg_genes.tsv'), 'w')
-	outf_problem = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_fp_neg_genomes_missing.tsv'), 'w')
-	neg_genes_mapped = defaultdict(int)
 
 	for label in fp_labels:
 		label_testing_fasta = args.test_genomes_info[label][1]
