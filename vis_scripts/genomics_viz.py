@@ -105,7 +105,7 @@ def ConcatenateFiles(list_files, outfilename):
 	with open(outfilename, 'w') as outf:
 		for input_file in list_files:
 			with open(input_file, 'r') as inf:
-				out.write(inf.read())
+				outf.write(inf.read())
 
 def RunBlast(args, output_dir, query, subject=None, db=False):
 	if db:
