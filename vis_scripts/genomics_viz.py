@@ -201,6 +201,10 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 	
 	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	if len(annot_file) == 0:
+		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
+		f.close()
+
 
 	genes_type = defaultdict(str)
 	annot_info = defaultdict(list)
@@ -585,6 +589,8 @@ if __name__ == "__main__":
 		os.makedirs(os.path.join(args.output_dir, 'mapping'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
 		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
+		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
 	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
 	
