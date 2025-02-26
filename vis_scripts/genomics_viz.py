@@ -78,16 +78,16 @@ def GetGCContent(sequence):
 		start = pos - int(window_size / 2)
 		end = pos + int(window_size / 2)
 
-	# update start and end of window according to the size of the sequence
-	if start < 0:
-		start = 0
+		# update start and end of window according to the size of the sequence
+		if start < 0:
+			start = 0
 
-	if end > len(sequence):
-		end = len(sequence)
+		if end > len(sequence):
+			end = len(sequence)
 
-	gccontent_seq = sequence[start:end]
-	gc_content = SeqUtils.gc_fraction(gccontent_seq) * 100
-	all_gc_content.append(gc_content)
+		gccontent_seq = sequence[start:end]
+		gc_content = SeqUtils.gc_fraction(gccontent_seq) * 100
+		all_gc_content.append(gc_content)
 
 	genome_gc_content = SeqUtils.gc_fraction(sequence) * 100
 
