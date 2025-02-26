@@ -89,7 +89,9 @@ def GetGCContent(sequence):
 	gc_content = SeqUtils.gc_fraction(gccontent_seq) * 100
 	all_gc_content.append(gc_content)
 
-	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64)
+	genome_gc_content = SeqUtils.gc_fraction(sequence) * 100
+
+	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
 
 
 
@@ -580,6 +582,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gc_content = GetGCContent(record_seq)
+		gc_content = gc_content -
 		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
 		negative_gc_content = np.where(gc_content < 0, gc_content, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content))
