@@ -581,8 +581,10 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# Plot GC content
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content = GetGCContent(record_seq)
-		gc_content = gc_content -
+		pos_list, gc_content, genome_gc_content = GetGCContent(record_seq)
+		print('gc_content', gc_content[:10], genome_gc_content)
+		gc_content = gc_content - genome_gc_content
+		print('gc_content', gc_content[:10], genome_gc_content)
 		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
 		negative_gc_content = np.where(gc_content < 0, gc_content, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content))
