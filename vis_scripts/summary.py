@@ -175,11 +175,10 @@ def main():
 
 
     if args.roc:
-        data = load_tool_output(args)
-        for line in data:
-            print(line)
-        ground_truth = [int(line.split('\t')[0]) for line in data]
-        confidence_scores = [float(line.rstrip().split('\t')[1]) for line in data]
+        with open(args.input, 'r') as f:
+            content = f.readlines()
+        ground_truth = [int(line.rstrip().split('\t')[0]) for line in content]
+        confidence_scores = [float(line.rstrip().split('\t')[1]) for line in content]
         # find optimal cutoff confidence score using Youden's method
         fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
         j_scores = tpr - fpr
