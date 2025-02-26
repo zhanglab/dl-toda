@@ -184,7 +184,7 @@ def main():
         j_scores = tpr - fpr
         optimal_idx = np.argmax(j_scores)
         with open(os.path.join(args.output_dir, f'roc_optimal_cutoff'), 'w') as f:
-            f.write(thresholds[optimal_idx])
+            f.write(f'{thresholds[optimal_idx]}')
 
     # if args.probs:
     #     # load dl-toda results
