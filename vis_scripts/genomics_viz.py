@@ -108,29 +108,30 @@ def GetTrainCoverage(args):
 
 	RunBowtie(args, genome_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	
-	ref_info, mapped = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
-	dict_coverage, reads_info = GetCoverageOfSample(list_of_reads, length_ref, label=None)
+	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	print(ref_info)
 
-	# get size of training genome
-	genome_size = 0
-	with open(genome_fasta, 'r') as f:
-		f.readline()
-		for line in f:
-			genome_size += len(line.rstrip())
+	train_coverage = {}
+	for i in range(len(ref_info)):
+        ref = ref_info[i][0]
+        length_ref = ref_info[i][1]
+		print(ref)
+		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
-	# get coverage per base
-	train_coverage = [dict_coverage[i] for i in range(genome_size)]
-	print(f'#pos train_coverage: {len(train_coverage)}')
-	coverage_1 = round(sum(train_coverage) / genome_size, 3)
-	print(f'coverage_1: {coverage_1}')
+		# get coverage per base
+		train_coverage = [dict_coverage[i] for i in range(genome_size)]
+		print(f'#pos train_coverage: {len(train_coverage)}')
+		coverage_1 = round(sum(train_coverage) / genome_size, 3)
+		train_coverage[ref] = coverage_1
+		print(f'coverage_1: {coverage_1}')
 
-	# calculate average coverage
-	total_bases = sum(readsid_to_length.values())
-	coverage_2 = round(total_bases / genome_size, 3)
-	print(f'coverage_2: {coverage_2}')
+		# calculate average coverage
+		total_bases = sum(readsid_to_length.values())
+		coverage_2 = round(total_bases / genome_size, 3)
+		print(f'coverage_2: {coverage_2}')
 
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_coverage.tsv'), 'w') as f:
-		f.write(f'{total_bases}\t{genome_size}\t{coverage_1}')
+		with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
+			f.write(f'{total_bases}\t{genome_size}\t{coverage_1}')
 
 	return train_coverage
 	
@@ -776,6 +777,7 @@ if __name__ == "__main__":
 
 	# calculate coverage of training genome
 	train_coverage = GetTrainCoverage(args)
+	print(train_coverage)
 
 	# blast FP reads to train genome of label 1
 	# create fasta file with all FP reads
