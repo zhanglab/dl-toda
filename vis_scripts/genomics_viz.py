@@ -179,9 +179,9 @@ def ConcatenateFiles(list_files, outfilename, data_type):
 
 def RunBowtie(args, target, query, outfilename):
 	# build index
-	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/mapping/bowtie/ref'])
+	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref'])
 	# map reads
-	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/mapping/bowtie/ref', '-U', f'{query}', '-S', f'{outfilename}'])
+	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}'])
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
@@ -541,20 +541,20 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 		# color = ColorCycler()
 		comp_name2color[comp_fasta.name] = colors[idx]
-		min_r_pos -= QUERY_TRACK_SIZE
-		print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
-		for sector in circos.sectors:
-			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
+				for sector in circos.sectors:
+			sector.add_track((min_r_pos-QUERY_TRACK_SIZE, min_r_pos), r_pad_ratio=0.1)	
 		for ac in align_coords:
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
+		min_r_pos -= QUERY_TRACK_SIZE
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
+		min_r_pos -= 2
 		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		tp_track.axis(ec="dodgerblue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
@@ -716,19 +716,19 @@ if __name__ == "__main__":
 		content = f.readlines()
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# do FN analysis
-	# create fasta file with testing reads from label 1
-	with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
-		for k, v in readid_to_read.items():
-			if k in fn_sequences or k in tp_sequences:
-				outf.write(f'>{k}\n{v}\n')
-	# blast testing reads to testing genome		
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/all_test_pos_test_blastn.out')
-	# get mapping of false negatives to testing genome from label 1
-	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	# get annotations info
-	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read, 'FN')
+	# # do FN analysis
+	# # create fasta file with testing reads from label 1
+	# with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
+	# 	for k, v in readid_to_read.items():
+	# 		if k in fn_sequences or k in tp_sequences:
+	# 			outf.write(f'>{k}\n{v}\n')
+	# # blast testing reads to testing genome		
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/all_test_pos_test_blastn.out')
+	# # get mapping of false negatives to testing genome from label 1
+	# fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# # get annotations info
+	# pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read, 'FN')
 
 	# blast testing reads to training genomes from other species
 	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
@@ -739,30 +739,30 @@ if __name__ == "__main__":
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, sequence_length, readid_to_read, 'TP')
 
 	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# load testing fasta file
-	with open(args.test_genomes_info[args.label][1], "r") as handle:
-		records = list(SeqIO.parse(handle, "fasta"))
+	# # load testing fasta file
+	# with open(args.test_genomes_info[args.label][1], "r") as handle:
+	# 	records = list(SeqIO.parse(handle, "fasta"))
 
-	# create circos plot
-	if args.circos:
-		for rec in records:
-			# create fasta file for each record
-			if len(records) == 1:
-				record_fasta = args.test_genomes_info[args.label][1]
-			else:
-				with open(os.path.join(args.output_dir, f'{rec.id}.fna'), "w") as outf:
-					SeqIO.write(rec, outf, "fasta")
-				record_fasta = os.path.join(args.output_dir, f'{rec.id}.fna')
+	# # create circos plot
+	# if args.circos:
+	# 	for rec in records:
+	# 		# create fasta file for each record
+	# 		if len(records) == 1:
+	# 			record_fasta = args.test_genomes_info[args.label][1]
+	# 		else:
+	# 			with open(os.path.join(args.output_dir, f'{rec.id}.fna'), "w") as outf:
+	# 				SeqIO.write(rec, outf, "fasta")
+	# 			record_fasta = os.path.join(args.output_dir, f'{rec.id}.fna')
 
-			FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-				os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# 		FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 
 	# # do FP analysis
