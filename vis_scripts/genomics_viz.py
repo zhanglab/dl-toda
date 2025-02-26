@@ -101,7 +101,7 @@ def GetTrainCoverage(args):
 	# get reads in training set fasta file
 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
 
-	with open(os.path.join(args.output_dir, f'{args.label}_train_pos_reads.fna'), 'w') as outf:
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), 'w') as outf:
 		for k, v in readid_to_read.items():
 			if k == args.label:
 				outf.write(f'>{k}\n{v}\n')
