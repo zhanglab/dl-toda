@@ -5,10 +5,12 @@ import sys
 import pandas as pd
 import glob
 import numpy as np
+from sklearn.metrics import roc_curve
 import statistics
 import multiprocessing as mp
 from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from dataprep_scripts.utils import load_fq_file
 from parse_tool_output import *
 from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 from summary_utils import *
@@ -73,22 +75,13 @@ def parse_results(args):
                                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
                     cm.to_excel(writer, sheet_name=f'genus')
 
-        if args.false_positives:
-            if len(predictions)+len(ground_truth)+len(confidence_scores) != 0:
-                for r_name, r_index in args.ranks.items():
-                    if args.output_prefix:
-                        output_file = os.path.join(args.output_dir,
-                                                         f'{args.output_prefix}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
-                    else:
-                        output_file = os.path.join(args.output_dir,
-                                                         f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-{r_name}-false-positives.tsv')
-
-                    # get taxa at given rank
-                    true_taxa = [i.split(';')[r_index] for i in ground_truth]
-                    pred_taxa = [i.split(';')[r_index] for i in predictions]
-                    df = pd.DataFrame(list(zip(true_taxa, pred_taxa, confidence_scores)), columns = ['true', 'pred', 'score'])
-                    # create dataframe
-                    df.to_csv(output_file, sep="\t") 
+        if args.roc:
+            # find optimal cutoff confidence score using Youden's method
+            fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
+            j_scores = tpr - fpr
+            optimal_idx = np.argmax(j_scores)
+            with open(os.path.join(args.output_dir, f'roc_optimal_cutoff'), 'w') as f:
+                f.write(thresholds[optimal_idx])
 
 
 def main():
@@ -101,7 +94,6 @@ def main():
     parser.add_argument('--num_proc', type=int, help='number of processors to parse results output from classifiers')
     parser.add_argument('--combine', help='summarized results from all samples combined', action='store_true', required=('--input_dir' in sys.argv))
     parser.add_argument('--metrics', help='get metrics from confusion matrix', action='store_true')
-    parser.add_argument('--false_positives', help='get false positives', action='store_true', required=('--positive_label' in sys.argv))
     parser.add_argument('--positive_class', type=str, help='label of positive class')
     parser.add_argument('--confusion_matrix', help='create confusion matrix', action='store_true')
     parser.add_argument('--probs', help='analysis of probability scores', action='store_true')
@@ -113,7 +105,7 @@ def main():
     parser.add_argument('--tax_db', help='type of taxonomy database used in DL-TODA', choices=['ncbi', 'gtdb'], default='gtdb')
     parser.add_argument('--ncbi_db', help='path to directory containing ncbi taxonomy db')
     parser.add_argument('--tax_file', type=str, help='path to file with taxonomy of labels in model')
-    parser.add_argument('--fq_file', type=str, help='path to file with taxonomy of labels in model', required=('bert' in sys.argv))
+    parser.add_argument('--fq_file', type=str, help='path to fq file')
     parser.add_argument('--mapping_file', type=str, help='path to file to update labels')
     parser.add_argument('--roc', help='option to generate decision thresholds with ROC curves', action='store_true')
 
@@ -160,7 +152,7 @@ def main():
         args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
-    if args.confusion_matrix or args.false_positives:
+    if args.confusion_matrix or args.roc:
         parse_results(args)
 
     if args.combine:
@@ -188,28 +180,31 @@ def main():
                 print(r_name)
                 get_metrics(args, cm[r_name], r_name, r_index)
 
-    if args.probs:
-        # load dl-toda results
-        data = load_tool_output(args)
-        with mp.Manager() as manager:
-            results = manager.dict()
-            processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, results)) for i in range(len(data))]
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-            # write results to file
-            stats_file = open(args.input[:-4] + '-stats.tsv', 'w')
-            conf_scores_file = open(args.input[:-4] + '-cs.tsv', 'w')
-            scores = []
-            for process, process_results in results.items():
-                for i in range(len(process_results)):
-                    scores.append(process_results[i][2])
-                    for k, v in args.ranks.items():
-                        conf_scores_file.write(f'{process_results[i][0].split(";")[v]}\t{process_results[i][1].split(";")[v]}\t')
-                    conf_scores_file.write(f'{process_results[i][2]}\n')
-            stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}'
-                             f'\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
+    # if args.probs:
+    #     # load dl-toda results
+    #     data = load_tool_output(args)
+    #     with mp.Manager() as manager:
+    #         results = manager.dict()
+    #         processes = [mp.Process(target=parse_dl_toda_output, args=(args, data[i], i, results)) for i in range(len(data))]
+    #         for p in processes:
+    #             p.start()
+    #         for p in processes:
+    #             p.join()
+    #         # write results to file
+    #         stats_file = open(args.input[:-4] + '-stats.tsv', 'w')
+    #         conf_scores_file = open(args.input[:-4] + '-cs.tsv', 'w')
+    #         scores = []
+    #         for process, process_results in results.items():
+    #             for i in range(len(process_results)):
+    #                 scores.append(process_results[i][2])
+    #                 for k, v in args.ranks.items():
+    #                     conf_scores_file.write(f'{process_results[i][0].split(";")[v]}\t{process_results[i][1].split(";")[v]}\t')
+    #                 conf_scores_file.write(f'{process_results[i][2]}\n')
+    #         stats_file.write(f'{args.input.split("/")[-1][:-8]}\t{statistics.mean(scores)}\t{statistics.median(scores)}'
+    #                          f'\t{min(scores)}\t{max(scores)}\t{len(scores)}\n')
+
+
+
 
 
 if __name__ == "__main__":
