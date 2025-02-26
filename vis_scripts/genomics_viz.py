@@ -433,36 +433,36 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 1
 		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos -= 5
+		min_r_pos -= 6
 		rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos -= 5
+		min_r_pos -= 6
 		trna_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos -= 5
+		min_r_pos -= 6
 		features = []
 		for gene_id in genes_of_interest.keys():
 			if genes_of_interest[gene_id][3] == 'plus':
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
-					cds_track.genomic_features(feature, plotstyle="arrow", fc="salmon")
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
 					if genes_of_interest[gene_id][0] == 'rRNA':
-						rrna_track.genomic_features(feature, fc="green")
+						rrna_track.genomic_features(feature, fc="darkgreen")
 					elif genes_of_interest[gene_id][0] == 'tRNA':
-						trna_track.genomic_features(feature, fc="magenta")
+						trna_track.genomic_features(feature, fc="deeppink")
 				
 			else:
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
-					cds_track.genomic_features(feature, plotstyle="arrow", fc="skyblue")
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
 					if genes_of_interest[gene_id][0] == 'rRNA':
-						rrna_track.genomic_features(feature, fc="green")
+						rrna_track.genomic_features(feature, fc="darkgreen")
 					elif genes_of_interest[gene_id][0] == 'tRNA':
-						trna_track.genomic_features(feature, fc="magenta")
+						trna_track.genomic_features(feature, fc="deeppink")
 
 			features.append(feature)
 
@@ -532,7 +532,6 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		genome_pos = list(range(target_fasta.full_genome_length))
 
 		# add track for TP reads
-		min_r_pos -= 10
 		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
@@ -542,13 +541,13 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
 		y_labels = list(map(str, y_values))
 		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="blue")
+		tp_track.line(genome_pos, pos_tp_count, color="dodgerblue")
 			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
 		print(min_r_pos, min_r_pos + 10)
 		print(f'added TP track')
 
 		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 15
+		min_r_pos -= 11
 		fn_track_1 = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track_1.axis(ec="red")
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
@@ -559,12 +558,12 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track_1.yticks(y_values, y_labels)
-		fn_track_1.line(genome_pos, pos_fn_1_count, color="red")
+		fn_track_1.line(genome_pos, pos_fn_1_count, color="orangered")
 			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
 		print(f'added FN track')
 
 		# Plot GC skew
-		min_r_pos -= 15
+		min_r_pos -= 11
 		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gcskews = GetGCSkew(record_seq)
 		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
@@ -572,10 +571,10 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		abs_max_gcskew = np.max(np.abs(gcskews))
 		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
 		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="olive"
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="darkviolet"
 		)
 		gcskew_track.fill_between(
-			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="purple"
+			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
 		)
 
 		# Plot GC content
@@ -593,7 +592,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
 		)
 		gc_content_track.fill_between(
-			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="grey"
+			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
 		)
 
 		# # add tracks for FN reads that were mapped to a taxon from label 0
