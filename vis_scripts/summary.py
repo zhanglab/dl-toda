@@ -179,10 +179,12 @@ def main():
             content = f.readlines()
         ground_truth = [int(line.rstrip().split('\t')[0]) for line in content]
         confidence_scores = [float(line.rstrip().split('\t')[1]) for line in content]
-        # find optimal cutoff confidence score using Youden's method
-        fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
-        j_scores = tpr - fpr
-        optimal_idx = np.argmax(j_scores)
+        # # find optimal cutoff confidence score using Youden's method
+        # fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
+        # j_scores = tpr - fpr
+        # optimal_idx = np.argmax(j_scores)
+        distances = np.sqrt(fpr**2 + (1 - tpr)**2)
+        optimal_idx = np.argmin(distances)
         with open(os.path.join(args.output_dir, f'roc_optimal_cutoff'), 'w') as f:
             f.write(f'{thresholds[optimal_idx]}')
 
