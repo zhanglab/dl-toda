@@ -398,7 +398,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
 					if genes_of_interest[gene_id][0] == 'rRNA':
 						rrna_track.genomic_features(feature, fc="green")
-					elif genes_of_interest[gene_id][0] == 'rRNA':
+					elif genes_of_interest[gene_id][0] == 'tRNA':
 						trna_track.genomic_features(feature, fc="magenta")
 				
 			else:
@@ -410,7 +410,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
 					if genes_of_interest[gene_id][0] == 'rRNA':
 						rrna_track.genomic_features(feature, fc="green")
-					elif genes_of_interest[gene_id][0] == 'rRNA':
+					elif genes_of_interest[gene_id][0] == 'tRNA':
 						trna_track.genomic_features(feature, fc="magenta")
 
 			features.append(feature)
@@ -459,7 +459,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# 	)
 
 		# Plot GC skew
-		min_r_pos -= 15
+		min_r_pos -= 10
 		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gcskews = GetGCSkew(record_seq)
 		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
