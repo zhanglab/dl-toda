@@ -723,9 +723,9 @@ if __name__ == "__main__":
 			if k in fn_sequences or k in tp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 	# blast testing reads to testing genome		
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/all_test_pos_test_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/all_test_pos_test_blastn.out')
 	# get mapping of false negatives to testing genome from label 1
-	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, sequence_length, readid_to_read, 'FN')
@@ -739,7 +739,7 @@ if __name__ == "__main__":
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, sequence_length, readid_to_read, 'TP')
 
 	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
@@ -784,7 +784,7 @@ if __name__ == "__main__":
 			if k in fp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/FP_pos_train_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
 
 	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
 	# fp_taxa = defaultdict(int)
