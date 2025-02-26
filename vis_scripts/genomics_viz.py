@@ -103,7 +103,7 @@ def GetTrainCoverage(args):
 
 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), 'w') as outf:
 		for k, v in readid_to_read.items():
-			if k == args.label:
+			if k.split('|')[1] == args.label:
 				outf.write(f'>{k}\n{v}\n')
 
 	RunBowtie(args, genome_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
