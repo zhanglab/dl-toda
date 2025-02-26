@@ -113,8 +113,8 @@ def GetTrainCoverage(args):
 
 	train_coverage = {}
 	for i in range(len(ref_info)):
-        ref = ref_info[i][0]
-        length_ref = ref_info[i][1]
+		ref = ref_info[i][0]
+		length_ref = ref_info[i][1]
 		print(ref)
 		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
