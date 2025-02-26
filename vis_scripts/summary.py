@@ -75,13 +75,6 @@ def parse_results(args):
                                                  f'{args.input.split("/")[-1]}-cutoff-{args.cutoff}-genus-confusion-matrix.xlsx')) as writer:
                     cm.to_excel(writer, sheet_name=f'genus')
 
-        if args.roc:
-            # find optimal cutoff confidence score using Youden's method
-            fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
-            j_scores = tpr - fpr
-            optimal_idx = np.argmax(j_scores)
-            with open(os.path.join(args.output_dir, f'roc_optimal_cutoff'), 'w') as f:
-                f.write(thresholds[optimal_idx])
 
 
 def main():
@@ -152,7 +145,7 @@ def main():
         args.d_nodes = parse_nodes_file(os.path.join(args.ncbi_db, 'taxonomy', 'nodes.dmp'))
         args.d_names = parse_names_file(os.path.join(args.ncbi_db, 'taxonomy', 'names.dmp'))
 
-    if args.confusion_matrix or args.roc:
+    if args.confusion_matrix:
         parse_results(args)
 
     if args.combine:
@@ -179,6 +172,18 @@ def main():
             if r_name in cm.keys():
                 print(r_name)
                 get_metrics(args, cm[r_name], r_name, r_index)
+
+
+    if args.roc:
+        data = load_tool_output(args)
+        ground_truth = [int(line.rstrip().split('\t')[0]) for line in data]
+        confidence_scores = [float(line.rstrip().split('\t')[1]) for line in data]
+        # find optimal cutoff confidence score using Youden's method
+        fpr, tpr, thresholds = roc_curve(ground_truth, confidence_scores)
+        j_scores = tpr - fpr
+        optimal_idx = np.argmax(j_scores)
+        with open(os.path.join(args.output_dir, f'roc_optimal_cutoff'), 'w') as f:
+            f.write(thresholds[optimal_idx])
 
     # if args.probs:
     #     # load dl-toda results
