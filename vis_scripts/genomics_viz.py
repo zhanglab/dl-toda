@@ -414,8 +414,6 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 	# circos.text(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)", size=13)
 	print(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)\n{target_fasta.full_genome_length}")
 
-	outf = open(outfilepath, 'w')
-
 	min_r_pos = 100
 	for sector in circos.sectors:
 		# Setup outer track
