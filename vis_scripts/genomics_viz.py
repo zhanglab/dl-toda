@@ -498,7 +498,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 
 		# add track for TP reads
 		min_r_pos -= 5
-		tp_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*target_fasta.full_genome_length
 		for readid, data in tp_alignments_pos_test.items():
@@ -513,8 +513,8 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		print(f'added TP track')
 
 		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 12
-		fn_track_1 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
+		min_r_pos -= 10
+		fn_track_1 = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track_1.axis(ec="red")
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
