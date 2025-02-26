@@ -26,8 +26,8 @@ ColorCycler.set_cmap("Set1")
 QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
 TICKS_INTERVAL = 100000
-# bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
-# bowtie2_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2"
+bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
+bowtie2_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2"
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
@@ -94,27 +94,45 @@ def GetGCContent(sequence):
 	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
 
 
-
-
-
-
 def GetTrainCoverage(args):
+	# get fasta file of genome used for training
+	genome_fasta = args.train_genomes_info[args.label][1]
+
 	# get reads in training set fasta file
-	_, sequence_length, _ = LoadFnaFile(args.training_fna_file)
+	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
+
+	with open(os.path.join(args.output_dir, f'{args.label}_train_pos_reads.fna'), 'w') as outf:
+		for k, v in readid_to_read.items():
+			if k == args.label:
+				outf.write(f'>{k}\n{v}\n')
+
+	RunBowtie(args, genome_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	
+	ref_info, mapped = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	dict_coverage, reads_info = GetCoverageOfSample(list_of_reads, length_ref, label=None)
 
 	# get size of training genome
-	genome_fasta = args.train_genomes_info[args.label][1]
 	genome_size = 0
 	with open(genome_fasta, 'r') as f:
 		f.readline()
 		for line in f:
 			genome_size += len(line.rstrip())
 
-	total_bases = sum(sequence_length.values())
-	coverage = round(total_bases / genome_size, 3)
+	# get coverage per base
+	train_coverage = [dict_coverage[i] for i in range(genome_size)]
+	print(f'#pos train_coverage: {len(train_coverage)}')
+	coverage_1 = round(sum(train_coverage) / genome_size, 3)
+	print(f'coverage_1: {coverage_1}')
 
-	with open(os.path.join(args.output_dir, f'{args.label}_train_coverage.tsv'), 'w') as f:
-		f.write(f'{total_bases}\t{genome_size}\t{coverage}')
+	# calculate average coverage
+	total_bases = sum(readsid_to_length.values())
+	coverage_2 = round(total_bases / genome_size, 3)
+	print(f'coverage_2: {coverage_2}')
+
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_coverage.tsv'), 'w') as f:
+		f.write(f'{total_bases}\t{genome_size}\t{coverage_1}')
+
+	return train_coverage
 	
 
 def LoadFnaFile(fasta_file):
@@ -159,8 +177,14 @@ def ConcatenateFiles(list_files, outfilename, data_type):
 					outf.write(inf.read())
 
 
+def RunBowtie(args, target, query, outfilename):
+	# build index
+	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/mapping/bowtie/ref'])
+	# map reads
+	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/mapping/bowtie/ref', '-U', f'{query}', '-S', f'{outfilename}'])
 
-def RunBlast(args, output_dir, query, subject=None, db=False):
+
+def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
 	if db:
 		sys.executable = blastn_exec
 		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', f'{args.output_dir}/mapping/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
@@ -175,10 +199,10 @@ def RunBlast(args, output_dir, query, subject=None, db=False):
 							outf.write(inf.read())
 			
 			# create database with all genomes
-			result = subprocess.run([makeblastdb_exec, '-in', f'{output_dir}/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/blastdb'])
+			result = subprocess.run([makeblastdb_exec, '-in', f'{output_dir}/all_training_genomes.fna',  '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{args.output_dir}/mapping/train_genomes_wo_label_blastdb'])
 			
 			# align reads to database or fasta file
-			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{output_dir}/test_train_blastn.out',
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/train_genomes_wo_label_blastdb', '-out', f'{outfilename}',
 				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident",
 				 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
@@ -188,7 +212,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False):
 		else:
 			print(f'run blast with {subject[0]}')
 			# align reads to database or fasta file
-			result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{output_dir}/test_test_blastn.out',
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{outfilename}',
 				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
 
 
@@ -403,7 +427,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 	# load data from training and testing genomes of label 1
 	target_fasta = Fasta(record_fasta) # ref/subject --> target --> testing genome
 	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
-	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
+	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
 	# print(target_fasta.__dict__)
 
 	# Initialize circos instance
@@ -509,23 +533,22 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# 		label_formatter=lambda v: f"{v/1000000:.1f} Mb"
 		# 	)
 
-	# # Blast genome comparison & plot match blocks
-	# min_r_pos -= 5
-	# comp_name2color = {}
-	# colors = ["black", "gray"]
-	# for idx, comp_fasta in enumerate(comp_fasta_list):
-	# 	align_coords = Blast([target_fasta, comp_fasta]).run()
-	# 	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	# 	# color = ColorCycler()
-	# 	comp_name2color[comp_fasta.name] = colors[idx]
-	# 	min_r_pos -= QUERY_TRACK_SIZE
-	# 	print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
-	# 	for sector in circos.sectors:
-	# 		sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
-	# 	for ac in align_coords:
-	# 		track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-	# 		rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-	# 		track.rect(ac.query_start, ac.query_end, color=rect_color)
+	# Blast genome comparison & plot match blocks
+	comp_name2color = {}
+	colors = ["black", "gray"]
+	for idx, comp_fasta in enumerate(comp_fasta_list):
+		align_coords = Blast([target_fasta, comp_fasta]).run()
+		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+		# color = ColorCycler()
+		comp_name2color[comp_fasta.name] = colors[idx]
+		min_r_pos -= QUERY_TRACK_SIZE
+		print(min_r_pos, min_r_pos + QUERY_TRACK_SIZE)
+		for sector in circos.sectors:
+			sector.add_track((min_r_pos, min_r_pos + QUERY_TRACK_SIZE), r_pad_ratio=0.1)	
+		for ac in align_coords:
+			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+			track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
@@ -595,40 +618,6 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
 		)
 
-		# # add tracks for FN reads that were mapped to a taxon from label 0
-		# min_r_pos -= 12
-		# fn_track_2 = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		# fn_track_2.axis(ec="orange")
-		# pos_fn_2_count = [0]*target_fasta.full_genome_length
-		# for readid, data in fn_alignments_pos_test.items():
-		# 	if readid in most_mapped_reads_id:
-		# 		for pos in range(data[1], data[2]+1, 1):
-		# 			pos_fn_2_count[pos-1] +=1
-		# y_values = list(range(min(pos_fn_2_count), max(pos_fn_2_count), 2))
-		# y_labels = list(map(str, y_values))
-		# fn_track_2.yticks(y_values, y_labels)
-		# fn_track_2.line(genome_pos, pos_fn_2_count, color="orange")
-		# 	# fn_track.rect(data[1], data[2], color="red", lw=0.1)
-		# print(f'added FN track')
-
-		# # add tracks for average sequence length of FN reads
-		# min_r_pos -= 12
-		# seq_track = sector.add_track((min_r_pos, min_r_pos + 10), r_pad_ratio=0.1)
-		# seq_track.axis(ec="green")
-		# avg_seq_length = []
-		# for i in range(1, target_fasta.full_genome_length+1, 1):
-		# 	if i in fn_positions_seq_length:
-		# 		avg_seq_length.append(sum(fn_positions_seq_length[i])/len(fn_positions_seq_length[i]))
-		# 	else:
-		# 		avg_seq_length.append(0)
-		# print(f'{len(avg_seq_length)}\n{statistics.mean(avg_seq_length)}\n{statistics.median(avg_seq_length)}\n{max(avg_seq_length)}\n{min(avg_seq_length)}')
-		# y_values = list(range(min([math.ceil(x) for x in avg_seq_length]), max(math.ceil(x) for x in avg_seq_length), 200))
-		# y_labels = list(map(str, y_values))
-		# seq_track.yticks(y_values, y_labels)
-		# # seq_track.bar(avg_seq_length, pos_seq_length, color="green", lw=0.5)
-		# seq_track.line(genome_pos, avg_seq_length, color="green")
-		# print(f'added sequence length track')
-
 	# save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
@@ -643,7 +632,7 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of training genomes')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
-	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
+	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--label', type=str, help='label of species investigated', required=True)
 	parser.add_argument('--circos', help='if selected, this option will create a circos plot', action='store_true', default=False)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
@@ -661,6 +650,8 @@ if __name__ == "__main__":
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'mapping')):
 		os.makedirs(os.path.join(args.output_dir, 'mapping'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
+		os.makedirs(os.path.join(args.output_dir, 'train_coverage'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
 		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
@@ -725,9 +716,6 @@ if __name__ == "__main__":
 		content = f.readlines()
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# calculate coverage of training genome
-	GetTrainCoverage(args)
-
 	# do FN analysis
 	# create fasta file with testing reads from label 1
 	with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
@@ -735,7 +723,7 @@ if __name__ == "__main__":
 			if k in fn_sequences or k in tp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 	# blast testing reads to testing genome		
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]])
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[args.test_genomes_info[args.label][1]], outfilename=f'{output_dir}/all_test_pos_test_blastn.out')
 	# get mapping of false negatives to testing genome from label 1
 	fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_test_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
@@ -744,7 +732,7 @@ if __name__ == "__main__":
 
 	# blast testing reads to training genomes from other species
 	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes)
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{output_dir}/all_test_pos_train_blastn.out')
 	# fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# get taxonomy of mapped training genomes and taxon with most reads mapped
 	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
@@ -764,8 +752,6 @@ if __name__ == "__main__":
 
 	# create circos plot
 	if args.circos:
-		if len(records) == 1:
-			args.test_genomes_info[args.label][1]
 		for rec in records:
 			# create fasta file for each record
 			if len(records) == 1:
@@ -787,6 +773,18 @@ if __name__ == "__main__":
 	# # 		if k in fp_sequences:
 	# # 			outf.write(f'>{k}\n{v}\n')
 	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
+
+	# calculate coverage of training genome
+	train_coverage = GetTrainCoverage(args)
+
+	# blast FP reads to train genome of label 1
+	# create fasta file with all FP reads
+	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
+		for k, v in readid_to_read.items():
+			if k in fp_sequences:
+				outf.write(f'>{k}\n{v}\n')
+
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/FP_pos_train_blastn.out')
 
 	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
 	# fp_taxa = defaultdict(int)
@@ -811,7 +809,7 @@ if __name__ == "__main__":
 	# 				outf.write(f'>{k}\n{v}\n')
 
 	# 	# run blast
-	# 	RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta])
+	# 	RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=)
 
 	# 	# get alignments info
 	# 	fp_alignments = GetAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
