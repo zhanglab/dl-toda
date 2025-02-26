@@ -541,7 +541,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 		# color = ColorCycler()
 		comp_name2color[comp_fasta.name] = colors[idx]
-				for sector in circos.sectors:
+		for sector in circos.sectors:
 			sector.add_track((min_r_pos-QUERY_TRACK_SIZE, min_r_pos), r_pad_ratio=0.1)	
 		for ac in align_coords:
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
