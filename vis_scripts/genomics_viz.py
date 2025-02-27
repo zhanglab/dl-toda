@@ -65,11 +65,12 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 				end_new_locus_tag = annot_parsed[end_locus_tag][2]
 				start_locus_strand = annot_parsed[start_locus_tag][3]
 				end_locus_strand = annot_parsed[end_locus_tag][3]
-				print(start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
+				print(line)
+				print(gi_id, start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
 				if end_locus_tag_end > start_locus_tag_start:
-					gi_sequence = training_seq[end_locus_tag_start:start_locus_tag_end+1]
-				else:
 					gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
+				else:
+					gi_sequence = training_seq[end_locus_tag_end:start_locus_tag_start+1]
 				print(gi_sequence)
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
