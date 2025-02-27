@@ -47,9 +47,11 @@ def GetGIs(args, annot_info, training_seq, testing_fasta):
 	annot_parsed = defaultdict(list)
 	for gene_id, data in annot_info.items():
 		if data[0] == 'protein_coding':
-			annot_parsed[data[7]] = [data[6], data[1], data[2], data[0]] # new locus tag, begin, end, gene type
+			if data[7] != '':
+				annot_parsed[data[7]] = [data[6], data[1], data[2], data[0]] # new locus tag, begin, end, gene type
 		elif data[0] == 'rRNA' or data[0] == 'tRNA':
-			annot_parsed[data[6]] = [data[5], data[1], data[2], data[0]]
+			if data[6] != '':
+				annot_parsed[data[6]] = [data[5], data[1], data[2], data[0]]
 	print(annot_parsed)
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
