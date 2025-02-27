@@ -50,7 +50,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 	for gene_id, data in locus_tags_info.items():
 		if data[2] != '':
 			annot_parsed[data[2]] = [data[0], data[1], gene_id]
-	print(type(training_seq), len(training_seq))
+	print(type(training_seq), len(training_seq), training_seq[:10])
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
