@@ -731,7 +731,7 @@ if __name__ == "__main__":
 	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{output_dir}/all_test_pos_train_blastn.out')
 	fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/test_train_blastn.out', sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
-	get taxonomy of mapped training genomes and taxon with most reads mapped
+	# get taxonomy of mapped training genomes and taxon with most reads mapped
 	_ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, sequence_length, readid_to_read)
 	
 	# do TP analysis
