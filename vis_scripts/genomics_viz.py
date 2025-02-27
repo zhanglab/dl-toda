@@ -112,7 +112,7 @@ def GetTrainCoverage(args):
 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	print(ref_info)
 
-	train_coverage = {}
+	train_coverage = []
 	for i in range(len(ref_info)):
 		ref = ref_info[i][0]
 		length_ref = ref_info[i][1]
@@ -120,10 +120,10 @@ def GetTrainCoverage(args):
 		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
 		# get coverage per base
-		train_coverage = [dict_coverage[i] for i in range(length_ref)]
-		print(f'#pos train_coverage: {len(train_coverage)}')
-		coverage_1 = round(sum(train_coverage) / length_ref, 3)
-		train_coverage[ref] = coverage_1
+		list_base_coverage = [dict_coverage[i] for i in range(length_ref)]
+		print(f'#pos train_coverage: {len(list_base_coverage)}')
+		coverage_1 = round(sum(list_base_coverage) / length_ref, 3)
+		train_coverage.append(list_base_coverage)
 		print(f'coverage_1: {coverage_1}')
 
 		# calculate average coverage
@@ -134,7 +134,7 @@ def GetTrainCoverage(args):
 		with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
 			f.write(f'{total_bases}\t{length_ref}\t{coverage_1}')
 
-	return train_coverage
+	return train_coverage, ref_info
 	
 
 def LoadFnaFile(fasta_file):
@@ -777,8 +777,9 @@ if __name__ == "__main__":
 	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
 
 	# calculate coverage of training genome
-	train_coverage = GetTrainCoverage(args)
-	print(train_coverage)
+	train_coverage, ref_info = GetTrainCoverage(args)
+	print(len(train_coverage))
+	print(ref_info)
 
 	# blast FP reads to train genome of label 1
 	# create fasta file with all FP reads
