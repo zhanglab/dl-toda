@@ -55,6 +55,7 @@ def GetGIs(args, annot_info, training_seq, testing_fasta):
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
+			print(line.rstrip().split('\t')[2].split('-'))
 			start_locus_tag = line.rstrip().split('\t')[2].split('-')[0]
 			end_locus_tag = line.rstrip().split('\t')[2].split('-')[1]
 			if start_locus_tag in annot_parsed and end_locus_tag in annot_parsed:
