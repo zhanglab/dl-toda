@@ -425,8 +425,9 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 		if len(list_readid) >= 3:
 			print(list_readid)
 			for readid in list_readid:
-				gene_id = readid_w_gene[readid][2]
-				genes_of_interest[gene_id] = genes[gene_id]
+				if readid in readid_w_gene:
+					gene_id = readid_w_gene[readid][2]
+					genes_of_interest[gene_id] = genes[gene_id]
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
