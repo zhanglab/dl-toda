@@ -49,9 +49,8 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 	annot_parsed = defaultdict(list)
 	for gene_id, data in locus_tags_info.items():
 		if data[2] != '':
-			print(gene_id, data[2])
 			annot_parsed[data[2]] = [data[0], data[1], gene_id]
-
+	print(training_seq)
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
@@ -65,6 +64,8 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 				end_locus_tag_start = annot_parsed[end_locus_tag][0]
 				end_locus_tag_end = annot_parsed[end_locus_tag][1]
 				end_new_locus_tag = annot_parsed[end_locus_tag][2]
+				print(start_locus_tag_start, type(start_locus_tag_start))
+				print(end_locus_tag_end, type(end_locus_tag_end))
 				gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
