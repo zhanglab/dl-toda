@@ -549,8 +549,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	colors = ["black", "gray"]
 	# store percentage identity between matching regions
 	percent_identity = []
-	# create dictionary mapping positions in training genome to positions in testing genome
-	train_to_test = {}
+
 	for idx, comp_fasta in enumerate(comp_fasta_list):
 		align_coords = Blast([target_fasta, comp_fasta]).run()
 		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
@@ -565,9 +564,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
 			query_pos = list(range(ac.query_start, ac.query_end+1, 1))
 			ref_pos = list(range(ac.ref_start, ac.ref_end+1, 1))
-			assert len(query_pos) == len(ref_pos)
-			for p in range(ac.query_start, ac.query_end, 1):
-				train_to_test[p] = 
+
 		min_r_pos -= QUERY_TRACK_SIZE
 
 	# get stats on percentage identity
