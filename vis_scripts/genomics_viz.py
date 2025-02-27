@@ -48,11 +48,10 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 	# parse annotation information
 	annot_parsed = defaultdict(list)
 	for gene_id, data in locus_tags_info.items():
-		if data[3] != '':
+		if data[2] != '':
 			print(gene_id, data[2])
-			annot_parsed[data[3]] = [data[0], data[1], data[2]]
+			annot_parsed[data[3]] = [data[0], data[1], gene_id]
 
-	print(annot_parsed)
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
@@ -69,7 +68,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 				gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
-				f.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{end_locus_tag_start-start_locus_tag_start}\n')
+				f.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\n')
 
 	# blast genomic islands to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/train_genomic_islands_test_blastn.out')
@@ -351,7 +350,6 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				biotype = ''
 				function = ''
 				old_locus_tag = ''
-				locus_tag = ''
 				for e in content[i].rstrip().split('\t')[8].split(';'):
 					e = e.replace('"', '')
 					# get all go_function entries and choose go_function with the most details
@@ -367,14 +365,10 @@ def GetAnnotInfo(args, genome_id, input_dir):
 						biotype = e.split(' ')[2]
 					if 'old_locus_tag' in e:
 						old_locus_tag = e.split(' ')[2]
-					if 'locus_tag' in e:
-						locus_tag = e.split(' ')[2]
-				if old_locus_tag != '':
-					print(old_locus_tag)
-					print(content[i])
+
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
-					locus_tags_info[gene_id] = [begin, end, locus_tag, old_locus_tag]
+					locus_tags_info[gene_id] = [begin, end, old_locus_tag]
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 					if function == '':
 						function = gene
