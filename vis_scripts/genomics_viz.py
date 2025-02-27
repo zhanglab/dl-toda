@@ -822,7 +822,7 @@ if __name__ == "__main__":
 	# # get mapping of false negatives to testing genome from label 1
 	# fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# # get annotations info
-	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	# pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
 	# # # blast testing reads to training genomes from other species
@@ -849,7 +849,8 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if args.genomic_islands is not None and args.circos:
-		gis_info = GetGIs(args, pos_test_annot_info, training_records[0].seq, testing_fasta)
+		pos_train_annot_info = GetAnnotInfo(args, args.train_genomes_info[args.label][0], input_dir)
+		gis_info = GetGIs(args, pos_train_annot_info, training_records[0].seq, testing_fasta)
 	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_info)
 	# else:
