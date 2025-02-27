@@ -635,26 +635,29 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
 	fn_not_matching_regions = set()
 	for read_id, data in fn_alignments_pos_test.items():
-		for pos in range(data[2], data[3]+1, 1):
-			if pos in pos_matching_regions:
-				fn_matching_regions.add(pos)
+		start_pos = data[2]
+		end_pos = data[3]
+		for i in range(len(matching_regions)):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+				fn_matching_regions.add(read_id)
 			else:
-				fn_not_matching_regions.add(pos)
+				fn_not_matching_regions.add(read_id)
 
-	tp_matching_regions = set() 
+	tp_matching_regions = set()
 	tp_not_matching_regions = set()
 	for read_id, data in tp_alignments_pos_test.items():
-		for pos in range(data[2], data[3]+1, 1):
-			if pos in pos_matching_regions:
-				tp_matching_regions.add(pos)
+		start_pos = data[2]
+		end_pos = data[3]
+		for i in range(len(matching_regions)):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+				tp_matching_regions.add(read_id)
 			else:
-				tp_not_matching_regions.add(pos)
+				tp_not_matching_regions.add(read_id)
 
-	print(f'% of matching regions mapped by FN reads\t{round(len(fn_matching_regions)/len(pos_matching_regions), 3)*100}')
-	print(f'% of not matching regions mapped by FN reads\t{round(len(fn_not_matching_regions)/len(pos_not_matching_regions), 3)*100}')
-
-	print(f'% of matching regions mapped by TP reads\t{round(len(tp_matching_regions)/len(pos_matching_regions), 3)*100}')
-	print(f'% of not matching regions mapped by TP reads\t{round(len(tp_not_matching_regions)/len(pos_not_matching_regions), 3)*100}')
+	print(f'% of FN reads mapped to matching regions\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
+	print(f'% of FN reads mapped to not matching regions\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
+	print(f'% of TP reads mapped to matching regions\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
+	print(f'% of TP reads mapped to not matching regions\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
