@@ -126,21 +126,19 @@ def GetTrainCoverage(args, training_fasta):
 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	print(ref_info)
 
-	train_coverage = []
-	for i in range(len(ref_info)):
-		ref = ref_info[i][0]
-		length_ref = ref_info[i][1]
-		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
+	ref = ref_info[i][0]
+	length_ref = ref_info[i][1]
+	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
-		# get coverage per base
-		list_base_coverage = [dict_coverage[i] for i in range(length_ref)]
-		coverage = round(sum(list_base_coverage) / length_ref, 3)
-		train_coverage.append(list_base_coverage)
+	# get coverage per base
+	base_coverage = [dict_coverage[i] for i in range(length_ref)]
+	total_bases = sum(base_coverage)
+	coverage = round(total_bases / length_ref, 3)
 
-		with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
-			f.write(f'{total_bases}\t{length_ref}\t{coverage}')
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
+		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
 
-	return train_coverage, ref_info, train_reads_id
+	return base_coverage, ref_info, train_reads_id
 	
 
 def LoadFnaFile(fasta_file):
