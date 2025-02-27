@@ -57,6 +57,7 @@ def GetGIs(args, annot_info, training_seq, testing_fasta):
 			gi_id = line.rstrip().split('\t')[1]
 			start_locus_tag = line.rstrip().split('\t')[2]
 			end_locus_tag = line.rstrip().split('\t')[3]
+			print(start_locus_tag, end_locus_tag)
 			if start_locus_tag in annot_parsed and end_locus_tag in annot_parsed:
 				start_locus_tag_start = annot_parsed[start_locus_tag][1]
 				start_locus_tag_end = annot_parsed[start_locus_tag][2]
