@@ -38,6 +38,22 @@ seed = 42
 random.seed(seed)
 
 
+def CheckGenomes(args):
+
+	# load testing fasta file
+	with open(args.test_genomes_info[args.label][1], "r") as handle:
+		test_records = list(SeqIO.parse(handle, "fasta"))
+
+	# load training fasta file
+	with open(args.train_genomes_info[args.label][1], "r") as handle:
+		train_records = list(SeqIO.parse(handle, "fasta"))
+
+	assert len(test_records) == 1, f'{arg.label}\t{args.test_genomes_info[args.label][0]} has more than 1 chromosome'
+	assert len(train_records) == 1, f'{arg.label}\t{args.train_genomes_info[args.label][0]} has more than 1 chromosome'
+
+	return args.test_genomes_info[args.label][1], test_records, args.train_genomes_info[args.label][1], train_records
+
+
 def GetGCSkew(sequence):
 	all_gc_skew = []
 	window_size = int(len(sequence) / 500)
@@ -419,12 +435,12 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
 
-def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath):
+def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath):
 	
 	# load data from training and testing genomes of label 1
-	target_fasta = Fasta(record_fasta) # ref/subject --> target --> testing genome
+	target_fasta = Fasta(testing_fasta) # ref/subject --> target --> testing genome
 	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
-	comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1]])) # query --> training genome
+	comp_fasta_list = list(map(Fasta, [training_fasta])) # query --> training genome
 	# print(target_fasta.__dict__)
 
 	# Initialize circos instance
@@ -541,7 +557,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		for sector in circos.sectors:
 			sector.add_track((min_r_pos-QUERY_TRACK_SIZE, min_r_pos), r_pad_ratio=0.1)	
 		for ac in align_coords:
-			print(ac.query_name, ac.query_start, ac.query_end)
+			print(ac, ac.query_name, ac.query_start, ac.query_end)
 			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			track.rect(ac.query_start, ac.query_end, color=rect_color)
@@ -551,24 +567,24 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(target_fasta.full_genome_length))
 
-		# add track for TP reads
-		min_r_pos -= 2
-		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="dodgerblue")
-		pos_tp_count = [0]*target_fasta.full_genome_length
-		for readid, data in tp_alignments_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_tp_count[pos-1] +=1
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="dodgerblue")
-			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		print(min_r_pos, min_r_pos + 10)
-		print(f'added TP track')
+		# # add track for TP reads
+		# min_r_pos -= 2
+		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		# tp_track.axis(ec="dodgerblue")
+		# pos_tp_count = [0]*target_fasta.full_genome_length
+		# for readid, data in tp_alignments_pos_test.items():
+		# 	for pos in range(data[2], data[3]+1, 1):
+		# 		pos_tp_count[pos-1] +=1
+		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
+		# y_labels = list(map(str, y_values))
+		# tp_track.yticks(y_values, y_labels)
+		# tp_track.line(genome_pos, pos_tp_count, color="dodgerblue")
+		# 	# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+		# print(min_r_pos, min_r_pos + 10)
+		# print(f'added TP track')
 
 		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 12
+		min_r_pos -= 2
 		fn_track_1 = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track_1.axis(ec="red")
 		pos_fn_1_count = [0]*target_fasta.full_genome_length
@@ -586,7 +602,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# Plot GC skew
 		min_r_pos -= 11
 		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gcskews = GetGCSkew(record_seq)
+		pos_list, gcskews = GetGCSkew(test_record_seq)
 		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
 		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
 		abs_max_gcskew = np.max(np.abs(gcskews))
@@ -601,10 +617,10 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		# Plot GC content
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content, genome_gc_content = GetGCContent(record_seq)
-		print('gc_content', gc_content[:10], genome_gc_content)
-		gc_content = gc_content - genome_gc_content
-		print('gc_content', gc_content[:10], genome_gc_content)
+		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		print('gc_content', gc_content[:10], test_genome_gc_content)
+		gc_content = gc_content - test_genome_gc_content
+		print('gc_content', gc_content[:10], test_genome_gc_content)
 		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
 		negative_gc_content = np.where(gc_content < 0, gc_content, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content))
@@ -615,6 +631,11 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 		gc_content_track.fill_between(
 			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
 		)
+		
+		# report GC content of train and test genomes
+		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		with open(os.path.join(args.output_dir, f'{args.label}_GC_content'), 'w') as f:
+			f.write(f'{test_genome_gc_content}\t{train_genome_gc_content}')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
@@ -641,21 +662,6 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	input_dir = os.getcwd()
-
-	# create output directory
-	args.output_dir = os.path.join(os.getcwd(), args.label)
-	if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
-	if not os.path.isdir(os.path.join(args.output_dir, 'mapping')):
-		os.makedirs(os.path.join(args.output_dir, 'mapping'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
-		os.makedirs(os.path.join(args.output_dir, 'train_coverage'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
-		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
-		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
-
-	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
 	
 	# get dltoda taxonomy
 	path_dl_toda_tax = '/'.join(
@@ -672,6 +678,26 @@ if __name__ == "__main__":
 	with open(args.training_fasta, 'r') as f:
 		content = f.readlines()
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
+
+	# verify that the genomes investigated only have one chromosome
+	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes():
+	print(testing_records)
+	print(testing_records[0].seq)
+	
+	# create output directories
+	args.output_dir = os.path.join(os.getcwd(), args.label)
+	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
+	if not os.path.isdir(os.path.join(args.output_dir, 'mapping')):
+		os.makedirs(os.path.join(args.output_dir, 'mapping'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
+		os.makedirs(os.path.join(args.output_dir, 'train_coverage'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
+		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
+		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
+
+	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
 
 	# get reads in testing set fasta file
 	readid_to_read, sequence_length, ordered_reads_id = LoadFnaFile(args.testing_fna_file)
@@ -744,23 +770,10 @@ if __name__ == "__main__":
 	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# load testing fasta file
-	with open(args.test_genomes_info[args.label][1], "r") as handle:
-		records = list(SeqIO.parse(handle, "fasta"))
-
 	# create circos plot
 	if args.circos:
-		for rec in records:
-			# create fasta file for each record
-			if len(records) == 1:
-				record_fasta = args.test_genomes_info[args.label][1]
-			else:
-				with open(os.path.join(args.output_dir, f'{rec.id}.fna'), "w") as outf:
-					SeqIO.write(rec, outf, "fasta")
-				record_fasta = os.path.join(args.output_dir, f'{rec.id}.fna')
-
-			FNCircosPlot(args, rec.id, rec.seq, record_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-				os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 
 	# # do FP analysis
