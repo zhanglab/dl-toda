@@ -49,8 +49,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 	annot_parsed = defaultdict(list)
 	for gene_id, data in locus_tags_info.items():
 		if data[2] != '':
-			annot_parsed[data[2]] = [data[0], data[1], gene_id]
-	print(type(training_seq), len(training_seq), training_seq[2:10])
+			annot_parsed[data[2]] = [data[0], data[1], gene_id, data[3]]
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
@@ -64,12 +63,17 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 				end_locus_tag_start = annot_parsed[end_locus_tag][0]
 				end_locus_tag_end = annot_parsed[end_locus_tag][1]
 				end_new_locus_tag = annot_parsed[end_locus_tag][2]
-				print(start_locus_tag_start, end_locus_tag_end)
-				gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
+				start_locus_strand = annot_parsed[start_locus_tag][3]
+				end_locus_strand = annot_parsed[end_locus_tag][3]
+				print(start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
+				if end_locus_tag_end > start_locus_tag_start:
+					gi_sequence = training_seq[end_locus_tag_start:start_locus_tag_end+1]
+				else:
+					gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
 				print(gi_sequence)
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
-				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\n')
+				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{start_locus_strand}\t{end_locus_strand}\n')
 
 	# blast genomic islands to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/train_genomic_islands_test_blastn.out')
@@ -369,7 +373,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
-					locus_tags_info[gene_id] = [begin, end, old_locus_tag]
+					locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 					if function == '':
 						function = gene
