@@ -116,19 +116,19 @@ def GetTrainCoverage(args):
 	for i in range(len(ref_info)):
 		ref = ref_info[i][0]
 		length_ref = ref_info[i][1]
-		print(ref)
+		print(ref, length_ref)
 		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
 		# get coverage per base
 		train_coverage = [dict_coverage[i] for i in range(genome_size)]
 		print(f'#pos train_coverage: {len(train_coverage)}')
-		coverage_1 = round(sum(train_coverage) / genome_size, 3)
+		coverage_1 = round(sum(train_coverage) / length_ref, 3)
 		train_coverage[ref] = coverage_1
 		print(f'coverage_1: {coverage_1}')
 
 		# calculate average coverage
 		total_bases = sum(readsid_to_length.values())
-		coverage_2 = round(total_bases / genome_size, 3)
+		coverage_2 = round(total_bases / length_ref, 3)
 		print(f'coverage_2: {coverage_2}')
 
 		with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
