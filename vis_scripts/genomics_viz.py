@@ -138,7 +138,7 @@ def GetTrainCoverage(args, training_fasta):
 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
 		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
 
-	return base_coverage, ref_info, train_reads_id
+	return base_coverage, ref_info, train_reads_id, readsid_to_length
 	
 
 def LoadFnaFile(fasta_file):
@@ -428,7 +428,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
 
-def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath):
+def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -550,20 +550,12 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
-		cov_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos-5
 		for ac in align_coords:
 			percent_identity.append(ac.identity)
 			# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 			print(ac)
-			# # get coverage of training genome within the alignment
-			# align_cov = [train_coverage[x] for x in range(ac.query_start, ac.query_end+1, 1)]
-			# align_pos = 
-			# cov_track.line(, align_cov, color="orangered")
-
-	min_r_pos -= QUERY_TRACK_SIZE
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -571,13 +563,27 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
-		genome_pos = list(range(target_fasta.full_genome_length))
+		genome_pos = list(range(query_fasta.full_genome_length))
+
+		# add tracks for coverage of training genome
+		train_cov_test = [0]*query_fasta.full_genome_length
+		for readid, data in alignments_train_pos_test.items():
+			for pos in range(data[2], data[3]+1, 1):
+				train_cov_test[pos-1] += train_coverage[pos-1]
+		min_r_pos -= 2
+		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		cov_track.axis(ec="blue")
+		y_values = list(range(min(train_coverage), max(train_coverage), 1))
+		y_labels = list(map(str, y_values))
+		cov_track.yticks(y_values, y_labels)
+		cov_track.line(genome_pos, train_cov_test, color="blue")
+		print(f'added COV track')
 
 		# # add track for TP reads
 		# min_r_pos -= 2
 		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		# tp_track.axis(ec="dodgerblue")
-		# pos_tp_count = [0]*target_fasta.full_genome_length
+		# pos_tp_count = [0]*query_fasta.full_genome_length
 		# for readid, data in tp_alignments_pos_test.items():
 		# 	for pos in range(data[2], data[3]+1, 1):
 		# 		pos_tp_count[pos-1] +=1
@@ -589,20 +595,19 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# print(min_r_pos, min_r_pos + 10)
 		# print(f'added TP track')
 
-		# add tracks for FN reads that didn't map to any training genomes 
-		min_r_pos -= 2
-		fn_track_1 = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fn_track_1.axis(ec="red")
-		pos_fn_1_count = [0]*target_fasta.full_genome_length
+		# add tracks for FN reads 
+		min_r_pos -= 12
+		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		fn_track.axis(ec="orangered")
+		pos_fn_count = [0]*query_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			# if readid not in most_mapped_reads_id:
 			for pos in range(data[2], data[3]+1, 1):
-				pos_fn_1_count[pos-1] +=1
-		y_values = list(range(min(pos_fn_1_count), max(pos_fn_1_count), 2))
+				pos_fn_count[pos-1] +=1
+		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track_1.yticks(y_values, y_labels)
-		fn_track_1.line(genome_pos, pos_fn_1_count, color="orangered")
-			# fn_track.rect(data[1], data[2], color="red", lw=0.1)
+		fn_track_1.line(genome_pos, pos_fn_count, color="orangered")
 		print(f'added FN track')
 
 		# Plot GC skew
@@ -707,9 +712,6 @@ if __name__ == "__main__":
 	# get reads in testing set fasta file
 	test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_fna_file)
 
-	# get reads in testing set fasta file
-	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.training_fna_file)
-
 	# get FN, FP and TP sequences
 	fn_sequences = set()
 	fp_sequences = set()
@@ -779,19 +781,14 @@ if __name__ == "__main__":
 	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
 	# calculate coverage of training genome
-	train_coverage, ref_info, train_pos_reads_id = GetTrainCoverage(args, training_fasta)
+	train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta)
 	# blast training reads to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/all_train_pos_test_blastn.out')
 	alignments_train_pos_test = GetAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/mapping/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	print(alignments_train_pos_test)
-	print(len(alignments_train_pos_test))
-
-	
-
-
+	alignments_train_pos_test
 	# create circos plot
 	if args.circos:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 
