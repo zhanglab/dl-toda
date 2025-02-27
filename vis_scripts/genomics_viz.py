@@ -808,7 +808,7 @@ if __name__ == "__main__":
 					outf.write(f'>{k}\n{v}\n')
 
 		# run blast
-		RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=)
+		RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
 
 		# get alignments info
 		fp_alignments = GetAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fp_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
