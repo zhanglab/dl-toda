@@ -423,7 +423,6 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	genes_of_interest = defaultdict(list)
 	for pos, list_readid in pos_readid.items():
 		if len(list_readid) >= 3:
-			print(list_readid)
 			for readid in list_readid:
 				if readid in readid_w_gene:
 					gene_id = readid_w_gene[readid][2]
