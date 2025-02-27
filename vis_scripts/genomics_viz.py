@@ -782,7 +782,7 @@ if __name__ == "__main__":
 	train_coverage, ref_info, train_pos_reads_id = GetTrainCoverage(args, training_fasta)
 	# blast training reads to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/all_train_pos_test_blastn.out')
-	alignments_train_pos_test = GetAlignmentsInfo(train_pos_reads_id, f'{args.output_dir}/mapping/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	alignments_train_pos_test = GetAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/mapping/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	print(alignments_train_pos_test)
 	print(len(alignments_train_pos_test))
 
