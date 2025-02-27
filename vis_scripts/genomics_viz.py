@@ -242,9 +242,9 @@ def ConcatenateFiles(list_files, outfilename, data_type):
 
 def RunBowtie(args, target, query, outfilename):
 	# build index
-	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref'])
+	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref', '--quiet'])
 	# map reads
-	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}'])
+	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}', '--quiet'])
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
@@ -682,64 +682,66 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
 
-		# # add tracks for coverage of training genome
-		# min_r_pos -= 5
-		# train_cov_test = [0]*query_fasta.full_genome_length
-		# for readid, data in alignments_train_pos_test.items():
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		train_cov_test[pos-1] += train_coverage[pos-1]
-		# cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# cov_track.axis(ec="blue")
-		# y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		# y_labels = list(map(str, y_values))
-		# cov_track.yticks(y_values, y_labels)
-		# cov_track.line(genome_pos, train_cov_test, color="blue")
-		# print(f'added COV track')
+		# add tracks for coverage of training genome
+		min_r_pos -= 5
+		train_cov_test = [0]*query_fasta.full_genome_length
+		for readid, data in alignments_train_pos_test.items():
+			for pos in range(data[2], data[3]+1, 1):
+				train_cov_test[pos-1] += train_coverage[pos-1]
+		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		cov_track.axis(ec="blue")
+		y_values = list(range(min(train_coverage), max(train_coverage), 2))
+		y_labels = list(map(str, y_values))
+		cov_track.yticks(y_values, y_labels)
+		cov_track.line(genome_pos, train_cov_test, color="blue")
+		print(f'added COV track')
 
-		# # add track for TP reads
-		# min_r_pos -= 12
-		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# tp_track.axis(ec="darkviolet")
-		# pos_tp_count = [0]*query_fasta.full_genome_length
-		# for readid, data in tp_alignments_pos_test.items():
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		pos_tp_count[pos-1] +=1
-		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
-		# y_labels = list(map(str, y_values))
-		# tp_track.yticks(y_values, y_labels)
-		# tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
-		# 	# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		# print(f'added TP track')
+		# add track for TP reads
+		min_r_pos -= 12
+		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		tp_track.axis(ec="darkviolet")
+		pos_tp_count = [0]*query_fasta.full_genome_length
+		for readid, data in tp_alignments_pos_test.items():
+			for pos in range(data[2], data[3]+1, 1):
+				pos_tp_count[pos-1] +=1
+		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
+		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
+		y_labels = list(map(str, y_values))
+		tp_track.yticks(y_values, y_labels)
+		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
+			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+		print(f'added TP track')
 
-		# # add tracks for FN reads 
-		# min_r_pos -= 12
-		# fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# fn_track.axis(ec="orangered")
-		# pos_fn_count = [0]*query_fasta.full_genome_length
-		# for readid, data in fn_alignments_pos_test.items():
-		# 	# if readid not in most_mapped_reads_id:
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		pos_fn_count[pos-1] +=1
-		# y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
-		# y_labels = list(map(str, y_values))
-		# fn_track.yticks(y_values, y_labels)
-		# fn_track.line(genome_pos, pos_fn_count, color="orangered")
-		# print(f'added FN track')
+		# add tracks for FN reads 
+		min_r_pos -= 12
+		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		fn_track.axis(ec="orangered")
+		pos_fn_count = [0]*query_fasta.full_genome_length
+		for readid, data in fn_alignments_pos_test.items():
+			# if readid not in most_mapped_reads_id:
+			for pos in range(data[2], data[3]+1, 1):
+				pos_fn_count[pos-1] +=1
+		print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
+		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
+		y_labels = list(map(str, y_values))
+		fn_track.yticks(y_values, y_labels)
+		fn_track.line(genome_pos, pos_fn_count, color="orangered")
+		print(f'added FN track')
 
-		# # Plot GC skew
-		# min_r_pos -= 11
-		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		# pos_list, gcskews = GetGCSkew(test_record_seq)
-		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		# abs_max_gcskew = np.max(np.abs(gcskews))
-		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		# gcskew_track.fill_between(
-		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
-		# )
-		# gcskew_track.fill_between(
-		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		# )
+		# Plot GC skew
+		min_r_pos -= 11
+		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gcskews = GetGCSkew(test_record_seq)
+		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		abs_max_gcskew = np.max(np.abs(gcskews))
+		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		gcskew_track.fill_between(
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
+		)
+		gcskew_track.fill_between(
+			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		)
 
 		# Plot GC content
 		min_r_pos -= 5
