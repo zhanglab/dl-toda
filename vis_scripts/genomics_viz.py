@@ -39,7 +39,7 @@ random.seed(seed)
 
 
 
-def GetGIs(args, annot_info, training_seq, testing_fasta, input_dir):
+def GetGIs(args, training_seq, testing_fasta, input_dir):
 	f = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
