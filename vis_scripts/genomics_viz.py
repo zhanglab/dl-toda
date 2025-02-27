@@ -612,6 +612,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
+	matching_regions = []
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
@@ -620,7 +621,40 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
-			print(ac)
+			matching_regions.append([ac.query_start, ac.query_end, ac.identity])
+
+	pos_matching_regions = set()
+	for i in range(len(matching_regions)):
+		for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
+			pos_matching_regions.add(j)
+
+	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
+	print(f'% testing genome that matches to training genome\t{len(num_pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(num_pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	print(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+
+	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
+	fn_not_matching_regions = set()
+	for read_id, data in fn_alignments_pos_test.items():
+		for pos in range(data[2], data[3]+1, 1):
+			if pos in pos_matching_regions:
+				fn_matching_regions.add(j)
+			else:
+				fn_not_matching_regions.add(j)
+
+	tp_matching_regions = set() 
+	tp_not_matching_regions = set()
+	for read_id, data in tp_alignments_pos_test.items():
+		for pos in range(data[2], data[3]+1, 1):
+			if pos in pos_matching_regions:
+				tp_matching_regions.add(j)
+			else:
+				tp_not_matching_regions.add(j)
+
+	print(f'% of matching regions mapped by FN reads\t{round(len(fn_matching_regions)/len(pos_matching_regions), 3)*100}')
+	print(f'% of not matching regions mapped by FN reads\t{round(len(fn_not_matching_regions)/len(pos_not_matching_regions), 3)*100}')
+
+	print(f'% of matching regions mapped by TP reads\t{round(len(tp_matching_regions)/len(pos_matching_regions), 3)*100}')
+	print(f'% of not matching regions mapped by TP reads\t{round(len(tp_not_matching_regions)/len(pos_not_matching_regions), 3)*100}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -693,9 +727,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		print('gc_content', gc_content[:10], test_genome_gc_content)
+		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
 		gc_content = gc_content - test_genome_gc_content
-		print('gc_content', gc_content[:10], test_genome_gc_content)
+		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
 		print(len(gc_content))
 		print(len(pos_list))
 		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
