@@ -23,7 +23,7 @@ from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 ColorCycler.set_cmap("Set1")
 
-QUERY_TRACK_SIZE = 5
+# QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
 TICKS_INTERVAL = 100000
 bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
@@ -130,15 +130,12 @@ def GetTrainCoverage(args, training_fasta):
 	for i in range(len(ref_info)):
 		ref = ref_info[i][0]
 		length_ref = ref_info[i][1]
-		print(ref, length_ref)
 		dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
 		# get coverage per base
 		list_base_coverage = [dict_coverage[i] for i in range(length_ref)]
-		print(f'#pos train_coverage: {len(list_base_coverage)}')
 		coverage = round(sum(list_base_coverage) / length_ref, 3)
 		train_coverage.append(list_base_coverage)
-		print(f'coverage_1: {coverage_1}')
 
 		with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
 			f.write(f'{total_bases}\t{length_ref}\t{coverage}')
@@ -436,20 +433,19 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath):
 	
 	# load data from training and testing genomes of label 1
-	target_fasta = Fasta(testing_fasta) # ref/subject --> target --> testing genome
-	# comp_fasta_list = list(map(Fasta, [args.train_genomes_info[args.label][1], args.train_genomes_info[most_mapped_taxon][1]])) # query --> training genome
-	comp_fasta_list = list(map(Fasta, [training_fasta])) # query --> training genome
-	# print(target_fasta.__dict__)
+	query_fasta = Fasta(testing_fasta) # query --> testing genome
+	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
 
 	# Initialize circos instance
 	circos = Circos(
-	    sectors=target_fasta.get_seqid2size(),
-	    # space=0 if len(target_fasta.get_seqid2size()) == 1 else 2,
+	    sectors=ref_fasta.get_seqid2size(),
+	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
-	print('define space', len(target_fasta.get_seqid2size()))
-	# circos.text(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)", size=13)
-	print(f"{target_fasta.name}\n({target_fasta.full_genome_length:,} bp)\n{target_fasta.full_genome_length}")
+	print('define space', len(ref_fasta.get_seqid2size()))
+	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
+	print(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
+	print(f"{query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
 
 	min_r_pos = 100
 	for sector in circos.sectors:
@@ -546,26 +542,30 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
-	colors = ["black", "gray"]
+	# colors = ["black", "gray"]
 	# store percentage identity between matching regions
 	percent_identity = []
-
-	for idx, comp_fasta in enumerate(comp_fasta_list):
-		align_coords = Blast([target_fasta, comp_fasta]).run()
-		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-		# color = ColorCycler()
-		comp_name2color[comp_fasta.name] = colors[idx]
-		for sector in circos.sectors:
-			sector.add_track((min_r_pos-QUERY_TRACK_SIZE, min_r_pos), r_pad_ratio=0.1)	
+	align_coords = Blast([query_fasta, ref_fasta]).run()
+	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# color = ColorCycler()
+	# comp_name2color[comp_fasta.name] = colors[idx]
+	for sector in circos.sectors:
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos-5	
+		cov_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos-5
 		for ac in align_coords:
 			percent_identity.append(ac.identity)
-			track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-			rect_color = interpolate_color(colors[idx], v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-			track.rect(ac.query_start, ac.query_end, color=rect_color)
-			query_pos = list(range(ac.query_start, ac.query_end+1, 1))
-			ref_pos = list(range(ac.ref_start, ac.ref_end+1, 1))
+			# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+			rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
+			print(ac)
+			# # get coverage of training genome within the alignment
+			# align_cov = [train_coverage[x] for x in range(ac.query_start, ac.query_end+1, 1)]
+			# align_pos = 
+			# cov_track.line(, align_cov, color="orangered")
 
-		min_r_pos -= QUERY_TRACK_SIZE
+	min_r_pos -= QUERY_TRACK_SIZE
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -791,10 +791,10 @@ if __name__ == "__main__":
 	
 
 
-	# # create circos plot
-	# if args.circos:
-	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+	# create circos plot
+	if args.circos:
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 
 
 	# # do FP analysis
