@@ -367,7 +367,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 						old_locus_tag = e.split(' ')[2]
 					if 'locus_tag' in e:
 						locus_tag = e.split(' ')[2]
-
+				if old_locus_tag != '':
+					print(old_locus_tag)
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
@@ -822,7 +823,6 @@ if __name__ == "__main__":
 	# fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# # get annotations info
 	pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	print(pos_test_annot_info)
 	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
 	# # # blast testing reads to training genomes from other species
