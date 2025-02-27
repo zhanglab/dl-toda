@@ -418,13 +418,15 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 				for i in range(annot[1], annot[2]+1, 1):
 					pos_readid[i].append(readid)
 
-	pos_readid_count = [len(k) for k in pos_readid.values()]
+	pos_readid_count = [len(v) for v in pos_readid.values()]
 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
 	genes_of_interest = defaultdict(list)
 	for k, v in pos_readid.items():
 		if len(v) >= 3:
-			gene_id = readid_w_gene[readid][2]
-			genes_of_interest[gene_id] = genes[gene_id]
+			print(v)
+			for readid in v:
+				gene_id = readid_w_gene[readid][2]
+				genes_of_interest[gene_id] = genes[gene_id]
 
 
 	reads_wo_genes = []
