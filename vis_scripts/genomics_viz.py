@@ -39,7 +39,7 @@ random.seed(seed)
 
 
 
-def GetGIs(args, training_seq, testing_fasta, input_dir):
+def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
 	outf = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
@@ -80,7 +80,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 	fna.close()
 
 	# blast genomic islands to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/train_genomic_islands_test_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/mapping/train_genomic_islands_test_blastn.out')
 
 	alignments = defaultdict(list)
 	with open(f'{args.output_dir}/mapping/train_genomic_islands_test_blastn.out', 'r') as f:
@@ -856,7 +856,7 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if args.genomic_islands is not None and args.circos:
-		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir)
+		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
 	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_info)
 	# else:
