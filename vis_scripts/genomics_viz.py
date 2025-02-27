@@ -184,7 +184,7 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 	tp_cov = []
 	fn_cov = []
 	for read_id, data in test_alignments_pos_train.items():
-		base_read_cov = [train_coverage[pos-1] for pos in range(data[2], data[3]+1, 1)]
+		base_read_cov = [base_coverage[pos-1] for pos in range(data[2], data[3]+1, 1)]
 		ave_read_cov = round(sum(base_read_cov)/(data[3]-data[2]), 3)
 		if read_id in tp_sequences:
 			tp_cov.append(ave_read_cov)
