@@ -399,11 +399,12 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
-	genes_of_interest = defaultdict(list)
+	genes = defaultdict(list)
 	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
-	
+	pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
+
 	for readid, data in alignments.items():
 		start_pos = data[2]
 		end_pos = data[3]
@@ -411,9 +412,20 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
 				if annot[0] == 'protein_coding':
 					functions[annot[5]] += 1
-				genes_of_interest[gene_id] = annot
-				readid_w_gene[readid] = [data[2], data[3]]
+				genes[gene_id] = annot
+				readid_w_gene[readid] = [data[2], data[3], gene_id]
 				genestype[annot[0]] += 1
+				for i in range(annot[1], annot[2]+1, 1):
+					pos_readid[i].append(readid)
+
+	pos_readid_count = [len(k) for k in pos_readid.values()]
+	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+	genes_of_interest = defaultdict(list)
+	for k, v in pos_readid.items():
+		if len(v) >= 3:
+			gene_id = readid_w_gene[readid][2]
+			genes_of_interest[gene_id] = genes[gene_id]
+
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
@@ -490,7 +502,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
 
-def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, genomic_islands=None):
+def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, outfilename, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -526,39 +538,39 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 1
-		# cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		# min_r_pos -= 6
+		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
+		min_r_pos -= 6
 		# # rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# # min_r_pos -= 6
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# min_r_pos -= 6
-		# features = []
-		# for gene_id in genes_of_interest.keys():
-		# 	if genes_of_interest[gene_id][3] == 'plus':
-		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
-		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
-		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
-		# 			cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
-		# 		else:
-		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
-		# 			if genes_of_interest[gene_id][0] == 'tRNA':
-		# 				trna_track.genomic_features(feature, fc="darkgreen")
-		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
-		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
+		features = []
+		for gene_id in genes_of_interest.keys():
+			if genes_of_interest[gene_id][3] == 'plus':
+				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
+				if genes_of_interest[gene_id][0] == 'protein_coding':
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
+				else:
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
+					if genes_of_interest[gene_id][0] == 'tRNA':
+						trna_track.genomic_features(feature, fc="darkgreen")
+					# if genes_of_interest[gene_id][0] == 'rRNA':
+					# 	rrna_track.genomic_features(feature, fc="deeppink")
 				
-		# 	else:
-		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
-		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
-		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
-		# 			cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
-		# 		else:
-		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
-		# 			if genes_of_interest[gene_id][0] == 'tRNA':
-		# 				trna_track.genomic_features(feature, fc="darkgreen")
-		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
-		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
+			else:
+				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
+				if genes_of_interest[gene_id][0] == 'protein_coding':
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
+					cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
+				else:
+					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
+					if genes_of_interest[gene_id][0] == 'tRNA':
+						trna_track.genomic_features(feature, fc="darkgreen")
+					# if genes_of_interest[gene_id][0] == 'rRNA':
+					# 	rrna_track.genomic_features(feature, fc="deeppink")
 
-		# 	features.append(feature)
+			features.append(feature)
 
 		# # Add regions not associated with genes and mapped by FN reads
 		# min_r_pos -= 5
@@ -571,28 +583,30 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		
 
 		# Plot info about genes
-		# labels, label_pos_list = [], []
-		# for feature in features:
-		# 	start = int(feature.location.start)
-		# 	end = int(feature.location.end)
-		# 	label_pos = (start + end) / 2
-		# 	gene_id = feature.qualifiers.get("gene_id", [None])[0]
-		# 	label = feature.qualifiers.get("gene_name", [None])[0]
-		# 	strand = feature.qualifiers.get("strand", [None])[0]
-		# 	gene_type = feature.qualifiers.get("gene_type", [None])[0]
-		# 	if gene_type == 'protein_coding':
-		# 		function = feature.qualifiers.get("function", [None])[0]
-		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
-		# 	else:
-		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+		outf = open(outfilename, 'w')
+		labels, label_pos_list = [], []
+		for feature in features:
+			start = int(feature.location.start)
+			end = int(feature.location.end)
+			label_pos = (start + end) / 2
+			gene_id = feature.qualifiers.get("gene_id", [None])[0]
+			label = feature.qualifiers.get("gene_name", [None])[0]
+			strand = feature.qualifiers.get("strand", [None])[0]
+			gene_type = feature.qualifiers.get("gene_type", [None])[0]
+			if gene_type == 'protein_coding':
+				function = feature.qualifiers.get("function", [None])[0]
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+			else:
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
 
-		# 	print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
-			# if label == None:
-			# 	continue
-			# if gene_id is not None:
-			# 	labels.append(gene_id)
-			# 	label_pos_list.append(label_pos)
-			# f_cds_track.annotate(label_pos, label, label_size=7)
+			print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+			if label == None:
+				continue
+			if gene_id is not None:
+				labels.append(gene_id)
+				label_pos_list.append(label_pos)
+			cds_track.annotate(label_pos, label, label_size=7)
+		outf.close()
 
 		# f_cds_track.xticks(label_pos_list, labels, label_size=8, label_orientation="vertical")
 
@@ -629,8 +643,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			pos_matching_regions.add(j)
 
 	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
-	print(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-	print(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 
 	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
 	for read_id, data in fn_alignments_pos_test.items():
@@ -650,11 +662,13 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				tp_matching_regions.add(read_id)
 	tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
 			
-
-	print(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
-	print(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
-	print(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-	print(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+	with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
+		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+		f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
+		f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -895,7 +909,7 @@ if __name__ == "__main__":
 	# get info about genomic islands
 	if args.circos:
 		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
 
 
 	# # do FP analysis
