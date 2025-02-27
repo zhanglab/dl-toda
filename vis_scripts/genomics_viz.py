@@ -152,7 +152,7 @@ def GetGCContent(sequence):
 	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
 
 
-def GetTrainCoverage(args, training_fasta):
+def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
 	# get reads in training set fasta file
 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
 
@@ -179,6 +179,21 @@ def GetTrainCoverage(args, training_fasta):
 
 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
 		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
+
+	# get train coverage in position mapped by TP reads
+	tp_cov = []
+	fn_cov = []
+	for read_id, data in test_alignments_pos_train.items():
+		base_read_cov = [train_coverage[pos-1] for pos in range(data[2], data[3]+1, 1)]
+		ave_read_cov = round(sum(base_read_cov)/(data[3]-data[2]), 3)
+		if read_id in tp_sequences:
+			tp_cov.append(ave_read_cov)
+		elif read_id in fn_sequences:
+			fn_cov.append(ave_read_cov)
+
+	with open(os.path.join(args.output_dir, f'{args.label}_test_train_average_coverage.tsv'), 'w') as f:
+		f.write(f'TP\t{len(tp_cov)}\t{len(tp_sequences)}\t{round(len(tp_cov)/len(tp_sequences),3)*100}\t{statistics.mean(tp_cov)}\t{statistics.median(tp_cov)}\t{min(tp_cov)}\t{max(tp_cov)}\n')
+		f.write(f'FN\t{len(fn_cov)}\t{len(fn_sequences)}\t{round(len(fn_cov)/len(fn_sequences),3)*100}\t{statistics.mean(fn_cov)}\t{statistics.median(fn_cov)}\t{min(fn_cov)}\t{max(fn_cov)}\n')
 
 	return base_coverage, ref_info, train_reads_id, readsid_to_length
 	
@@ -615,64 +630,64 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
 
-		# add tracks for coverage of training genome
-		min_r_pos -= 5
-		train_cov_test = [0]*query_fasta.full_genome_length
-		for readid, data in alignments_train_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				train_cov_test[pos-1] += train_coverage[pos-1]
-		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		cov_track.axis(ec="blue")
-		y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		y_labels = list(map(str, y_values))
-		cov_track.yticks(y_values, y_labels)
-		cov_track.line(genome_pos, train_cov_test, color="blue")
-		print(f'added COV track')
+		# # add tracks for coverage of training genome
+		# min_r_pos -= 5
+		# train_cov_test = [0]*query_fasta.full_genome_length
+		# for readid, data in alignments_train_pos_test.items():
+		# 	for pos in range(data[2], data[3]+1, 1):
+		# 		train_cov_test[pos-1] += train_coverage[pos-1]
+		# cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		# cov_track.axis(ec="blue")
+		# y_values = list(range(min(train_coverage), max(train_coverage), 2))
+		# y_labels = list(map(str, y_values))
+		# cov_track.yticks(y_values, y_labels)
+		# cov_track.line(genome_pos, train_cov_test, color="blue")
+		# print(f'added COV track')
 
-		# add track for TP reads
-		min_r_pos -= 12
-		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="darkviolet")
-		pos_tp_count = [0]*query_fasta.full_genome_length
-		for readid, data in tp_alignments_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_tp_count[pos-1] +=1
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
-			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		print(f'added TP track')
+		# # add track for TP reads
+		# min_r_pos -= 12
+		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		# tp_track.axis(ec="darkviolet")
+		# pos_tp_count = [0]*query_fasta.full_genome_length
+		# for readid, data in tp_alignments_pos_test.items():
+		# 	for pos in range(data[2], data[3]+1, 1):
+		# 		pos_tp_count[pos-1] +=1
+		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
+		# y_labels = list(map(str, y_values))
+		# tp_track.yticks(y_values, y_labels)
+		# tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
+		# 	# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+		# print(f'added TP track')
 
-		# add tracks for FN reads 
-		min_r_pos -= 12
-		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fn_track.axis(ec="orangered")
-		pos_fn_count = [0]*query_fasta.full_genome_length
-		for readid, data in fn_alignments_pos_test.items():
-			# if readid not in most_mapped_reads_id:
-			for pos in range(data[2], data[3]+1, 1):
-				pos_fn_count[pos-1] +=1
-		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
-		y_labels = list(map(str, y_values))
-		fn_track.yticks(y_values, y_labels)
-		fn_track.line(genome_pos, pos_fn_count, color="orangered")
-		print(f'added FN track')
+		# # add tracks for FN reads 
+		# min_r_pos -= 12
+		# fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		# fn_track.axis(ec="orangered")
+		# pos_fn_count = [0]*query_fasta.full_genome_length
+		# for readid, data in fn_alignments_pos_test.items():
+		# 	# if readid not in most_mapped_reads_id:
+		# 	for pos in range(data[2], data[3]+1, 1):
+		# 		pos_fn_count[pos-1] +=1
+		# y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
+		# y_labels = list(map(str, y_values))
+		# fn_track.yticks(y_values, y_labels)
+		# fn_track.line(genome_pos, pos_fn_count, color="orangered")
+		# print(f'added FN track')
 
-		# Plot GC skew
-		min_r_pos -= 11
-		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gcskews = GetGCSkew(test_record_seq)
-		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		abs_max_gcskew = np.max(np.abs(gcskews))
-		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
-		)
-		gcskew_track.fill_between(
-			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		)
+		# # Plot GC skew
+		# min_r_pos -= 11
+		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gcskews = GetGCSkew(test_record_seq)
+		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		# abs_max_gcskew = np.max(np.abs(gcskews))
+		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		# gcskew_track.fill_between(
+		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
+		# )
+		# gcskew_track.fill_between(
+		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		# )
 
 		# Plot GC content
 		min_r_pos -= 5
@@ -681,6 +696,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		print('gc_content', gc_content[:10], test_genome_gc_content)
 		gc_content = gc_content - test_genome_gc_content
 		print('gc_content', gc_content[:10], test_genome_gc_content)
+		print(len(gc_content))
+		print(len(pos_list))
 		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
 		negative_gc_content = np.where(gc_content < 0, gc_content, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content))
@@ -832,8 +849,11 @@ if __name__ == "__main__":
 	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
+	# blast testing reads to training genome from label 1
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/mapping/all_test_pos_train_blastn.out')
+	test_alignments_pos_train = GetAlignmentsInfo(fn_sequences.union(tp_sequences), f'{args.output_dir}/mapping/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	# # calculate coverage of training genome
-	train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta)
+	train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
 	# blast training reads to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'mapping'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/mapping/all_train_pos_test_blastn.out')
 	alignments_train_pos_test = GetAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/mapping/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
