@@ -67,6 +67,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir):
 				print(start_locus_tag_start, type(start_locus_tag_start))
 				print(end_locus_tag_end, type(end_locus_tag_end))
 				gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
+				print(gi_sequence)
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
 				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\n')
