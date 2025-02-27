@@ -408,7 +408,7 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	for readid, data in alignments.items():
 		start_pos = data[2]
 		end_pos = data[3]
-		for pos in range(start, end+1, 1):
+		for pos in range(start_pos, end_pos+1, 1):
 			pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
 			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
