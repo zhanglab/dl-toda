@@ -637,18 +637,18 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	for read_id, data in fn_alignments_pos_test.items():
 		for pos in range(data[2], data[3]+1, 1):
 			if pos in pos_matching_regions:
-				fn_matching_regions.add(j)
+				fn_matching_regions.add(pos)
 			else:
-				fn_not_matching_regions.add(j)
+				fn_not_matching_regions.add(pos)
 
 	tp_matching_regions = set() 
 	tp_not_matching_regions = set()
 	for read_id, data in tp_alignments_pos_test.items():
 		for pos in range(data[2], data[3]+1, 1):
 			if pos in pos_matching_regions:
-				tp_matching_regions.add(j)
+				tp_matching_regions.add(pos)
 			else:
-				tp_not_matching_regions.add(j)
+				tp_not_matching_regions.add(pos)
 
 	print(f'% of matching regions mapped by FN reads\t{round(len(fn_matching_regions)/len(pos_matching_regions), 3)*100}')
 	print(f'% of not matching regions mapped by FN reads\t{round(len(fn_not_matching_regions)/len(pos_not_matching_regions), 3)*100}')
