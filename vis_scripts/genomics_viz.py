@@ -39,19 +39,19 @@ random.seed(seed)
 
 
 
-def GetGIs(args, annot_info, training_seq, testing_fasta):
+def GetGIs(args, annot_info, training_seq, testing_fasta, input_dir):
 	f = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
+	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, args.train_genomes_info[args.label][0], input_dir)
+
 	# parse annotation information
 	annot_parsed = defaultdict(list)
-	for gene_id, data in annot_info.items():
-		if data[0] == 'protein_coding':
-			if data[7] != '':
-				annot_parsed[data[7]] = [data[6], data[1], data[2], data[0]] # new locus tag, begin, end, gene type
-		elif data[0] == 'rRNA' or data[0] == 'tRNA':
-			if data[6] != '':
-				annot_parsed[data[6]] = [data[5], data[1], data[2], data[0]]
+	for gene_id, data in locus_tags_info.items():
+		if data[3] != '':
+			print(gene_id, data[2])
+			annot_parsed[data[3]] = [data[0], data[1], data[2]]
+
 	print(annot_parsed)
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
@@ -59,14 +59,13 @@ def GetGIs(args, annot_info, training_seq, testing_fasta):
 			gi_id = line.rstrip().split('\t')[1]
 			start_locus_tag = line.rstrip().split('\t')[2]
 			end_locus_tag = line.rstrip().split('\t')[3]
-			print(start_locus_tag, end_locus_tag)
 			if start_locus_tag in annot_parsed and end_locus_tag in annot_parsed:
-				start_locus_tag_start = annot_parsed[start_locus_tag][1]
-				start_locus_tag_end = annot_parsed[start_locus_tag][2]
-				start_new_locus_tag = annot_parsed[start_locus_tag][0]
-				end_locus_tag_start = annot_parsed[end_locus_tag][1]
-				end_locus_tag_end = annot_parsed[end_locus_tag][2]
-				end_new_locus_tag = annot_parsed[end_locus_tag][0]
+				start_locus_tag_start = annot_parsed[start_locus_tag][0]
+				start_locus_tag_end = annot_parsed[start_locus_tag][1]
+				start_new_locus_tag = annot_parsed[start_locus_tag][2]
+				end_locus_tag_start = annot_parsed[end_locus_tag][0]
+				end_locus_tag_end = annot_parsed[end_locus_tag][1]
+				end_new_locus_tag = annot_parsed[end_locus_tag][2]
 				gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
@@ -340,6 +339,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 	else:
 		genes_type = defaultdict(str)
 		annot_info = defaultdict(list)
+		locus_tags_info = defaultdict(list)
 		with open(annot_file[0], 'r') as f:
 			content = f.readlines()
 			for i in range(5,len(content)-1,1):
@@ -374,14 +374,15 @@ def GetAnnotInfo(args, genome_id, input_dir):
 					print(content[i])
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
+					locus_tags_info[gene_id] = [begin, end, locus_tag, old_locus_tag]
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 					if function == '':
 						function = gene
-					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, locus_tag, old_locus_tag]
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
-					annot_info[gene_id] = ['tRNA', begin, end, strand, gene, locus_tag, old_locus_tag]
+					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
-					annot_info[gene_id] = ['rRNA', begin, end, strand, gene, locus_tag, old_locus_tag]
+					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
 				
 				assert gene_id != '', 'gene id should not be unknown'
 		
@@ -389,7 +390,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
 		print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
 
-		return annot_info
+		return annot_info, locus_tags_info
 
 
 def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
@@ -825,7 +826,7 @@ if __name__ == "__main__":
 	# # get mapping of false negatives to testing genome from label 1
 	# fn_alignments_pos_test = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/mapping/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# # get annotations info
-	# pos_test_annot_info = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
 	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
 	# # # blast testing reads to training genomes from other species
@@ -852,8 +853,7 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if args.genomic_islands is not None and args.circos:
-		pos_train_annot_info = GetAnnotInfo(args, args.train_genomes_info[args.label][0], input_dir)
-		gis_info = GetGIs(args, pos_train_annot_info, training_records[0].seq, testing_fasta)
+		gis_info = GetGIs(args, training_records[0].seq, testing_fasta, input_dir)
 	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_info)
 	# else:
