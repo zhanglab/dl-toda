@@ -642,7 +642,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		tp_track.yticks(y_values, y_labels)
 		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
 			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-\		print(f'added TP track')
+		print(f'added TP track')
 
 		# add tracks for FN reads 
 		min_r_pos -= 12
