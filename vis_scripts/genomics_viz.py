@@ -638,7 +638,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		start_pos = data[2]
 		end_pos = data[3]
 		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
 				fn_matching_regions.add(read_id)
 			else:
 				fn_not_matching_regions.add(read_id)
@@ -649,7 +649,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		start_pos = data[2]
 		end_pos = data[3]
 		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
 				tp_matching_regions.add(read_id)
 			else:
 				tp_not_matching_regions.add(read_id)
