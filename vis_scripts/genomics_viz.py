@@ -468,7 +468,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 					cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
-					if genes_of_interest[gene_id][0] == 'rRNA':
+					if genes_of_interest[gene_id][0] == 'tRNA':
 						rrna_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	trna_track.genomic_features(feature, fc="deeppink")
@@ -480,7 +480,7 @@ def FNCircosPlot(args, record_id, record_seq, record_fasta, fn_alignments_pos_te
 					cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
-					if genes_of_interest[gene_id][0] == 'rRNA':
+					if genes_of_interest[gene_id][0] == 'tRNA':
 						rrna_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	trna_track.genomic_features(feature, fc="deeppink")
