@@ -408,6 +408,8 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	for readid, data in alignments.items():
 		start_pos = data[2]
 		end_pos = data[3]
+		for pos in range(start, end+1, 1):
+			pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
 			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
 				if annot[0] == 'protein_coding':
@@ -415,19 +417,16 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 				genes[gene_id] = annot
 				readid_w_gene[readid] = [data[2], data[3], gene_id]
 				genestype[annot[0]] += 1
-				for i in range(annot[1], annot[2]+1, 1):
-					pos_readid[i].append(readid)
 
 	pos_readid_count = [len(v) for v in pos_readid.values()]
 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
 	genes_of_interest = defaultdict(list)
-	for k, v in pos_readid.items():
-		if len(v) >= 3:
-			print(v)
-			for readid in v:
+	for pos, list_readid in pos_readid.items():
+		if len(list_readid) >= 3:
+			print(list_readid)
+			for readid in list_readid:
 				gene_id = readid_w_gene[readid][2]
 				genes_of_interest[gene_id] = genes[gene_id]
-
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
