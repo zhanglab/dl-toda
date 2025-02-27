@@ -50,12 +50,11 @@ def GetGIs(args, annot_info, training_seq, testing_fasta):
 			annot_parsed[data[7]] = [data[6], data[1], data[2], data[0]] # new locus tag, begin, end, gene type
 		elif data[0] == 'rRNA' or data[0] == 'tRNA':
 			annot_parsed[data[6]] = [data[5], data[1], data[2], data[0]]
-
+	print(annot_parsed)
 	gis_info = defaultdict(list)
 	with open(args.genomic_islands, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
-			print(line.rstrip().split('\t')[2].split('-'))
 			start_locus_tag = line.rstrip().split('\t')[2]
 			end_locus_tag = line.rstrip().split('\t')[3]
 			if start_locus_tag in annot_parsed and end_locus_tag in annot_parsed:
