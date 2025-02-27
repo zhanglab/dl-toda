@@ -606,8 +606,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				pos_fn_count[pos-1] +=1
 		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
 		y_labels = list(map(str, y_values))
-		fn_track_1.yticks(y_values, y_labels)
-		fn_track_1.line(genome_pos, pos_fn_count, color="orangered")
+		fn_track.yticks(y_values, y_labels)
+		fn_track.line(genome_pos, pos_fn_count, color="orangered")
 		print(f'added FN track')
 
 		# Plot GC skew
