@@ -629,7 +629,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			pos_matching_regions.add(j)
 
 	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
-	print(f'% testing genome that matches to training genome\t{len(num_pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(num_pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	print(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 	print(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 
 	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
