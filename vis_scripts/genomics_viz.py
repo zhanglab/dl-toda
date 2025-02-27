@@ -680,7 +680,7 @@ if __name__ == "__main__":
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	# verify that the genomes investigated only have one chromosome
-	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes():
+	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes(args)
 	print(testing_records)
 	print(testing_records[0].seq)
 	
