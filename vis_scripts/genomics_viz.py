@@ -847,7 +847,7 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if args.genomic_islands is not None and args.circos:
-		gis_info = GetGIs(args, pos_test_annot_info, training_records[0].seq testing_fasta)
+		gis_info = GetGIs(args, pos_test_annot_info, training_records[0].seq, testing_fasta)
 	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_info)
 	# else:
