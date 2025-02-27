@@ -101,12 +101,13 @@ def GetTrainCoverage(args):
 	# get reads in training set fasta file
 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
 
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), 'w') as outf:
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), 'w') as outf:
 		for k, v in readid_to_read.items():
 			if k.split('|')[1] == args.label:
-				outf.write(f'>{k}\n{v}\n+\n{len(v)*"J"}\n')
+				print(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
+				outf.write(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
 
-	RunBowtie(args, genome_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fna'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	RunBowtie(args, genome_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	
 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	print(ref_info)
