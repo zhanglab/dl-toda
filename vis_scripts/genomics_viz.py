@@ -276,7 +276,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
 			# align reads to database or fasta file
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-subject', f'{subject[0]}', '-out', f'{outfilename}',
 				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", '-max_target_seqs', '5', '-qcov_hsp_perc', '100', '-perc_identity', '100' ])
-
+			print(result)
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
 	""" get genes on testing genome associated wth FN reads and taxa that were mapped by FN reads """
