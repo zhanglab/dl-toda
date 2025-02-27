@@ -523,6 +523,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
+	print('genes of interest')
+	print(genes_of_interest)
+
 	min_r_pos = 100
 	for sector in circos.sectors:
 		# Setup outer track
@@ -555,7 +558,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
 					if genes_of_interest[gene_id][0] == 'tRNA':
-						trna_track.genomic_features(feature, fc="darkgreen")
+						cds_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
 				
@@ -567,7 +570,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
 					if genes_of_interest[gene_id][0] == 'tRNA':
-						trna_track.genomic_features(feature, fc="darkgreen")
+						cds_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
 
