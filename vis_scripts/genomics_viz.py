@@ -318,7 +318,7 @@ def CreateFastaFile(genes_of_interest, alignments, readid_to_read, filename):
 		start_pos = data[2]
 		end_pos = data[3]
 		for gene_id, annot in genes_of_interest.items():
-			if (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
 				reads_of_interest.add(readid)
 	
 	with open(filename, 'w') as f:
@@ -408,7 +408,7 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 		start_pos = data[2]
 		end_pos = data[3]
 		for gene_id, annot in annot_info.items():
-			if (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
 				if annot[0] == 'protein_coding':
 					functions[annot[5]] += 1
 				genes_of_interest[gene_id] = annot
@@ -638,7 +638,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		start_pos = data[2]
 		end_pos = data[3]
 		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
 				fn_matching_regions.add(read_id)
 			else:
 				fn_not_matching_regions.add(read_id)
