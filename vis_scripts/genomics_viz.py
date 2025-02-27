@@ -126,8 +126,8 @@ def GetTrainCoverage(args, training_fasta):
 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	print(ref_info)
 
-	ref = ref_info[i][0]
-	length_ref = ref_info[i][1]
+	ref = ref_info[0][0]
+	length_ref = ref_info[0][1]
 	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
 	# get coverage per base
