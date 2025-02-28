@@ -696,7 +696,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# add track for genomic islands
 		min_r_pos -= 5
 
-		for readid, data in fn_alignments_pos_test.items():
+		# for readid, data in fn_alignments_pos_test.items():
 
 
 		# # add tracks for coverage of training genome
