@@ -566,8 +566,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
 		min_r_pos -= 1
-		cds_track = sector.add_track((min_r_pos-5, min_r_pos))
-		min_r_pos -= 6
+		cds_track = sector.add_track((min_r_pos-3, min_r_pos))
+		min_r_pos -= 3
 		# # rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# # min_r_pos -= 6
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -630,25 +630,27 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# # 	cds_track.annotate(label_pos, label, label_size=7)
 		# outf.close()
 
-	# # Blast genome comparison & plot match blocks
-	# comp_name2color = {}
-	# # colors = ["black", "gray"]
-	# # store percentage identity between matching regions
-	# percent_identity = []
-	# align_coords = Blast([query_fasta, ref_fasta]).run()
-	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	# # color = ColorCycler()
-	# # comp_name2color[comp_fasta.name] = colors[idx]
-	# matching_regions = []
-	# for sector in circos.sectors:
-	# 	blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-	# 	min_r_pos-5	
-	# 	for ac in align_coords:
-	# 		percent_identity.append(ac.identity)
-	# 		# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-	# 		rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-	# 		blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
-	# 		matching_regions.append([ac.query_start, ac.query_end, ac.identity])
+	# Blast genome comparison & plot match blocks
+	comp_name2color = {}
+	# colors = ["black", "gray"]
+	# store percentage identity between matching regions
+	percent_identity = []
+	align_coords = Blast([query_fasta, ref_fasta]).run()
+	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# color = ColorCycler()
+	# comp_name2color[comp_fasta.name] = colors[idx]
+	matching_regions = []
+	matching_regions_dict = {} # key = position in training genome, value
+	for sector in circos.sectors:
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos-5	
+		for ac in align_coords:
+			print(ac)
+			percent_identity.append(ac.identity)
+			# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+			rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
+			matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
 	# pos_matching_regions = set()
 	# for i in range(len(matching_regions)):
@@ -690,6 +692,12 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
+
+		# add track for genomic islands
+		min_r_pos -= 5
+
+		for readid, data in fn_alignments_pos_test.items():
+
 
 		# # add tracks for coverage of training genome
 		# min_r_pos -= 5
@@ -752,37 +760,37 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
 		# )
 
-		# Plot GC content
-		min_r_pos -= 5
-		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
-		gc_content_updated = gc_content - test_genome_gc_content
-		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
-		print(len(gc_content_updated))
-		print(len(pos_list))
-		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-		abs_max_gc_content = np.max(np.abs(gc_content_updated))
-		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-		gc_content_track.fill_between(
-			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-		)
-		gc_content_track.fill_between(
-			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-		)
+		# # Plot GC content
+		# min_r_pos -= 5
+		# gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		# print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
+		# gc_content_updated = gc_content - test_genome_gc_content
+		# print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
+		# print(len(gc_content_updated))
+		# print(len(pos_list))
+		# positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		# negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+		# abs_max_gc_content = np.max(np.abs(gc_content_updated))
+		# vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+		# gc_content_track.fill_between(
+		# 	pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+		# )
+		# gc_content_track.fill_between(
+		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+		# )
 		
-		# report GC content of train and test genomes
-		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
-			f.write(f'Testing genome:\t{test_genome_gc_content}')
-			f.write(f'Training genome:\t{train_genome_gc_content}')
+		# # report GC content of train and test genomes
+		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		# with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
+		# 	f.write(f'Testing genome:\t{test_genome_gc_content}')
+		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# get average GC content for FN and TP reads
-		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
-		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
+		# # get average GC content for FN and TP reads
+		# GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
+		# GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
+		# GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
+		# GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
@@ -931,10 +939,10 @@ if __name__ == "__main__":
 	if args.circos:
 		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
 		print(gis_info)
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
 		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-		# 	os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv', genomic_islands=gis_info))
+			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv', genomic_islands=gis_info))
 
 
 	# # do FP analysis
