@@ -160,7 +160,7 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 		for i in range(0, len(pos_list)-1, 1):
 			if (data[2] <= pos_list[i] and data[3] >= pos_list[i]) or \
 				(data[2] >= pos_list[i] and data[3] <= pos_list[i+1]) or \
-				(data[3] <= pos_list[i+1] and data[3] >= pos_list[i+1]) or \
+				(data[2] <= pos_list[i+1] and data[3] >= pos_list[i+1]) or \
 				(data[2] <= pos_list[i] and data[3] >= pos_list[i+1]):
 					read_gc.append(gc_content[i])
 					read_pos.append([pos_list[i],pos_list[i+1]])
@@ -346,7 +346,10 @@ def CreateFastaFile(genes_of_interest, alignments, readid_to_read, filename):
 		start_pos = data[2]
 		end_pos = data[3]
 		for gene_id, annot in genes_of_interest.items():
-			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
+			(start_pos <= annot[1] and end_pos >= annot[1]) or \
+			(start_pos >= annot[1] and end_pos <= annot[2]) or \
+			(start_pos <= annot[2] and end_pos >= annot[2]):
 				reads_of_interest.add(readid)
 	
 	with open(filename, 'w') as f:
@@ -516,9 +519,9 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 
 def GetGenomePos(input_file, data):
 	ref_to_query = defaultdict(dict)
-	ref_start_end = defaultdict(int)
+	ref_start_end = defaultdict(list)
 	with open(input_file, 'r') as f:
-		for line in f:
+		for count, line in enumerate(f, 1):
 			sstart = int(line.rstrip().split(',')[2])
 			send = int(line.rstrip().split(',')[3])
 			qstart = int(line.rstrip().split(',')[4])
@@ -530,7 +533,8 @@ def GetGenomePos(input_file, data):
 			spos = sstart
 			for i in range(len(qseq)):
 				if qseq[i] != '-' and sseq[i] != '-':
-					ref_to_query[spos] = qpos
+					print(qseq[i], sseq[i])
+					ref_to_query[count][spos] = qpos
 					qpos += 1
 					spos += 1
 				elif sseq[i] == '-' and qseq[i] != '-':
@@ -538,15 +542,25 @@ def GetGenomePos(input_file, data):
 				elif sseq[i] != '-' and qseq[i] == '-':
 					spos += 1
 
-			ref_start_end[sstart] = send
+			ref_start_end[count] = [sstart, send]
+
+	print(ref_to_query)
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
 		# find start and end on query genome
 		query_matching_pos = []
-		for gi_pos in range(info[0], info[3]+1, 1):
-			if gi_pos in ref_to_query:
-				query_matching_pos.append(ref_to_query[gi_pos])
+		for count in ref_start_end.keys():
+			gi_start = info[0]
+			gi_end = info[3]
+			if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
+				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
+				or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
+				or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
+				all_gis_pos = set(range(gi_start, gi_end, 1))
+				for spos, qpos in ref_to_query[count].items():
+					if spos in all_gis_pos:
+						query_matching_pos.append(qpos)
 		
 		if len(query_matching_pos) > 0:
 			gi_to_plot[gi_id] = [min(query_matching_pos), max(query_matching_pos)]
