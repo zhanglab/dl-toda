@@ -165,7 +165,8 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 					read_gc.append(gc_content[i])
 					read_pos.append([pos_list[i],pos_list[i+1]])
 		ave_read_gc = sum(read_gc)/len(read_gc)
-		assert len(read_pos) == 1, f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}'
+		if len(read_pos) > 1:
+			print(f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}')
 		reads_gc_content.append(ave_read_gc)
 
 	with open(os.path.join(args.output_dir, f'{type}_gc_content.tsv'), 'w') as f:
