@@ -547,6 +547,13 @@ def GetGenomePos(args, input_file, data):
 	with open(os.path.join(args.output_dir, 'gis_ref_to_query.json'), 'w') as f:
 		json.dump(ref_to_query, f)
 
+	for k1, v1 in ref_to_query.items():
+		print(type(k1), type(v1))
+		for k2, v2 in v1.items():
+			print(type(k2), type(v2))
+			break
+		break
+
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
 		print(gi_id, info)
