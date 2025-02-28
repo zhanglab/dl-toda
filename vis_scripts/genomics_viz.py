@@ -605,9 +605,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outf = open(outfilename, 'w')
 		labels, label_pos_list = [], []
 		features_sorted = dict(sorted(features.items()))
-		for feature in features:
+		for feature in features_sorted.values():
+		# for feature in features:
 			start = int(feature.location.start)
 			end = int(feature.location.end)
+			print(start, end)
 			label_pos = (start + end) / 2
 			gene_id = feature.qualifiers.get("gene_id", [None])[0]
 			label = feature.qualifiers.get("gene_name", [None])[0]
