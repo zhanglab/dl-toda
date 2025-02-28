@@ -685,7 +685,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	
+	GetGenomePos(f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands)
 
 	# # color = ColorCycler()
 	# # comp_name2color[comp_fasta.name] = colors[idx]
@@ -996,8 +996,8 @@ if __name__ == "__main__":
 		print(gis_info)
 		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
-		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv', genomic_islands=gis_info))
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv', genomic_islands=gis_info))
 
 
 	# # do FP analysis
