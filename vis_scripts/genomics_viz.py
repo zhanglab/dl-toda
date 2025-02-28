@@ -152,7 +152,7 @@ def GetGCContent(sequence):
 	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
 
 
-def GetReadsGCcontent(gc_content, pos_list, alignments):
+def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 	reads_gc_content = []
 	for readid, data in alignments.items():
 		read_gc = []
@@ -165,9 +165,16 @@ def GetReadsGCcontent(gc_content, pos_list, alignments):
 					read_gc.append(gc_content[i])
 					read_pos.append([pos_list[i],pos_list[i+1]])
 		ave_read_gc = sum(read_gc)/len(read_gc)
-		print(readid, data, read_gc, ave_read_gc, read_pos)
-		sys.exit(1)
+		assert len(read_pos) == 1, f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}'
+		reads_gc_content.append(ave_read_gc)
 
+	with open(os.path.join(args.output_dir, f'{type}_gc_content.tsv'), 'w') as f:
+		f.write(f'#reads\t{len(reads_gc_content)}\n'
+				f'mean\t{statistics.mean(reads_gc_content)}\n'
+				f'median\t{statistics.median(reads_gc_content)}\n'
+				f'min\t{statistics.min(reads_gc_content)}\n'
+				f'max\t{statistics.max(reads_gc_content)}\n')
+		
 
 def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
 	# get reads in training set fasta file
@@ -770,8 +777,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			f.write(f'Testing genome:\t{test_genome_gc_content}')
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# get average GC content per read
-		GetReadsGCcontent(gc_content, pos_list, fn_alignments_pos_test)
+		# get average GC content for FN and TP reads
+		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
+		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
