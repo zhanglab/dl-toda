@@ -152,6 +152,21 @@ def GetGCContent(sequence):
 	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
 
 
+def GetReadsGCcontent(gc_content, pos_list, alignments):
+	reads_gc_content = []
+	for readid, data in alignments.items():
+		read_gc = []
+		read_pos = []
+		for pos in range(data[2], data[3]+1, 1):
+			for i in range(0,len(pos_list)-1,1):
+				if pos >= pos_list[i] and pos < pos_list[i+1]:
+					read_gc.append(gc_content[i])
+					read_pos.append(pos_list[i])
+		ave_read_gc = sum(read_gc)/len(read_gc)
+		print(readid, data, read_gc, ave_read_gc)
+		sys.exit(1)
+
+
 def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
 	# get reads in training set fasta file
 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
@@ -472,7 +487,6 @@ def GetAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, out
 				seq_label = seq_to_labels[seq_id]
 				evalue = float(line.rstrip().split(',')[7])
 				pident = float(line.rstrip().split(',')[8])
-
 				alignments[readid] = [seq_label, seq_id, sstart, send]
 
 	if outfilename:
@@ -548,7 +562,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# # min_r_pos -= 6
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# min_r_pos -= 6
-		features = []
+		# features = []
+		features = {}
 		for gene_id in genes_of_interest.keys():
 			if genes_of_interest[gene_id][3] == 'plus':
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
@@ -561,7 +576,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 						cds_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
-				
 			else:
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
@@ -574,7 +588,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
 
-			features.append(feature)
+			# features.append(feature)
+			features[genes_of_interest[gene_id][1]] = feature
 
 		# # Add regions not associated with genes and mapped by FN reads
 		# min_r_pos -= 5
@@ -589,6 +604,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# Plot info about genes
 		outf = open(outfilename, 'w')
 		labels, label_pos_list = [], []
+		features_sorted = dict(sorted(features.items()))
 		for feature in features:
 			start = int(feature.location.start)
 			end = int(feature.location.end)
@@ -603,14 +619,14 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			else:
 				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
 
-			print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
-			if label == None:
-				continue
-			if gene_id is not None:
-				labels.append(gene_id)
-				label_pos_list.append(label_pos)
-			cds_track.annotate(label_pos, label, label_size=7)
-		outf.close()
+		# 	print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+		# 	if label == None:
+		# 		continue
+		# 	if gene_id is not None:
+		# 		labels.append(gene_id)
+		# 		label_pos_list.append(label_pos)
+		# 	cds_track.annotate(label_pos, label, label_size=7)
+		# outf.close()
 
 		# f_cds_track.xticks(label_pos_list, labels, label_size=8, label_orientation="vertical")
 
@@ -748,13 +764,13 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
 		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
-		gc_content = gc_content - test_genome_gc_content
-		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
-		print(len(gc_content))
+		gc_content_updated = gc_content - test_genome_gc_content
+		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
+		print(len(gc_content_updated))
 		print(len(pos_list))
-		positive_gc_content = np.where(gc_content > 0, gc_content, 0)
-		negative_gc_content = np.where(gc_content < 0, gc_content, 0)
-		abs_max_gc_content = np.max(np.abs(gc_content))
+		positive_gc_content = np.where(gc_content_updated > 0, gc_content, 0)
+		negative_gc_content = np.where(gc_content_updated < 0, gc_content, 0)
+		abs_max_gc_content = np.max(np.abs(gc_content_updated))
 		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
 		gc_content_track.fill_between(
 			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
@@ -768,6 +784,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
 			f.write(f'Testing genome:\t{test_genome_gc_content}')
 			f.write(f'Training genome:\t{train_genome_gc_content}')
+
+		# get average GC content per read
+		GetReadsGCcontent(gc_content, pos_list, fn_alignments_pos_test)
 
 	# save figure
 	# Enable annotation text adjustment (Default)
