@@ -769,11 +769,17 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 
 	for sector in circos.sectors:
-		# define x-axis vector for the next tracks
-		genome_pos = list(range(query_fasta.full_genome_length))
-
 		# add track for genomic islands
 		min_r_pos -= 5
+		gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		gis_track.axis(ec="orange")
+		for gi_id, info in gi_to_plot.items():
+			print(gi_id, info)
+			gis_track.rect(info[0], info[1], color="orange")
+		print(f'added GIs track')
+
+		# define x-axis vector for the next tracks
+		genome_pos = list(range(query_fasta.full_genome_length))
 
 		# # add tracks for coverage of training genome
 		# min_r_pos -= 5
