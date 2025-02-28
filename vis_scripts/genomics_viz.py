@@ -41,7 +41,7 @@ random.seed(seed)
 
 
 def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
-	outf = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.tsv'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.label}_gis.tsv'), 'w')
 	# fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
 	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, args.train_genomes_info[args.label][0], input_dir)
@@ -544,12 +544,8 @@ def GetGenomePos(args, input_file, data):
 
 			ref_start_end[count] = [sstart, send]
 
-	with open(os.path.join(args.output_dir, 'gis_ref_to_query.json'), 'w') as f:
-		json.dump(ref_to_query, f)
-
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
-		print(gi_id, info)
 		# find start and end on query genome
 		query_matching_pos = []
 		gi_start = info[0]
@@ -563,7 +559,6 @@ def GetGenomePos(args, input_file, data):
 					all_gis_pos = set(list(range(gi_start, gi_end, 1)))
 				else:
 					all_gis_pos = set(list(range(gi_end, gi_start, 1)))
-				print(len(all_gis_pos), gi_end-gi_start)
 				for spos, qpos in ref_to_query[count].items():
 					if spos in all_gis_pos:
 						query_matching_pos.append(qpos)
@@ -571,7 +566,12 @@ def GetGenomePos(args, input_file, data):
 		if len(query_matching_pos) > 0:
 			gi_to_plot[gi_id] = [min(query_matching_pos), max(query_matching_pos)]
 
-	print(gi_to_plot)
+	with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
+		for gi_id, info in gi_to_plot.items():
+			f.write(f'{gi_id}')
+			for i in info:
+				f.write(f'\t{i}')
+			f.write('\n')
 
 	return gi_to_plot
 
