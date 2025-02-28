@@ -272,7 +272,7 @@ def RunBowtie(args, target, query, outfilename):
 	process = subprocess.run([bowtie2_exec, '--quiet', '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}'])
 
 
-def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
+def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
 	print('run blast')
 	if db:
 		sys.executable = blastn_exec
@@ -295,10 +295,14 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
 
 		print(input_fasta)
 		# create database
-		result = subprocess.run([makeblastdb_exec, '-in', f'{input_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blast/blastdb'])
+		result = subprocess.run([makeblastdb_exec, '-in', f'{input_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
 		
 		# align reads to database or fasta file
-		result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blast/blastdb', '-out', f'{outfilename}', \
+		if sam:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			 	'-outfmt', "17", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+		else:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident", \
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
@@ -638,7 +642,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = Blast([query_fasta, ref_fasta]).run()
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
 
 
 	# # color = ColorCycler()
