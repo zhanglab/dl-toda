@@ -514,35 +514,46 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
-# def GetGenomePos(input_file, data):
-# 	ref_to_query = defaultdict(dict)
-# 	ref_start_end = defaultdict(int)
-# 	with open(input_file, 'r') as f:
-# 		for line in f:
-# 			sstart = int(line.rstrip().split(',')[2])  4623266
-# 			send = int(line.rstrip().split(',')[3]) 4783340
-# 			qstart = int(line.rstrip().split(',')[4]) 4302977
-# 			qend = int(line.rstrip().split(',')[5]) 4463047
-# 			qseq = line.rstrip().split(',')[9]
-# 			sseq = line.rstrip().split(',')[10]
+def GetGenomePos(input_file, data):
+	ref_to_query = defaultdict(dict)
+	ref_start_end = defaultdict(int)
+	with open(input_file, 'r') as f:
+		for line in f:
+			sstart = int(line.rstrip().split(',')[2])  4623266
+			send = int(line.rstrip().split(',')[3]) 4783340
+			qstart = int(line.rstrip().split(',')[4]) 4302977
+			qend = int(line.rstrip().split(',')[5]) 4463047
+			qseq = line.rstrip().split(',')[9]
+			sseq = line.rstrip().split(',')[10]
 
-# 			qpos = qstart
-# 			spos = sstart
-# 			for i in range(len(qseq)):
-# 				if qseq[i] != '-' and sseq[i] != '-':
-# 					ref_to_query[spos] = qpos
-# 					qpos += 1
-# 					spos += 1
-# 				elif sseq[i] == '-' and qseq[i] != '-':
-# 					qpos += 1
-# 				elif sseq[i] != '-' and qseq[i] == '-':
-# 					spos += 1
+			qpos = qstart
+			spos = sstart
+			for i in range(len(qseq)):
+				if qseq[i] != '-' and sseq[i] != '-':
+					ref_to_query[spos] = qpos
+					qpos += 1
+					spos += 1
+				elif sseq[i] == '-' and qseq[i] != '-':
+					qpos += 1
+				elif sseq[i] != '-' and qseq[i] == '-':
+					spos += 1
 
-# 			ref_start_end[sstart] = send
+			ref_start_end[sstart] = send
 
-# 	# for gene_id, annot_info in data.items():
+	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
+	for gi_id, info in data.items():
+		# find start and end on query genome
+		query_matching_pos = []
+		for gi_pos in range(info[0], info[3]+1, 1):
+			if gi_pos in ref_to_query:
+				query_matching_pos.append(ref_to_query[gi_pos])
+		
+		if len(query_matching_pos) > 0:
+			gi_to_plot[gi_id] = [min(query_matching_pos), max(query_matching_pos)]
 
-# 	return 
+	print(gi_to_plot)
+
+	return gi_to_plot
 
 
 def StoreCS(args, list_cs, type):
