@@ -303,7 +303,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 			 	'-outfmt', "17", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 		else:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
-			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident frames", \
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq", \
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 
