@@ -172,8 +172,8 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 		f.write(f'#reads\t{len(reads_gc_content)}\n'
 				f'mean\t{statistics.mean(reads_gc_content)}\n'
 				f'median\t{statistics.median(reads_gc_content)}\n'
-				f'min\t{statistics.min(reads_gc_content)}\n'
-				f'max\t{statistics.max(reads_gc_content)}\n')
+				f'min\t{min(reads_gc_content)}\n'
+				f'max\t{max(reads_gc_content)}\n')
 		
 
 def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
@@ -926,8 +926,12 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if args.circos:
+		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
+		print(gis_info)
 		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
+		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+		# 	os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv', genomic_islands=gis_info))
 
 
 	# # do FP analysis
@@ -1010,8 +1014,7 @@ if __name__ == "__main__":
 	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
 	# 	f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
-	# gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
-	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# FPCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_info)
 
 
