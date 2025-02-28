@@ -559,7 +559,7 @@ def GetGenomePos(args, input_file, data):
 				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
 				or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
 				or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
-				all_gis_pos = set(range(gi_start, gi_end, 1))
+				all_gis_pos = set(list(range(gi_start, gi_end, 1)))
 				print(len(all_gis_pos), gi_end-gi_start)
 				for spos, qpos in ref_to_query[count].items():
 					if spos in all_gis_pos:
