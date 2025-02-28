@@ -169,7 +169,7 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 			print(f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}')
 		reads_gc_content.append(ave_read_gc)
 
-	with open(os.path.join(args.output_dir, f'{type}_gc_content.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.label}_{type}_gc_content.tsv'), 'w') as f:
 		f.write(f'#reads\t{len(reads_gc_content)}\n'
 				f'mean\t{statistics.mean(reads_gc_content)}\n'
 				f'median\t{statistics.median(reads_gc_content)}\n'
@@ -706,7 +706,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# print(f'added COV track')
 
 		# # add track for TP reads
-		# min_r_pos -= 12
+		# min_r_pos -= 13
 		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		# tp_track.axis(ec="darkviolet")
 		# pos_tp_count = [0]*query_fasta.full_genome_length
@@ -714,7 +714,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# 	for pos in range(data[2], data[3]+1, 1):
 		# 		pos_tp_count[pos-1] +=1
 		# print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
-		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 3))
+		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
 		# y_labels = list(map(str, y_values))
 		# tp_track.yticks(y_values, y_labels)
 		# tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
@@ -722,7 +722,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# print(f'added TP track')
 
 		# # add tracks for FN reads 
-		# min_r_pos -= 12
+		# min_r_pos -= 13
 		# fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		# fn_track.axis(ec="orangered")
 		# pos_fn_count = [0]*query_fasta.full_genome_length
@@ -781,6 +781,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# get average GC content for FN and TP reads
 		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
 		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
