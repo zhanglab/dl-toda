@@ -161,9 +161,9 @@ def GetReadsGCcontent(gc_content, pos_list, alignments):
 			for i in range(0,len(pos_list)-1,1):
 				if pos >= pos_list[i] and pos < pos_list[i+1]:
 					read_gc.append(gc_content[i])
-					read_pos.append(pos_list[i])
+					read_pos.append([pos_list[i],pos_list[i+1]])
 		ave_read_gc = sum(read_gc)/len(read_gc)
-		print(readid, data, read_gc, ave_read_gc)
+		print(readid, data, read_gc, ave_read_gc, read_pos)
 		sys.exit(1)
 
 
