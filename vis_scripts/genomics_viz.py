@@ -518,7 +518,7 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
-def GetGenomePos(args, input_file, data, genomic_islands, identity_thr=MIN_IDENTITY):
+def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 	print(f'identity_thr: {identity_thr}')
 	ref_to_query = defaultdict(dict)
 	ref_start_end = defaultdict(list)
@@ -551,7 +551,7 @@ def GetGenomePos(args, input_file, data, genomic_islands, identity_thr=MIN_IDENT
 				ref_start_end[count] = [sstart, send]
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
-	for gi_id, info in data.items():
+	for gi_id, info in genomic_islands.items():
 		# find start and end on query genome
 		query_matching_pos = []
 		gi_start = info[0]
