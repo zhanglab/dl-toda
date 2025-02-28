@@ -534,7 +534,6 @@ def GetGenomePos(args, input_file, data):
 			spos = sstart
 			for i in range(len(qseq)):
 				if qseq[i] != '-' and sseq[i] != '-':
-					print(qseq[i], sseq[i])
 					ref_to_query[count][spos] = qpos
 					qpos += 1
 					spos += 1
@@ -546,7 +545,7 @@ def GetGenomePos(args, input_file, data):
 			ref_start_end[count] = [sstart, send]
 
 	with open(os.path.join(args.output_dir, 'gis_ref_to_query.json'), 'w') as f:
-		json.dump(f, ref_to_query)
+		json.dump(ref_to_query, f)
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
