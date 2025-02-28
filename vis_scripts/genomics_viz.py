@@ -548,6 +548,7 @@ def GetGenomePos(input_file, data):
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
+		print(gi_id, info)
 		# find start and end on query genome
 		query_matching_pos = []
 		for count in ref_start_end.keys():
