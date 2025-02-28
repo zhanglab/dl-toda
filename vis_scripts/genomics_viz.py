@@ -751,8 +751,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
 		print(len(gc_content_updated))
 		print(len(pos_list))
-		positive_gc_content = np.where(gc_content_updated > 0, gc_content, 0)
-		negative_gc_content = np.where(gc_content_updated < 0, gc_content, 0)
+		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content_updated))
 		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
 		gc_content_track.fill_between(
