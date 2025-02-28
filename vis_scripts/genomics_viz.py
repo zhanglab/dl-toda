@@ -291,7 +291,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
 			
 			# align reads to database or fasta file
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{args.output_dir}/mapping/train_genomes_wo_label_blastdb', '-out', f'{outfilename}',
-				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident",
+				 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident frames",
 				 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 			# remove fasta file
@@ -635,22 +635,27 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# colors = ["black", "gray"]
 	# store percentage identity between matching regions
 	percent_identity = []
-	align_coords = Blast([query_fasta, ref_fasta]).run()
-	align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	# color = ColorCycler()
-	# comp_name2color[comp_fasta.name] = colors[idx]
-	matching_regions = []
-	matching_regions_dict = {} # key = position in training genome, value
-	for sector in circos.sectors:
-		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos-5	
-		for ac in align_coords:
-			print(ac)
-			percent_identity.append(ac.identity)
-			# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-			rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
-			matching_regions.append([ac.query_start, ac.query_end, ac.identity])
+	# run blast using pygenomeviz
+	# align_coords = Blast([query_fasta, ref_fasta]).run()
+	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# run blast 
+	RunBlast(args, os.path.join(args.output_dir, 'mapping'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/mapping/test_train_genomes_blastn.out')
+
+
+	# # color = ColorCycler()
+	# # comp_name2color[comp_fasta.name] = colors[idx]
+	# matching_regions = []
+	# matching_regions_dict = {} # key = position in training genome, value
+	# for sector in circos.sectors:
+	# 	blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+	# 	min_r_pos-5	
+	# 	for ac in align_coords:
+	# 		print(ac)
+	# 		percent_identity.append(ac.identity)
+	# 		# track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+	# 		rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+	# 		blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
+	# 		matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
 	# pos_matching_regions = set()
 	# for i in range(len(matching_regions)):
