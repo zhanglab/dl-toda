@@ -257,9 +257,9 @@ def ConcatenateFiles(list_files, outfilename, data_type):
 
 def RunBowtie(args, target, query, outfilename):
 	# build index
-	process = subprocess.run([bowtie2_build_exec, '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref', '--quiet'])
+	process = subprocess.run([bowtie2_build_exec, '--quiet', '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref'])
 	# map reads
-	process = subprocess.run([bowtie2_exec, '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}', '--quiet'])
+	process = subprocess.run([bowtie2_exec, '--quiet', '--threads', f'{args.num_processes}', '-x', f'{args.output_dir}/train_coverage/ref', '-U', f'{query}', '-S', f'{outfilename}'])
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None):
@@ -565,7 +565,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# features = []
 		features = {}
 		for gene_id in genes_of_interest.keys():
-			if genes_of_interest[gene_id][3] == 'plus':
+			if genes_of_interest[gene_id][3] == '+':
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
