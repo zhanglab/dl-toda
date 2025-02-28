@@ -519,10 +519,10 @@ def GetGenomePos(input_file, data):
 	ref_start_end = defaultdict(int)
 	with open(input_file, 'r') as f:
 		for line in f:
-			sstart = int(line.rstrip().split(',')[2])  4623266
-			send = int(line.rstrip().split(',')[3]) 4783340
-			qstart = int(line.rstrip().split(',')[4]) 4302977
-			qend = int(line.rstrip().split(',')[5]) 4463047
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			qstart = int(line.rstrip().split(',')[4])
+			qend = int(line.rstrip().split(',')[5])
 			qseq = line.rstrip().split(',')[9]
 			sseq = line.rstrip().split(',')[10]
 
