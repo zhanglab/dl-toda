@@ -579,7 +579,7 @@ def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 				f.write(f'\t{i}')
 			f.write('\n')
 
-	return gi_to_plot
+	return gi_to_plot, align_coords
 
 
 def StoreCS(args, list_cs, type):
