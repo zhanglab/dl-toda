@@ -9,6 +9,7 @@ import multiprocessing
 import random
 import statistics
 import numpy as np
+import json
 from Bio import SeqIO, SeqUtils
 from collections import defaultdict
 from pycirclize import Circos, config
@@ -517,7 +518,7 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
-def GetGenomePos(input_file, data):
+def GetGenomePos(args, input_file, data):
 	ref_to_query = defaultdict(dict)
 	ref_start_end = defaultdict(list)
 	with open(input_file, 'r') as f:
@@ -544,16 +545,17 @@ def GetGenomePos(input_file, data):
 
 			ref_start_end[count] = [sstart, send]
 
-	print(ref_to_query)
+	with open(os.path.join(args.output_dir, 'gis_ref_to_query.json'), 'w') as f:
+		json.dump(f, ref_to_query)
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in data.items():
 		print(gi_id, info)
 		# find start and end on query genome
 		query_matching_pos = []
+		gi_start = info[0]
+		gi_end = info[3]
 		for count in ref_start_end.keys():
-			gi_start = info[0]
-			gi_end = info[3]
 			if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
 				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
 				or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
@@ -700,7 +702,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	GetGenomePos(f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands)
+	GetGenomePos(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands)
 
 	# # color = ColorCycler()
 	# # comp_name2color[comp_fasta.name] = colors[idx]
