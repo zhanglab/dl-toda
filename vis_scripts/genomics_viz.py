@@ -504,7 +504,7 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	return genes_of_interest
 
 
-def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
+def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
 	alignments = defaultdict(list)
 	with open(input_file, 'r') as f:
 		for line in f:
@@ -516,7 +516,9 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 				seq_label = seq_to_labels[seq_id]
 				evalue = float(line.rstrip().split(',')[7])
 				pident = float(line.rstrip().split(',')[8])
-				alignments[readid] = [seq_label, seq_id, sstart, send]
+				if readid in alignments:
+					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
+						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
 
 	if outfilename:
 		with open(outfilename, 'w') as f:
@@ -530,30 +532,44 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
+def GetGIAlignments(input_file):
+	alignments = defaultdict(list)
+	with open(input_file, 'r') as f:
+		for line in f:
+			gi_id = line.rstrip().split(',')[0]
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			evalue = float(line.rstrip().split(',')[7])
+			pident = float(line.rstrip().split(',')[8])
+			if readid in alignments:
+				if evalue < alignments[gi_id][4] and pident > alignments[gi_id][5]:
+					alignments[gi_id] = [sstart, send, evalue, pident]
 
-def GetGIMatchingPos(ref_start_end, ref_to_query, start_locus, end_locus):
+	return alignments
 
-	query_matching_pos = set()
+# def GetGIMatchingPos(ref_start_end, ref_to_query, start_locus, end_locus):
+
+# 	query_matching_pos = set()
 	
-	if start_locus > end_locus:
-		gi_start = end_locus
-		gi_end = start_locus
-	else:
-		gi_start = start_locus
-		gi_end = end_locus
+# 	if start_locus > end_locus:
+# 		gi_start = end_locus
+# 		gi_end = start_locus
+# 	else:
+# 		gi_start = start_locus
+# 		gi_end = end_locus
 
-	for count in ref_start_end.keys():
-		if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
-			or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
-			or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
-			or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
-			all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
+# 	for count in ref_start_end.keys():
+# 		if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
+# 			or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
+# 			or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
+# 			or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
+# 			all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
 			
-			for spos, qpos in ref_to_query[count].items():
-				if spos in all_gis_pos:
-					query_matching_pos.add(qpos)
+# 			for spos, qpos in ref_to_query[count].items():
+# 				if spos in all_gis_pos:
+# 					query_matching_pos.add(qpos)
 
-	return query_matching_pos
+# 	return query_matching_pos
 
 
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
@@ -588,31 +604,32 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 
 				ref_start_end[count] = [sstart, send]
 
-	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
-	for gi_id, info in genomic_islands.items():
-		# find start locus and end locus of genomic islands on query genome
-		start_locus_start_pos = info[0]
-		start_locus_end_pos = info[1]
-		end_locus_start_pos = info[4]
-		end_locus_end_pos = info[5]
+	# gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
+	# for gi_id, info in genomic_islands.items():
+	# 	# find start locus and end locus of genomic islands on query genome
+	# 	start_locus_start_pos = info[0]
+	# 	start_locus_end_pos = info[1]
+	# 	end_locus_start_pos = info[4]
+	# 	end_locus_end_pos = info[5]
 
-		start_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, start_locus_start_pos, start_locus_end_pos)
-		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
+	# 	start_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, start_locus_start_pos, start_locus_end_pos)
+	# 	end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
 
-		if len(start_locus_matching_pos) > 0:
-			gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(start_locus_matching_pos), max(start_locus_matching_pos), info[3], start_locus_start_pos, start_locus_end_pos]
+	# 	if len(start_locus_matching_pos) > 0:
+	# 		gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(start_locus_matching_pos), max(start_locus_matching_pos), info[3], start_locus_start_pos, start_locus_end_pos]
 
-		if len(end_locus_matching_pos) > 0:
-			gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(end_locus_matching_pos), max(end_locus_matching_pos), info[7], end_locus_start_pos, end_locus_end_pos]
+	# 	if len(end_locus_matching_pos) > 0:
+	# 		gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(end_locus_matching_pos), max(end_locus_matching_pos), info[7], end_locus_start_pos, end_locus_end_pos]
 
-	with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
-		for gi_id, info in gi_to_plot.items():
-			f.write(f'{gi_id}')
-			for i in info:
-				f.write(f'\t{i}')
-			f.write('\n')
+	# with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
+	# 	for gi_id, info in gi_to_plot.items():
+	# 		f.write(f'{gi_id}')
+	# 		for i in info:
+	# 			f.write(f'\t{i}')
+	# 		f.write('\n')
 
-	return gi_to_plot, align_coords
+	# return gi_to_plot, align_coords
+	return align_coords
 
 
 def StoreCS(args, list_cs, type):
@@ -1038,7 +1055,7 @@ if __name__ == "__main__":
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetReadsAlignmentsInfo(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetAlignmentsInfo(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	_ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
 	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
@@ -1047,19 +1064,21 @@ if __name__ == "__main__":
 
 	# blast testing reads to training genome from label 1
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
-	test_alignments_pos_train = GetReadsAlignmentsInfo(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	test_alignments_pos_train = GetAlignmentsInfo(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	# # calculate coverage of training genome
 	train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
 	# blast training reads to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'train_reads_train_genome'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out')
-	alignments_train_pos_test = GetReadsAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	alignments_train_pos_test = GetAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# get info about genomic islands
 	gis_info = GetGIs(args, str(training_records[0].seq), input_dir, training_fasta)
 	print(gis_info)
+	# blast GIs start and enf loci to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
+	gi_align = GetGIAlignments(f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
-
+	print(gi_align)
 	# if args.circos:
 	# 	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
