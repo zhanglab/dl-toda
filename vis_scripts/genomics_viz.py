@@ -40,11 +40,9 @@ random.seed(seed)
 
 
 def GetLocusSeq(start, end, strand):
-	if strand == '-':
-		assert end < start, f'End position should be smaller than start position: {start}\t{end}\t{strand}'
+	if end < start:
 		seq = training_seq[end:start+1]
-	elif strand == '+':
-		assert end > start, f'End position should be bigger than start position: {start}\t{end}\t{strand}'
+	elif end > start:
 		seq = training_seq[start:end+1]
 	
 	return seq
@@ -87,7 +85,7 @@ def GetGIs(args, training_seq, input_dir, training_fasta):
 				fna.write(f'>{gi_id}_start_{start_new_locus_tag}\n{start_locus_sequence}\n')
 				fna.write(f'>{gi_id}_end_{end_new_locus_tag}\n{end_locus_sequence}\n')
 
-				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{start_locus_strand}\t{end_locus_strand}\n')
+				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{start_locus_strand}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{end_locus_strand}\n')
 
 	outf.close()
 	fna.close()
