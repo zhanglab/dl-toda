@@ -544,7 +544,7 @@ def GetGIAlignments(input_file):
 			evalue = float(line.rstrip().split(',')[7])
 			pident = float(line.rstrip().split(',')[8])
 			if gi_id in alignments:
-				if evalue < alignments[gi_id][4] and pident > alignments[gi_id][5]:
+				if evalue < alignments[gi_id][2] and pident > alignments[gi_id][3]:
 					alignments[gi_id] = [sstart, send, evalue, pident]
 			else:
 				alignments[gi_id] = [sstart, send, evalue, pident]
