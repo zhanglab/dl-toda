@@ -543,7 +543,7 @@ def GetGIAlignments(input_file):
 			send = int(line.rstrip().split(',')[3])
 			evalue = float(line.rstrip().split(',')[7])
 			pident = float(line.rstrip().split(',')[8])
-			sstrand = line.rstrip().split(',')[9]
+			sstrand = line.rstrip().split(',')[11]
 			if gi_id in alignments:
 				if evalue < alignments[gi_id][2] and pident > alignments[gi_id][3]:
 					alignments[gi_id] = [sstart, send, evalue, pident, sstrand]
@@ -690,11 +690,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 			for gi_id, info in genomic_islands.items():
 				print(info)
-			# 	if info[2] == '+':
-			# 		gis_track.rect(info[0], info[1], color="orange")
-			# 	elif info[2] == '-':
-			# 		gis_track.rect(info[0], info[1], color="blue")
-			# print(f'added GIs track')
+				if info[2] == '+':
+					gis_track.rect(info[0], info[1], color="orange")
+				elif info[2] == '-':
+					gis_track.rect(info[0], info[1], color="blue")
+			print(f'added GIs track')
 
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
