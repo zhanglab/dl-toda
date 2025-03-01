@@ -553,9 +553,13 @@ def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in genomic_islands.items():
 		# find start and end on query genome
-		query_matching_pos = []
-		gi_start = info[0]
-		gi_end = info[3]
+		query_matching_pos = set()
+		if info[0] > info[3]:
+			gi_start = info[3]
+			gi_end = info[0]
+		else:
+			gi_start = info[0]
+			gi_end = info[3]
 		for count in ref_start_end.keys():
 			if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
 				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
@@ -569,7 +573,7 @@ def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 				print(count, ref_start_end[count][0], ref_start_end[count][1])
 				for spos, qpos in ref_to_query[count].items():
 					if spos in all_gis_pos:
-						query_matching_pos.append(qpos)
+						query_matching_pos.add(qpos)
 		
 		if len(query_matching_pos) > 0:
 			print(min(query_matching_pos), max(query_matching_pos))
