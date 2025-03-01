@@ -39,7 +39,7 @@ seed = 42
 random.seed(seed)
 
 
-def GetLocusSeq(start, end, strand):
+def GetLocusSeq(start, end, strand, training_seq):
 	if end < start:
 		seq = training_seq[end:start+1]
 	elif end > start:
@@ -79,8 +79,8 @@ def GetGIs(args, training_seq, input_dir, training_fasta):
 				gis_info[f'{gi_id}_start_{start_new_locus_tag}'] = [start_locus_tag_start, start_locus_tag_end, start_locus_strand]
 				gis_info[f'{gi_id}_end_{end_new_locus_tag}'] = [end_locus_tag_start, end_locus_tag_end, end_locus_strand]
 
-				start_locus_sequence = GetLocusSeq(start_locus_tag_start, start_locus_tag_end, start_locus_strand)
-				end_locus_sequence = GetLocusSeq(end_locus_tag_start, end_locus_tag_end, end_locus_strand)
+				start_locus_sequence = GetLocusSeq(start_locus_tag_start, start_locus_tag_end, start_locus_strand, training_seq)
+				end_locus_sequence = GetLocusSeq(end_locus_tag_start, end_locus_tag_end, end_locus_strand, training_seq)
 
 				fna.write(f'>{gi_id}_start_{start_new_locus_tag}\n{start_locus_sequence}\n')
 				fna.write(f'>{gi_id}_end_{end_new_locus_tag}\n{end_locus_sequence}\n')
