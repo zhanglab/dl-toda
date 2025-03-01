@@ -1046,15 +1046,15 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
+	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 
-	if args.circos:
-		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
-		print(gis_info)
-		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_info)
+	# if args.circos:
+	# 	gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
+	# 	print(gis_info)
+	# 	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 		# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
+	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_info)
 
 
 	# # do FP analysis
