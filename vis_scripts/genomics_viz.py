@@ -538,8 +538,6 @@ def GetGIMatchingPos(ref_start_end, start_locus, end_locus):
 			or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
 			or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
 			all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
-			print(gi_id, gi_start, gi_end, gi_start-gi_end+1, len(all_gis_pos))
-			print(count, ref_start_end[count][0], ref_start_end[count][1])
 			
 			for spos, qpos in ref_to_query[count].items():
 				if spos in all_gis_pos:
