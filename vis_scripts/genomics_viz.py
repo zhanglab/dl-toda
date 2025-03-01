@@ -39,6 +39,16 @@ seed = 42
 random.seed(seed)
 
 
+def GetLocusSeq(start, end, strand):
+	if strand == '-':
+		assert end < start, f'End position should be smaller than start position: {start}\t{end}\t{strand}'
+		seq = training_seq[end:start+1]
+	elif strand == '+':
+		assert end > start, f'End position should be bigger than start position: {start}\t{end}\t{strand}'
+		seq = training_seq[start:end+1]
+	
+	return seq
+
 
 def GetGIs(args, training_seq, input_dir, training_fasta):
 	outf = open(os.path.join(args.output_dir, f'{args.label}_gis.tsv'), 'w')
@@ -61,20 +71,22 @@ def GetGIs(args, training_seq, input_dir, training_fasta):
 				start_locus_tag_start = annot_parsed[start_locus_tag][0]
 				start_locus_tag_end = annot_parsed[start_locus_tag][1]
 				start_new_locus_tag = annot_parsed[start_locus_tag][2]
+				start_locus_strand = annot_parsed[start_locus_tag][3]
+
 				end_locus_tag_start = annot_parsed[end_locus_tag][0]
 				end_locus_tag_end = annot_parsed[end_locus_tag][1]
 				end_new_locus_tag = annot_parsed[end_locus_tag][2]
-				start_locus_strand = annot_parsed[start_locus_tag][3]
 				end_locus_strand = annot_parsed[end_locus_tag][3]
-				if end_locus_tag_end > start_locus_tag_start:
-					gi_sequence = training_seq[start_locus_tag_start:end_locus_tag_end+1]
-				else:
-					gi_sequence = training_seq[end_locus_tag_end:start_locus_tag_start+1]
-				print(line)
-				print(gi_id, start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
-				print(len(gi_sequence))
-				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, start_new_locus_tag, start_locus_strand, end_locus_tag_start, end_locus_tag_end, end_new_locus_tag, start_locus_strand]
-				fna.write(f'>{gi_id}\n{gi_sequence}\n')
+
+				gis_info[f'{gi_id}_start_{start_new_locus_tag}'] = [start_locus_tag_start, start_locus_tag_end, start_locus_strand]
+				gis_info[f'{gi_id}_end_{end_new_locus_tag}'] = [end_locus_tag_start, end_locus_tag_end, end_locus_strand]
+
+				start_locus_sequence = GetLocusSeq(start_locus_tag_start, start_locus_tag_end, start_locus_strand)
+				end_locus_sequence = GetLocusSeq(end_locus_tag_start, end_locus_tag_end, end_locus_strand)
+
+				fna.write(f'>{gi_id}_start_{start_new_locus_tag}\n{start_locus_sequence}\n')
+				fna.write(f'>{gi_id}_end_{end_new_locus_tag}\n{end_locus_sequence}\n')
+
 				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{start_locus_strand}\t{end_locus_strand}\n')
 
 	outf.close()
@@ -1046,6 +1058,7 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	gis_info = GetGIs(args, str(training_records[0].seq), input_dir, training_fasta)
+	print(gis_info)
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 
