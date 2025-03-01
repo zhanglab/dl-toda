@@ -796,7 +796,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for gi_id, info in gi_to_plot.items():
-			print(gi_id, info)
+			print(gi_id, info, info[1]-info[0])
 			if info[2] == '+':
 				gis_track.rect(info[0], info[1], color="orange")
 			elif info[2] == '-':
