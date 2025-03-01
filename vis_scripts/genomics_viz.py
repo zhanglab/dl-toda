@@ -583,8 +583,8 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 		# find start locus and end locus of genomic islands on query genome
 		start_locus_start_pos = info[0]
 		start_locus_end_pos = info[1]
-		end_locus_start_pos = info[2]
-		end_locus_end_pos = info[3]
+		end_locus_start_pos = info[4]
+		end_locus_end_pos = info[5]
 
 		start_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, start_locus_start_pos, start_locus_end_pos)
 		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
