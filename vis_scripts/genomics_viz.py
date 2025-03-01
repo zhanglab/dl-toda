@@ -316,7 +316,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 		else:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
-			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq", \
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
 			 '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 
 
@@ -543,11 +543,12 @@ def GetGIAlignments(input_file):
 			send = int(line.rstrip().split(',')[3])
 			evalue = float(line.rstrip().split(',')[7])
 			pident = float(line.rstrip().split(',')[8])
+			sstrand = line.rstrip().split(',')[9]
 			if gi_id in alignments:
 				if evalue < alignments[gi_id][2] and pident > alignments[gi_id][3]:
-					alignments[gi_id] = [sstart, send, evalue, pident]
+					alignments[gi_id] = [sstart, send, evalue, pident, sstrand]
 			else:
-				alignments[gi_id] = [sstart, send, evalue, pident]
+				alignments[gi_id] = [sstart, send, evalue, pident, sstrand]
 
 	return alignments
 
@@ -577,9 +578,8 @@ def GetGIAlignments(input_file):
 
 
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
-	print(f'identity_thr: {identity_thr}')
-	ref_to_query = defaultdict(dict)
-	ref_start_end = defaultdict(list)
+	# ref_to_query = defaultdict(dict)
+	# ref_start_end = defaultdict(list)
 	align_coords = []
 	with open(input_file, 'r') as f:
 		for count, line in enumerate(f, 1):
@@ -593,20 +593,20 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 
 			if pident >= identity_thr:
 				align_coords.append([qstart, qend, pident])
-				# get information for genomic islands
-				qpos = qstart
-				spos = sstart
-				for i in range(len(qseq)):
-					if qseq[i] != '-' and sseq[i] != '-':
-						ref_to_query[count][spos] = qpos
-						qpos += 1
-						spos += 1
-					elif sseq[i] == '-' and qseq[i] != '-':
-						qpos += 1
-					elif sseq[i] != '-' and qseq[i] == '-':
-						spos += 1
+				# # get information for genomic islands
+				# qpos = qstart
+				# spos = sstart
+				# for i in range(len(qseq)):
+				# 	if qseq[i] != '-' and sseq[i] != '-':
+				# 		ref_to_query[count][spos] = qpos
+				# 		qpos += 1
+				# 		spos += 1
+				# 	elif sseq[i] == '-' and qseq[i] != '-':
+				# 		qpos += 1
+				# 	elif sseq[i] != '-' and qseq[i] == '-':
+				# 		spos += 1
 
-				ref_start_end[count] = [sstart, send]
+				# ref_start_end[count] = [sstart, send]
 
 	# gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	# for gi_id, info in genomic_islands.items():
@@ -682,6 +682,20 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track.axis(fc="black")
 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
 		outer_track.xticks_by_interval(50000, tick_length=1, show_label=False)
+		min_r_pos -= 1
+
+		if args.genomic_islands:
+			# add track for genomic islands
+			min_r_pos -= 5
+			gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+			for gi_id, info in genomic_islands.items():
+				print(info)
+			# 	if info[2] == '+':
+			# 		gis_track.rect(info[0], info[1], color="orange")
+			# 	elif info[2] == '-':
+			# 		gis_track.rect(info[0], info[1], color="blue")
+			# print(f'added GIs track')
+
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
@@ -690,7 +704,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
-		min_r_pos -= 1
+		
 		cds_track = sector.add_track((min_r_pos-3, min_r_pos))
 		min_r_pos -= 3
 		# # rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -755,88 +769,76 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# # 	cds_track.annotate(label_pos, label, label_size=7)
 		# outf.close()
 
-	# Blast genome comparison & plot match blocks
-	comp_name2color = {}
-	# colors = ["black", "gray"]
-	# store percentage identity between matching regions
-	percent_identity = []
-	# run blast using pygenomeviz
-	# align_coords = Blast([query_fasta, ref_fasta]).run()
-	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	# run blast 		
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	_, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+	# # Blast genome comparison & plot match blocks
+	# comp_name2color = {}
+	# # colors = ["black", "gray"]
+	# # store percentage identity between matching regions
+	# percent_identity = []
+	# # run blast using pygenomeviz
+	# # align_coords = Blast([query_fasta, ref_fasta]).run()
+	# # align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# # run blast 		
+	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
+	# _, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 
-	# color = ColorCycler()
-	# comp_name2color[comp_fasta.name] = colors[idx]
-	matching_regions = []
-	for sector in circos.sectors:
-		# blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos-5	
-		for ac in align_coords:
-			print(ac)
-			# # percent_identity.append(ac.identity)
-			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-			percent_identity.append(ac[2])
-			# rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-			# blast_track.rect(ac[0], ac[1], color=rect_color)
-			matching_regions.append([ac[0], ac[1], ac[2]])
-			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
-			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
+	# # color = ColorCycler()
+	# # comp_name2color[comp_fasta.name] = colors[idx]
+	# matching_regions = []
+	# for sector in circos.sectors:
+	# 	# blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+	# 	min_r_pos-5	
+	# 	for ac in align_coords:
+	# 		print(ac)
+	# 		# # percent_identity.append(ac.identity)
+	# 		# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+	# 		# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+	# 		percent_identity.append(ac[2])
+	# 		# rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+	# 		# blast_track.rect(ac[0], ac[1], color=rect_color)
+	# 		matching_regions.append([ac[0], ac[1], ac[2]])
+	# 		# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
+	# 		# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
-	pos_matching_regions = set()
-	for i in range(len(matching_regions)):
-		for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
-			pos_matching_regions.add(j)
+	# pos_matching_regions = set()
+	# for i in range(len(matching_regions)):
+	# 	for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
+	# 		pos_matching_regions.add(j)
 
-	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
+	# pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
 
-	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
-	for read_id, data in fn_alignments_pos_test.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				fn_matching_regions.add(read_id)
-	fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
+	# fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
+	# for read_id, data in fn_alignments_pos_test.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			fn_matching_regions.add(read_id)
+	# fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
 
-	tp_matching_regions = set()
-	for read_id, data in tp_alignments_pos_test.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				tp_matching_regions.add(read_id)
-	tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
+	# tp_matching_regions = set()
+	# for read_id, data in tp_alignments_pos_test.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			tp_matching_regions.add(read_id)
+	# tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
 			
-	with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
-		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+	# with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
+	# 	f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	# 	f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	# 	f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
+	# 	f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
+	# 	f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
+	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
 
-	# get stats on percentage identity
-	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
+	# # get stats on percentage identity
+	# with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
+	# 	f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 
-	for sector in circos.sectors:
-		# add track for genomic islands
-		min_r_pos -= 5
-		gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		for gi_id, info in gi_to_plot.items():
-			print(f'GI:{gi_id}\tstart and end on query:{info[0]}-{info[1]}\tlength on query:{info[1]-info[0]}\tstart and end on ref:{info[4]}-{info[3]}\tlength on ref:{info[4]-info[3]}')
-			# print(gi_id, info, info[1]-info[0], info[4]-info[3])
-			if info[2] == '+':
-				gis_track.rect(info[0], info[1], color="orange")
-			elif info[2] == '-':
-				gis_track.rect(info[0], info[1], color="blue")
-		print(f'added GIs track')
-
-		# define x-axis vector for the next tracks
-		genome_pos = list(range(query_fasta.full_genome_length))
+	# for sector in circos.sectors:
+	# 	# define x-axis vector for the next tracks
+	# 	genome_pos = list(range(query_fasta.full_genome_length))
 
 		# # add tracks for coverage of training genome
 		# min_r_pos -= 5
@@ -1083,11 +1085,12 @@ if __name__ == "__main__":
 	gi_align = GetGIAlignments(f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	print(gi_align)
-	# if args.circos:
-	# 	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
-	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_info)
+
+	if args.circos:
+		# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gi_align)
 
 
 	# # do FP analysis
