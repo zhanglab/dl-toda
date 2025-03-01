@@ -521,7 +521,7 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 
 
 
-def GetGIMatchingPos(ref_start_end, start_locus, end_locus):
+def GetGIMatchingPos(ref_start_end, ref_to_query, start_locus, end_locus):
 
 	query_matching_pos = set()
 	
@@ -586,8 +586,8 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 		end_locus_start_pos = info[2]
 		end_locus_end_pos = info[3]
 
-		start_locus_matching_pos = GetGIMatchingPos(ref_start_end, start_locus_start_pos, start_locus_end_pos)
-		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, end_locus_start_pos, end_locus_end_pos)
+		start_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, start_locus_start_pos, start_locus_end_pos)
+		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
 
 		if len(start_locus_matching_pos) > 0:
 			gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(query_matching_pos), max(query_matching_pos), info[3]]
