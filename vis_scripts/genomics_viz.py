@@ -590,10 +590,10 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
 
 		if len(start_locus_matching_pos) > 0:
-			gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(start_locus_matching_pos), max(start_locus_matching_pos), info[3]]
+			gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(start_locus_matching_pos), max(start_locus_matching_pos), info[3], start_locus_start_pos, start_locus_end_pos]
 
 		if len(end_locus_matching_pos) > 0:
-			gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(end_locus_matching_pos), max(end_locus_matching_pos), info[7]]
+			gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(end_locus_matching_pos), max(end_locus_matching_pos), info[7], end_locus_start_pos, end_locus_end_pos]
 
 	with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
 		for gi_id, info in gi_to_plot.items():
@@ -796,7 +796,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for gi_id, info in gi_to_plot.items():
-			print(gi_id, info, info[1]-info[0])
+			print(f'GI:{gi_id}\tstart and end on query:{info[0]}-{info[1]}\tlength on query:{info[1]-info[0]}\tstart and end on ref:{info[4]}-{info[3]}\tlength on ref:{info[4]-info[3]}')
+			print(gi_id, info, info[1]-info[0], info[4]-info[3])
 			if info[2] == '+':
 				gis_track.rect(info[0], info[1], color="orange")
 			elif info[2] == '-':
