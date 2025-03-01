@@ -281,7 +281,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 		sys.executable = blastn_exec
 		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', \
 			f'{args.output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
-			'-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+			'-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 	else:
 		print('run blast')
 		if len(subject) > 1:
@@ -303,11 +303,11 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 		# align reads to database or fasta file
 		if sam:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
-			 	'-outfmt', "17", '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 		else:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq", \
-			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+			 '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
@@ -734,7 +734,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	gi_to_plot, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+	_, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
