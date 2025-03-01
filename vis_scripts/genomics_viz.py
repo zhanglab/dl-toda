@@ -42,7 +42,7 @@ random.seed(seed)
 
 def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
 	outf = open(os.path.join(args.output_dir, f'{args.label}_gis.tsv'), 'w')
-	# fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
 	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, args.train_genomes_info[args.label][0], input_dir)
 
@@ -74,11 +74,11 @@ def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
 				print(gi_id, start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
 				print(len(gi_sequence))
 				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
-				# fna.write(f'>{gi_id}\n{gi_sequence}\n')
+				fna.write(f'>{gi_id}\n{gi_sequence}\n')
 				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{start_locus_strand}\t{end_locus_strand}\n')
 
 	outf.close()
-	# fna.close()
+	fna.close()
 
 	return gis_info
 
@@ -274,6 +274,8 @@ def RunBowtie(args, target, query, outfilename):
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
+	if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
 	print('run blast')
 	if db:
 		sys.executable = blastn_exec
@@ -518,7 +520,7 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
-def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
+def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 	print(f'identity_thr: {identity_thr}')
 	ref_to_query = defaultdict(dict)
 	ref_start_end = defaultdict(list)
@@ -565,12 +567,10 @@ def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
 				or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
 				or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
-				if gi_start < gi_end:
-					all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
-				else:
-					all_gis_pos = set(list(range(gi_end, gi_start+1, 1)))
+				all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
 				print(gi_id, gi_start, gi_end, gi_start-gi_end+1, len(all_gis_pos))
 				print(count, ref_start_end[count][0], ref_start_end[count][1])
+				
 				for spos, qpos in ref_to_query[count].items():
 					if spos in all_gis_pos:
 						query_matching_pos.add(qpos)
@@ -719,7 +719,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	gi_to_plot, align_coords = GetGenomePos(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+	_, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
@@ -936,10 +936,6 @@ if __name__ == "__main__":
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
 		os.makedirs(os.path.join(args.output_dir, 'blast'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'blast', 'test_reads_test_genome')):
-		os.makedirs(os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'blast', 'test_train_genomes')):
-		os.makedirs(os.path.join(args.output_dir, 'blast', 'test_train_genomes'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
 		os.makedirs(os.path.join(args.output_dir, 'train_coverage'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
@@ -1031,6 +1027,8 @@ if __name__ == "__main__":
 	alignments_train_pos_test = GetReadsAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# get info about genomic islands
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
+
 	if args.circos:
 		gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
 		print(gis_info)
