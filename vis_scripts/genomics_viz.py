@@ -563,10 +563,10 @@ def GetGenomePos(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 				or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
 				if gi_start < gi_end:
 					all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
-					print(gi_id, gi_end-gi_start, len(all_gis_pos))
 				else:
 					all_gis_pos = set(list(range(gi_end, gi_start+1, 1)))
-					print(gi_id, gi_start-gi_end, len(all_gis_pos))
+				print(gi_id, gi_start, gi_end, gi_start-gi_end+1, len(all_gis_pos))
+				print(count, ref_start_end[count][0], ref_start_end[count][1])
 				for spos, qpos in ref_to_query[count].items():
 					if spos in all_gis_pos:
 						query_matching_pos.append(qpos)
