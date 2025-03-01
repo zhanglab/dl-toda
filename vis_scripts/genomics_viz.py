@@ -519,6 +519,8 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				if readid in alignments:
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
 						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
+				else:
+					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
 
 	if outfilename:
 		with open(outfilename, 'w') as f:
@@ -541,9 +543,11 @@ def GetGIAlignments(input_file):
 			send = int(line.rstrip().split(',')[3])
 			evalue = float(line.rstrip().split(',')[7])
 			pident = float(line.rstrip().split(',')[8])
-			if readid in alignments:
+			if gi_id in alignments:
 				if evalue < alignments[gi_id][4] and pident > alignments[gi_id][5]:
 					alignments[gi_id] = [sstart, send, evalue, pident]
+			else:
+				alignments[gi_id] = [sstart, send, evalue, pident]
 
 	return alignments
 
