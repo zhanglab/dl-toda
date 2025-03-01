@@ -40,7 +40,7 @@ random.seed(seed)
 
 
 
-def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
+def GetGIs(args, training_seq, input_dir, training_fasta):
 	outf = open(os.path.join(args.output_dir, f'{args.label}_gis.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), 'w')
 
@@ -1045,12 +1045,11 @@ if __name__ == "__main__":
 	alignments_train_pos_test = GetReadsAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# get info about genomic islands
+	gis_info = GetGIs(args, str(training_records[0].seq), input_dir, training_fasta)
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 
 	# if args.circos:
-	# 	gis_info = GetGIs(args, str(training_records[0].seq), testing_fasta, input_dir, training_fasta)
-	# 	print(gis_info)
 	# 	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 	# 		# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
 	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
