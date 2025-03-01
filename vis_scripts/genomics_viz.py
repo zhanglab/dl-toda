@@ -73,7 +73,7 @@ def GetGIs(args, training_seq, testing_fasta, input_dir, training_fasta):
 				print(line)
 				print(gi_id, start_locus_tag_start, end_locus_tag_end, start_locus_strand, end_locus_strand)
 				print(len(gi_sequence))
-				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, end_locus_tag_start, end_locus_tag_end]
+				gis_info[gi_id] = [start_locus_tag_start, start_locus_tag_end, start_new_locus_tag, start_locus_strand, end_locus_tag_start, end_locus_tag_end, end_new_locus_tag, start_locus_strand]
 				fna.write(f'>{gi_id}\n{gi_sequence}\n')
 				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{start_locus_strand}\t{end_locus_strand}\n')
 
@@ -520,6 +520,34 @@ def GetReadsAlignmentsInfo(sequences, input_file, sequence_length, seq_to_labels
 	return alignments
 
 
+
+def GetGIMatchingPos(ref_start_end, start_locus, end_locus):
+
+	query_matching_pos = set()
+	
+	if start_locus > end_locus:
+		gi_start = end_locus
+		gi_end = start_locus
+	else:
+		gi_start = start_locus
+		gi_end = end_locus
+
+	for count in ref_start_end.keys():
+		if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
+			or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
+			or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
+			or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
+			all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
+			print(gi_id, gi_start, gi_end, gi_start-gi_end+1, len(all_gis_pos))
+			print(count, ref_start_end[count][0], ref_start_end[count][1])
+			
+			for spos, qpos in ref_to_query[count].items():
+				if spos in all_gis_pos:
+					query_matching_pos.add(qpos)
+
+	return query_matching_pos
+
+
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 	print(f'identity_thr: {identity_thr}')
 	ref_to_query = defaultdict(dict)
@@ -554,31 +582,20 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 
 	gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
 	for gi_id, info in genomic_islands.items():
-		# find start and end on query genome
-		query_matching_pos = set()
-		if info[0] > info[3]:
-			gi_start = info[3]
-			gi_end = info[0]
-		else:
-			gi_start = info[0]
-			gi_end = info[3]
-		for count in ref_start_end.keys():
-			if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
-				or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
-				or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
-				or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
-				all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
-				print(gi_id, gi_start, gi_end, gi_start-gi_end+1, len(all_gis_pos))
-				print(count, ref_start_end[count][0], ref_start_end[count][1])
-				
-				for spos, qpos in ref_to_query[count].items():
-					if spos in all_gis_pos:
-						query_matching_pos.add(qpos)
-		
-		if len(query_matching_pos) > 0:
-			print(min(query_matching_pos), max(query_matching_pos))
-			gi_to_plot[gi_id] = [min(query_matching_pos), max(query_matching_pos)]
-		sys.exit(1)
+		# find start locus and end locus of genomic islands on query genome
+		start_locus_start_pos = info[0]
+		start_locus_end_pos = info[1]
+		end_locus_start_pos = info[2]
+		end_locus_end_pos = info[3]
+
+		start_locus_matching_pos = GetGIMatchingPos(ref_start_end, start_locus_start_pos, start_locus_end_pos)
+		end_locus_matching_pos = GetGIMatchingPos(ref_start_end, end_locus_start_pos, end_locus_end_pos)
+
+		if len(start_locus_matching_pos) > 0:
+			gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(query_matching_pos), max(query_matching_pos), info[3]]
+
+		if len(end_locus_matching_pos) > 0:
+			gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(query_matching_pos), max(query_matching_pos), info[7]]
 
 	with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
 		for gi_id, info in gi_to_plot.items():
@@ -719,7 +736,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	_, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+	gi_to_plot, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
@@ -1027,6 +1044,7 @@ if __name__ == "__main__":
 	alignments_train_pos_test = GetReadsAlignmentsInfo(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# get info about genomic islands
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
 
 	if args.circos:
