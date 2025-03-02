@@ -720,8 +720,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		space=10,
 	)
 	with open(testing_fasta, 'r') as f:
-		print(f.readline())
-	# circos.text("Escherichia coli\n(NC_000913)", size=12, r=20)
+		content = f.readline()
+	sequence_id = content[0].split(',')[0].split(' ')[0][1:]
+	strain = content[0].split(',')[0].split(' ')[1:]
+	circos.text(f'{strain}\n{sequences_id}', size=12, r=20)
 
 	print('define space', len(query_fasta.get_seqid2size()))
 	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
@@ -730,8 +732,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(os.path.join(args.output_dir, f'{args.label}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
-
-	sys.exit(1)
 	print('genes of interest')
 	print(genes_of_interest)
 
@@ -907,102 +907,102 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
 		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 
-	for sector in circos.sectors:
-		# define x-axis vector for the next tracks
-		genome_pos = list(range(query_fasta.full_genome_length))
+	# for sector in circos.sectors:
+	# 	# define x-axis vector for the next tracks
+	# 	genome_pos = list(range(query_fasta.full_genome_length))
 
-		# add tracks for coverage of training genome
-		min_r_pos -= 5
-		train_cov_test = [0]*query_fasta.full_genome_length
-		for readid, data in alignments_train_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				train_cov_test[pos-1] += train_coverage[pos-1]
-		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		cov_track.axis(ec="blue")
-		y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		y_labels = list(map(str, y_values))
-		cov_track.yticks(y_values, y_labels)
-		cov_track.line(genome_pos, train_cov_test, color="blue")
-		print(f'added COV track')
+	# 	# add tracks for coverage of training genome
+	# 	min_r_pos -= 5
+	# 	train_cov_test = [0]*query_fasta.full_genome_length
+	# 	for readid, data in alignments_train_pos_test.items():
+	# 		for pos in range(data[2], data[3]+1, 1):
+	# 			train_cov_test[pos-1] += train_coverage[pos-1]
+	# 	cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	cov_track.axis(ec="blue")
+	# 	y_values = list(range(min(train_coverage), max(train_coverage), 2))
+	# 	y_labels = list(map(str, y_values))
+	# 	cov_track.yticks(y_values, y_labels)
+	# 	cov_track.line(genome_pos, train_cov_test, color="blue")
+	# 	print(f'added COV track')
 
-		# add track for TP reads
-		min_r_pos -= 13
-		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="darkviolet")
-		pos_tp_count = [0]*query_fasta.full_genome_length
-		for readid, data in tp_alignments_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_tp_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
-			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		print(f'added TP track')
+	# 	# add track for TP reads
+	# 	min_r_pos -= 13
+	# 	tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	tp_track.axis(ec="darkviolet")
+	# 	pos_tp_count = [0]*query_fasta.full_genome_length
+	# 	for readid, data in tp_alignments_pos_test.items():
+	# 		for pos in range(data[2], data[3]+1, 1):
+	# 			pos_tp_count[pos-1] +=1
+	# 	print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
+	# 	y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
+	# 	y_labels = list(map(str, y_values))
+	# 	tp_track.yticks(y_values, y_labels)
+	# 	tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
+	# 		# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+	# 	print(f'added TP track')
 
-		# add tracks for FN reads 
-		min_r_pos -= 13
-		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fn_track.axis(ec="orangered")
-		pos_fn_count = [0]*query_fasta.full_genome_length
-		for readid, data in fn_alignments_pos_test.items():
-			# if readid not in most_mapped_reads_id:
-			for pos in range(data[2], data[3]+1, 1):
-				pos_fn_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
-		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
-		y_labels = list(map(str, y_values))
-		fn_track.yticks(y_values, y_labels)
-		fn_track.line(genome_pos, pos_fn_count, color="orangered")
-		print(f'added FN track')
+	# 	# add tracks for FN reads 
+	# 	min_r_pos -= 13
+	# 	fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	fn_track.axis(ec="orangered")
+	# 	pos_fn_count = [0]*query_fasta.full_genome_length
+	# 	for readid, data in fn_alignments_pos_test.items():
+	# 		# if readid not in most_mapped_reads_id:
+	# 		for pos in range(data[2], data[3]+1, 1):
+	# 			pos_fn_count[pos-1] +=1
+	# 	print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
+	# 	y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
+	# 	y_labels = list(map(str, y_values))
+	# 	fn_track.yticks(y_values, y_labels)
+	# 	fn_track.line(genome_pos, pos_fn_count, color="orangered")
+	# 	print(f'added FN track')
 
-		# Plot GC skew
-		min_r_pos -= 11
-		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gcskews = GetGCSkew(test_record_seq)
-		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		abs_max_gcskew = np.max(np.abs(gcskews))
-		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
-		)
-		gcskew_track.fill_between(
-			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		)
+	# 	# Plot GC skew
+	# 	min_r_pos -= 11
+	# 	gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+	# 	pos_list, gcskews = GetGCSkew(test_record_seq)
+	# 	positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+	# 	negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+	# 	abs_max_gcskew = np.max(np.abs(gcskews))
+	# 	vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+	# 	gcskew_track.fill_between(
+	# 		pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
+	# 	)
+	# 	gcskew_track.fill_between(
+	# 		pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+	# 	)
 
-		# Plot GC content
-		min_r_pos -= 5
-		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
-		gc_content_updated = gc_content - test_genome_gc_content
-		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
-		print(len(gc_content_updated))
-		print(len(pos_list))
-		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-		abs_max_gc_content = np.max(np.abs(gc_content_updated))
-		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-		gc_content_track.fill_between(
-			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-		)
-		gc_content_track.fill_between(
-			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-		)
+	# 	# Plot GC content
+	# 	min_r_pos -= 5
+	# 	gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+	# 	pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+	# 	print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
+	# 	gc_content_updated = gc_content - test_genome_gc_content
+	# 	print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
+	# 	print(len(gc_content_updated))
+	# 	print(len(pos_list))
+	# 	positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+	# 	negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+	# 	abs_max_gc_content = np.max(np.abs(gc_content_updated))
+	# 	vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+	# 	gc_content_track.fill_between(
+	# 		pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+	# 	)
+	# 	gc_content_track.fill_between(
+	# 		pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+	# 	)
 		
-		# report GC content of train and test genomes
-		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
-			f.write(f'Testing genome:\t{test_genome_gc_content}')
-			f.write(f'Training genome:\t{train_genome_gc_content}')
+	# 	# report GC content of train and test genomes
+	# 	_, _, train_genome_gc_content = GetGCContent(train_record_seq)
+	# 	with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
+	# 		f.write(f'Testing genome:\t{test_genome_gc_content}')
+	# 		f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# get average GC content for FN and TP reads
-		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
-		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
+	# 	# get average GC content for FN and TP reads
+	# 	GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
+	# 	GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
+	# 	GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
+	# 	GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
