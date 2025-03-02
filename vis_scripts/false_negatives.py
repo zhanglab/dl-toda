@@ -16,7 +16,7 @@ from pycirclize import Circos, config
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.utils import load_fq_file
-from genomics_viz_utils import *
+# from genomics_viz_utils import *
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 from pygenomeviz.parser import Fasta
 from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
