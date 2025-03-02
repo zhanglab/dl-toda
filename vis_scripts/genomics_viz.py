@@ -812,8 +812,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			percent_identity.append(ac[2])
-			# rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-			# blast_track.rect(ac[0], ac[1], color=rect_color)
+			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+			blast_track.rect(ac[0], ac[1], color=rect_color)
 			matching_regions.append([ac[0], ac[1], ac[2]])
 			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
