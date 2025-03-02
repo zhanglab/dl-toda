@@ -117,7 +117,7 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 	return gis_align
 
 
-def GetGIsFromFasta(args, genome_id, fasta):
+def GetGIsFromFasta(args, genome_id, ref_fasta):
 	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
 
@@ -132,9 +132,9 @@ def GetGIsFromFasta(args, genome_id, fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
-	print(gi_align)
+	print(gis_align)
 	# with open(info_file, 'r') as f:
 	# 	for line in f:
 	# 		gi_id = line.rstrip().split('\t')[1]
