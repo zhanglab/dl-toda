@@ -129,7 +129,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	# blast GIs start and end loci to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
-
+	print(gis_align)
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
 	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
@@ -156,7 +156,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 					del gis_align[end_locus]
 			else:
 				outf.write(f'{pos_info[0]}')
-				for e in gis_align[start_locus]:
+				for e in gis_align[pos_info[0]]:
 						outf.write(f'\t{e}')
 
 			outf.write('\n')
