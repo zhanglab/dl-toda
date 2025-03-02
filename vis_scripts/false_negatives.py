@@ -914,20 +914,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
 
-		# # add tracks for coverage of training genome
-		# min_r_pos -= 5
-		# train_cov_test = [0]*query_fasta.full_genome_length
-		# for readid, data in alignments_train_pos_test.items():
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		train_cov_test[pos-1] += train_coverage[pos-1]
-		# cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# cov_track.axis(ec="blue")
-		# y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		# y_labels = list(map(str, y_values))
-		# cov_track.yticks(y_values, y_labels)
-		# cov_track.line(genome_pos, train_cov_test, color="blue")
-		# print(f'added COV track')
-
 		# add track for TP reads
 		min_r_pos -= 5
 		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
@@ -1148,17 +1134,13 @@ if __name__ == "__main__":
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
 	test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
-	# blast training reads to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'train_reads_train_genome'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out')
-	alignments_train_pos_test = GetReadsAlignments(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-
 	# get info about genomic islands
 	if os.path.isdir(args.genomic_islands):
 		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
 	else:
 		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_align)
 
 
