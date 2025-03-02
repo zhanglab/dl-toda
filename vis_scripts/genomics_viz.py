@@ -161,7 +161,8 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 				outf.write(f'{pos_info[0]}')
 				for e in gis_align[pos_info[0]]:
 					outf.write(f'\t{e}')
-				gis_align[gi_id] = [gis_align[pos_info[0]][0], gis_align[pos_info[1]][1]]
+				print(gis_align[pos_info[0]])
+				gis_align[gi_id] = [gis_align[pos_info[0]][0], gis_align[pos_info[0]][1]]
 				del gis_align[pos_info[0]]
 
 			outf.write('\n')
