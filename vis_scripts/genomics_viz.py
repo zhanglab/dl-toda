@@ -738,10 +738,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
 			print(f'list of GIs: {list_gis}')
 			for idx, gi_id in enumerate(list_gis):
-				print(gi_id, start_locus, end_locus)
 				color = colors[idx]
 				start_locus = genomic_islands[f'{gi_id}_start']
 				end_locus = genomic_islands[f'{gi_id}_end']
+				print(gi_id, start_locus, end_locus)
 				gis_track.rect(start_locus[0], start_locus[1], color=color)
 				gis_track.rect(end_locus[0], end_locus[1], color=color)
 				start_label_pos = (start_locus[0] + start_locus[1]) / 2
