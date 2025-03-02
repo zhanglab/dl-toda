@@ -26,7 +26,7 @@ ColorCycler.set_cmap("Set1")
 
 # QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
-TICKS_INTERVAL = 100000
+TICKS_INTERVAL = 500000
 bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
 bowtie2_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2"
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
@@ -142,22 +142,28 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 				end_locus = pos_info[1]
 				print(start_locus, end_locus)
 				if start_locus in gis_align:
+					start_pos = gis_align[start_locus][0]
 					outf.write(f'{start_locus}')
 					for e in gis_align[start_locus]:
 						outf.write(f'\t{e}')
-					gis_align[f'{start_locus}_start'] = gis_align[start_locus]
-					del gis_align[start_locus]
+					
 
 				if end_locus in gis_align:
+					end_pos = gis_align[end_locus][1]
 					outf.write(f'\t{end_locus}')
 					for e in gis_align[end_locus]:
 						outf.write(f'\t{e}')
-					gis_align[f'{end_locus}_start'] = gis_align[end_locus]
-					del gis_align[end_locus]
+				
+				gis_align[gi_id] = [start_pos, end_pos]
+
+				del gis_align[start_locus]
+				del gis_align[end_locus]
 			else:
 				outf.write(f'{pos_info[0]}')
 				for e in gis_align[pos_info[0]]:
 					outf.write(f'\t{e}')
+				gis_align[gi_id] = [gis_align[pos_info[0]], gis_align[pos_info[1]]]
+				del gis_align[pos_info[0]]
 
 			outf.write('\n')
 	outf.close()
@@ -732,8 +738,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
-		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
-		outer_track.xticks_by_interval(50000, tick_length=1, show_label=False)
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+		outer_track.xticks_by_interval(250000, tick_length=1, show_label=False)
 
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -744,8 +750,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
 		
-		cds_track = sector.add_track((min_r_pos-4, min_r_pos))
-		min_r_pos -= 4
+		# cds_track = sector.add_track((min_r_pos-4, min_r_pos))
+		# min_r_pos -= 4
 		# # rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# # min_r_pos -= 6
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -757,22 +763,22 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
-					cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
+					# cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
-					if genes_of_interest[gene_id][0] == 'tRNA':
-						cds_track.genomic_features(feature, fc="darkgreen")
+					# if genes_of_interest[gene_id][0] == 'tRNA':
+						# cds_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
 			else:
 				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
 				if genes_of_interest[gene_id][0] == 'protein_coding':
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
-					cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
+					# cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
 				else:
 					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
-					if genes_of_interest[gene_id][0] == 'tRNA':
-						cds_track.genomic_features(feature, fc="darkgreen")
+					# if genes_of_interest[gene_id][0] == 'tRNA':
+						# cds_track.genomic_features(feature, fc="darkgreen")
 					# if genes_of_interest[gene_id][0] == 'rRNA':
 					# 	rrna_track.genomic_features(feature, fc="deeppink")
 
@@ -782,33 +788,35 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		
 		# Plot labels of genomic islands
 		if genomic_islands:
-			colors = ['red', 'darkorange', 'mediumblue', 'darkgreen', 'darkviolet']
+			color = 'darkorange'
 			# add track for genomic islands
-			f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos -= 6
+			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
+			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			min_r_pos -= 4
 			list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
-			for idx, gi_id in enumerate(list_gis):
-				color = colors[idx]
-				start_locus = genomic_islands[f'{gi_id}_start']
-				end_locus = genomic_islands[f'{gi_id}_end']
-				if start_locus[0] > end_locus[1]:
-					start_gi = end_locus[1]
-					end_gi = start_locus[0]
+			for gi_id in list_gis:
+				if len(gi_id.split('_')) > 1:
 				else:
-					start_gi = start_locus[0]
-					end_gi = end_locus[1]
+					start_locus = genomic_islands[gi_id][0]
+					end_locus = genomic_islands[gi_id][1]
+					if start_locus[0] > end_locus[1]:
+						start_gi = end_locus[1]
+						end_gi = start_locus[0]
+					else:
+						start_gi = start_locus[0]
+						end_gi = end_locus[1]
 
-				if start_locus[4] == 'plus' and end_locus[4] == 'plus':
-					f_gis_track.rect(start_gi, end_gi, color=color)
-				elif start_locus[4] == 'minus' and end_locus[4] == 'minus':
-					r_gis_track.rect(start_gi, end_gi, color=color)
-				# gis_track.rect(end_locus[0], end_locus[1], color=color)
-				# start_label_pos = (start_locus[0] + start_locus[1]) / 2
-				# end_label_pos = (end_locus[0] + end_locus[1]) / 2
-				# label_pos = (start_gi + end_gi) / 2
-				# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-				# gis_track.annotate(end_label_pos, f'{gi_id}_end', label_size=7)
+					# if start_locus[4] == 'plus' and end_locus[4] == 'plus':
+					# 	f_gis_track.rect(start_gi, end_gi, color=color)
+					# elif start_locus[4] == 'minus' and end_locus[4] == 'minus':
+					# 	r_gis_track.rect(start_gi, end_gi, color=color)
+					gis_track.rect(start_gi, end_gi, color=color)
+					# start_label_pos = (start_locus[0] + start_locus[1]) / 2
+					# end_label_pos = (end_locus[0] + end_locus[1]) / 2
+					label_pos = (start_gi + end_gi) / 2
+					# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
+					gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
 			print(f'added GIs track')
 
 
@@ -1103,50 +1111,50 @@ if __name__ == "__main__":
 	StoreCS(args, fp_cs, 'FP')
 	StoreCS(args, tp_cs, 'TP')
 
-	# # get association between sequences in training set and labels
-	# with open(args.sequences_info, 'r') as f:
-	# 	content = f.readlines()
-	# 	seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+	# get association between sequences in training set and labels
+	with open(args.sequences_info, 'r') as f:
+		content = f.readlines()
+		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# # do FN analysis
-	# # create fasta file with testing reads from label 1
-	# with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
-	# 	for k, v in test_readid_to_read.items():
-	# 		if k in fn_sequences or k in tp_sequences:
-	# 			outf.write(f'>{k}\n{v}\n')
+	# do FN analysis
+	# create fasta file with testing reads from label 1
+	with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
+		for k, v in test_readid_to_read.items():
+			if k in fn_sequences or k in tp_sequences:
+				outf.write(f'>{k}\n{v}\n')
 
-	# # blast testing reads to testing genome		
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
-	# # get mapping of false negatives to testing genome from label 1
-	# fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	# # get annotations info
-	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	# blast testing reads to testing genome		
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
+	# get mapping of false negatives to testing genome from label 1
+	fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# get annotations info
+	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
-	# # # blast testing reads to training genomes from other species
-	# # training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	# # RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/all_test_pos_train_blastn.out')
-	# # fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/blast/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
-	# # # get taxonomy of mapped training genomes and taxon with most reads mapped
-	# # _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
+	# # blast testing reads to training genomes from other species
+	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
+	# RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/all_test_pos_train_blastn.out')
+	# fn_alignments_pos_neg_train = GetAlignmentsInfo(fn_sequences, f'{args.output_dir}/blast/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	# # get taxonomy of mapped training genomes and taxon with most reads mapped
+	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
 	
-	# # do TP analysis
-	# # get mapping of true positives to testing genome from label 1
-	# tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
+	# do TP analysis
+	# get mapping of true positives to testing genome from label 1
+	tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	_ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
-	# # # create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	# # CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	# # CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
+	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# # blast testing reads to training genome from label 1
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
-	# test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
-	# # # calculate coverage of training genome
-	# train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
-	# # blast training reads to testing genome
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'train_reads_train_genome'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out')
-	# alignments_train_pos_test = GetReadsAlignments(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# blast testing reads to training genome from label 1
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
+	test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	# # calculate coverage of training genome
+	train_coverage, ref_info, train_pos_reads_id, train_sequence_length = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
+	# blast training reads to testing genome
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'train_reads_train_genome'), args.training_fna_file, subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out')
+	alignments_train_pos_test = GetReadsAlignments(set(train_pos_reads_id), f'{args.output_dir}/blast/train_reads_train_genome/all_train_pos_test_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/train_reads_train_genome/all_pos_train_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# get info about genomic islands
 	if os.path.isdir(args.genomic_islands):
@@ -1156,11 +1164,9 @@ if __name__ == "__main__":
 
 	print(gis_align)
 
-	# if args.circos:
-	# 	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		# os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'))
-	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gi_align)
+	if args.circos:
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gi_align)
 
 
 	# # do FP analysis
