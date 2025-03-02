@@ -684,7 +684,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track.xticks_by_interval(50000, tick_length=1, show_label=False)
 		min_r_pos -= 1
 
-		if genomic_islands is not None:
+		if genomic_islands:
 			colors = ['red', 'darkorange', 'mediumblue', 'darkgreen', 'darkviolet']
 			# add track for genomic islands
 			min_r_pos -= 5
@@ -692,6 +692,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
 			print(f'list of GIs: {list_gis}')
 			for idx, gi_id in enumerate(list_gis):
+				print(gi_id, start_locus, end_locus)
 				color = colors[idx]
 				start_locus = genomic_islands[f'{gi_id}_start']
 				end_locus = genomic_islands[f'{gi_id}_end']
