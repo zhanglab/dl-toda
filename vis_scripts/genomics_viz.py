@@ -123,7 +123,6 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
-	print(fasta_files)
 	for fasta in fasta_files:
 		with open(fasta, 'r') as f:
 			fna.write(f.read())
@@ -134,18 +133,36 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	# blast GIs start and end loci to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
-	print(gis_align)
-	# with open(info_file, 'r') as f:
-	# 	for line in f:
-	# 		gi_id = line.rstrip().split('\t')[1]
-	# 		pos_info = line.rstrip().split('\t')[1:]
-	# 		if len(pos_info) == 2:
-	# 			start_locus = pos_info[0]
-	# 			end_locus = pos_info[1]
-	# 		else:
-	# 			locus = 
 
-	# print(gis_info)
+	# update GIs ID if the information provided consists of the junction sites and not the entire island
+	with open(info_file, 'r') as f:
+		for line in f:
+			gi_id = line.rstrip().split('\t')[1]
+			pos_info = line.rstrip().split('\t')[2:]
+			outf.write(f'{gi_id}\t')
+			if len(pos_info) == 2:
+				start_locus = pos_info[0]
+				end_locus = pos_info[1]
+				
+				if start_locus in gis_align:
+					outf.write(f'{start_locus}')
+					for e in gis_align[start_locus]:
+						outf.write(f'\t{e}')
+					gis_align[f'{start_locus}_start'] = gis_align[start_locus]
+					del gis_align[start_locus]
+
+				if end_locus in gis_align:
+					outf.write(f'\t{end_locus}')
+					for e in gis_align[end_locus]:
+						outf.write(f'\t{e}')
+					gis_align[f'{end_locus}_start'] = gis_align[end_locus]
+					del gis_align[end_locus]
+			else:
+				outf.write(f'{pos_info[0]}')
+				for e in gis_align[start_locus]:
+						outf.write(f'\t{e}')
+
+			outf.write('\n')
 
 	return gis_align
 
@@ -1135,13 +1152,10 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if os.path.isdir(args.genomic_islands):
-		gis_info = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
 	else:
-		gis_info = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
-	print(gis_info)
-	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'gis_test_genome'), os.path.join(args.output_dir, f'{args.label}_genomic_islands.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
-	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_test_genome/gis_pos_test_blastn.out')
+		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+
 	print(gis_align)
 
 	# if args.circos:
