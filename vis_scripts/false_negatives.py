@@ -709,7 +709,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 
 
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-		alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, \
+			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, \
 			outfilename, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
