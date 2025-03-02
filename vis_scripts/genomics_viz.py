@@ -794,30 +794,30 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			min_r_pos -= 4
-			list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
-			for gi_id in list_gis:
-				if len(gi_id.split('_')) > 1:
-				else:
-					start_locus = genomic_islands[gi_id][0]
-					end_locus = genomic_islands[gi_id][1]
-					if start_locus[0] > end_locus[1]:
-						start_gi = end_locus[1]
-						end_gi = start_locus[0]
-					else:
-						start_gi = start_locus[0]
-						end_gi = end_locus[1]
+			# list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
+			# for gi_id in list_gis:
+			# 	if len(gi_id.split('_')) > 1:
+			# 	else:
+			# 		start_locus = genomic_islands[gi_id][0]
+			# 		end_locus = genomic_islands[gi_id][1]
+			# 		if start_locus[0] > end_locus[1]:
+			# 			start_gi = end_locus[1]
+			# 			end_gi = start_locus[0]
+			# 		else:
+			# 			start_gi = start_locus[0]
+			# 			end_gi = end_locus[1]
 
-					# if start_locus[4] == 'plus' and end_locus[4] == 'plus':
-					# 	f_gis_track.rect(start_gi, end_gi, color=color)
-					# elif start_locus[4] == 'minus' and end_locus[4] == 'minus':
-					# 	r_gis_track.rect(start_gi, end_gi, color=color)
-					gis_track.rect(start_gi, end_gi, color=color)
-					# start_label_pos = (start_locus[0] + start_locus[1]) / 2
-					# end_label_pos = (end_locus[0] + end_locus[1]) / 2
-					label_pos = (start_gi + end_gi) / 2
-					# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-					gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-			print(f'added GIs track')
+			# 		# if start_locus[4] == 'plus' and end_locus[4] == 'plus':
+			# 		# 	f_gis_track.rect(start_gi, end_gi, color=color)
+			# 		# elif start_locus[4] == 'minus' and end_locus[4] == 'minus':
+			# 		# 	r_gis_track.rect(start_gi, end_gi, color=color)
+			# 		gis_track.rect(start_gi, end_gi, color=color)
+			# 		# start_label_pos = (start_locus[0] + start_locus[1]) / 2
+			# 		# end_label_pos = (end_locus[0] + end_locus[1]) / 2
+			# 		label_pos = (start_gi + end_gi) / 2
+			# 		# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
+			# 		gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
+			# print(f'added GIs track')
 
 
 
