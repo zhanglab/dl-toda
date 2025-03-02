@@ -376,7 +376,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 						print(f'{count}\t{fasta}')
 						with open(fasta, 'r') as inf:
 							outf.write(inf.read())
-				input_fasta = os.path.join(output_dir, 'all_training_genomes.fna')
+			input_fasta = os.path.join(output_dir, 'all_training_genomes.fna')
 		else:
 			input_fasta = subject[0]
 
