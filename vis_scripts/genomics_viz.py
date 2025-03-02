@@ -719,6 +719,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
+	with open(testing_fasta, 'r') as f:
+		print(f.readline())
 	# circos.text("Escherichia coli\n(NC_000913)", size=12, r=20)
 
 	print('define space', len(query_fasta.get_seqid2size()))
@@ -1058,6 +1060,7 @@ if __name__ == "__main__":
 	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes(args)
 	print(testing_records)
 	print(training_records)
+	print(args.dl_toda_tax[args.label])
 	
 	# create output directories
 	args.output_dir = os.path.join(os.getcwd(), args.label)
