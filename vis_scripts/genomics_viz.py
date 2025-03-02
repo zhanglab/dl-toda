@@ -756,8 +756,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 				# gis_track.rect(end_locus[0], end_locus[1], color=color)
 				# start_label_pos = (start_locus[0] + start_locus[1]) / 2
 				# end_label_pos = (end_locus[0] + end_locus[1]) / 2
-				label_pos = (start_gi + end_gi) / 2
-				gis_track.annotate(abel_pos, f'{gi_id}', label_size=7)
+				# label_pos = (start_gi + end_gi) / 2
+				# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
 				# gis_track.annotate(end_label_pos, f'{gi_id}_end', label_size=7)
 			print(f'added GIs track')
 
