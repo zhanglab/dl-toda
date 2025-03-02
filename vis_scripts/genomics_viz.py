@@ -128,6 +128,9 @@ def GetGIsFromFasta(args, genome_id, fasta):
 		with open(fasta, 'r') as f:
 			fna.write(f.read())
 
+	outf.close()
+	fna.close()
+
 	# blast GIs start and end loci to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
@@ -141,9 +144,6 @@ def GetGIsFromFasta(args, genome_id, fasta):
 	# 			end_locus = pos_info[1]
 	# 		else:
 	# 			locus = 
-
-	outf.close()
-	fna.close()
 
 	# print(gis_info)
 
@@ -344,14 +344,12 @@ def RunBowtie(args, target, query, outfilename):
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
-	print('run blast')
 	if db:
 		sys.executable = blastn_exec
 		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', \
 			f'{args.output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
 			'-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
 	else:
-		print('run blast')
 		if len(subject) > 1:
 			# put all training genomes into one fasta file
 			if not os.path.exists(os.path.join(output_dir, 'all_training_genomes.fna')):
@@ -375,7 +373,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 		else:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
-			 '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 
 def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, sequence_length, readid_to_read):
