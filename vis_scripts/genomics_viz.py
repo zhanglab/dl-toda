@@ -804,7 +804,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# comp_name2color[comp_fasta.name] = colors[idx]
 	matching_regions = []
 	for sector in circos.sectors:
-		# blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
 		for ac in align_coords:
 			print(ac)
