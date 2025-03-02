@@ -118,16 +118,12 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 
 
 def GetGIsFromFasta(args, genome_id, ref_fasta):
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
 	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
-
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
 	for fasta in fasta_files:
 		with open(fasta, 'r') as f:
 			fna.write(f.read())
-
-	outf.close()
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
@@ -135,6 +131,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
+	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
@@ -163,6 +160,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 						outf.write(f'\t{e}')
 
 			outf.write('\n')
+	outf.close()
 
 	return gis_align
 
