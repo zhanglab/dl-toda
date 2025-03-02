@@ -112,8 +112,6 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 
-	print(gis_info)
-	print(gis_align)
 	return gis_align
 
 
@@ -129,7 +127,6 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	# blast GIs start and end loci to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
-	print(gis_align)
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
 	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
@@ -140,7 +137,6 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 			if len(pos_info) == 2:
 				start_locus = pos_info[0]
 				end_locus = pos_info[1]
-				print(start_locus, end_locus)
 				if start_locus in gis_align:
 					start_pos = gis_align[start_locus][0]
 					outf.write(f'{start_locus}')
@@ -161,7 +157,6 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 				outf.write(f'{pos_info[0]}')
 				for e in gis_align[pos_info[0]]:
 					outf.write(f'\t{e}')
-				print(gis_align[pos_info[0]])
 				gis_align[gi_id] = [gis_align[pos_info[0]][0], gis_align[pos_info[0]][1]]
 				del gis_align[pos_info[0]]
 
@@ -710,7 +705,9 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
 
-def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, outfilename, genomic_islands=None):
+def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, train_coverage, \
+		alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, \
+			outfilename, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -722,6 +719,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
+	# circos.text("Escherichia coli\n(NC_000913)", size=12, r=20)
+
 	print('define space', len(query_fasta.get_seqid2size()))
 	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
 	print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
@@ -730,6 +729,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
+	sys.exit(1)
 	print('genes of interest')
 	print(genes_of_interest)
 
@@ -793,31 +793,21 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
 			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos -= 4
-			# list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
-			# for gi_id in list_gis:
-			# 	if len(gi_id.split('_')) > 1:
-			# 	else:
-			# 		start_locus = genomic_islands[gi_id][0]
-			# 		end_locus = genomic_islands[gi_id][1]
-			# 		if start_locus[0] > end_locus[1]:
-			# 			start_gi = end_locus[1]
-			# 			end_gi = start_locus[0]
-			# 		else:
-			# 			start_gi = start_locus[0]
-			# 			end_gi = end_locus[1]
+			min_r_pos -= 6
+			for gi_id in genomic_islands.items():
+				start_locus = genomic_islands[gi_id][0]
+				end_locus = genomic_islands[gi_id][1]
+				if start_locus > end_locus:
+					start_gi = end_locus
+					end_gi = start_locus
+				else:
+					start_gi = start_locus
+					end_gi = end_locus
 
-			# 		# if start_locus[4] == 'plus' and end_locus[4] == 'plus':
-			# 		# 	f_gis_track.rect(start_gi, end_gi, color=color)
-			# 		# elif start_locus[4] == 'minus' and end_locus[4] == 'minus':
-			# 		# 	r_gis_track.rect(start_gi, end_gi, color=color)
-			# 		gis_track.rect(start_gi, end_gi, color=color)
-			# 		# start_label_pos = (start_locus[0] + start_locus[1]) / 2
-			# 		# end_label_pos = (end_locus[0] + end_locus[1]) / 2
-			# 		label_pos = (start_gi + end_gi) / 2
-			# 		# f_gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-			# 		gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-			# print(f'added GIs track')
+				gis_track.rect(start_gi, end_gi, color=color)
+				label_pos = (start_gi + end_gi) / 2
+				gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
+			print(f'added GIs track')
 
 
 
@@ -1012,10 +1002,19 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
 		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
 
-	# save figure
+	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
+	# Add legend
+	# handles = [
+	# 	Patch(color='darkorange', label='Pathogenicity Islands'),
+	# 	Patch(color='black', label=f'{}'),
+	# 	Patch(color='blue', label=),
+	# 	Patch(color='darkviolet', label=),
+	# 	Patch(color='orangered', label=),
+	# 	Patch(color='black', label=''),
+	# 	]
 	fig.savefig(outfigpath, dpi=300)
 
 
@@ -1166,7 +1165,7 @@ if __name__ == "__main__":
 
 	if args.circos:
 		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, train_coverage, alignments_train_pos_test, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gi_align)
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_align)
 
 
 	# # do FP analysis
