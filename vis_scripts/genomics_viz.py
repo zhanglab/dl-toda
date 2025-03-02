@@ -140,7 +140,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 			if len(pos_info) == 2:
 				start_locus = pos_info[0]
 				end_locus = pos_info[1]
-				
+				print(start_locus, end_locus)
 				if start_locus in gis_align:
 					outf.write(f'{start_locus}')
 					for e in gis_align[start_locus]:
@@ -157,7 +157,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 			else:
 				outf.write(f'{pos_info[0]}')
 				for e in gis_align[pos_info[0]]:
-						outf.write(f'\t{e}')
+					outf.write(f'\t{e}')
 
 			outf.write('\n')
 	outf.close()
