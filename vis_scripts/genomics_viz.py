@@ -76,14 +76,14 @@ def GetGIs(args, training_seq, input_dir, training_fasta):
 				end_new_locus_tag = annot_parsed[end_locus_tag][2]
 				end_locus_strand = annot_parsed[end_locus_tag][3]
 
-				gis_info[f'{gi_id}_start_{start_new_locus_tag}'] = [start_locus_tag_start, start_locus_tag_end, start_locus_strand]
-				gis_info[f'{gi_id}_end_{end_new_locus_tag}'] = [end_locus_tag_start, end_locus_tag_end, end_locus_strand]
+				gis_info[f'{gi_id}_start'] = [start_locus_tag_start, start_locus_tag_end, start_locus_strand]
+				gis_info[f'{gi_id}_end'] = [end_locus_tag_start, end_locus_tag_end, end_locus_strand]
 
 				start_locus_sequence = GetLocusSeq(start_locus_tag_start, start_locus_tag_end, start_locus_strand, training_seq)
 				end_locus_sequence = GetLocusSeq(end_locus_tag_start, end_locus_tag_end, end_locus_strand, training_seq)
 
-				fna.write(f'>{gi_id}_start_{start_new_locus_tag}\n{start_locus_sequence}\n')
-				fna.write(f'>{gi_id}_end_{end_new_locus_tag}\n{end_locus_sequence}\n')
+				fna.write(f'>{gi_id}_start\n{start_locus_sequence}\n')
+				fna.write(f'>{gi_id}_end\n{end_locus_sequence}\n')
 
 				outf.write(f'{gi_id}\t{start_locus_tag}\t{start_new_locus_tag}\t{start_locus_tag_start}\t{start_locus_tag_end}\t{start_locus_strand}\t{end_locus_tag}\t{end_new_locus_tag}\t{end_locus_tag_start}\t{end_locus_tag_end}\t{end_locus_strand}\n')
 
@@ -684,16 +684,23 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track.xticks_by_interval(50000, tick_length=1, show_label=False)
 		min_r_pos -= 1
 
-		if args.genomic_islands:
+		if genomic_islands is not None:
+			colors = ['red', 'darkorange', 'mediumblue', 'darkgreen', 'darkviolet']
 			# add track for genomic islands
 			min_r_pos -= 5
 			gis_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-			for gi_id, info in genomic_islands.items():
-				print(info)
-				if info[2] == '+':
-					gis_track.rect(info[0], info[1], color="orange")
-				elif info[2] == '-':
-					gis_track.rect(info[0], info[1], color="blue")
+			list_gis = [x.split('_')[0] for x in list(genomic_islands.keys())]
+			print(f'list of GIs: {list_gis}')
+			for idx, gi_id in enumerate(list_gis):
+				color = colors[idx]
+				start_locus = genomic_islands[f'{gi_id}_start']
+				end_locus = genomic_islands[f'{gi_id}_end']
+				gis_track.rect(start_locus[0], start_locus[1], color=color)
+				gis_track.rect(end_locus[0], end_locus[1], color=color)
+				start_label_pos = (start_locus[0] + start_locus[1]) / 2
+				end_label_pos = (end_locus[0] + end_locus[1]) / 2
+			outer_track.annotate(start_label_pos, f'{gi_id}_start', label_size=7)
+			outer_track.annotate(end_label_pos, f'{gi_id}_end', label_size=7)
 			print(f'added GIs track')
 
 		# create tracks for genomics features
@@ -705,8 +712,8 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# min_r_pos -= 5
 		# Plot forward/reverse strand CDS
 		
-		cds_track = sector.add_track((min_r_pos-3, min_r_pos))
-		min_r_pos -= 3
+		cds_track = sector.add_track((min_r_pos-4, min_r_pos))
+		min_r_pos -= 4
 		# # rrna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# # min_r_pos -= 6
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -740,34 +747,37 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# features.append(feature)
 			features[genes_of_interest[gene_id][1]] = feature
 
-		# # Plot info about genes
-		# outf = open(outfilename, 'w')
-		# labels, label_pos_list = [], []
-		# features_sorted = dict(sorted(features.items()))
-		# for feature in features_sorted.values():
-		# # for feature in features:
-		# 	start = int(feature.location.start)
-		# 	end = int(feature.location.end)
-		# 	print(start, end)
-		# 	label_pos = (start + end) / 2
-		# 	gene_id = feature.qualifiers.get("gene_id", [None])[0]
-		# 	label = feature.qualifiers.get("gene_name", [None])[0]
-		# 	strand = feature.qualifiers.get("strand", [None])[0]
-		# 	gene_type = feature.qualifiers.get("gene_type", [None])[0]
-		# 	if gene_type == 'protein_coding':
-		# 		function = feature.qualifiers.get("function", [None])[0]
-		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
-		# 	else:
-		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+		
+		# Plot labels of genomic islands
 
-		# # 	print(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
-		# # 	if label == None:
-		# # 		continue
-		# # 	if gene_id is not None:
-		# # 		labels.append(gene_id)
-		# # 		label_pos_list.append(label_pos)
-		# # 	cds_track.annotate(label_pos, label, label_size=7)
-		# outf.close()
+
+
+		# Get info about genes
+		outf = open(outfilename, 'w')
+		labels, label_pos_list = [], []
+		features_sorted = dict(sorted(features.items()))
+		for feature in features_sorted.values():
+		# for feature in features:
+			start = int(feature.location.start)
+			end = int(feature.location.end)
+			label_pos = (start + end) / 2
+			gene_id = feature.qualifiers.get("gene_id", [None])[0]
+			label = feature.qualifiers.get("gene_name", [None])[0]
+			strand = feature.qualifiers.get("strand", [None])[0]
+			gene_type = feature.qualifiers.get("gene_type", [None])[0]
+			if gene_type == 'protein_coding':
+				function = feature.qualifiers.get("function", [None])[0]
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+			else:
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+
+		# 	if label == None:
+		# 		continue
+		# 	if gene_id is not None:
+		# 		labels.append(gene_id)
+		# 		label_pos_list.append(label_pos)
+		# 	cds_track.annotate(label_pos, label, label_size=7)
+		outf.close()
 
 	# # Blast genome comparison & plot match blocks
 	# comp_name2color = {}
