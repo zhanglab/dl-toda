@@ -680,7 +680,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
-		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/5000000:.1f} Mb")
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
 		outer_track.xticks_by_interval(50000, tick_length=1, show_label=False)
 
 		# create tracks for genomics features
@@ -736,12 +736,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			min_r_pos -= 6
 			list_gis = set([x.split('_')[0] for x in list(genomic_islands.keys())])
-			print(f'list of GIs: {list_gis}')
 			for idx, gi_id in enumerate(list_gis):
 				color = colors[idx]
 				start_locus = genomic_islands[f'{gi_id}_start']
 				end_locus = genomic_islands[f'{gi_id}_end']
-				print(gi_id, start_locus, end_locus)
 				if start_locus[0] > end_locus[1]:
 					start_gi = end_locus[1]
 					end_gi = start_locus[0]
@@ -790,169 +788,169 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# 	cds_track.annotate(label_pos, label, label_size=7)
 		outf.close()
 
-	# # Blast genome comparison & plot match blocks
-	# comp_name2color = {}
-	# # colors = ["black", "gray"]
-	# # store percentage identity between matching regions
-	# percent_identity = []
-	# # run blast using pygenomeviz
-	# # align_coords = Blast([query_fasta, ref_fasta]).run()
-	# # align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-	# # run blast 		
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
-	# _, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+	# Blast genome comparison & plot match blocks
+	comp_name2color = {}
+	# colors = ["black", "gray"]
+	# store percentage identity between matching regions
+	percent_identity = []
+	# run blast using pygenomeviz
+	# align_coords = Blast([query_fasta, ref_fasta]).run()
+	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+	# run blast 		
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out')
+	_, align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 
-	# # color = ColorCycler()
-	# # comp_name2color[comp_fasta.name] = colors[idx]
-	# matching_regions = []
-	# for sector in circos.sectors:
-	# 	# blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-	# 	min_r_pos-5	
-	# 	for ac in align_coords:
-	# 		print(ac)
-	# 		# # percent_identity.append(ac.identity)
-	# 		# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
-	# 		# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
-	# 		percent_identity.append(ac[2])
-	# 		# rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-	# 		# blast_track.rect(ac[0], ac[1], color=rect_color)
-	# 		matching_regions.append([ac[0], ac[1], ac[2]])
-	# 		# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
-	# 		# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
+	# color = ColorCycler()
+	# comp_name2color[comp_fasta.name] = colors[idx]
+	matching_regions = []
+	for sector in circos.sectors:
+		# blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos-5	
+		for ac in align_coords:
+			print(ac)
+			# # percent_identity.append(ac.identity)
+			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
+			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
+			percent_identity.append(ac[2])
+			# rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+			# blast_track.rect(ac[0], ac[1], color=rect_color)
+			matching_regions.append([ac[0], ac[1], ac[2]])
+			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
+			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
-	# pos_matching_regions = set()
-	# for i in range(len(matching_regions)):
-	# 	for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
-	# 		pos_matching_regions.add(j)
+	pos_matching_regions = set()
+	for i in range(len(matching_regions)):
+		for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
+			pos_matching_regions.add(j)
 
-	# pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
+	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
 
-	# fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
-	# for read_id, data in fn_alignments_pos_test.items():
-	# 	start_pos = data[2]
-	# 	end_pos = data[3]
-	# 	for i in range(len(matching_regions)):
-	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-	# 			fn_matching_regions.add(read_id)
-	# fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
+	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
+	for read_id, data in fn_alignments_pos_test.items():
+		start_pos = data[2]
+		end_pos = data[3]
+		for i in range(len(matching_regions)):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+				fn_matching_regions.add(read_id)
+	fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
 
-	# tp_matching_regions = set()
-	# for read_id, data in tp_alignments_pos_test.items():
-	# 	start_pos = data[2]
-	# 	end_pos = data[3]
-	# 	for i in range(len(matching_regions)):
-	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-	# 			tp_matching_regions.add(read_id)
-	# tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
+	tp_matching_regions = set()
+	for read_id, data in tp_alignments_pos_test.items():
+		start_pos = data[2]
+		end_pos = data[3]
+		for i in range(len(matching_regions)):
+			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or (start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or (start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+				tp_matching_regions.add(read_id)
+	tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
 			
-	# with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
-	# 	f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-	# 	f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-	# 	f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
-	# 	f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
-	# 	f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+	with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
+		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+		f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
+		f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
 
-	# # get stats on percentage identity
-	# with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
-	# 	f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
+	# get stats on percentage identity
+	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
+		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 
-	# for sector in circos.sectors:
-	# 	# define x-axis vector for the next tracks
-	# 	genome_pos = list(range(query_fasta.full_genome_length))
+	for sector in circos.sectors:
+		# define x-axis vector for the next tracks
+		genome_pos = list(range(query_fasta.full_genome_length))
 
-		# # add tracks for coverage of training genome
-		# min_r_pos -= 5
-		# train_cov_test = [0]*query_fasta.full_genome_length
-		# for readid, data in alignments_train_pos_test.items():
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		train_cov_test[pos-1] += train_coverage[pos-1]
-		# cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# cov_track.axis(ec="blue")
-		# y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		# y_labels = list(map(str, y_values))
-		# cov_track.yticks(y_values, y_labels)
-		# cov_track.line(genome_pos, train_cov_test, color="blue")
-		# print(f'added COV track')
+		# add tracks for coverage of training genome
+		min_r_pos -= 5
+		train_cov_test = [0]*query_fasta.full_genome_length
+		for readid, data in alignments_train_pos_test.items():
+			for pos in range(data[2], data[3]+1, 1):
+				train_cov_test[pos-1] += train_coverage[pos-1]
+		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		cov_track.axis(ec="blue")
+		y_values = list(range(min(train_coverage), max(train_coverage), 2))
+		y_labels = list(map(str, y_values))
+		cov_track.yticks(y_values, y_labels)
+		cov_track.line(genome_pos, train_cov_test, color="blue")
+		print(f'added COV track')
 
-		# # add track for TP reads
-		# min_r_pos -= 13
-		# tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# tp_track.axis(ec="darkviolet")
-		# pos_tp_count = [0]*query_fasta.full_genome_length
-		# for readid, data in tp_alignments_pos_test.items():
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		pos_tp_count[pos-1] +=1
-		# print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
-		# y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
-		# y_labels = list(map(str, y_values))
-		# tp_track.yticks(y_values, y_labels)
-		# tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
-		# 	# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		# print(f'added TP track')
+		# add track for TP reads
+		min_r_pos -= 13
+		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		tp_track.axis(ec="darkviolet")
+		pos_tp_count = [0]*query_fasta.full_genome_length
+		for readid, data in tp_alignments_pos_test.items():
+			for pos in range(data[2], data[3]+1, 1):
+				pos_tp_count[pos-1] +=1
+		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
+		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
+		y_labels = list(map(str, y_values))
+		tp_track.yticks(y_values, y_labels)
+		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
+			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+		print(f'added TP track')
 
-		# # add tracks for FN reads 
-		# min_r_pos -= 13
-		# fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		# fn_track.axis(ec="orangered")
-		# pos_fn_count = [0]*query_fasta.full_genome_length
-		# for readid, data in fn_alignments_pos_test.items():
-		# 	# if readid not in most_mapped_reads_id:
-		# 	for pos in range(data[2], data[3]+1, 1):
-		# 		pos_fn_count[pos-1] +=1
-		# print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
-		# y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
-		# y_labels = list(map(str, y_values))
-		# fn_track.yticks(y_values, y_labels)
-		# fn_track.line(genome_pos, pos_fn_count, color="orangered")
-		# print(f'added FN track')
+		# add tracks for FN reads 
+		min_r_pos -= 13
+		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		fn_track.axis(ec="orangered")
+		pos_fn_count = [0]*query_fasta.full_genome_length
+		for readid, data in fn_alignments_pos_test.items():
+			# if readid not in most_mapped_reads_id:
+			for pos in range(data[2], data[3]+1, 1):
+				pos_fn_count[pos-1] +=1
+		print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
+		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
+		y_labels = list(map(str, y_values))
+		fn_track.yticks(y_values, y_labels)
+		fn_track.line(genome_pos, pos_fn_count, color="orangered")
+		print(f'added FN track')
 
-		# # Plot GC skew
-		# min_r_pos -= 11
-		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		# pos_list, gcskews = GetGCSkew(test_record_seq)
-		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		# abs_max_gcskew = np.max(np.abs(gcskews))
-		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		# gcskew_track.fill_between(
-		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
-		# )
-		# gcskew_track.fill_between(
-		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		# )
+		# Plot GC skew
+		min_r_pos -= 11
+		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gcskews = GetGCSkew(test_record_seq)
+		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		abs_max_gcskew = np.max(np.abs(gcskews))
+		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		gcskew_track.fill_between(
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
+		)
+		gcskew_track.fill_between(
+			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		)
 
-		# # Plot GC content
-		# min_r_pos -= 5
-		# gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		# pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		# print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
-		# gc_content_updated = gc_content - test_genome_gc_content
-		# print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
-		# print(len(gc_content_updated))
-		# print(len(pos_list))
-		# positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-		# negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-		# abs_max_gc_content = np.max(np.abs(gc_content_updated))
-		# vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-		# gc_content_track.fill_between(
-		# 	pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-		# )
-		# gc_content_track.fill_between(
-		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-		# )
+		# Plot GC content
+		min_r_pos -= 5
+		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
+		gc_content_updated = gc_content - test_genome_gc_content
+		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
+		print(len(gc_content_updated))
+		print(len(pos_list))
+		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+		abs_max_gc_content = np.max(np.abs(gc_content_updated))
+		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+		gc_content_track.fill_between(
+			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+		)
+		gc_content_track.fill_between(
+			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+		)
 		
-		# # report GC content of train and test genomes
-		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		# with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
-		# 	f.write(f'Testing genome:\t{test_genome_gc_content}')
-		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
+		# report GC content of train and test genomes
+		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
+			f.write(f'Testing genome:\t{test_genome_gc_content}')
+			f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# # get average GC content for FN and TP reads
-		# GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
-		# GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
-		# GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
-		# GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
+		# get average GC content for FN and TP reads
+		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
+		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
 
 	# save figure
 	# Enable annotation text adjustment (Default)
