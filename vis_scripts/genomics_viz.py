@@ -723,7 +723,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		content = f.readline()
 	sequence_id = content[0].split(',')[0].split(' ')[0][1:]
 	strain = content[0].split(',')[0].split(' ')[1:]
-	circos.text(f'{strain}\n{sequences_id}', size=12, r=20)
+	circos.text(f'{strain}\n{sequence_id}', size=12, r=20)
 
 	print('define space', len(query_fasta.get_seqid2size()))
 	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
@@ -1058,9 +1058,6 @@ if __name__ == "__main__":
 
 	# verify that the genomes investigated only have one chromosome
 	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes(args)
-	print(testing_records)
-	print(training_records)
-	print(args.dl_toda_tax[args.label])
 	
 	# create output directories
 	args.output_dir = os.path.join(os.getcwd(), args.label)
