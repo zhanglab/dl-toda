@@ -123,7 +123,7 @@ def GetGIsFromFasta(args, genome_id, fasta):
 
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
-
+	print(fasta_files)
 	for fasta in fasta_files:
 		with open(fasta, 'r') as f:
 			fna.write(f.read())
