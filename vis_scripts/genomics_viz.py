@@ -721,9 +721,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	)
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
-	query_sequence_id = content[0].split(',')[0].split(' ')[0][1:]
-	strain = content[0].split(',')[0].split(' ')[1:]
-	circos.text(f'{strain}\n{sequence_id}', size=12, r=20)
+	# test_sequence_id = content[0].split(',')[0].split(' ')[0][1:]
+	test_strain = content[0].split(',')[0].split(' ')[1:]
+	circos.text(f'{test_strain}', size=12, r=20)
 
 	print('define space', len(query_fasta.get_seqid2size()))
 	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
@@ -790,7 +790,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		
 		# Plot labels of genomic islands
 		if genomic_islands:
-			color = 'darkorange'
+			color = 'red'
 			# add track for genomic islands
 			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
 			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
@@ -928,7 +928,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# add track for TP reads
 		min_r_pos -= 13
 		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="darkviolet")
+		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*query_fasta.full_genome_length
 		for readid, data in tp_alignments_pos_test.items():
 			for pos in range(data[2], data[3]+1, 1):
@@ -937,14 +937,14 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
 		y_labels = list(map(str, y_values))
 		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="darkviolet")
+		tp_track.line(genome_pos, pos_tp_count, color="blue")
 			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
 		print(f'added TP track')
 
 		# add tracks for FN reads 
 		min_r_pos -= 13
 		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fn_track.axis(ec="orangered")
+		fn_track.axis(ec="darkviolet")
 		pos_fn_count = [0]*query_fasta.full_genome_length
 		for readid, data in fn_alignments_pos_test.items():
 			# if readid not in most_mapped_reads_id:
@@ -954,7 +954,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track.yticks(y_values, y_labels)
-		fn_track.line(genome_pos, pos_fn_count, color="orangered")
+		fn_track.line(genome_pos, pos_fn_count, color="darkviolet")
 		print(f'added FN track')
 
 		# Plot GC skew
@@ -966,7 +966,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		abs_max_gcskew = np.max(np.abs(gcskews))
 		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
 		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="orange"
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
 		)
 		gcskew_track.fill_between(
 			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
@@ -1009,13 +1009,19 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
+	with open(training_fasta, 'r') as f:
+		content = f.readline()
+	train_strain = content[0].split(',')[0].split(' ')[1:]
+
 	handles = [
 		Patch(color='darkorange', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{}'),
-		Patch(color='blue', label=),
-		Patch(color='darkviolet', label=),
-		Patch(color='orangered', label=),
-		Patch(color='black', label=''),
+		Patch(color='black', label=f'{train_strain}'),
+		Patch(color='blue', label='True Positives'),
+		Patch(color='darkviolet', label='False Negatives'),
+		Line2D([], [], color='grey', label='Positive GC Skew'),
+		Line2D([], [], color='limegreen', label='Negative GC Skew'),
+		Line2D([], [], color='black', label='Positive GC Content'),
+		Line2D([], [], color='deeppink', label='Negative GC Skew'),
 		]
 	fig.savefig(outfigpath, dpi=300)
 
