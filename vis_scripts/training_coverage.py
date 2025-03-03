@@ -532,7 +532,7 @@ if __name__ == "__main__":
 	# blast testing reads to training genome (get average coverage for fn and tp reads)
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), args.testing_fna_file, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
 	test_reads_id = list(fn_sequences) + list(tp_sequences)
-	test_alignments_pos_train = GetReadsAlignments(test_reads_id, f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/all_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	test_alignments_pos_train = GetReadsAlignments(set(test_reads_id), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/all_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get training coverage
 	train_coverage, _, _, _ = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
