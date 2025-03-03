@@ -763,6 +763,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track.axis(fc="black")
 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		min_r_pos -= 5
 
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -1073,6 +1074,8 @@ if __name__ == "__main__":
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
 		os.makedirs(os.path.join(args.output_dir, 'blast'))
+	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
+		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
