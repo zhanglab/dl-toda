@@ -538,7 +538,11 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 				genestype[annot[0]] += 1
 
 	pos_readid_count = [len(v) for v in pos_readid.values()]
-	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+	assert len(pos_readid_count) > 0, f'{label}\t{alignments}'
+	
+	if len(pos_readid_count) > 0:
+		print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+
 	genes_of_interest = defaultdict(list)
 	for pos, list_readid in pos_readid.items():
 		if len(list_readid) >= 3:
@@ -1189,13 +1193,14 @@ if __name__ == "__main__":
 	outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
 
 	for label in fp_labels:
+		print(f'label: {label}')
 		label_testing_fasta = args.test_genomes_info[label][1]
 		label_testing_genome = args.test_genomes_info[label][0]
 
 		# get fp sequences of label and create fasta file
 		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
 		
-		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+		mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
 		if not os.path.isdir(mapping_output_dir):
 			os.makedirs(mapping_output_dir)
 
@@ -1209,7 +1214,8 @@ if __name__ == "__main__":
 
 		# get alignments info
 		fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
-		
+		if label_testing_genome == 'GCF_004421065.1':
+			print(fp_alignments)
 		# get annotations info
 		neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
 
