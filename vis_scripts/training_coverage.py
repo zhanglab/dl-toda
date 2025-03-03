@@ -473,7 +473,7 @@ def CircosPlot(args, testing_fasta, training_fasta, alignments_train_pos_test, o
 	# store percentage identity between matching regions
 	percent_identity = []
 	comp_name2color = {}
-	train_genome_id = '_'.join(training_fasta[idx].split('/')[-1].split('_')[2:4])
+	train_genome_id = '_'.join(training_fasta.split('/')[-1].split('_')[2:4])
 	for idx, ref_fasta in enumerate(ref_fasta_list):
 		genome_id = '_'.join(testing_fasta[idx].split('/')[-1].split('_')[2:4])
 		RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta[idx], subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out')
