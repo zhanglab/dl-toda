@@ -480,8 +480,7 @@ def CircosPlot(args, testing_fasta, training_fasta, alignments_train_pos_test, o
 		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 		color = ColorCycler()
 		comp_name2color[genome_id] = color
-		for sector in circos.sectors:
-			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
 			percent_identity.append(ac[2])
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
