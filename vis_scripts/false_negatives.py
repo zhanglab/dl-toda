@@ -1211,7 +1211,7 @@ if __name__ == "__main__":
 		fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 		
 		# get annotations info
-		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+		neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
 
 		if len(neg_test_annot_info) != 0:
 			# get genes 
