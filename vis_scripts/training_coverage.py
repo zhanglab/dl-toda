@@ -389,6 +389,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 	with open(input_file, 'r') as f:
 		for count, line in enumerate(f, 1):
 			qseqid = line.rstrip().split(',')[0]
+			sseqid = line.rstrip().split(',')[1]
 			sstart = int(line.rstrip().split(',')[2])
 			send = int(line.rstrip().split(',')[3])
 			qstart = int(line.rstrip().split(',')[4])
@@ -398,7 +399,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 			sseq = line.rstrip().split(',')[10]
 
 			if pident >= identity_thr:
-				align_coords.append([qstart, qend, pident, qseqid])
+				align_coords.append([qstart, qend, pident, qseqid, sseqid])
 
 	return align_coords
 
@@ -482,11 +483,13 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		color = ColorCycler()
 		comp_name2color[genome_id] = color
 		for sector in circos.sectors:
-			track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-			for ac in align_coords:
-				rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
-				track.rect(ac[0], ac[1], color=rect_color)
-				percent_identity.append(ac[2])
+			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		for ac in align_coords:
+			print(ac)
+			track = circos.get_sector(ac[3]).tracks[-1]
+			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
+			track.rect(ac[0], ac[1], color=rect_color)
+			percent_identity.append(ac[2])
 		min_r_pos -= 5
 
 		# get stats on percentage identity
