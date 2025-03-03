@@ -481,7 +481,7 @@ def CircosPlot(args, testing_fasta, training_fasta, alignments_train_pos_test, o
 		color = ColorCycler()
 		comp_name2color[genome_id] = color
 		for sector in circos.sectors:
-        	sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
 			print(ac)
 			track = circos.get_sector(ac.query_name).tracks[-1]
