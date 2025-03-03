@@ -732,7 +732,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}\n(testing genome)', size=11)
+	circos.text(f'{test_strain}\n(testing genome)', size=11, r=20)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -1129,128 +1129,128 @@ if __name__ == "__main__":
 		content = f.readlines()
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# # do FN analysis
-	# # create fasta file with testing reads from label 1
-	# with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
-	# 	for k, v in test_readid_to_read.items():
-	# 		if k in fn_sequences or k in tp_sequences:
-	# 			outf.write(f'>{k}\n{v}\n')
+	# do FN analysis
+	# create fasta file with testing reads from label 1
+	with open(os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), 'w') as outf:
+		for k, v in test_readid_to_read.items():
+			if k in fn_sequences or k in tp_sequences:
+				outf.write(f'>{k}\n{v}\n')
 
-	# # blast testing reads to testing genome		
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
-	# # get mapping of false negatives to testing genome from label 1
-	# fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	# # get annotations info
-	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	# blast testing reads to testing genome		
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
+	# get mapping of false negatives to testing genome from label 1
+	fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	# get annotations info
+	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
-	# # blast testing reads to training genomes from other species
-	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	# RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/blast/all_test_pos_train_blastn.out')
-	# fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
-	# # get taxonomy of mapped training genomes and taxon with most reads mapped
-	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
+	# blast testing reads to training genomes from other species
+	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
+	RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/blast/all_test_pos_train_blastn.out')
+	fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	# get taxonomy of mapped training genomes and taxon with most reads mapped
+	_ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
 	
-	# # do TP analysis
-	# # get mapping of true positives to testing genome from label 1
-	# tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
+	# do TP analysis
+	# get mapping of true positives to testing genome from label 1
+	tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	_ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
-	# # # create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	# # CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	# # CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
+	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
+	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# # blast testing reads to training genome from label 1
-	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
-	# test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	# blast testing reads to training genome from label 1
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
+	test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
-	# # get info about genomic islands
-	# if os.path.isdir(args.genomic_islands):
-	# 	gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
-	# else:
-	# 	gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+	# get info about genomic islands
+	if os.path.isdir(args.genomic_islands):
+		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+	else:
+		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 	os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
+	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
 
-	# # do FP analysis
-	# # blast FP reads to ncbi nt database
-	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
-	# 	for k, v in test_readid_to_read.items():
-	# 		if k in fp_sequences:
-	# 			outf.write(f'>{k}\n{v}\n')
-	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
+	# # # do FP analysis
+	# # # blast FP reads to ncbi nt database
+	# # with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
+	# # 	for k, v in test_readid_to_read.items():
+	# # 		if k in fp_sequences:
+	# # 			outf.write(f'>{k}\n{v}\n')
+	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
 
-	# # blast FP reads to train genome of label 1
-	# # create fasta file with all FP reads
-	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
-	# 	for k, v in readid_to_read.items():
-	# 		if k in fp_sequences:
-	# 			outf.write(f'>{k}\n{v}\n')
+	# # # blast FP reads to train genome of label 1
+	# # # create fasta file with all FP reads
+	# # with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
+	# # 	for k, v in readid_to_read.items():
+	# # 		if k in fp_sequences:
+	# # 			outf.write(f'>{k}\n{v}\n')
 
-	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
+	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
 
-	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	fp_taxa = defaultdict(int)
-	print(f'# labels: {len(fp_labels)}')
-	outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
+	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	# fp_taxa = defaultdict(int)
+	# print(f'# labels: {len(fp_labels)}')
+	# outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
 
-	for label in fp_labels:
-		print(f'label: {label}')
-		label_testing_fasta = args.test_genomes_info[label][1]
-		label_testing_genome = args.test_genomes_info[label][0]
+	# for label in fp_labels:
+	# 	print(f'label: {label}')
+	# 	label_testing_fasta = args.test_genomes_info[label][1]
+	# 	label_testing_genome = args.test_genomes_info[label][0]
 
-		# get fp sequences of label and create fasta file
-		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
+	# 	# get fp sequences of label and create fasta file
+	# 	label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
 		
-		mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
-		if not os.path.isdir(mapping_output_dir):
-			os.makedirs(mapping_output_dir)
+	# 	mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
+	# 	if not os.path.isdir(mapping_output_dir):
+	# 		os.makedirs(mapping_output_dir)
 
-		with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
-			for k, v in test_readid_to_read.items():
-				if k in label_sequences:
-					outf.write(f'>{k}\n{v}\n')
+	# 	with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
+	# 		for k, v in test_readid_to_read.items():
+	# 			if k in label_sequences:
+	# 				outf.write(f'>{k}\n{v}\n')
 
-		# run blast
-		RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
+	# 	# run blast
+	# 	RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
 
-		# get alignments info
-		fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
-		if label_testing_genome == 'GCF_004421065.1':
-			print(fp_alignments)
-		# get annotations info
-		neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
+	# 	# get alignments info
+	# 	fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+	# 	if label_testing_genome == 'GCF_004421065.1':
+	# 		print(fp_alignments)
+	# 	# get annotations info
+	# 	neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
 
-		if len(neg_test_annot_info) != 0:
-			# get genes 
-			_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
+	# 	if len(neg_test_annot_info) != 0:
+	# 		# get genes 
+	# 		_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
 
-		else:
-			print(f'No annotations for genome {label_testing_genome}')
+	# 	else:
+	# 		print(f'No annotations for genome {label_testing_genome}')
 
-		# monitor number of sequences per label
-		fp_taxa[label] = len(label_sequences)
+	# 	# monitor number of sequences per label
+	# 	fp_taxa[label] = len(label_sequences)
 
-	genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
-	functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
-	geneinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_info_{args.prob_threshold}.tsv'))
-	readswogenesinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.tsv'))
-	readswogenesfna_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.fna'))
+	# genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
+	# functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
+	# geneinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_info_{args.prob_threshold}.tsv'))
+	# readswogenesinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.tsv'))
+	# readswogenesfna_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.fna'))
 
-	ConcatenateFiles(genetypes_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_type_{args.prob_threshold}.tsv'), "gene_type")
-	ConcatenateFiles(functions_files, os.path.join(args.output_dir, f'{args.label}_FP_functions_{args.prob_threshold}.tsv'), "function")
-	ConcatenateFiles(geneinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_info_{args.prob_threshold}.tsv'), "gene_info")
-	ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
-	ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
+	# ConcatenateFiles(genetypes_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_type_{args.prob_threshold}.tsv'), "gene_type")
+	# ConcatenateFiles(functions_files, os.path.join(args.output_dir, f'{args.label}_FP_functions_{args.prob_threshold}.tsv'), "function")
+	# ConcatenateFiles(geneinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_info_{args.prob_threshold}.tsv'), "gene_info")
+	# ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
+	# ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
 
-	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_neg_taxa.tsv'), 'w') as f:
-		for k, v in fp_taxa_sorted.items():
-			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_neg_taxa.tsv'), 'w') as f:
+	# 	for k, v in fp_taxa_sorted.items():
+	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
-		f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
+	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
+	# 	f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
 
 
