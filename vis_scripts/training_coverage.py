@@ -228,7 +228,79 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 		f.write(f'FN\t{len(fn_cov)}\t{len(fn_sequences)}\t{round(len(fn_cov)/len(fn_sequences),3)*100}\t{statistics.mean(fn_cov)}\t{statistics.median(fn_cov)}\t{min(fn_cov)}\t{max(fn_cov)}\n')
 
 	return base_coverage, ref_info, train_reads_id, readsid_to_length
+
+
+def GetAnnotInfo(args, genome_id, input_dir):
+	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
+		annot_output_dir = os.path.join(args.annotations_dir, f'{genome_id}_gtf')
+		os.makedirs(annot_output_dir)
+		os.chdir(annot_output_dir)
+		# download feature table in gtf if not present
+		result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'gtf'])
+		# unzip output folder
+		with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
+			zip_ref.extractall(os.getcwd())
+		os.chdir(input_dir)
+	else:
+		print(f'{genome_id}\tdownload already done')
+
 	
+	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	if len(annot_file) == 0:
+		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
+		f.close()
+		return {}, {}
+	else:
+		genes_type = defaultdict(str)
+		annot_info = defaultdict(list)
+		locus_tags_info = defaultdict(list)
+		with open(annot_file[0], 'r') as f:
+			content = f.readlines()
+			for i in range(5,len(content)-1,1):
+				begin = int(content[i].rstrip().split('\t')[3])
+				end = int(content[i].rstrip().split('\t')[4])
+				strand = content[i].rstrip().split('\t')[6]
+				gene_id = ''
+				gene = ''
+				biotype = ''
+				function = ''
+				old_locus_tag = ''
+				for e in content[i].rstrip().split('\t')[8].split(';'):
+					e = e.replace('"', '')
+					# get all go_function entries and choose go_function with the most details
+					if 'go_function' in e:
+						fn = e.split('|')[0].split(' ')[2:]
+						if len(fn) > len(function):
+							function = ' '.join(fn)
+					if 'product' in e:
+						gene = ' '.join(e.split(' ')[2:])
+					if 'gene_id' in e:
+						gene_id = e.split(' ')[1]
+					if 'gene_biotype' in e:
+						biotype = e.split(' ')[2]
+					if 'old_locus_tag' in e:
+						old_locus_tag = e.split(' ')[2]
+
+				if content[i].rstrip().split('\t')[2] == 'gene':
+					genes_type[gene_id] = biotype
+					locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
+				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+					if function == '':
+						function = gene
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+				
+				assert gene_id != '', 'gene id should not be unknown'
+		
+		print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
+
+		return annot_info, locus_tags_info
+
 
 def LoadFnaFile(fasta_file):
 	with open(fasta_file, 'r') as f:
@@ -467,6 +539,7 @@ if __name__ == "__main__":
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
+	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	parser.add_argument('--genomic_islands', type=str, help='path to file containing list of genomic islands')
