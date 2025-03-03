@@ -442,31 +442,32 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		for ref_fasta in ref_fasta_list:
 			print(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 			f.write(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
-	print('genomic islands')
-	print(genomic_islands.keys())
+
 	min_r_pos = 100
 	for sector in circos.sectors:
 		# Plot labels of genomic islands
 		if genomic_islands:
-			print(genomic_islands)
+			print(genomic_islands, len(genomic_islands))
+			gis_id = set([key.split('_')[0] for key in genomic_islands.keys()])
+			print(gis_id, len(gis_id))
 			color = 'red'
 			# add track for genomic islands
 			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
 			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			min_r_pos -= 5
-			for gi_id in genomic_islands.keys():
-				start_locus = genomic_islands[gi_id][0]
-				end_locus = genomic_islands[gi_id][1]
-				if start_locus > end_locus:
+			for gi_id in list(gis_id):
+				start_locus = genomic_islands[f'{gi_id}_start']
+				end_locus = genomic_islands[f'{gi_id}_end']
+				if start_locus[0] > end_locus[1]:
 					start_gi = end_locus
 					end_gi = start_locus
 				else:
 					start_gi = start_locus
 					end_gi = end_locus
 
-				gis_track.rect(start_gi, end_gi, color=color)
-				label_pos = (start_gi + end_gi) / 2
+				gis_track.rect(start_gi[0], end_gi[1], color=color)
+				label_pos = (start_gi[0] + end_gi[1]) / 2
 				gis_track.annotate(label_pos, f'{gi_id}', label_size=9)
 			print(f'added GIs track')
 
