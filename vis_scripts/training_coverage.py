@@ -514,7 +514,7 @@ if __name__ == "__main__":
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
 		os.makedirs(os.path.join(args.output_dir, 'blast'))
-		if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
+	if not os.path.isdir(os.path.join(args.output_dir, 'train_coverage')):
 		os.makedirs(os.path.join(args.output_dir, 'train_coverage'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
