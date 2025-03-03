@@ -725,7 +725,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}\n(testing genome)', size=12, r=20)
+	circos.text(f'{test_strain}\n(testing genome)\n', size=12)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -763,7 +763,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track.axis(fc="black")
 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
-		min_r_pos -= 5
+		min_r_pos -= 6
 
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
