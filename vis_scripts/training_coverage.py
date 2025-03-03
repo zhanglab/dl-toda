@@ -492,7 +492,7 @@ if __name__ == "__main__":
 	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.training_fna_file)
 	
 	# create output directories
-	args.output_dir = os.path.join(os.getcwd(), args.label)
+	args.output_dir = os.path.join(os.getcwd(), args.pos_label)
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
