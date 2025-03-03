@@ -276,6 +276,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
+
 def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
 	alignments = defaultdict(list)
 	with open(input_file, 'r') as f:
@@ -466,6 +467,7 @@ if __name__ == "__main__":
 	parser.add_argument('--genomic_islands', type=str, help='path to file containing list of genomic islands')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
+	print(args)
 
 	input_dir = os.getcwd()
 	
@@ -519,7 +521,7 @@ if __name__ == "__main__":
 
 	# blast testing reads to training genome (get average coverage for fn and tp reads)
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), args.testing_fna_file, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
-	test_alignments_pos_train = GetReadsAlignments(set([r for r in train_readid_to_read.keys() if r.split('|')[1] == args.label]), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', train_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/all_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	test_alignments_pos_train = GetReadsAlignments(fn_sequences+tp_sequences, f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/all_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get training coverage
 	train_coverage, _, _, _ = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
