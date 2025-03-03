@@ -725,7 +725,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}', size=12, r=20)
+	circos.text(f'{test_strain}\n(testing genome)', size=12, r=20)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -742,7 +742,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
 			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
 			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos -= 4
+			min_r_pos -= 5
 			for gi_id in genomic_islands.keys():
 				start_locus = genomic_islands[gi_id][0]
 				end_locus = genomic_islands[gi_id][1]
@@ -949,7 +949,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		print(f'added TP track')
 
 		# add tracks for FN reads 
-		min_r_pos -= 10
+		min_r_pos -= 13
 		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track.axis(ec="darkviolet")
 		pos_fn_count = [0]*query_fasta.full_genome_length
@@ -1017,7 +1017,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 
 	handles = [
 		Patch(color='red', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{train_strain}'),
+		Patch(color='black', label=f'{train_strain}\n(training genome)'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
@@ -1200,7 +1200,7 @@ if __name__ == "__main__":
 			os.makedirs(mapping_output_dir)
 
 		with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
-			for k, v in readid_to_read.items():
+			for k, v in test_readid_to_read.items():
 				if k in label_sequences:
 					outf.write(f'>{k}\n{v}\n')
 
@@ -1208,14 +1208,14 @@ if __name__ == "__main__":
 		RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
 
 		# get alignments info
-		fp_alignments = GetReadsAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+		fp_alignments = GetReadsAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 		
 		# get annotations info
 		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
 
 		if len(neg_test_annot_info) != 0:
 			# get genes 
-			_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, sequence_length, readid_to_read, 'FP')
+			_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
 
 		else:
 			print(f'No annotations for genome {label_testing_genome}')
@@ -1241,7 +1241,7 @@ if __name__ == "__main__":
 			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
 	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
-		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(fp_sequences)]))
+		f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
 
 
