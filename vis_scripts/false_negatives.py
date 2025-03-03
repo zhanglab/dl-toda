@@ -1173,8 +1173,8 @@ if __name__ == "__main__":
 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
 
-	do FP analysis
-	blast FP reads to ncbi nt database
+	# do FP analysis
+	# blast FP reads to ncbi nt database
 	with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
 		for k, v in readid_to_read.items():
 			if k in fp_sequences:
