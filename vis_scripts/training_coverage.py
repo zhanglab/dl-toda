@@ -399,7 +399,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 			sseq = line.rstrip().split(',')[10]
 
 			if pident >= identity_thr:
-				align_coords.append([qstart, qend, pident, qseqid, sseqid])
+				align_coords.append([qstart, qend, pident, qseqid])
 
 	return align_coords
 
@@ -433,9 +433,12 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 	print(genomes_id)
 	print(testing_strains)
 
+
+	print(f'Training genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 	with open(os.path.join(args.output_dir, f'{args.pos_label}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Training genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		for ref_fasta in ref_fasta_list:
+			print(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 			f.write(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
 	min_r_pos = 100
@@ -478,7 +481,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 	train_genome_id = '_'.join(training_fasta.split('/')[-1].split('_')[2:4])
 	for idx, ref_fasta in enumerate(ref_fasta_list):
 		genome_id = '_'.join(testing_fasta[idx].split('/')[-1].split('_')[2:4])
-		RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), testing_fasta[idx], subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out')
+		RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), training_fasta, subject=[testing_fasta[idx]], outfilename=f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out')
 		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
 		color = ColorCycler()
 		comp_name2color[genome_id] = color
@@ -486,7 +489,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
 			print(ac)
-			track = circos.get_sector(ac[4]).tracks[-1]
+			track = circos.get_sector(ac[3]).tracks[-1]
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			track.rect(ac[0], ac[1], color=rect_color)
 			percent_identity.append(ac[2])
