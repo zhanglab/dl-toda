@@ -457,7 +457,6 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files')
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of training genomes')
-	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--neg_label', nargs='+', help='list of labels to analyze', required=True)
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
@@ -529,7 +528,7 @@ if __name__ == "__main__":
 	print(gis_align)
 	list_testing_fasta = [args.test_genomes_info[l][1] for l in args.neg_label]
 	print(list_testing_fasta)
-	CircosPlot(args, list_testing_fasta, training_fasta, train_coverage \
+	CircosPlot(args, list_testing_fasta, training_fasta, train_coverage, \
 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_coverage_circos.png'), genomic_islands=gis_align)
 
 
