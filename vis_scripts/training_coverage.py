@@ -69,8 +69,8 @@ def GetGIAlignments(input_file):
 	return alignments
 
 def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
-	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_gis.tsv'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_genomic_islands.fna'), 'w')
 
 	# get gene annotations 
 	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, genome_id, input_dir)
@@ -112,14 +112,14 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 
 	return gis_align
 
 
 def GetGIsFromFasta(args, genome_id, ref_fasta):
-	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_genomic_islands.fna'), 'w')
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
 	for fasta in fasta_files:
@@ -128,10 +128,10 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.pos_label}_{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
@@ -191,11 +191,11 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 	train_reads_id = []
 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_train_pos_reads.fq'), 'w') as outf:
 		for k, v in readid_to_read.items():
-			if k.split('|')[1] == args.label:
+			if k.split('|')[1] == args.pos_label:
 				outf.write(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
 				train_reads_id.append(k)
 
-	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_pos_train_coverage.sam'))
 	
 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_pos_train_coverage.sam'))
 	print(ref_info)
