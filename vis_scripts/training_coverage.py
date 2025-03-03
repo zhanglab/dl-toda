@@ -189,15 +189,15 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
 
 	train_reads_id = []
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), 'w') as outf:
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_train_pos_reads.fq'), 'w') as outf:
 		for k, v in readid_to_read.items():
 			if k.split('|')[1] == args.label:
 				outf.write(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
 				train_reads_id.append(k)
 
-	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	
-	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_pos_train_coverage.sam'))
 	print(ref_info)
 
 	ref = ref_info[0][0]
@@ -209,7 +209,7 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 	total_bases = sum(base_coverage)
 	coverage = round(total_bases / length_ref, 3)
 
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.pos_label}_{ref}_train_coverage.tsv'), 'w') as f:
 		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
 
 	# get train coverage in position mapped by TP reads
@@ -223,7 +223,7 @@ def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alig
 		elif read_id in fn_sequences:
 			fn_cov.append(ave_read_cov)
 
-	with open(os.path.join(args.output_dir, f'{args.label}_test_train_average_coverage.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_test_train_average_coverage.tsv'), 'w') as f:
 		f.write(f'TP\t{len(tp_cov)}\t{len(tp_sequences)}\t{round(len(tp_cov)/len(tp_sequences),3)*100}\t{statistics.mean(tp_cov)}\t{statistics.median(tp_cov)}\t{min(tp_cov)}\t{max(tp_cov)}\n')
 		f.write(f'FN\t{len(fn_cov)}\t{len(fn_sequences)}\t{round(len(fn_cov)/len(fn_sequences),3)*100}\t{statistics.mean(fn_cov)}\t{statistics.median(fn_cov)}\t{min(fn_cov)}\t{max(fn_cov)}\n')
 
@@ -359,7 +359,7 @@ def CircosPlot(args, testing_fasta, training_fasta, alignments_train_pos_test, o
 	print(genomes_id)
 	print(testing_strains)
 
-	with open(os.path.join(args.output_dir, f'{args.label}_genomes_length.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Training genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		for ref_fasta in ref_fasta_list:
 			f.write(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
@@ -539,15 +539,15 @@ if __name__ == "__main__":
 
 	# get info about genomic islands
 	if os.path.isdir(args.genomic_islands):
-		gis_align = GetGIsFromFasta(args, args.train_genomes_info[args.label_pos][0], training_fasta)
+		gis_align = GetGIsFromFasta(args, args.train_genomes_info[args.pos_label][0], training_fasta)
 	else:
-		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label_pos][0], training_fasta)
+		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.pos_label][0], training_fasta)
 
 	print(gis_align)
 	list_testing_fasta = [args.test_genomes_info[l][1] for l in args.neg_label] + [testing_fasta]
 	print(list_testing_fasta)
 	CircosPlot(args, list_testing_fasta, training_fasta, train_coverage, \
-		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_coverage_circos.png'), genomic_islands=gis_align)
+		os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_coverage_circos.png'), genomic_islands=gis_align)
 
 
 
