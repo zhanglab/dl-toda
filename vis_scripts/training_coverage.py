@@ -425,8 +425,8 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
-
-	circos.text(f'{GetGenomesInfo(training_fasta)}\n(training genome)\n', size=12)
+	train_strain = GetGenomesInfo(training_fasta)
+	circos.text(f'{train_strain}\n(training genome)\n', size=12)
 	# get strains of testing genomes
 	genomes_id = ['_'.join(i.split('/')[-1].split('_')[2:4]) for i in testing_fasta]
 	testing_strains = [GetGenomesInfo(i) for i in testing_fasta]
