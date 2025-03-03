@@ -486,7 +486,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
 			print(ac)
-			track = circos.get_sector(ac[3]).tracks[-1]
+			track = circos.get_sector(ac[4]).tracks[-1]
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			track.rect(ac[0], ac[1], color=rect_color)
 			percent_identity.append(ac[2])
