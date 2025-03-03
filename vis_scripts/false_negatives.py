@@ -525,8 +525,12 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
 
 	for readid, data in alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
+		if data[2] < data[3]:
+			start_pos = data[2]
+			end_pos = data[3]
+		else:
+			start_pos = data[3]
+			end_pos = data[2]
 		for pos in range(start_pos, end_pos+1, 1):
 			pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
@@ -538,7 +542,6 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 				genestype[annot[0]] += 1
 
 	pos_readid_count = [len(v) for v in pos_readid.values()]
-	assert len(pos_readid_count) > 0, f'{label}\t{alignments}'
 	
 	if len(pos_readid_count) > 0:
 		print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
@@ -597,7 +600,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				pident = float(line.rstrip().split(',')[8])
 				if readid in alignments:
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
-						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
+						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]						
 				else:
 					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
 
