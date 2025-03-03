@@ -457,6 +457,7 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of training genomes')
 	parser.add_argument('--neg_label', nargs='+', help='list of labels to analyze', required=True)
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
+	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
@@ -492,6 +493,8 @@ if __name__ == "__main__":
 
 	# get reads in training set fasta file
 	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.training_fna_file)
+	# get reads in testing set fasta file
+	test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_fna_file)
 	
 	# create output directories
 	args.output_dir = os.path.join(os.getcwd(), args.pos_label)
