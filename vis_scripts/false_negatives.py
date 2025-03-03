@@ -724,27 +724,45 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	)
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
-	# test_sequence_id = content[0].split(',')[0].split(' ')[0][1:]
-	test_strain = content[0].split(',')[0].split(' ')[1:]
+	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
 	circos.text(f'{test_strain}', size=12, r=20)
 
-	print('define space', len(query_fasta.get_seqid2size()))
-	# circos.text(f"{ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)", size=13)
-	print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
-	print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
+	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
+	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
 	with open(os.path.join(args.output_dir, f'{args.label}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
-	print('genes of interest')
-	print(genes_of_interest)
 
 	min_r_pos = 100
 	for sector in circos.sectors:
+		# Plot labels of genomic islands
+		if genomic_islands:
+			color = 'red'
+			# add track for genomic islands
+			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
+			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			min_r_pos -= 4
+			for gi_id in genomic_islands.keys():
+				start_locus = genomic_islands[gi_id][0]
+				end_locus = genomic_islands[gi_id][1]
+				if start_locus > end_locus:
+					start_gi = end_locus
+					end_gi = start_locus
+				else:
+					start_gi = start_locus
+					end_gi = end_locus
+
+				gis_track.rect(start_gi, end_gi, color=color)
+				label_pos = (start_gi + end_gi) / 2
+				gis_track.annotate(label_pos, f'{gi_id}', label_size=9)
+			print(f'added GIs track')
+
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
-		outer_track.xticks_by_interval(250000, tick_length=1, show_label=False)
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
 		# create tracks for genomics features
 		# f_cds_track = sector.add_track((min_r_pos-5, min_r_pos))
@@ -791,28 +809,28 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			features[genes_of_interest[gene_id][1]] = feature
 
 		
-		# Plot labels of genomic islands
-		if genomic_islands:
-			color = 'red'
-			# add track for genomic islands
-			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
-			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos -= 8
-			for gi_id in genomic_islands.keys():
-				start_locus = genomic_islands[gi_id][0]
-				end_locus = genomic_islands[gi_id][1]
-				if start_locus > end_locus:
-					start_gi = end_locus
-					end_gi = start_locus
-				else:
-					start_gi = start_locus
-					end_gi = end_locus
+		# # Plot labels of genomic islands
+		# if genomic_islands:
+		# 	color = 'red'
+		# 	# add track for genomic islands
+		# 	gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
+		# 	# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+		# 	# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+		# 	min_r_pos -= 8
+		# 	for gi_id in genomic_islands.keys():
+		# 		start_locus = genomic_islands[gi_id][0]
+		# 		end_locus = genomic_islands[gi_id][1]
+		# 		if start_locus > end_locus:
+		# 			start_gi = end_locus
+		# 			end_gi = start_locus
+		# 		else:
+		# 			start_gi = start_locus
+		# 			end_gi = end_locus
 
-				gis_track.rect(start_gi, end_gi, color=color)
-				label_pos = (start_gi + end_gi) / 2
-				gis_track.annotate(label_pos, f'{gi_id}', label_size=9)
-			print(f'added GIs track')
+		# 		gis_track.rect(start_gi, end_gi, color=color)
+		# 		label_pos = (start_gi + end_gi) / 2
+		# 		gis_track.annotate(label_pos, f'{gi_id}', label_size=9)
+		# 	print(f'added GIs track')
 
 
 
@@ -922,7 +940,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		for readid, data in tp_alignments_pos_test.items():
 			for pos in range(data[2], data[3]+1, 1):
 				pos_tp_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
 		y_labels = list(map(str, y_values))
 		tp_track.yticks(y_values, y_labels)
@@ -931,7 +948,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		print(f'added TP track')
 
 		# add tracks for FN reads 
-		min_r_pos -= 13
+		min_r_pos -= 10
 		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track.axis(ec="darkviolet")
 		pos_fn_count = [0]*query_fasta.full_genome_length
@@ -939,7 +956,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# if readid not in most_mapped_reads_id:
 			for pos in range(data[2], data[3]+1, 1):
 				pos_fn_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_fn_count)}\tmedian: {statistics.median(pos_fn_count)}\tmin: {min(pos_fn_count)}\tmax: {max(pos_fn_count)}')
 		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
 		y_labels = list(map(str, y_values))
 		fn_track.yticks(y_values, y_labels)
@@ -965,11 +981,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
 		gc_content_updated = gc_content - test_genome_gc_content
-		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
-		print(len(gc_content_updated))
-		print(len(pos_list))
 		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
 		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content_updated))
@@ -1000,17 +1012,17 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# Add legend
 	with open(training_fasta, 'r') as f:
 		content = f.readline()
-	train_strain = content[0].split(',')[0].split(' ')[1:]
+	train_strain = ' '.join(content.split(',')[0].split(' ')[1:])
 
 	handles = [
-		Patch(color='darkorange', label='Pathogenicity Islands'),
+		Patch(color='red', label='Pathogenicity Islands'),
 		Patch(color='black', label=f'{train_strain}'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
-		Line2D([], [], color='grey', label='Positive GC Skew'),
-		Line2D([], [], color='limegreen', label='Negative GC Skew'),
-		Line2D([], [], color='black', label='Positive GC Content'),
-		Line2D([], [], color='deeppink', label='Negative GC Skew'),
+		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='limegreen', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+		Line2D([], [], color='black', label='Positive GC Content', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='deeppink', label='Negative GC Content', marker="v", ms=6, ls="None"),
 		]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 
@@ -1072,8 +1084,10 @@ if __name__ == "__main__":
 	# get FN and TP sequences
 	fn_sequences = set()
 	tp_sequences = set()
+	fp_sequences = set()
 	fn_cs = []
 	tp_cs = []
+	fp_cs = []
 
 	with open(args.testing_results, 'r') as f:
 		for count, line in enumerate(f):
@@ -1082,17 +1096,23 @@ if __name__ == "__main__":
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
 					fn_sequences.add(test_ordered_reads_id[count])
 					fn_cs.append(prob)
+				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
+					fp_sequences.add(test_ordered_reads_id[count])
+					fp_cs.append(prob)
 				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
 					tp_sequences.add(test_ordered_reads_id[count])
 					tp_cs.append(prob)
 
 	print(f'#FN for label {args.label}: {len(fn_sequences)}')
 	print(f'#TP for label {args.label}: {len(tp_sequences)}')
-	outfile_sum.write(f'{len(fn_sequences)}\t{len(tp_sequences)}\n')
+	print(f'#FP for label {args.label}: {len(fp_sequences)}')
+	outfile_sum.write(f'{len(fn_sequences)}\t{len(fp_sequences)}\t{len(tp_sequences)}\n')
 	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'FN')
 	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'TP')
+	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'FP')
 	StoreCS(args, fn_cs, 'FN')
 	StoreCS(args, tp_cs, 'TP')
+	StoreCS(args, fp_cs, 'FP')
 
 	# get association between sequences in training set and labels
 	with open(args.sequences_info, 'r') as f:
@@ -1141,8 +1161,84 @@ if __name__ == "__main__":
 		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), genomic_islands=gis_align)
+		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
 
+	# do FP analysis
+	# blast FP reads to ncbi nt database
+	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
+	# 	for k, v in readid_to_read.items():
+	# 		if k in fp_sequences:
+	# 			outf.write(f'>{k}\n{v}\n')
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
+
+	# # blast FP reads to train genome of label 1
+	# # create fasta file with all FP reads
+	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
+	# 	for k, v in readid_to_read.items():
+	# 		if k in fp_sequences:
+	# 			outf.write(f'>{k}\n{v}\n')
+
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
+
+	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	fp_taxa = defaultdict(int)
+	print(f'# labels: {len(fp_labels)}')
+	outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
+
+	for label in fp_labels:
+		label_testing_fasta = args.test_genomes_info[label][1]
+		label_testing_genome = args.test_genomes_info[label][0]
+
+		# get fp sequences of label and create fasta file
+		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
+		
+		mapping_output_dir = f'{args.output_dir}/mapping/label0/testing-genome/{label}'
+		if not os.path.isdir(mapping_output_dir):
+			os.makedirs(mapping_output_dir)
+
+		with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
+			for k, v in readid_to_read.items():
+				if k in label_sequences:
+					outf.write(f'>{k}\n{v}\n')
+
+		# run blast
+		RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
+
+		# get alignments info
+		fp_alignments = GetReadsAlignmentsInfo(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+		
+		# get annotations info
+		neg_test_annot_info = GetAnnotInfo(args, label_testing_genome, input_dir)
+
+		if len(neg_test_annot_info) != 0:
+			# get genes 
+			_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, sequence_length, readid_to_read, 'FP')
+
+		else:
+			print(f'No annotations for genome {label_testing_genome}')
+
+		# monitor number of sequences per label
+		fp_taxa[label] = len(label_sequences)
+
+	genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
+	functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
+	geneinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_info_{args.prob_threshold}.tsv'))
+	readswogenesinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.tsv'))
+	readswogenesfna_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.fna'))
+
+	ConcatenateFiles(genetypes_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_type_{args.prob_threshold}.tsv'), "gene_type")
+	ConcatenateFiles(functions_files, os.path.join(args.output_dir, f'{args.label}_FP_functions_{args.prob_threshold}.tsv'), "function")
+	ConcatenateFiles(geneinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_info_{args.prob_threshold}.tsv'), "gene_info")
+	ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
+	ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
+
+	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_neg_taxa.tsv'), 'w') as f:
+		for k, v in fp_taxa_sorted.items():
+			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
 
 
