@@ -407,7 +407,9 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ' '.join(content.split(',')[0].split(' ')[1:])
+	strain = ''.join([e for e in content.split(',')[0].split(' ')[1:] if e != 'chromosome'])
+	
+
 	return strain
 
 
@@ -426,7 +428,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		space=10,
 	)
 	train_strain = GetGenomesInfo(training_fasta)
-	circos.text(f'{train_strain}\n(training genome)\n', size=12)
+	circos.text(f'{train_strain}\n(training genome)\n', size=11, r=20)
 	# get strains of testing genomes
 	genomes_id = ['_'.join(i.split('/')[-1].split('_')[2:4]) for i in testing_fasta]
 	testing_strains = [GetGenomesInfo(i) for i in testing_fasta]
@@ -440,7 +442,8 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		for ref_fasta in ref_fasta_list:
 			print(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 			f.write(f'Testing genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
-
+	print('genomic islands')
+	print(genomic_islands.keys())
 	min_r_pos = 100
 	for sector in circos.sectors:
 		# Plot labels of genomic islands
@@ -472,7 +475,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		outer_track.axis(fc="black")
 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
-		min_r_pos -= 6
+		min_r_pos -= 7
 
 	
 	# store percentage identity between matching regions
@@ -488,7 +491,6 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 		for sector in circos.sectors:
 			sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
-			print(ac)
 			track = circos.get_sector(ac[3]).tracks[-1]
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			track.rect(ac[0], ac[1], color=rect_color)
@@ -500,17 +502,17 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 			f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 		print(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 	
-	# add tracks for coverage of training genome
-	for sector in circos.sectors:
-		# define x-axis vector for the next track
-		genome_pos = list(range(query_fasta.full_genome_length))
-		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		cov_track.axis(ec="darkorange")
-		y_values = list(range(min(train_coverage), max(train_coverage), 2))
-		y_labels = list(map(str, y_values))
-		cov_track.yticks(y_values, y_labels)
-		cov_track.line(genome_pos, train_coverage, color="darkorange")
-		print(f'added coverage track')
+	# # add tracks for coverage of training genome
+	# for sector in circos.sectors:
+	# 	# define x-axis vector for the next track
+	# 	genome_pos = list(range(query_fasta.full_genome_length))
+	# 	cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	cov_track.axis(ec="darkorange")
+	# 	y_values = list(range(min(train_coverage), max(train_coverage), 2))
+	# 	y_labels = list(map(str, y_values))
+	# 	cov_track.yticks(y_values, y_labels)
+	# 	cov_track.line(genome_pos, train_coverage, color="darkorange")
+	# 	print(f'added coverage track')
 
 
 
@@ -518,12 +520,9 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
-	handles = [
-		Patch(color='red', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{train_strain}\n(training genome)'),
-		]
+	handles = [Patch(color='red', label='Pathogenicity Islands')]
 	handles += [Patch(label=testing_strains[idx], fc=comp_name2color[genomes_id[idx]]) for idx in range(len(testing_fasta))]
-	handles += [Patch(color='darkorange', label='Coverage of training\ngenome')]
+	handles += [Patch(color='darkorange', label='Coverage of\ntraining genome')]
 
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 
