@@ -169,21 +169,19 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	return gis_align
 
 
-def CheckGenomes(args):
+def CheckGenomes(args, label):
 	# load testing fasta file
-	with open(args.test_genomes_info[args.label][1], "r") as handle:
+	with open(args.test_genomes_info[label][1], "r") as handle:
 		test_records = list(SeqIO.parse(handle, "fasta"))
 
 	# load training fasta file
-	with open(args.train_genomes_info[args.label][1], "r") as handle:
+	with open(args.train_genomes_info[label][1], "r") as handle:
 		train_records = list(SeqIO.parse(handle, "fasta"))
 
-	assert len(test_records) == 1, f'{arg.label}\t{args.test_genomes_info[args.label][0]} has more than 1 chromosome'
-	assert len(train_records) == 1, f'{arg.label}\t{args.train_genomes_info[args.label][0]} has more than 1 chromosome'
+	assert len(test_records) == 1, f'{label}\t{args.test_genomes_info[label][0]} has more than 1 chromosome'
+	assert len(train_records) == 1, f'{label}\t{args.train_genomes_info[label][0]} has more than 1 chromosome'
 
-	return args.test_genomes_info[args.label][1], test_records, args.train_genomes_info[args.label][1], train_records
-
-
+	return args.test_genomes_info[label][1], test_records, args.train_genomes_info[label][1], train_records
 
 
 def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
@@ -485,7 +483,10 @@ if __name__ == "__main__":
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	# verify that the genomes investigated only have one chromosome
-	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes(args)
+	testing_fasta, _, training_fasta, training_records = CheckGenomes(args)
+
+	for label in args.neg_label:
+		_, _, _, _ = CheckGenomes(args, label)
 
 	# get reads in training set fasta file
 	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.testing_fna_file)
@@ -518,15 +519,14 @@ if __name__ == "__main__":
 	# get training coverage
 	train_coverage, _, _, _ = GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train)
 
-
 	# get info about genomic islands
 	if os.path.isdir(args.genomic_islands):
-		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+		gis_align = GetGIsFromFasta(args, args.train_genomes_info[args.label_pos][0], training_fasta)
 	else:
-		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label_pos][0], training_fasta)
 
 	print(gis_align)
-	list_testing_fasta = [args.test_genomes_info[l][1] for l in args.neg_label]
+	list_testing_fasta = [args.test_genomes_info[l][1] for l in args.neg_label] + [testing_fasta]
 	print(list_testing_fasta)
 	CircosPlot(args, list_testing_fasta, training_fasta, train_coverage, \
 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_coverage_circos.png'), genomic_islands=gis_align)
