@@ -459,6 +459,7 @@ if __name__ == "__main__":
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
+	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	parser.add_argument('--genomic_islands', type=str, help='path to file containing list of genomic islands')
