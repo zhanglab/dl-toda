@@ -489,7 +489,7 @@ if __name__ == "__main__":
 		_, _, _, _ = CheckGenomes(args, label)
 
 	# get reads in training set fasta file
-	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.testing_fna_file)
+	train_readid_to_read, train_sequence_length, _ = LoadFnaFile(args.training_fna_file)
 	
 	# create output directories
 	args.output_dir = os.path.join(os.getcwd(), args.label)
