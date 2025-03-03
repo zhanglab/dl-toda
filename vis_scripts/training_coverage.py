@@ -407,7 +407,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ''.join([e for e in content.split(',')[0].split(' ')[1:] if e != 'chromosome'])
+	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e != 'chromosome'])
 	
 
 	return strain
@@ -496,24 +496,24 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			track.rect(ac[0], ac[1], color=rect_color)
 			percent_identity.append(ac[2])
-		min_r_pos -= 5
+		min_r_pos -= 6
 
 		# get stats on percentage identity
 		with open(os.path.join(args.output_dir, f'{args.pos_label}_{train_genome_id}_{genome_id}_pct_identity_matching_regions.tsv'), 'w') as f:
 			f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 		print(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
 	
-	# # add tracks for coverage of training genome
-	# for sector in circos.sectors:
-	# 	# define x-axis vector for the next track
-	# 	genome_pos = list(range(query_fasta.full_genome_length))
-	# 	cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-	# 	cov_track.axis(ec="darkorange")
-	# 	y_values = list(range(min(train_coverage), max(train_coverage), 2))
-	# 	y_labels = list(map(str, y_values))
-	# 	cov_track.yticks(y_values, y_labels)
-	# 	cov_track.line(genome_pos, train_coverage, color="darkorange")
-	# 	print(f'added coverage track')
+	# add tracks for coverage of training genome
+	for sector in circos.sectors:
+		# define x-axis vector for the next track
+		genome_pos = list(range(query_fasta.full_genome_length))
+		cov_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		cov_track.axis(ec="darkorange")
+		y_values = list(range(min(train_coverage), max(train_coverage), 2))
+		y_labels = list(map(str, y_values))
+		cov_track.yticks(y_values, y_labels)
+		cov_track.line(genome_pos, train_coverage, color="darkorange")
+		print(f'added coverage track')
 
 
 
