@@ -492,6 +492,11 @@ if __name__ == "__main__":
 		content = f.readlines()
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
+	# get association between sequences in training set and labels
+	with open(args.sequences_info, 'r') as f:
+		content = f.readlines()
+		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+
 	# verify that the genomes investigated only have one chromosome
 	testing_fasta, _, training_fasta, training_records = CheckGenomes(args, args.pos_label)
 
