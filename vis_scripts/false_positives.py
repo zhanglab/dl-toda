@@ -908,7 +908,7 @@ if __name__ == "__main__":
 	# create fasta file with testing reads from label 0
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_test_reads.fna'), 'w') as outf:
 		for k, v in test_readid_to_read.items():
-			if k in fn_sequences or k in tp_sequences:
+			if k in fp_sequences or k in tp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 
 	# blast testing reads to testing genome
