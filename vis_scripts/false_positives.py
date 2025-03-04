@@ -868,7 +868,7 @@ if __name__ == "__main__":
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
-	outfile_sum = open(os.path.join(args.output_dir, f'{args.label}_summary.tsv'), 'w')
+	outfile_sum = open(os.path.join(args.output_dir, f'{args.neg_label}_summary.tsv'), 'w')
 
 	# get reads in testing set fasta file
 	test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_fna_file)
