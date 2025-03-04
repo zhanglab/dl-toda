@@ -518,8 +518,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 
 def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
-	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
-	reads = {}
+	reads = []
 	for fn_readid, fn_data in fn_alignments_pos_test.items():
 		if fn_data[2] < fn_data[3]:
 			fn_start_pos = fn_data[2]
@@ -540,16 +539,17 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
-				reads[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-				reads[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
-				sum_file.write(f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}\t{len(test_readid_to_read[fn_readid])}\t{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}\t{len(test_readid_to_read[tp_readid])}\n')
+				reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'])
 
 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
-	for r in reads.keys():
-		tsv_file.write(f'{reads[r]}\t{test_readid_to_read[r]}\n')
+	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
+	for r in reads:
+		tsv_file.write(f'{r[0]}\t{test_readid_to_read[r[0]]}\n')
+		tsv_file.write(f'{r[2]}\t{test_readid_to_read[r[2]]}\n')
+		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{len(test_readid_to_read[r[2]])}\n')
 
-				
-				
+
+
 def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes = defaultdict(list)
