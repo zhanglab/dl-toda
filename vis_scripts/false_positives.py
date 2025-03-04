@@ -69,8 +69,8 @@ def GetGIAlignments(input_file):
 	return alignments
 
 def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
-	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_gis.tsv'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), 'w')
 
 	# get gene annotations 
 	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, genome_id, input_dir)
@@ -112,14 +112,14 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 
 	return gis_align
 
 
 def GetGIsFromFasta(args, genome_id, ref_fasta):
-	fna = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), 'w')
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
 	for fasta in fasta_files:
@@ -128,10 +128,10 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
-	outf = open(os.path.join(args.output_dir, f'{args.label}_{genome_id}_gis.tsv'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
@@ -257,7 +257,7 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 			print(f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}')
 		reads_gc_content.append(ave_read_gc)
 
-	with open(os.path.join(args.output_dir, f'{args.label}_{type}_gc_content.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.neg_label}_{type}_gc_content.tsv'), 'w') as f:
 		f.write(f'#reads\t{len(reads_gc_content)}\n'
 				f'mean\t{statistics.mean(reads_gc_content)}\n'
 				f'median\t{statistics.median(reads_gc_content)}\n'
@@ -665,7 +665,6 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
 		for ac in align_coords:
-			print(ac)
 			# # percent_identity.append(ac.identity)
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
