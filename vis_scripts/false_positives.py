@@ -528,10 +528,6 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 			f.write('\n'.join([str(x) for x in seq_length_info]))
 
 
-CircosPlot(args, testing_records[0].seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'))
-
-
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
