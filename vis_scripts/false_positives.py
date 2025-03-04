@@ -540,7 +540,7 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
-def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, genes_of_interest, outfigpath, \
+def CircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, genes_of_interest, outfigpath, \
 				outfilename, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
