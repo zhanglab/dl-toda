@@ -235,8 +235,12 @@ def main():
             df_kmers = df.columns.tolist()
             
             dict_kmers_sum = dict(zip(df_kmers, df_sum))
-            print(dict_kmers_sum)
+            # sort dictionary based on values
+            dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
+            print(dict_kmers_sum_sorted)
             print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
+            with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{all_labels[batch]}.json'), 'w') as f:
+                json.dump(dict_kmers_sum_sorted, f)
             # get kmers with high attention weights
             # filtered_df = df[['col1', 'col3']]
             # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
@@ -247,8 +251,11 @@ def main():
             # print(filtered_df.shape)
             # plot heatmap of attention weights
             plt.figure(figsize=(15, 15))
-            sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{batch}_{len(df)}_{all_labels[batch]}.png'))
+            if df.shape[0] > 50:
+                sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+            else:
+                sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{all_labels[batch]}.png'))
             plt.close()
             break
         break
