@@ -383,7 +383,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 
 	return alignments
 
-def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
+def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 
 	align_coords = []
 	with open(input_file, 'r') as f:
@@ -409,7 +409,6 @@ def GetGenomesInfo(fasta):
 		content = f.readline()
 	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
 	
-
 	return strain
 
 
@@ -486,7 +485,7 @@ def CircosPlot(args, testing_fasta, training_fasta, train_coverage, outfigpath, 
 	for idx, ref_fasta in enumerate(ref_fasta_list):
 		genome_id = '_'.join(testing_fasta[idx].split('/')[-1].split('_')[2:4])
 		RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_train_genomes'), training_fasta, subject=[testing_fasta[idx]], outfilename=f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out')
-		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out', genomic_islands, identity_thr=MIN_IDENTITY)
+		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/test_train_genomes/{genome_id}_test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 		color = ColorCycler()
 		comp_name2color[genome_id] = color
 		for sector in circos.sectors:
