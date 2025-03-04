@@ -829,7 +829,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	if len(tp_sequences) > 0:
 		handles.append(Patch(color='blue', label='True Positives'))
 	if len(fp_sequences) > 0:
-		handles.append(Patch(color='darkviolet', label='False Negatives'))
+		handles.append(Patch(color='darkviolet', label='False Positives'))
 		
 	handles += [
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
