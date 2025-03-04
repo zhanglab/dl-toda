@@ -516,6 +516,32 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		return annot_info, locus_tags_info
 
 
+
+def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
+	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'))
+	for fn_readid, fn_data in fn_alignments_pos_test.items():
+		if fn_data[2] < fn_data[3]:
+			fn_start_pos = fn_data[2]
+			fn_end_pos = fn_data[3]
+		else:
+			fn_start_pos = fn_data[3]
+			fn_end_pos = fn_data[2]
+
+		for tp_readid, tp_data in tp_alignments_pos_test.items():
+			if tp_data[2] < tp_data[3]:
+				tp_start_pos = tp_data[2]
+				tp_end_pos = tp_data[3]
+			else:
+				tp_start_pos = tp_data[3]
+				tp_end_pos = tp_data[2]
+
+			if (tp_start_pos < fn_end_pos) or (fn_start_pos < tp_end_pos):
+				new_tp_read_id = f'{tp_readid}-{tp_start_pos}-{tp_end_pos}'
+				new_fn_read_id = f'{tp_readid}-{tp_start_pos}-{tp_end_pos}'
+				tsv_file.write(f'{new_tp_read_id}\t{test_readid_to_read[tp_readid]}\n')
+				tsv_file.write(f'{new_fn_read_id}\t{test_readid_to_read[fn_readid]}\n')
+				
+				
 def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes = defaultdict(list)
@@ -534,7 +560,10 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 		for pos in range(start_pos, end_pos+1, 1):
 			pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
-			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
+			(start_pos <= annot[1] and end_pos >= annot[1]) or \
+			(start_pos >= annot[1] and end_pos <= annot[2]) or \
+			(start_pos <= annot[2] and end_pos >= annot[2]):
 				if annot[0] == 'protein_coding':
 					functions[annot[5]] += 1
 				genes[gene_id] = annot
@@ -615,30 +644,6 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 
 	return alignments
 
-# def GetGIMatchingPos(ref_start_end, ref_to_query, start_locus, end_locus):
-
-# 	query_matching_pos = set()
-	
-# 	if start_locus > end_locus:
-# 		gi_start = end_locus
-# 		gi_end = start_locus
-# 	else:
-# 		gi_start = start_locus
-# 		gi_end = end_locus
-
-# 	for count in ref_start_end.keys():
-# 		if (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][0]) \
-# 			or (gi_start >= ref_start_end[count][0] and gi_end <= ref_start_end[count][1]) \
-# 			or (gi_start <= ref_start_end[count][1] and gi_end >= ref_start_end[count][1]) \
-# 			or (gi_start <= ref_start_end[count][0] and gi_end >= ref_start_end[count][1]):
-# 			all_gis_pos = set(list(range(gi_start, gi_end+1, 1)))
-			
-# 			for spos, qpos in ref_to_query[count].items():
-# 				if spos in all_gis_pos:
-# 					query_matching_pos.add(qpos)
-
-# 	return query_matching_pos
-
 
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
 	# ref_to_query = defaultdict(dict)
@@ -656,46 +661,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 
 			if pident >= identity_thr:
 				align_coords.append([qstart, qend, pident])
-				# # get information for genomic islands
-				# qpos = qstart
-				# spos = sstart
-				# for i in range(len(qseq)):
-				# 	if qseq[i] != '-' and sseq[i] != '-':
-				# 		ref_to_query[count][spos] = qpos
-				# 		qpos += 1
-				# 		spos += 1
-				# 	elif sseq[i] == '-' and qseq[i] != '-':
-				# 		qpos += 1
-				# 	elif sseq[i] != '-' and qseq[i] == '-':
-				# 		spos += 1
 
-				# ref_start_end[count] = [sstart, send]
-
-	# gi_to_plot = defaultdict(list) # key = genomic island ID, value = list with start pos and end pos on query genome
-	# for gi_id, info in genomic_islands.items():
-	# 	# find start locus and end locus of genomic islands on query genome
-	# 	start_locus_start_pos = info[0]
-	# 	start_locus_end_pos = info[1]
-	# 	end_locus_start_pos = info[4]
-	# 	end_locus_end_pos = info[5]
-
-	# 	start_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, start_locus_start_pos, start_locus_end_pos)
-	# 	end_locus_matching_pos = GetGIMatchingPos(ref_start_end, ref_to_query, end_locus_start_pos, end_locus_end_pos)
-
-	# 	if len(start_locus_matching_pos) > 0:
-	# 		gi_to_plot[f'{gi_id}_start_{info[2]}'] = [min(start_locus_matching_pos), max(start_locus_matching_pos), info[3], start_locus_start_pos, start_locus_end_pos]
-
-	# 	if len(end_locus_matching_pos) > 0:
-	# 		gi_to_plot[f'{gi_id}_end_{info[6]}'] = [min(end_locus_matching_pos), max(end_locus_matching_pos), info[7], end_locus_start_pos, end_locus_end_pos]
-
-	# with open(os.path.join(args.output_dir, f'{args.label}_gis_query.tsv'), 'w') as f:
-	# 	for gi_id, info in gi_to_plot.items():
-	# 		f.write(f'{gi_id}')
-	# 		for i in info:
-	# 			f.write(f'\t{i}')
-	# 		f.write('\n')
-
-	# return gi_to_plot, align_coords
 	return align_coords
 
 
@@ -1147,37 +1113,39 @@ if __name__ == "__main__":
 	# get mapping of false negatives to testing genome from label 1
 	fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
-	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
-	# blast testing reads to training genomes from other species
-	training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
-	RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/blast/all_test_pos_train_blastn.out')
-	fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
-	# get taxonomy of mapped training genomes and taxon with most reads mapped
-	_ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
+	# # blast testing reads to training genomes from other species
+	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
+	# RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/blast/all_test_pos_train_blastn.out')
+	# fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	# # get taxonomy of mapped training genomes and taxon with most reads mapped
+	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
 	tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
-	_ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
+	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
+
+	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
 	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
 
-	# blast testing reads to training genome from label 1
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
-	test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
+	# # blast testing reads to training genome from label 1
+	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
+	# test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
-	# get info about genomic islands
-	if os.path.isdir(args.genomic_islands):
-		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
-	else:
-		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+	# # get info about genomic islands
+	# if os.path.isdir(args.genomic_islands):
+	# 	gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+	# else:
+	# 	gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
+	# FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 	os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), genomic_islands=gis_align)
 
 	# # # do FP analysis
 	# # # blast FP reads to ncbi nt database
