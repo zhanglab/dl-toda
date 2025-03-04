@@ -924,7 +924,7 @@ if __name__ == "__main__":
 	test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.neg_label][0], input_dir)
 	fp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
 
-	CircosPlot(args, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, 
+	CircosPlot(args, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
 			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_FP_genes_circos.tsv'),)
 
 
