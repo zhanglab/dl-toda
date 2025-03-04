@@ -183,7 +183,8 @@ def main():
     # get labels from class 0 
     with open(args.tsv_file, 'r') as f:
         content = f.readlines()
-        all_labels = [line.rstrip().split('\t')[0] for line in content]
+        reads_id = [line.rstrip().split('\t')[0] for line in content]
+        reads_seq = [line.rstrip().split('\t')[1] for line in content]
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
@@ -199,7 +200,7 @@ def main():
     # set color palette
     palette = sn.color_palette("viridis", as_cmap=True)
 
-    print(len(all_labels), test_steps)
+    print(len(reads_id), test_steps)
 
     for batch, data in enumerate(test_input.take(test_steps), 1):
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
@@ -213,7 +214,9 @@ def main():
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
         # print(f'accuracy: {test_accuracy.result().numpy()}')
-
+        print(len(data["input_ids"]))
+        print(reads_id[batch])
+        print(reads_seq[batch])
         for i in range(len(data["input_ids"])):
             label = data["labels"][i].numpy()
             seq_ids = data["input_ids"][i].numpy()
@@ -239,7 +242,7 @@ def main():
             dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
             print(dict_kmers_sum_sorted)
             print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
-            with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{all_labels[batch]}.tsv'), 'w') as f:
+            with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                 for kmer, kmer_sum in dict_kmers_sum_sorted.items():
                     f.write(f'{kmer}\t{kmer_sum}\n')
             # get kmers with high attention weights
@@ -256,7 +259,7 @@ def main():
                 sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
             else:
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
-            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{all_labels[batch]}.png'))
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
             plt.close()
 
             # if label == 0:
