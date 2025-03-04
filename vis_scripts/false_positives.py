@@ -797,7 +797,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		# get average GC content for FN and TP reads
 		GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'FP')
 		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments, 'TP')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments, 'FP_relative')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'FP_relative')
 		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments, 'TP_relative')
 
 	# Save figure
@@ -806,7 +806,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	fig = circos.plotfig()
 	# Add legend
 	handles = [
-		Patch(color='darkorange', label='Pathogenicity Islands'),
+		# Patch(color='darkorange', label='Pathogenicity Islands'),
 		Patch(color='black', label=f'{train_strain}'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
