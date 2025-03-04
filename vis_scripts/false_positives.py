@@ -709,10 +709,25 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_FN_TP_matching_regions.tsv'), 'w') as f:
 		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% of FN reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{round(len(fp_matching_regions)/len(fp_sequences), 3)*100}')
-		f.write(f'% of FN reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+		
+		if len(fp_sequences) > 0:
+			fp_pct_matching_region = round(len(fp_matching_regions)/len(fp_sequences), 3)*100
+			fp_pct_not_matching_region = round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100
+		else:
+			fp_pct_matching_region = 0
+			fp_pct_not_matching_region = 0
+
+		f.write(f'% of FP reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_matching_region}')
+		f.write(f'% of FP reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_not_matching_region}')
+		
+		if len(tp_sequences) > 0:
+			tp_pct_matching_region = round(len(tp_matching_regions)/len(tp_sequences), 3)*100
+			tp_pct_not_matching_region = round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100
+		else:
+			tp_pct_matching_region = 0
+			tp_pct_not_matching_region = 0
+		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_matching_region}')
+		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_not_matching_region}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -724,36 +739,38 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 
 
 		# add track for TP reads
-		min_r_pos -= 5
-		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="blue")
-		pos_tp_count = [0]*query_fasta.full_genome_length
-		for readid, data in tp_alignments.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_tp_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 1))
-		print(y_values)
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="blue")
-		print(f'added TP track')
+		if len(tp_sequences) > 0:
+			min_r_pos -= 5
+			tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			tp_track.axis(ec="blue")
+			pos_tp_count = [0]*query_fasta.full_genome_length
+			for readid, data in tp_alignments.items():
+				for pos in range(data[2], data[3]+1, 1):
+					pos_tp_count[pos-1] +=1
+			print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
+			y_values = list(range(min(pos_tp_count), max(pos_tp_count), 1))
+			print(y_values)
+			y_labels = list(map(str, y_values))
+			tp_track.yticks(y_values, y_labels)
+			tp_track.line(genome_pos, pos_tp_count, color="blue")
+			print(f'added TP track')
 
-		# add tracks for FN reads 
-		min_r_pos -= 13
-		fp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fp_track.axis(ec="darkviolet")
-		pos_fp_count = [0]*query_fasta.full_genome_length
-		for readid, data in fp_alignments.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_fp_count[pos-1] +=1
-		print(f'mean: {statistics.mean(pos_fp_count)}\tmedian: {statistics.median(pos_fp_count)}\tmin: {min(pos_fp_count)}\tmax: {max(pos_fp_count)}')
-		y_values = list(range(min(pos_fp_count), max(pos_fp_count), 1))
-		print(y_values)
-		y_labels = list(map(str, y_values))
-		fp_track.yticks(y_values, y_labels)
-		fp_track.line(genome_pos, pos_fp_count, color="darkviolet")
-		print(f'added FP track')
+		# add tracks for FP reads 
+		if len(fp_sequences) > 0
+			min_r_pos -= 13
+			fp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			fp_track.axis(ec="darkviolet")
+			pos_fp_count = [0]*query_fasta.full_genome_length
+			for readid, data in fp_alignments.items():
+				for pos in range(data[2], data[3]+1, 1):
+					pos_fp_count[pos-1] +=1
+			print(f'mean: {statistics.mean(pos_fp_count)}\tmedian: {statistics.median(pos_fp_count)}\tmin: {min(pos_fp_count)}\tmax: {max(pos_fp_count)}')
+			y_values = list(range(min(pos_fp_count), max(pos_fp_count), 1))
+			print(y_values)
+			y_labels = list(map(str, y_values))
+			fp_track.yticks(y_values, y_labels)
+			fp_track.line(genome_pos, pos_fp_count, color="darkviolet")
+			print(f'added FP track')
 
 		# Plot GC skew
 		min_r_pos -= 11
@@ -809,9 +826,14 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# Add legend
 	handles = [
 		# Patch(color='darkorange', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{train_strain}'),
-		Patch(color='blue', label='True Positives'),
-		Patch(color='darkviolet', label='False Negatives'),
+		Patch(color='black', label=f'{train_strain}')
+	]
+	if len(tp_sequences) > 0:
+		handles.append(Patch(color='blue', label='True Positives'))
+	if len(fp_sequences) > 0:
+		handles.append(Patch(color='darkviolet', label='False Negatives'))
+		
+	handles += [
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
 		Line2D([], [], color='limegreen', label='Negative GC Skew', marker="v", ms=6, ls="None"),
 		Line2D([], [], color='black', label='Positive GC Content', marker="^", ms=6, ls="None"),
