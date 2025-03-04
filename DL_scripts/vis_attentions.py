@@ -202,7 +202,7 @@ def main():
 
     print(len(reads_id), test_steps)
 
-    for batch, data in enumerate(test_input.take(test_steps), 1):
+    for batch, data in enumerate(test_input.take(test_steps), 0):
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
@@ -234,7 +234,7 @@ def main():
             # remove columns ['PAD']
             df = df.drop('[PAD]', axis='columns')
             print(df)
-            break
+            
             # get sum of attention weights by column
             df_sum = df.sum(axis=0).tolist()
             df_kmers = df.columns.tolist()
@@ -263,7 +263,7 @@ def main():
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
             plt.close()
-        break
+        
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
             #     # kmers_label_0 += filtered_df.columns.tolist()
