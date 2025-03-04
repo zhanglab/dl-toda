@@ -836,7 +836,7 @@ if __name__ == "__main__":
 	parser.add_argument('--genomic_islands', type=str, help='path to file containing list of genomic islands')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
-
+	print(args)
 	input_dir = os.getcwd()
 	
 	# get dltoda taxonomy
@@ -860,11 +860,11 @@ if __name__ == "__main__":
 	_, _, pos_training_fasta, pos_training_records = CheckGenomes(args, args.pos_label)
 	
 	# create output directories
-	args.output_dir = os.path.join(args.output_dir, args.neg_label)
-	if not os.path.isdir(os.path.join(args.output_dir, args.neg_label)):
-		os.makedirs(os.path.join(args.output_dir, args.neg_label))
-	if not os.path.isdir(os.path.join(args.output_dir, 'blast', args.neg_label)):
-		os.makedirs(os.path.join(args.output_dir, 'blast', args.neg_label))
+	args.output_dir = os.path.join(os.getcwd(), args.pos_label, args.neg_label)
+	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
+	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
+		os.makedirs(os.path.join(args.output_dir, 'blast'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
@@ -912,10 +912,10 @@ if __name__ == "__main__":
 				outf.write(f'>{k}\n{v}\n')
 
 	# blast testing reads to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', args.label, 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.neg_label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/{args.neg_label}/test_reads_test_genome/all_test_pos_test_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.neg_label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false and true positives to testing genome
-	fp_alignments = GetReadsAlignments(fp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/{args.neg_label}/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
-	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/{args.neg_label}/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+	fp_alignments = GetReadsAlignments(fp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.neg_label][0], input_dir)
 	fp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
