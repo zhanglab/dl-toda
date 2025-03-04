@@ -547,6 +547,8 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 		tsv_file.write(f'{r[0]}\t{test_readid_to_read[r[0]]}\n')
 		tsv_file.write(f'{r[2]}\t{test_readid_to_read[r[2]]}\n')
 		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{len(test_readid_to_read[r[2]])}\n')
+	tsv_file.close()
+	sum_file.close()
 
 
 
