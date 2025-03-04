@@ -239,8 +239,9 @@ def main():
             dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
             print(dict_kmers_sum_sorted)
             print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
-            with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{all_labels[batch]}.json'), 'w') as f:
-                json.dump(dict_kmers_sum_sorted, f)
+            with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{all_labels[batch]}.tsv'), 'w') as f:
+                for kmer, kmer_sum in dict_kmers_sum_sorted.items():
+                    f.write(f'{kmer}\t{kmer_sum}\n')
             # get kmers with high attention weights
             # filtered_df = df[['col1', 'col3']]
             # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
