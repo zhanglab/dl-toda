@@ -197,7 +197,7 @@ def main():
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # set color palette
-    palette = sn.color_palette("icefire", as_cmap=True)
+    palette = sn.color_palette("viridis", as_cmap=True)
 
     print(len(all_labels), test_steps)
 
@@ -223,7 +223,7 @@ def main():
             df = pd.DataFrame(attentions_weights)
             print(df.shape)
             df.columns = seq_kmers
-            # remove columns and rows [PAD]
+            # remove rows ['PAD']
             pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
             df = df.drop(pad_idx, axis='index')
             # remove columns ['PAD']
@@ -258,8 +258,7 @@ def main():
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{all_labels[batch]}.png'))
             plt.close()
-            break
-        break
+
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
             #     # kmers_label_0 += filtered_df.columns.tolist()
