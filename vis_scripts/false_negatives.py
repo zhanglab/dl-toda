@@ -535,8 +535,8 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				tp_start_pos = tp_data[3]
 				tp_end_pos = tp_data[2]
 
-			if (tp_start_pos < fn_end_pos) or \
-				(fn_start_pos < tp_end_pos) or \
+			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
+				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
 				
