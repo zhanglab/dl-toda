@@ -214,13 +214,15 @@ def main():
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
         # print(f'accuracy: {test_accuracy.result().numpy()}')
-        print(len(data["input_ids"]))
         print(reads_id[batch])
         print(reads_seq[batch])
         for i in range(len(data["input_ids"])):
             label = data["labels"][i].numpy()
             seq_ids = data["input_ids"][i].numpy()
+            print(seq_ids)
             seq_kmers = [vocab[i] for i in seq_ids]
+            print(seq_kmers)
+            print(len(seq_kmers))
             # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             attentions_weights = attentions[-1][-1][i].numpy()
             df = pd.DataFrame(attentions_weights)
@@ -232,7 +234,7 @@ def main():
             # remove columns ['PAD']
             df = df.drop('[PAD]', axis='columns')
             print(df)
-            
+            break
             # get sum of attention weights by column
             df_sum = df.sum(axis=0).tolist()
             df_kmers = df.columns.tolist()
@@ -261,7 +263,7 @@ def main():
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
             plt.close()
-
+        break
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
             #     # kmers_label_0 += filtered_df.columns.tolist()
