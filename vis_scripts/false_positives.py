@@ -496,7 +496,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 
 	return alignments
 
-def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
+def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	align_coords = []
 	with open(input_file, 'r') as f:
 		for count, line in enumerate(f, 1):
