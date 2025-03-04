@@ -861,8 +861,8 @@ if __name__ == "__main__":
 	
 	# create output directories
 	args.output_dir = os.path.join(args.output_dir, args.neg_label)
-	if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
+	if not os.path.isdir(os.path.join(args.output_dir, args.neg_label)):
+		os.makedirs(os.path.join(args.output_dir, args.neg_label))
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast', args.neg_label)):
 		os.makedirs(os.path.join(args.output_dir, 'blast', args.neg_label))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
