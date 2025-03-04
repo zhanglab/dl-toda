@@ -251,7 +251,7 @@ def main():
             # print(filtered_df.shape)
             # plot heatmap of attention weights
             plt.figure(figsize=(15, 15))
-            if df.shape[0] > 50:
+            if df.shape[0] < 50:
                 sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
             else:
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
