@@ -536,8 +536,8 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				tp_end_pos = tp_data[2]
 
 			if (tp_start_pos < fn_end_pos) or (fn_start_pos < tp_end_pos):
-				new_tp_read_id = f'{tp_readid}-{tp_start_pos}-{tp_end_pos}'
-				new_fn_read_id = f'{tp_readid}-{tp_start_pos}-{tp_end_pos}'
+				new_tp_read_id = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+				new_fn_read_id = f'{tp_readid}-fn-{tp_start_pos}-{tp_end_pos}'
 				tsv_file.write(f'{new_tp_read_id}\t{test_readid_to_read[tp_readid]}\n')
 				tsv_file.write(f'{new_fn_read_id}\t{test_readid_to_read[fn_readid]}\n')
 				
