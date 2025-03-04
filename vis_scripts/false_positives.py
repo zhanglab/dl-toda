@@ -536,7 +536,7 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
-def CircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, genes_of_interest, outfigpath, \
+def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, genes_of_interest, outfigpath, \
 				outfilename, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
@@ -710,10 +710,10 @@ def CircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_FN_TP_matching_regions.tsv'), 'w') as f:
 		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+		f.write(f'% of FN reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{round(len(fp_matching_regions)/len(fp_sequences), 3)*100}')
+		f.write(f'% of FN reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
+		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -920,7 +920,7 @@ if __name__ == "__main__":
 	test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.neg_label][0], input_dir)
 	fp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
 
-	CircosPlot(args, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
+	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
 			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_FP_genes_circos.tsv'),)
 
 
