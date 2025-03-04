@@ -830,7 +830,6 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of testing genomes')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
-	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	parser.add_argument('--neg_label', type=str, help='label to analyze', required=True)
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
