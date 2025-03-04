@@ -518,7 +518,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 
 def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
-	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'))
+	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
 	for fn_readid, fn_data in fn_alignments_pos_test.items():
 		if fn_data[2] < fn_data[3]:
 			fn_start_pos = fn_data[2]
