@@ -724,7 +724,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 
 
 		# add track for TP reads
-		# min_r_pos -= 5
+		min_r_pos -= 5
 		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		tp_track.axis(ec="blue")
 		pos_tp_count = [0]*query_fasta.full_genome_length
@@ -733,6 +733,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 				pos_tp_count[pos-1] +=1
 		print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
 		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 1))
+		print(y_values)
 		y_labels = list(map(str, y_values))
 		tp_track.yticks(y_values, y_labels)
 		tp_track.line(genome_pos, pos_tp_count, color="blue")
@@ -748,6 +749,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 				pos_fp_count[pos-1] +=1
 		print(f'mean: {statistics.mean(pos_fp_count)}\tmedian: {statistics.median(pos_fp_count)}\tmin: {min(pos_fp_count)}\tmax: {max(pos_fp_count)}')
 		y_values = list(range(min(pos_fp_count), max(pos_fp_count), 1))
+		print(y_values)
 		y_labels = list(map(str, y_values))
 		fp_track.yticks(y_values, y_labels)
 		fp_track.line(genome_pos, pos_fp_count, color="darkviolet")
@@ -810,10 +812,10 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		Patch(color='black', label=f'{train_strain}'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
-		Line2D([], [], color='grey', label='Positive GC Skew'),
-		Line2D([], [], color='limegreen', label='Negative GC Skew'),
-		Line2D([], [], color='black', label='Positive GC Content'),
-		Line2D([], [], color='deeppink', label='Negative GC Skew'),
+		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='limegreen', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+		Line2D([], [], color='black', label='Positive GC Content', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='deeppink', label='Negative GC Content', marker="v", ms=6, ls="None")
 		]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 	fig.savefig(outfigpath, dpi=300)
