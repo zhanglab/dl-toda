@@ -756,7 +756,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			print(f'added TP track')
 
 		# add tracks for FP reads 
-		if len(fp_sequences) > 0
+		if len(fp_sequences) > 0:
 			min_r_pos -= 13
 			fp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 			fp_track.axis(ec="darkviolet")
