@@ -791,11 +791,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		min_r_pos -= 5
 		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
 		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		print('gc_content', gc_content[:10], pos_list[:10], test_genome_gc_content)
 		gc_content_updated = gc_content - test_genome_gc_content
-		print('gc_content', gc_content_updated[:10], pos_list[:10], test_genome_gc_content)
-		print(len(gc_content_updated))
-		print(len(pos_list))
 		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
 		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
 		abs_max_gc_content = np.max(np.abs(gc_content_updated))
@@ -814,10 +810,12 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
 		# get average GC content for FN and TP reads
-		GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'FP')
-		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments, 'TP')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'FP_relative')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments, 'TP_relative')
+		if len(fp_sequences) > 0:
+			GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'FP')
+			GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'FP_relative')
+		if len(tp_sequences) > 0:
+			GetReadsGCcontent(args, gc_content, pos_list, tp_alignments, 'TP')
+			GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments, 'TP_relative')
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
