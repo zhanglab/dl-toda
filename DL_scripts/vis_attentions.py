@@ -249,12 +249,12 @@ def main():
             print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
 
 
-            df_values= df.values.flatten().tolist()
+            df_values = df.values.flatten().tolist()
             with open(os.path.join(args.output_dir, f'stats_att_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                 f.write(f'{np.mean(df_values)}\t{np.median(df_values)}\t{min(df_values)}\t{max(df_values)}')
 
             plt.figure(figsize=(12, 12))
-            sn.histplot(data=df)
+            sn.histplot(data=df_values)
             plt.xlabel('Attention scores')
             plt.ylabel('Frequency')
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist_{len(df)}_{reads_id[batch]}.png'))
