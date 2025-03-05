@@ -187,7 +187,7 @@ def main():
         reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
         classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
         genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
-        reads_seq = [line.rstrip().split('\t')[1] for line in content]
+        reads_seq = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[1] for line in content}
 
 
     args.datatype = 'finetuning'
@@ -228,7 +228,7 @@ def main():
                     if seq_kmers[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                         dna_seq += seq_kmers[j][-1]
                 print(dna_seq)
-                assert dna_seq == reads_seq[batch]
+                assert dna_seq == reads_seq[reads_id[batch]]
                 print(seq_kmers)
                 print(len(seq_kmers))
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
@@ -302,7 +302,7 @@ def main():
     hist_palette = sn.color_palette("husl", len(data_to_plot))
     plt.figure(figsize=(10, 10))
     for idx, (key, value) in enumerate(data_to_plot.items(),0):
-        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}')
+        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}-{len(reads_seq[reads_id[batch]])}')
     plt.xlabel('Attention scores')
     plt.ylabel('Frequency')
     plt.legend()
