@@ -219,9 +219,9 @@ def main():
                 print(seq_kmers)
                 # reconstruct original sequence
                 dna_seq = seq_kmers[1]
-                for i in range(2, len(seq_kmers), 1):
-                    if seq_kmers[i] not in ['[PAD]', '[SEP]', '[UNK]']:
-                        dna_seq += seq_kmers[i][-1]
+                for j in range(2, len(seq_kmers), 1):
+                    if seq_kmers[j] not in ['[PAD]', '[SEP]', '[UNK]']:
+                        dna_seq += seq_kmers[j][-1]
                 print(dna_seq)
                 assert dna_seq == reads_seq[batch]
                 print(seq_kmers)
@@ -232,7 +232,7 @@ def main():
                 print(df.shape)
                 df.columns = seq_kmers
                 # remove rows ['PAD']
-                pad_idx = [i for i in range(len(seq_kmers)) if seq_kmers[i] == '[PAD]']
+                pad_idx = [idx for idx in range(len(seq_kmers)) if seq_kmers[idx] == '[PAD]']
                 df = df.drop(pad_idx, axis='index')
                 # remove columns ['PAD']
                 df = df.drop('[PAD]', axis='columns')
