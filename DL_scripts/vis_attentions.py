@@ -215,7 +215,7 @@ def main():
             # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
             print(reads_id[batch])
-            print(reads_seq[reads_id[batch]])
+            print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
             for i in range(len(data["input_ids"])):
                 label = data["labels"][i].numpy()
                 seq_ids = data["input_ids"][i].numpy()
@@ -302,7 +302,7 @@ def main():
     hist_palette = sn.color_palette("husl", len(data_to_plot))
     plt.figure(figsize=(10, 10))
     for idx, (key, value) in enumerate(data_to_plot.items(),0):
-        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}-{len(reads_seq[reads_id[batch]])}')
+        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}-{len(reads_seq[key])}')
     plt.xlabel('Attention scores')
     plt.ylabel('Frequency')
     plt.legend()
