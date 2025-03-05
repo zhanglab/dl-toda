@@ -180,12 +180,14 @@ def main():
     # compute number of steps required to iterate over entire test set
     test_steps = math.ceil(num_reads/(args.batch_size))
 
-    # get labels from class 0 
+    # get id of reads
     with open(args.tsv_file, 'r') as f:
         content = f.readlines()
         reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
+        classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
+        genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
         reads_seq = [line.rstrip().split('\t')[1] for line in content]
-    print(reads_id[:10])
+
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
@@ -193,7 +195,9 @@ def main():
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # set color palette
-    palette = sn.color_palette("viridis", as_cmap=True)
+    heatmap_palette = sn.color_palette("viridis", as_cmap=True)
+
+    data_to_plot = defaultdict(list)
 
     print(len(reads_id), test_steps)
     print(f'list of reads: {args.list_reads_id}\t{len(args.list_reads_id)}')
@@ -256,13 +260,7 @@ def main():
                 with open(os.path.join(args.output_dir, f'stats_att_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                     f.write(f'{np.mean(df_values)}\t{np.median(df_values)}\t{min(df_values)}\t{max(df_values)}')
 
-                plt.figure(figsize=(12, 12))
-                sn.histplot(data=df_values)
-                plt.xlabel('Attention scores')
-                plt.ylabel('Frequency')
-                plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist_{len(df)}_{reads_id[batch]}.png'))
-                plt.close()
-
+                data_to_plot[reads_id[batch]] = df_values
                 # get kmers with high attention weights
                 # filtered_df = df[['col1', 'col3']]
                 # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
@@ -274,9 +272,9 @@ def main():
                 # plot heatmap of attention weights
                 plt.figure(figsize=(15, 15))
                 if df.shape[0] < 50:
-                    sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=palette) 
+                    sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=heatmap_palette) 
                 else:
-                    sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
+                    sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=heatmap_palette) 
                 plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
                 plt.close()
 
@@ -299,7 +297,15 @@ def main():
             #     else:
             #         predictions_label_1.append('i') 
     
-    
+    # plot histograms of attention weights
+    hist_palette = sn.color_palette("husl", len(data_to_plot))
+    plt.figure(figsize=(10, 10))
+    for idx, (key, value) in enumerate(data_to_plot.items(),0):
+        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}')
+    plt.xlabel('Attention scores')
+    plt.ylabel('Frequency')
+    plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
+    plt.close()
 
     # # plot histogram of attention weights for other labels
     # confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
