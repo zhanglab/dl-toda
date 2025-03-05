@@ -192,10 +192,6 @@ def main():
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
-    attention_weights_label_0 = []
-    predictions_label_0 = []
-    confidence_scores_label_0 = []
-
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # set color palette
@@ -203,7 +199,8 @@ def main():
 
     print(len(reads_id), test_steps)
 
-    for batch, data in enumerate(test_input.take(test_steps), 0):
+    for batch, data in enumerate(test_input.take(test_steps), 1):
+        print(batch, reads_id[batch])
         if reads_id[batch] in args.list_reads_id:
             outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
