@@ -199,8 +199,10 @@ def main():
 
     print(len(reads_id), test_steps)
 
-    for batch, data in enumerate(test_input.take(test_steps), 1):
+    for batch, data in enumerate(test_input.take(test_steps), 0):
         print(batch, reads_id[batch])
+        if reads_id[batch] == 'num_6686':
+            print(f'{reads_id[batch]} IS PRESENT!!')
         if reads_id[batch] in args.list_reads_id:
             outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
