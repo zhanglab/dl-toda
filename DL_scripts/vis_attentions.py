@@ -118,8 +118,6 @@ def main():
     parser.add_argument('--model', type=str, help='path to directory containing keras model saved with .save()')
     parser.add_argument('--pretrained', type=str, help='path to model saved with .save_pretrained()')
     args = parser.parse_args()
-    print(args.list_reads_id)
-
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
@@ -198,7 +196,7 @@ def main():
     palette = sn.color_palette("viridis", as_cmap=True)
 
     print(len(reads_id), test_steps)
-
+    print(f'list of reads: {args.list_reads_id}\t{len(args.list_reads_id)}')
     for batch, data in enumerate(test_input.take(test_steps), 0):
         print(batch, reads_id[batch])
         if reads_id[batch] == 'num_6686':
