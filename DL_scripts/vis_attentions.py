@@ -198,9 +198,6 @@ def main():
     print(len(reads_id), test_steps)
     print(f'list of reads: {args.list_reads_id}\t{len(args.list_reads_id)}')
     for batch, data in enumerate(test_input.take(test_steps), 0):
-        print(batch, reads_id[batch])
-        if reads_id[batch] == 'num_6686':
-            print(f'{reads_id[batch]} IS PRESENT!!')
         if reads_id[batch] in args.list_reads_id:
             outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
@@ -219,6 +216,12 @@ def main():
                 seq_ids = data["input_ids"][i].numpy()
                 print(seq_ids)
                 seq_kmers = [vocab[i] for i in seq_ids]
+                # reconstruct original sequence
+                dna_seq = seq_kmers[0]
+                for i in range(1, len(seq_kmers), 1):
+                    dna_seq += seq_kmers[-1]
+                print(dna_seq)
+                assert dna_seq == reads_seq[batch]
                 print(seq_kmers)
                 print(len(seq_kmers))
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
