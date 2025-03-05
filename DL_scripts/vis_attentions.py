@@ -185,17 +185,16 @@ def main():
     # get labels from class 0 
     with open(args.tsv_file, 'r') as f:
         content = f.readlines()
-        reads_id = [line.rstrip().split('\t')[0].split('|')[2] for line in content]
+        reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
         reads_seq = [line.rstrip().split('\t')[1] for line in content]
+    print(reads_id[:10])
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
 
     attention_weights_label_0 = []
-    # kmers_label_0 = []
     predictions_label_0 = []
     confidence_scores_label_0 = []
-    # labels_0 = []
 
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
@@ -216,7 +215,6 @@ def main():
             # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
             # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
-            # print(f'accuracy: {test_accuracy.result().numpy()}')
             print(reads_id[batch])
             print(reads_seq[batch])
             for i in range(len(data["input_ids"])):
