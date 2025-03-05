@@ -305,6 +305,7 @@ def main():
         sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}')
     plt.xlabel('Attention scores')
     plt.ylabel('Frequency')
+    plt.legend()
     plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
     plt.close()
 
