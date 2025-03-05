@@ -218,10 +218,10 @@ def main():
                 seq_kmers = [vocab[i] for i in seq_ids]
                 print(seq_kmers)
                 # reconstruct original sequence
-                dna_seq = seq_kmers[0]
-                for i in range(1, len(seq_kmers), 1):
-                    if seq_kmers[i] not in ['[CLS]', '[PAD]', '[SEP]', '[UNK]']:
-                        dna_seq += seq_kmers[-1]
+                dna_seq = seq_kmers[1]
+                for i in range(2, len(seq_kmers), 1):
+                    if seq_kmers[i] not in ['[PAD]', '[SEP]', '[UNK]']:
+                        dna_seq += seq_kmers[i][-1]
                 print(dna_seq)
                 assert dna_seq == reads_seq[batch]
                 print(seq_kmers)
