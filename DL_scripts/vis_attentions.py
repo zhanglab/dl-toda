@@ -238,15 +238,27 @@ def main():
             # get sum of attention weights by column
             df_sum = df.sum(axis=0).tolist()
             df_kmers = df.columns.tolist()
-            
-            dict_kmers_sum = dict(zip(df_kmers, df_sum))
+                        
             # sort dictionary based on values
+            dict_kmers_sum = dict(zip(df_kmers, df_sum))
             dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
-            print(dict_kmers_sum_sorted)
-            print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
             with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                 for kmer, kmer_sum in dict_kmers_sum_sorted.items():
                     f.write(f'{kmer}\t{kmer_sum}\n')
+
+            print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
+
+
+            df_values= df.values.flatten().tolist()
+            with open(os.path.join(args.output_dir, f'stats_att_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
+                f.write(f'{np.mean(df_values)}\t{np.median(df_values)}\t{min(df_values)}\t{max(df_values)}')
+
+            sns.histplot(data=df, x='sepal_length')
+            plt.xlabel('Attention scores')
+            plt.ylabel('Frequency')
+            plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist_{len(df)}_{reads_id[batch]}.png'))
+            plt.close()
+
             # get kmers with high attention weights
             # filtered_df = df[['col1', 'col3']]
             # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
@@ -263,6 +275,7 @@ def main():
                 sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=palette) 
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
             plt.close()
+            break
         
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
