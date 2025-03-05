@@ -276,6 +276,7 @@ def main():
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
             plt.close()
             break
+        break
         
             # if label == 0:
             #     attention_weights_label_0.append(df.values.flatten().tolist())
