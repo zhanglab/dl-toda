@@ -519,6 +519,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
 	reads = []
+	reads_id = {}
 	for fn_readid, fn_data in fn_alignments_pos_test.items():
 		if fn_data[2] < fn_data[3]:
 			fn_start_pos = fn_data[2]
@@ -540,13 +541,15 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
 				reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'])
+				reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+				reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
 	for r in reads:
-		tsv_file.write(f'{r[0]}\t{test_readid_to_read[r[0]]}\n')
-		tsv_file.write(f'{r[2]}\t{test_readid_to_read[r[2]]}\n')
 		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{len(test_readid_to_read[r[2]])}\n')
+	for k, v in reads_id.items():
+		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
 	tsv_file.close()
 	sum_file.close()
 
