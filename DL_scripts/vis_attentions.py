@@ -215,7 +215,7 @@ def main():
             # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
             print(reads_id[batch])
-            print(reads_seq[batch])
+            print(reads_seq[reads_id[batch]])
             for i in range(len(data["input_ids"])):
                 label = data["labels"][i].numpy()
                 seq_ids = data["input_ids"][i].numpy()
