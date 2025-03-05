@@ -253,7 +253,7 @@ def main():
             with open(os.path.join(args.output_dir, f'stats_att_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                 f.write(f'{np.mean(df_values)}\t{np.median(df_values)}\t{min(df_values)}\t{max(df_values)}')
 
-            sns.histplot(data=df, x='sepal_length')
+            sn.histplot(data=df, x='sepal_length')
             plt.xlabel('Attention scores')
             plt.ylabel('Frequency')
             plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist_{len(df)}_{reads_id[batch]}.png'))
