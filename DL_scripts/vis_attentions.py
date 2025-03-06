@@ -310,8 +310,8 @@ def main():
     plt.close()
 
     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
-    fn_read_id = [key for key, value in classification_group.items() if value == 'fn']
-    tp_read_id = [key for key, value in classification_group.items() if value == 'tp']
+    fn_read_id = [key for key, value in classification_group.items() if value == 'fn' and key in args.list_reads_id]
+    tp_read_id = [key for key, value in classification_group.items() if value == 'tp' and key in args.list_reads_id]
     for tp_read in tp_read_id:
         print(tp_read, fn_read_id[0])
         tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
