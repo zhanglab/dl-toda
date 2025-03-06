@@ -316,10 +316,10 @@ def main():
         print(tp_read, fn_read_id[0])
         tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
         tp_genome_pos_end = max([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
-        assert tp_genome_pos_end-tp_genome_pos_start == len(reads_seq[tp_read]), f'{tp_genome_pos_end-tp_genome_pos_start}-{len(reads_seq[tp_read])}'
+        assert tp_genome_pos_end-tp_genome_pos_start+1 == len(reads_seq[tp_read]), f'{tp_genome_pos_end-tp_genome_pos_start}-{len(reads_seq[tp_read])}'
         fn_genome_pos_start = min([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
         fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
-        assert fn_genome_pos_end-fn_genome_pos_start == len(reads_seq[fn_read_id[0]]), f'{fn_genome_pos_end-fn_genome_pos_start}-{len(reads_seq[fn_read_id[0]])}'
+        assert fn_genome_pos_end-fn_genome_pos_start+1 == len(reads_seq[fn_read_id[0]]), f'{fn_genome_pos_end-fn_genome_pos_start}-{len(reads_seq[fn_read_id[0]])}'
         print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
         tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
         fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
