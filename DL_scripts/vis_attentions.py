@@ -251,7 +251,7 @@ def main():
                 df_mean = df.mean(axis=0).tolist()
                 # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
-                attentions_mean[reads_id[batch]] = df_mean
+                attentions_mean[reads_id[batch]] = df_sum
                             
                 # sort dictionary based on values
                 dict_kmers_sum = dict(zip(df_kmers, df_sum))
@@ -386,7 +386,7 @@ def main():
     # gv.set_scale_xticks()
 
     # add track for FN
-    list_reads_id = [fn_read_id[0]]
+    list_reads_id = [fn_read_id[0], ]
     fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
     fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
@@ -403,10 +403,10 @@ def main():
 
         if len(right_non_matching_regions) != 0:
             print(f'FN - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
-            fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='blue')
+            fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
         if len(left_non_matching_regions) != 0:
             print(f'FN - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
-            fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='blue')
+            fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
     # add tracks for TP + matching and non matching sequences with FN read
     for idx, tp_read in enumerate(tp_read_id, 0):
