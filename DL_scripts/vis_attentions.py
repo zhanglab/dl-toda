@@ -430,7 +430,7 @@ def main():
             print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
             tp_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
-
+    fig = gv.plotfig()
     # add attention scores
     for idx, track in enumerate(gv.feature_tracks, 0):
         print(track)
@@ -441,7 +441,7 @@ def main():
         for segment in track.segments:
             subtrack.ax.line(x_values, attentions_mean[read_id], color="grey")
 
-    fig = gv.plotfig()
+    
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
 
 
