@@ -384,6 +384,7 @@ def main():
     fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
     # add matching and non matching sequences with TP reads
     for match in matching_pos:
+        print(f'FN - matching positions: {genome_pos_to_segment[match[0]]}\t{genome_pos_to_segment[match[1]]}')
         fn_track.add_feature(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], strand, plotstyle='box', fc='darkorange')
         
         right_non_matching_regions = []
@@ -395,14 +396,17 @@ def main():
                 left_non_matching_regions.append(i)
 
         if len(right_non_matching_regions) != 0:
+            print(f'FN - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
             fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='blue')
         if len(left_non_matching_regions) != 0:
+            print(f'FN - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
             fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='blue')
 
     # add tracks for TP + matching and non matching sequences with FN read
     for idx, tp_read in enumerate(tp_read_id, 0):
+        print(f'TP - macthing positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
         tp_track = gv.add_feature_track(f'{tp_read} - TP', len(reads_seq[tp_read]))
-        tp_track.add_feature(matching_pos[idx][0], matching_pos[idx][1], strand, plotstyle='box', fc='darkorange')
+        tp_track.add_feature(genome_pos_to_segment[matching_pos[idx][0]], genome_pos_to_segment[matching_pos[idx][1]], strand, plotstyle='box', fc='darkorange')
 
         right_non_matching_regions = []
         left_non_matching_regions = []
@@ -413,8 +417,10 @@ def main():
                 left_non_matching_regions.append(i)
 
         if len(right_non_matching_regions) != 0:
+            print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
             tp_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
         if len(left_non_matching_regions) != 0:
+            print(f'TP - left non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
             tp_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
 
