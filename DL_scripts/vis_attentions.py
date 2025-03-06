@@ -249,9 +249,11 @@ def main():
                 df_sum = df.sum(axis=0).tolist()
                 # get mean of attention weights by column
                 df_mean = df.mean(axis=0).tolist()
+                # get max value of attention weights by column
+                df_max = df.max(axis=0).tolist()
                 # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
-                attentions_mean[reads_id[batch]] = df_sum
+                attentions_mean[reads_id[batch]] = df_max
                             
                 # sort dictionary based on values
                 dict_kmers_sum = dict(zip(df_kmers, df_sum))
@@ -323,6 +325,7 @@ def main():
     fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
     start_genome_pos = {fn_read_id[0] : fn_genome_pos_start}
     end_genome_pos = {fn_read_id[0] : fn_genome_pos_end}
+    non_matching_seq = defaultdict(list)
     for tp_read in tp_read_id:
         print(tp_read, fn_read_id[0])
         tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
@@ -359,6 +362,10 @@ def main():
             genome_pos += 1
 
         assert fn_overlap_seq == tp_overlap_seq
+
+        non_matching_seq[tp_read]
+
+
         with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
             f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
             f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}\n')
