@@ -375,12 +375,13 @@ def main():
     gv = GenomeViz()
     # get length of segment to plot
     start_x_value = min(start_genome_pos.values())
-    end_x_value = max(end_genome_pos.values())
+    end_x_value = max(end_genome_pos.values()) + 1
+    print(f'length of fragment shown: {end_x_value-start_x_value}')
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
     # gv.set_scale_xticks()
 
     # add track for FN
-    fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', len(reads_seq[fn_read_id[0]]))
+    fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
     # add matching and non matching sequences with TP reads
     for match in matching_pos:
         fn_track.add_feature(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], strand, plotstyle='box', fc='darkorange')
