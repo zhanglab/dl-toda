@@ -376,17 +376,22 @@ def main():
     # get length of segment to plot
     start_x_value = min(start_genome_pos.values())
     end_x_value = max(end_genome_pos.values()) + 1
+    all_attentions_mean = []
+    for v in attentions_mean.values():
+        all_attentions_mean += v
+    max_y_value = max(all_attentions_mean)
+    print(f'max y value: {max_y_value}')
     print(f'length of fragment shown: {end_x_value-start_x_value}')
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
     # gv.set_scale_xticks()
 
     # add track for FN
     fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
+    fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
     for match in matching_pos:
         print(f'FN - matching positions: {genome_pos_to_segment[match[0]]}\t{genome_pos_to_segment[match[1]]}')
         fn_track.add_feature(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], strand, plotstyle='box', fc='darkorange')
-        
         right_non_matching_regions = []
         left_non_matching_regions = []
         for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
@@ -406,8 +411,8 @@ def main():
     for idx, tp_read in enumerate(tp_read_id, 0):
         print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
         tp_track = gv.add_feature_track(f'{tp_read} - TP', end_x_value-start_x_value)
+        tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
         tp_track.add_feature(genome_pos_to_segment[matching_pos[idx][0]], genome_pos_to_segment[matching_pos[idx][1]], strand, plotstyle='box', fc='darkorange')
-
         right_non_matching_regions = []
         left_non_matching_regions = []
         for i in range(start_genome_pos[tp_read], end_genome_pos[tp_read]+1, 1):
@@ -426,7 +431,7 @@ def main():
 
     # add attention scores
     for track in gv.feature_tracks:
-        subtrack = track.get_subtrack()
+        subtrack = track.get_subtrack('attentions')
         name = track.get_name()
         print(name)
         read_id = name.split(' ')[0]
