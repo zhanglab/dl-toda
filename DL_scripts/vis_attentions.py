@@ -200,6 +200,7 @@ def main():
     heatmap_palette = sn.color_palette("viridis", as_cmap=True)
 
     data_to_plot = defaultdict(list)
+    attentions_mean = defaultdict(list)
 
     print(len(reads_id), test_steps)
     print(f'list of reads: {args.list_reads_id}\t{len(args.list_reads_id)}')
@@ -246,7 +247,11 @@ def main():
                 
                 # get sum of attention weights by column
                 df_sum = df.sum(axis=0).tolist()
+                # get mean of attention weights by column
+                df_mean = df.mean(axis=0).tolist()
+                # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
+                attentions_mean[reads_id[batch]] = df_mean
                             
                 # sort dictionary based on values
                 dict_kmers_sum = dict(zip(df_kmers, df_sum))
@@ -313,29 +318,32 @@ def main():
     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
     fn_read_id = [key for key, value in classification_group.items() if value == 'fn' and key in args.list_reads_id]
     tp_read_id = [key for key, value in classification_group.items() if value == 'tp' and key in args.list_reads_id]
-    fn_matching_seq = [] # key = read id, value = list of start and end of matching regions
-    tp_matching_seq = [] # key = read id, value = list of start and end of matching regions
+    matching_pos = []
+    fn_genome_pos_start = min([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
+    fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
+    start_genome_pos = {fn_read_id[0] : fn_genome_pos_start}
+    end_genome_pos = {fn_read_id[0] : fn_genome_pos_end}
     for tp_read in tp_read_id:
         print(tp_read, fn_read_id[0])
         tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
         tp_genome_pos_end = max([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
         assert tp_genome_pos_end-tp_genome_pos_start+1 == len(reads_seq[tp_read]), f'{tp_genome_pos_end-tp_genome_pos_start}-{len(reads_seq[tp_read])}'
-        fn_genome_pos_start = min([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
-        fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
         assert fn_genome_pos_end-fn_genome_pos_start+1 == len(reads_seq[fn_read_id[0]]), f'{fn_genome_pos_end-fn_genome_pos_start}-{len(reads_seq[fn_read_id[0]])}'
+        start_genome_pos[tp_read] = tp_genome_pos_start 
+        end_genome_pos[tp_read] = tp_genome_pos_end
         print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
         tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
         fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
         overlap = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
         print(overlap)
+        matching_pos.append(overlap)
+
         tp_overlap_seq = ''
         tp_non_overlap_seq = ''
         genome_pos = tp_genome_pos_start
-        tp_overlap_pos = []
         for i in range(len(reads_seq[tp_read])):
             if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
                 tp_overlap_seq += reads_seq[tp_read][i]
-                tp_overlap_pos.append(i)
             if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
                 tp_non_overlap_seq += reads_seq[tp_read][i]
             genome_pos += 1
@@ -343,17 +351,13 @@ def main():
         fn_overlap_seq = ''
         fn_non_overlap_seq = ''
         genome_pos = fn_genome_pos_start
-        fn_overlap_pos = []
         for i in range(len(reads_seq[fn_read_id[0]])):
             if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
                 fn_overlap_seq += reads_seq[fn_read_id[0]][i]
-                fn_overlap_pos.append(i)
             if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
                 fn_non_overlap_seq += reads_seq[fn_read_id[0]][i]
             genome_pos += 1
 
-        fn_matching_seq.append([min(fn_overlap_pos), max(fn_overlap_pos)])
-        tp_matching_seq.append([min(tp_overlap_pos), max(tp_overlap_pos)])
         assert fn_overlap_seq == tp_overlap_seq
         with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
             f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
@@ -367,19 +371,62 @@ def main():
             f.write(f'fn overlap seq: {fn_overlap_seq}\n')
 
     # plot TP and FN along with sum of attention scores
-    strand = 1    
+    strand = 1
     gv = GenomeViz()
-    gv.set_scale_xticks()
+    # get length of segment to plot
+    start_x_value = min(start_genome_pos.values())
+    end_x_value = max(end_genome_pos.values())
+    genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
+    # gv.set_scale_xticks()
+
     # add track for FN
     fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', len(reads_seq[fn_read_id[0]]))
-    # add matching sequences with TP reads
-    for match_seq in fn_matching_seq:
-        fn_track.add_feature(match_seq[0], match_seq[1], strand, plotstyle='box', fc='lime')
+    # add matching and non matching sequences with TP reads
+    for match in matching_pos:
+        fn_track.add_feature(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], strand, plotstyle='box', fc='darkorange')
+        
+        right_non_matching_regions = []
+        left_non_matching_regions = []
+        for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
+            if i > match[0]:
+                right_non_matching_regions.append(i)
+            if i < match[1]:
+                left_non_matching_regions.append(i)
 
-    # add tracks for TP and matching sequence with FN read
+        if len(right_non_matching_regions) != 0:
+            fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='blue')
+        if len(left_non_matching_regions) != 0:
+            fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='blue')
+
+    # add tracks for TP + matching and non matching sequences with FN read
     for idx, tp_read in enumerate(tp_read_id, 0):
         tp_track = gv.add_feature_track(f'{tp_read} - TP', len(reads_seq[tp_read]))
-        tp_track.add_feature(tp_matching_seq[idx][0], tp_matching_seq[idx][1], strand, plotstyle='box', fc='blue')
+        tp_track.add_feature(matching_pos[idx][0], matching_pos[idx][1], strand, plotstyle='box', fc='darkorange')
+
+        right_non_matching_regions = []
+        left_non_matching_regions = []
+        for i in range(start_genome_pos[tp_read], end_genome_pos[tp_read]+1, 1):
+            if i > match[0]:
+                right_non_matching_regions.append(i)
+            if i < match[1]:
+                left_non_matching_regions.append(i)
+
+        if len(right_non_matching_regions) != 0:
+            tp_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+        if len(left_non_matching_regions) != 0:
+            tp_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+
+
+    # add attention scores
+    for track in gv.feature_tracks:
+        subtrack = track.get_subtrack()
+        name = track.get_name()
+        print(name)
+        read_id = name.split(' ')[0]
+        print(read_id)
+        x_values = list(range(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], 1))
+        for segment in track.segments:
+            subtrack.ax.line(x_values, attentions_mean[read_id], color="grey")
 
     fig = gv.plotfig()
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
