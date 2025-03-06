@@ -386,6 +386,7 @@ def main():
     # gv.set_scale_xticks()
 
     # add track for FN
+    list_reads_id = [fn_read_id[0]]
     fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
     fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
@@ -409,6 +410,7 @@ def main():
 
     # add tracks for TP + matching and non matching sequences with FN read
     for idx, tp_read in enumerate(tp_read_id, 0):
+        list_reads_id.append(tp_read)
         print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
         tp_track = gv.add_feature_track(f'{tp_read} - TP', end_x_value-start_x_value)
         tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
@@ -430,13 +432,12 @@ def main():
 
 
     # add attention scores
-    for track in gv.feature_tracks:
+    for idx, track in enumerate(gv.feature_tracks, 0):
+        print(track)
         subtrack = track.get_subtrack('attentions')
-        name = track.get_name()
-        print(name)
-        read_id = name.split(' ')[0]
+        read_id = list_reads_id[idx]
         print(read_id)
-        x_values = list(range(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], 1))
+        x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
         for segment in track.segments:
             subtrack.ax.line(x_values, attentions_mean[read_id], color="grey")
 
