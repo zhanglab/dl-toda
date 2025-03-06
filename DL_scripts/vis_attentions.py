@@ -373,6 +373,10 @@ def main():
             fn_non_matching_kmers.append(fn_non_overlap_seq[i:i+4])
         non_matching_seq[fn_read_id[0]] = fn_non_matching_kmers
 
+        print(set(tp_non_matching_kmers).intersection(set(fn_non_matching_kmers)))
+        print(len(set(tp_non_matching_kmers).intersection(set(fn_non_matching_kmers))))
+        print(set(tp_non_matching_kmers).difference(set(fn_non_matching_kmers)))
+        print(len(set(tp_non_matching_kmers).difference(set(fn_non_matching_kmers))))
         with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
             f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
             f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}\n')
