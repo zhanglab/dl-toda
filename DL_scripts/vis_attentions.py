@@ -363,8 +363,15 @@ def main():
 
         assert fn_overlap_seq == tp_overlap_seq
 
-        non_matching_seq[tp_read]
+        tp_non_matching_kmers = []
+        for i in range(0, len(tp_non_overlap_seq)-4+1, 4):
+            tp_non_matching_kmers.append(tp_non_overlap_seq[i:i+4])
+        non_matching_seq[tp_read] = tp_non_matching_kmers
 
+        fn_non_matching_kmers = []
+        for i in range(0, len(fn_non_overlap_seq)-4+1, 4):
+            fn_non_matching_kmers.append(fn_non_overlap_seq[i:i+4])
+        non_matching_seq[fn_read_id[0]] = fn_non_matching_kmers
 
         with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
             f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
@@ -451,7 +458,7 @@ def main():
     
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
 
-
+    print(non_matching_seq)
 
     # # plot histogram of attention weights for other labels
     # confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
