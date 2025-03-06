@@ -346,10 +346,13 @@ def main():
             genome_pos += 1
 
         assert fn_overlap_seq == tp_overlap_seq
-        with open(os.path.join(args.output_dir, f'overlap_seq'), 'w') as f:
+        with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
+            f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}')
+            f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}')
             f.write(f'tp seq: {reads_seq[tp_read]}\n')
             f.write(f'tp non overlap seq: {tp_non_overlap_seq}\n')
             f.write(f'tp overlap seq: {tp_overlap_seq}\n')
+            f.write(f'fn start: {fn_genome_pos_start}\tfn end: {fn_genome_pos_end}')
             f.write(f'fn seq: {reads_seq[fn_read_id[0]]}\n')
             f.write(f'fn non overlap seq: {fn_non_overlap_seq}\n')
             f.write(f'fn overlap seq: {fn_overlap_seq}\n')
