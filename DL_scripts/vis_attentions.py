@@ -309,6 +309,23 @@ def main():
     plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
     plt.close()
 
+    # get kmers inside matching and non matching regions between the FN read and the TP read(s)
+    fn_read_id = [key for key, value in classification_group.items() if value == 'fn']
+    tp_read_id = [key for key, value in classification_group.items() if value == 'tp']
+    for tp_read in tp_read_id:
+        print(tp_read, fn_read_id[0])
+        tp_genome_pos_start = int(genomes_pos[tp_read].split('-')[0])
+        tp_genome_pos_end = int(genomes_pos[tp_read].split('-')[1])
+        fn_genome_pos_start = int(genomes_pos[fn_read_id[0]].split('-')[0])
+        fn_genome_pos_end = int(genomes_pos[fn_read_id[0]].split('-')[1])
+        
+        tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
+        fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
+        overlap = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
+        print(overlap, tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
+
+
+
     # # plot histogram of attention weights for other labels
     # confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
     # confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
