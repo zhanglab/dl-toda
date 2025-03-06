@@ -314,10 +314,10 @@ def main():
     tp_read_id = [key for key, value in classification_group.items() if value == 'tp']
     for tp_read in tp_read_id:
         print(tp_read, fn_read_id[0])
-        tp_genome_pos_start = int(genomes_pos[tp_read].split('-')[0])
-        tp_genome_pos_end = int(genomes_pos[tp_read].split('-')[1])
-        fn_genome_pos_start = int(genomes_pos[fn_read_id[0]].split('-')[0])
-        fn_genome_pos_end = int(genomes_pos[fn_read_id[0]].split('-')[1])
+        tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
+        tp_genome_pos_end = max([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
+        fn_genome_pos_start = min([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
+        fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
         print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
         tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
         fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
