@@ -390,9 +390,9 @@ def main():
         right_non_matching_regions = []
         left_non_matching_regions = []
         for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
-            if i > match[0]:
+            if i > match[1]:
                 right_non_matching_regions.append(i)
-            if i < match[1]:
+            if i < match[0]:
                 left_non_matching_regions.append(i)
 
         if len(right_non_matching_regions) != 0:
@@ -404,16 +404,16 @@ def main():
 
     # add tracks for TP + matching and non matching sequences with FN read
     for idx, tp_read in enumerate(tp_read_id, 0):
-        print(f'TP - macthing positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
-        tp_track = gv.add_feature_track(f'{tp_read} - TP', len(reads_seq[tp_read]))
+        print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
+        tp_track = gv.add_feature_track(f'{tp_read} - TP', end_x_value-start_x_value)
         tp_track.add_feature(genome_pos_to_segment[matching_pos[idx][0]], genome_pos_to_segment[matching_pos[idx][1]], strand, plotstyle='box', fc='darkorange')
 
         right_non_matching_regions = []
         left_non_matching_regions = []
         for i in range(start_genome_pos[tp_read], end_genome_pos[tp_read]+1, 1):
-            if i > match[0]:
+            if i > match[1]:
                 right_non_matching_regions.append(i)
-            if i < match[1]:
+            if i < match[0]:
                 left_non_matching_regions.append(i)
 
         if len(right_non_matching_regions) != 0:
