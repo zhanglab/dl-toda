@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 from collections import defaultdict
 import random
+from pygenomeviz import GenomeViz
 
 
 # set seed
@@ -312,6 +313,8 @@ def main():
     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
     fn_read_id = [key for key, value in classification_group.items() if value == 'fn' and key in args.list_reads_id]
     tp_read_id = [key for key, value in classification_group.items() if value == 'tp' and key in args.list_reads_id]
+    fn_matching_seq = [] # key = read id, value = list of start and end of matching regions
+    tp_matching_seq = [] # key = read id, value = list of start and end of matching regions
     for tp_read in tp_read_id:
         print(tp_read, fn_read_id[0])
         tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
@@ -328,9 +331,11 @@ def main():
         tp_overlap_seq = ''
         tp_non_overlap_seq = ''
         genome_pos = tp_genome_pos_start
+        tp_overlap_pos = []
         for i in range(len(reads_seq[tp_read])):
             if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
                 tp_overlap_seq += reads_seq[tp_read][i]
+                tp_overlap_pos.append(i)
             if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
                 tp_non_overlap_seq += reads_seq[tp_read][i]
             genome_pos += 1
@@ -338,13 +343,17 @@ def main():
         fn_overlap_seq = ''
         fn_non_overlap_seq = ''
         genome_pos = fn_genome_pos_start
+        fn_overlap_pos = []
         for i in range(len(reads_seq[fn_read_id[0]])):
             if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
                 fn_overlap_seq += reads_seq[fn_read_id[0]][i]
+                fn_overlap_pos.append(i)
             if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
                 fn_non_overlap_seq += reads_seq[fn_read_id[0]][i]
             genome_pos += 1
 
+        fn_matching_seq.append([min(fn_overlap_pos), max(fn_overlap_pos)])
+        tp_matching_seq.append([min(tp_overlap_pos), max(tp_overlap_pos)])
         assert fn_overlap_seq == tp_overlap_seq
         with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
             f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
@@ -356,7 +365,24 @@ def main():
             f.write(f'fn seq: {reads_seq[fn_read_id[0]]}\n')
             f.write(f'fn non overlap seq: {fn_non_overlap_seq}\n')
             f.write(f'fn overlap seq: {fn_overlap_seq}\n')
-            
+
+    # plot TP and FN along with sum of attention scores
+    strand = 1    
+    gv = GenomeViz()
+    gv.set_scale_xticks()
+    # add track for FN
+    fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', len(reads_seq[fn_read_id[0]]))
+    # add matching sequences with TP reads
+    for match_seq in fn_matching_seq:
+        fn_track.add_feature(match_seq[0], match_seq[1], strand, plotstyle='box', fc='lime')
+
+    # add tracks for TP and matching sequence with FN read
+    for idx, tp_read in enumerate(tp_read_id, 0):
+        tp_track = gv.add_feature_track(f'{tp_read} - TP', len(reads_seq[tp_read]))
+        tp_track.add_feature(tp_matching_seq[idx][0], tp_matching_seq[idx][1], strand, plotstyle='box', fc='blue')
+
+    fig = gv.plotfig()
+    fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
 
 
 
