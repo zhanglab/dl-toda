@@ -439,7 +439,7 @@ def main():
         print(read_id)
         x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
         for segment in track.segments:
-            subtrack.ax.line(x_values, attentions_mean[read_id], color="grey")
+            subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
 
     
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
