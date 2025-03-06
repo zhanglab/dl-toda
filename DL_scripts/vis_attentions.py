@@ -347,11 +347,13 @@ def main():
 
         assert fn_overlap_seq == tp_overlap_seq
         with open(os.path.join(args.output_dir, f'overlap_seq'), 'w') as f:
-            f.write(f'tp non overlap seq: {tp_non_overlap_seq}')
-            f.write(f'tp seq: {reads_seq[tp_read]}')
-
-            f.write(f'fn non overlap seq: {fn_non_overlap_seq}')
-            f.write(f'fn seq: {reads_seq[fn_read_id[0]]}')
+            f.write(f'tp seq: {reads_seq[tp_read]}\n')
+            f.write(f'tp non overlap seq: {tp_non_overlap_seq}\n')
+            f.write(f'tp overlap seq: {tp_overlap_seq}\n')
+            f.write(f'fn seq: {reads_seq[fn_read_id[0]]}\n')
+            f.write(f'fn non overlap seq: {fn_non_overlap_seq}\n')
+            f.write(f'fn overlap seq: {fn_overlap_seq}\n')
+            
 
 
 
