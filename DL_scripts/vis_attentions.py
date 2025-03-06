@@ -318,11 +318,11 @@ def main():
         tp_genome_pos_end = int(genomes_pos[tp_read].split('-')[1])
         fn_genome_pos_start = int(genomes_pos[fn_read_id[0]].split('-')[0])
         fn_genome_pos_end = int(genomes_pos[fn_read_id[0]].split('-')[1])
-        
+        print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
         tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
         fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
         overlap = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
-        print(overlap, tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
+        print(overlap)
 
 
 
