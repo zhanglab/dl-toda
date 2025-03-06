@@ -323,6 +323,29 @@ def main():
         fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
         overlap = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
         print(overlap)
+        tp_overlap_seq = ''
+        tp_non_overlap_seq = ''
+        for i in range(tp_genome_pos_start, tp_genome_pos_end+1, 1):
+            if i >= overlap[0] and i <= overlap[1]:
+                tp_overlap_seq += reads_seq[tp_read][i]
+            if i <= overlap[0] or i >= overlap[1]:
+                tp_non_overlap_seq += reads_seq[tp_read][i]
+
+        fn_overlap_seq = ''
+        fn_non_overlap_seq = ''
+        for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
+            if i >= overlap[0] and i <= overlap[1]:
+                fn_overlap_seq += reads_seq[fn_read_id[0]][i]
+            if i <= overlap[0] or i >= overlap[1]:
+                fn_non_overlap_seq += reads_seq[fn_read_id[0]][i]
+
+        assert fn_overlap_seq == tp_overlap_seq
+        with open(os.path.join(args.output_dir, f'overlap_seq'), 'w') as f:
+            f.write(f'tp non overlap seq: {tp_non_overlap_seq}')
+            f.write(f'tp seq: {reads_seq[tp_read]}')
+
+            f.write(f'fn non overlap seq: {fn_non_overlap_seq}')
+            f.write(f'fn seq: {reads_seq[fn_read_id[0]]}')
 
 
 
