@@ -440,7 +440,7 @@ def main():
         tp_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
 
-    fig = gv.plotfig()
+    
 
     # get kmers and position of first and last nucleotide
     kmers_pos = defaultdict(dict)
@@ -496,7 +496,7 @@ def main():
             # for segment in track.segments:
                 # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
 
-    
+    fig = gv.plotfig()
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
 
 
