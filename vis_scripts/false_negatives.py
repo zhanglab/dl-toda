@@ -550,7 +550,7 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
 	for r in reads:
-		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{len(test_readid_to_read[r[2]])}\n')
+		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{r[4]}\t{len(test_readid_to_read[r[3]])}\t{r[5]}\n')
 	for k, v in reads_id.items():
 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
 	tsv_file.close()
