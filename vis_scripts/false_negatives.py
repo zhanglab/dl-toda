@@ -543,7 +543,7 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
 				if tp_strand == fn_strand:
-					reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'])
+					reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', tp_strand, fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', fn_strand])
 					reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
 					reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
