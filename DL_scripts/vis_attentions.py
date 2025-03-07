@@ -385,6 +385,8 @@ def main():
         f.write(f'fn matching seq: {fn_matching_seq}\n')
 
     # plot TP and FN along with sum of attention scores
+    att_scores_out = open(os.path.join(args.output_dir, f'attention_scores_stats_{args.cutoff}.tsv'), 'w')
+    query_key_out = open(os.path.join(args.output_dir, f'query_key_{args.cutoff}.tsv'), 'w')
     strand = 1
     gv = GenomeViz()
     # get length of segment to plot
@@ -426,15 +428,18 @@ def main():
     max_attention_scores = max(attentions_df[args.fn_read].values.flatten().tolist())
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
+    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    att_scores_out.write(f'FN - before normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
     attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
-    print(f'mean: {statistics.mean(list_attention_scores)}\tmedian: {statistics.median(list_attention_scores)}\tmin: {min(list_attention_scores)}\tmax: {max(list_attention_scores)}')
+    att_scores_out.write(f'FN - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
 
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     filtered_attention_scores = []
+    query_key_out.write(f'FN\n')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -468,6 +473,7 @@ def main():
                             elif classification_group[read_id] == 'tp':
                                 query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
+                            query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_last_pos}\t{key_kmer}\t{key_first_pos}\t{key_last_pos}\t{attention_score}\n')
                             gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
             gv.set_colorbar([color], vmin=0.0)
             
@@ -514,15 +520,18 @@ def main():
     max_attention_scores = max(attentions_df[args.tp_read].values.flatten().tolist())
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
+    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    att_scores_out.write(f'\nTP - before normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
     attentions_df[args.tp_read] = attentions_df[args.tp_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
-    print(f'mean: {statistics.mean(list_attention_scores)}\tmedian: {statistics.median(list_attention_scores)}\tmin: {min(list_attention_scores)}\tmax: {max(list_attention_scores)}')
+    att_scores_out.write(f'TP - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
 
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     filtered_attention_scores = []
+    query_key_out.write(f'\nTP\n')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -556,6 +565,7 @@ def main():
                             elif classification_group[read_id] == 'tp':
                                 query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
+                            query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_last_pos}\t{key_kmer}\t{key_first_pos}\t{key_last_pos}\t{attention_score}\n')
                             gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
             gv.set_colorbar([color], vmin=0.0)
     print(filtered_attention_scores)
