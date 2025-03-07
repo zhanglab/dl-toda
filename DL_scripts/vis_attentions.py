@@ -115,6 +115,7 @@ def main():
     parser.add_argument('--tsv_file', type=str, help='path to tsv file', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
+    parser.add_argument('--cutoff', type=float, help='cutoff for displaying attention scores', default=0.0)
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
@@ -472,7 +473,7 @@ def main():
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
-    cutoff = 50.0
+    cutoff = args.cutoff
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx in [1, 3]:
             print(track)
@@ -508,7 +509,7 @@ def main():
                                 query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
                             gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
-            gv.set_colorbar([color], vmin=min_attention_score)
+            gv.set_colorbar([color], vmin=0.0)
             
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
             # for segment in track.segments:
