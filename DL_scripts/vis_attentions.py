@@ -239,20 +239,25 @@ def main():
                 print(df.shape)
                 df.columns = seq_kmers
                 # remove rows ['PAD']
-                pad_idx = [idx for idx in range(len(seq_kmers)) if seq_kmers[idx] == '[PAD]']
+                pad_idx = [idx for idx in range(len(seq_kmers)) if seq_kmers[idx] in ['[PAD]', '[CLS]', '[SEP]']]
                 df = df.drop(pad_idx, axis='index')
-                # remove columns ['PAD']
+                # remove columns ['PAD'], ['CLS'] and ['SEP']
                 df = df.drop('[PAD]', axis='columns')
+                df = df.drop('[CLS]', axis='columns')
+                df = df.drop('[SEP]', axis='columns')
+                # get list of kmers in the sequence
+                df_kmers = df.columns.tolist()
+                # rename index to kmers
+                df.index = df_kmers
                 print(df)
-                
+
                 # get sum of attention weights by column
                 df_sum = df.sum(axis=0).tolist()
                 # get mean of attention weights by column
                 df_mean = df.mean(axis=0).tolist()
                 # get max value of attention weights by column
                 df_max = df.max(axis=0).tolist()
-                # get list of kmers in the sequence
-                df_kmers = df.columns.tolist()
+                
                 attentions_df[reads_id[batch]] = df
                             
                 # sort dictionary based on values
