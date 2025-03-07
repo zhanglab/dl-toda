@@ -477,6 +477,7 @@ def main():
 
 
     # add tracks for TP + matching and non matching sequences with FN read
+    gv = GenomeViz()
     print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
     tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
     tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
