@@ -453,12 +453,13 @@ def main():
     min_attention_score = min(all_attention_scores)
     print(f'min attention score: {min_attention_score}')
     color, inverted_color = "grey", "red"
-    for idx, track in enumerate(gv.feature_tracks, 0):
+    for track in enumerate(gv.feature_tracks, 0):
         if idx in [1, 3]:
             print(track)
             # subtrack = track.get_subtrack('attentions')
             read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
+            print(attentions_df[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
             for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
                 # check if position is in a non-matching region
