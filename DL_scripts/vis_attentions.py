@@ -560,7 +560,7 @@ def main():
                                 query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
                                 key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
                             elif classification_group[read_id] == 'tp':
-                                query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
+                                query_info = (f'TP - query', query_first_genome_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
                             query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
                             gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
