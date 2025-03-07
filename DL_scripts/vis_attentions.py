@@ -419,66 +419,23 @@ def main():
         fn_track_all.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
         fn_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
-    # add tracks for TP + matching and non matching sequences with FN read
-    print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
-    tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
-    tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
-    # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
-    tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='blue')
-    right_non_matching_regions = []
-    left_non_matching_regions = []
-    for i in range(start_genome_pos[args.tp_read], end_genome_pos[args.tp_read]+1, 1):
-        if i > matching_pos[1]:
-            right_non_matching_regions.append(i)
-        if i < matching_pos[0]:
-            left_non_matching_regions.append(i)
 
-    if len(right_non_matching_regions) != 0:
-        non_matching_pos[args.tp_read] += right_non_matching_regions
-        print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
-        tp_track_all.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
-        tp_track_non_match.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
-
-    if len(left_non_matching_regions) != 0:
-        non_matching_pos[args.tp_read] += left_non_matching_regions
-        print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
-        tp_track_all.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
-        tp_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
-
-
-    
-
-    # get kmers and position of first and last nucleotide
-    kmers_pos = defaultdict(dict)
-    list_reads = [args.fn_read, args.tp_read]
-    print(list_reads)
-    for read_id in list_reads:
-        genome_pos = start_genome_pos[read_id]
-        for i in range(0, len(reads_seq[read_id])-4+1, 1):
-            kmer = reads_seq[read_id][i:i+4]
-            kmers_pos[read_id][kmer] = [genome_pos, genome_pos+4]
-            genome_pos += 1
-
-    # add attention scores
-    all_attention_scores = []
-    for v in attentions_df.values():
-        all_attention_scores += v.values.flatten().tolist()
-    min_attention_score = min(all_attention_scores)
-    max_attention_scores = max(all_attention_scores)
+    # normalize attention scores
+    min_attention_score = min(attentions_df[args.fn_read].values.flatten().tolist())
+    max_attention_scores = max(attentions_df[args.fn_read].values.flatten().tolist())
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
-    for k, v in attentions_df.items():
-        attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+    attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     for idx, track in enumerate(gv.feature_tracks, 0):
-        if idx in [1, 3]:
+        if idx in == 1:
             print(track)
             # subtrack = track.get_subtrack('attentions')
-            read_id = list_reads[0] if idx == 1 else list_reads[1]
+            read_id = args.fn_read
             print(read_id, classification_group[read_id])
             print(attentions_df[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
@@ -516,8 +473,90 @@ def main():
                 # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
 
     fig = gv.plotfig()
-    fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
+    fig.savefig(os.path.join(args.output_dir, f'plot_fn.png'), dpi=300)
 
+
+    # add tracks for TP + matching and non matching sequences with FN read
+    print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
+    tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
+    tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
+    # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
+    tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='blue')
+    right_non_matching_regions = []
+    left_non_matching_regions = []
+    for i in range(start_genome_pos[args.tp_read], end_genome_pos[args.tp_read]+1, 1):
+        if i > matching_pos[1]:
+            right_non_matching_regions.append(i)
+        if i < matching_pos[0]:
+            left_non_matching_regions.append(i)
+
+    if len(right_non_matching_regions) != 0:
+        non_matching_pos[args.tp_read] += right_non_matching_regions
+        print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
+        tp_track_all.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+        tp_track_non_match.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+
+    if len(left_non_matching_regions) != 0:
+        non_matching_pos[args.tp_read] += left_non_matching_regions
+        print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
+        tp_track_all.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+        tp_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+
+
+     # normalize attention scores
+    min_attention_score = min(attentions_df[args.fn_read].values.flatten().tolist())
+    max_attention_scores = max(attentions_df[args.fn_read].values.flatten().tolist())
+    print(f'min attention score: {min_attention_score}')
+    print(f'max attention score: {max_attention_scores}')
+    attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+    
+    # normalize values in dataframes
+    color = 'red'
+    # set cutoff for attention scores to display
+    cutoff = args.cutoff
+    for idx, track in enumerate(gv.feature_tracks, 0):
+        if idx in == 1:
+            print(track)
+            # subtrack = track.get_subtrack('attentions')
+            read_id = args.tp_read
+            print(read_id, classification_group[read_id])
+            print(attentions_df[read_id])
+            # get attentions with all kmers in sequence for each kmer in the non matching sequence
+
+            for query_read_pos, i in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
+                # check if position is in a non-matching region
+                if i in non_matching_pos[read_id]:
+                    # get position of first and last nucleotide in the kmer
+                    query_first_pos = query_read_pos
+                    query_last_pos = query_read_pos + 4
+                    query_first_genome_pos = genome_pos_to_segment[i]
+                    query_last_genome_pos = genome_pos_to_segment[i+4]
+                    print('query', i, query_first_pos, i+4, query_last_pos)
+                    query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
+                    for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
+                        key_first_pos = key_read_pos
+                        key_last_pos = key_read_pos + 4
+                        key_first_genome_pos = genome_pos_to_segment[j]
+                        key_last_genome_pos = genome_pos_to_segment[j+4]
+                        key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
+                        attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
+                        if attention_score > cutoff:
+                            print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
+                            if classification_group[read_id] == 'fn':
+                                query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
+                                key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
+                            elif classification_group[read_id] == 'tp':
+                                query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
+                                key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
+                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
+            gv.set_colorbar([color], vmin=0.0)
+            
+            # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
+            # for segment in track.segments:
+                # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
+
+    fig = gv.plotfig()
+    fig.savefig(os.path.join(args.output_dir, f'plot_tp.png'), dpi=300)
 
 
 if __name__ == "__main__":
