@@ -438,6 +438,7 @@ def main():
     # get kmers and position of first and last nucleotide
     kmers_pos = defaultdict(dict)
     list_reads = [args.fn_read, args.tp_read]
+    print(list_reads)
     for read_id in list_reads:
         genome_pos = start_genome_pos[read_id]
         for i in range(0, len(reads_seq[read_id])-4+1, 1):
@@ -450,11 +451,13 @@ def main():
     for v in attentions_df.values():
         all_attention_scores += v.values.flatten().tolist()
     min_attention_score = min(all_attention_scores)
+    print(f'min attention score: {min_attention_score}')
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
-        if idx in [1, 2]:
+        if idx in [1, 3]:
+            print(track)
             # subtrack = track.get_subtrack('attentions')
-            read_id = list_reads[idx]
+            read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
             for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
@@ -468,7 +471,7 @@ def main():
                         key_kmer = reads_seq[read_id][genome_pos_to_segment[j]:genome_pos_to_segment[j+4]]
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
-                        attention_score = attentions_df.loc[query_kmer, key_kmer]
+                        attention_score = attentions_df[read_id].loc[query_kmer, key_kmer]
                         if classification_group[read_id] == 'fn':
                             query_info = (f'FN non-matching\nsequence', f'FN non-matching\nsequence', query_first_pos, query_last_pos)
                             key_info = (f'FN full sequence', f'FN full sequence', key_first_pos, key_last_pos)
