@@ -113,7 +113,8 @@ def main():
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
-    parser.add_argument('--list_reads_id', nargs='+', help='list of reads id to analyze', required=True)
+    parser.add_argument('--fn_read', type=str, help='false negative read id', required=True)
+    parser.add_argument('--tp_read', type=str, help='true positive read id', required=True)
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
@@ -200,12 +201,11 @@ def main():
     heatmap_palette = sn.color_palette("viridis", as_cmap=True)
 
     data_to_plot = defaultdict(list)
-    attentions_mean = defaultdict(list)
+    attentions_df = defaultdict(list)
 
     print(len(reads_id), test_steps)
-    print(f'list of reads: {args.list_reads_id}\t{len(args.list_reads_id)}')
     for batch, data in enumerate(test_input.take(test_steps), 0):
-        if reads_id[batch] in args.list_reads_id:
+        if reads_id[batch] in [args.tp_read, args.fn_read]:
             outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
             attentions = list(outputs[-1])
@@ -253,7 +253,7 @@ def main():
                 df_max = df.max(axis=0).tolist()
                 # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
-                attentions_mean[reads_id[batch]] = df_max
+                attentions_df[reads_id[batch]] = df
                             
                 # sort dictionary based on values
                 dict_kmers_sum = dict(zip(df_kmers, df_sum))
@@ -318,75 +318,57 @@ def main():
     plt.close()
 
     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
-    fn_read_id = [key for key, value in classification_group.items() if value == 'fn' and key in args.list_reads_id]
-    tp_read_id = [key for key, value in classification_group.items() if value == 'tp' and key in args.list_reads_id]
-    matching_pos = []
-    fn_genome_pos_start = min([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
-    fn_genome_pos_end = max([int(genomes_pos[fn_read_id[0]].split('-')[0]), int(genomes_pos[fn_read_id[0]].split('-')[1])])
-    start_genome_pos = {fn_read_id[0] : fn_genome_pos_start}
-    end_genome_pos = {fn_read_id[0] : fn_genome_pos_end}
+    non_matching_pos = defaultdict(dict)
+    fn_genome_pos_start = min([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
+    fn_genome_pos_end = max([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
+    start_genome_pos = {args.fn_read : fn_genome_pos_start}
+    end_genome_pos = {args.fn_read : fn_genome_pos_end}
     non_matching_seq = defaultdict(list)
-    for tp_read in tp_read_id:
-        print(tp_read, fn_read_id[0])
-        tp_genome_pos_start = min([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
-        tp_genome_pos_end = max([int(genomes_pos[tp_read].split('-')[0]), int(genomes_pos[tp_read].split('-')[1])])
-        assert tp_genome_pos_end-tp_genome_pos_start+1 == len(reads_seq[tp_read]), f'{tp_genome_pos_end-tp_genome_pos_start}-{len(reads_seq[tp_read])}'
-        assert fn_genome_pos_end-fn_genome_pos_start+1 == len(reads_seq[fn_read_id[0]]), f'{fn_genome_pos_end-fn_genome_pos_start}-{len(reads_seq[fn_read_id[0]])}'
-        start_genome_pos[tp_read] = tp_genome_pos_start 
-        end_genome_pos[tp_read] = tp_genome_pos_end
-        print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
-        tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
-        fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
-        overlap = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
-        print(overlap)
-        matching_pos.append(overlap)
+    
+    tp_genome_pos_start = min([int(genomes_pos[args.tp_read].split('-')[0]), int(genomes_pos[args.tp_read].split('-')[1])])
+    tp_genome_pos_end = max([int(genomes_pos[args.tp_read].split('-')[0]), int(genomes_pos[args.tp_read].split('-')[1])])
+    assert tp_genome_pos_end-tp_genome_pos_start+1 == len(reads_seq[args.tp_read]), f'{tp_genome_pos_end-tp_genome_pos_start}-{len(reads_seq[args.tp_read])}'
+    assert fn_genome_pos_end-fn_genome_pos_start+1 == len(reads_seq[args.fn_read]), f'{fn_genome_pos_end-fn_genome_pos_start}-{len(reads_seq[args.fn_read])}'
+    start_genome_pos[args.tp_read] = tp_genome_pos_start 
+    end_genome_pos[args.tp_read] = tp_genome_pos_end
+    print(tp_genome_pos_start, tp_genome_pos_end, fn_genome_pos_start, fn_genome_pos_end)
+    tp_pos = list(range(tp_genome_pos_start, tp_genome_pos_end+1, 1))
+    fn_pos = list(range(fn_genome_pos_start, fn_genome_pos_end+1, 1))
+    matching_pos = [min(set(tp_pos).intersection(set(fn_pos))), max(set(tp_pos).intersection(set(fn_pos)))]
+    
+    tp_matching_seq = ''
+    tp_non_matching_seq = ''
+    genome_pos = tp_genome_pos_start
+    for i in range(len(reads_seq[tp_read])):
+        if genome_pos >= matching_pos[0] and genome_pos <= matching_pos[1]:
+            tp_matching_seq += reads_seq[tp_read][i]
+        if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
+            tp_non_matching_seq += reads_seq[tp_read][i]
+            non_matching_pos[tp_read]
+        genome_pos += 1
 
-        tp_overlap_seq = ''
-        tp_non_overlap_seq = ''
-        genome_pos = tp_genome_pos_start
-        for i in range(len(reads_seq[tp_read])):
-            if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
-                tp_overlap_seq += reads_seq[tp_read][i]
-            if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
-                tp_non_overlap_seq += reads_seq[tp_read][i]
-            genome_pos += 1
+    fn_matching_seq = ''
+    fn_non_matching_seq = ''
+    genome_pos = fn_genome_pos_start
+    for i in range(len(reads_seq[fn_read_id[0]])):
+        if genome_pos >= matching_pos[0] and genome_pos <= matching_pos[1]:
+            fn_matching_seq += reads_seq[args.fn_read][i]
+        if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
+            fn_non_matching_seq += reads_seq[args.fn_read][i]
+        genome_pos += 1
 
-        fn_overlap_seq = ''
-        fn_non_overlap_seq = ''
-        genome_pos = fn_genome_pos_start
-        for i in range(len(reads_seq[fn_read_id[0]])):
-            if genome_pos >= overlap[0] and genome_pos <= overlap[1]:
-                fn_overlap_seq += reads_seq[fn_read_id[0]][i]
-            if genome_pos <= overlap[0] or genome_pos >= overlap[1]:
-                fn_non_overlap_seq += reads_seq[fn_read_id[0]][i]
-            genome_pos += 1
+    assert fn_matching_seq == tp_matching_seq
 
-        assert fn_overlap_seq == tp_overlap_seq
-
-        tp_non_matching_kmers = []
-        for i in range(0, len(tp_non_overlap_seq)-4+1, 1):
-            tp_non_matching_kmers.append(tp_non_overlap_seq[i:i+4])
-        non_matching_seq[tp_read] = tp_non_matching_kmers
-
-        fn_non_matching_kmers = []
-        for i in range(0, len(fn_non_overlap_seq)-4+1, 1):
-            fn_non_matching_kmers.append(fn_non_overlap_seq[i:i+4])
-        non_matching_seq[fn_read_id[0]] = fn_non_matching_kmers
-
-        print(set(tp_non_matching_kmers).intersection(set(fn_non_matching_kmers)))
-        print(len(set(tp_non_matching_kmers).intersection(set(fn_non_matching_kmers))))
-        print(set(tp_non_matching_kmers).difference(set(fn_non_matching_kmers)))
-        print(len(set(tp_non_matching_kmers).difference(set(fn_non_matching_kmers))))
-        with open(os.path.join(args.output_dir, f'{tp_read}_{fn_read_id[0]}_overlap_seq'), 'w') as f:
-            f.write(f'overlap positions: {overlap[0]}\t{overlap[1]}\n')
-            f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}\n')
-            f.write(f'tp seq: {reads_seq[tp_read]}\n')
-            f.write(f'tp non overlap seq: {tp_non_overlap_seq}\n')
-            f.write(f'tp overlap seq: {tp_overlap_seq}\n')
-            f.write(f'fn start: {fn_genome_pos_start}\tfn end: {fn_genome_pos_end}\n')
-            f.write(f'fn seq: {reads_seq[fn_read_id[0]]}\n')
-            f.write(f'fn non overlap seq: {fn_non_overlap_seq}\n')
-            f.write(f'fn overlap seq: {fn_overlap_seq}\n')
+    with open(os.path.join(args.output_dir, f'{args.tp_read}_{args.fn_read}_matching_seq'), 'w') as f:
+        f.write(f'matching positions: {matching_pos[0]}\t{matching_pos[1]}\n')
+        f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}\n')
+        f.write(f'tp seq: {reads_seq[tp_read]}\n')
+        f.write(f'tp non matching seq: {tp_non_matching_seq}\n')
+        f.write(f'tp matching seq: {tp_matching_seq}\n')
+        f.write(f'fn start: {fn_genome_pos_start}\tfn end: {fn_genome_pos_end}\n')
+        f.write(f'fn seq: {reads_seq[args.fn_read]}\n')
+        f.write(f'fn non matching seq: {fn_non_matching_seq}\n')
+        f.write(f'fn matching seq: {fn_matching_seq}\n')
 
     # plot TP and FN along with sum of attention scores
     strand = 1
@@ -394,174 +376,111 @@ def main():
     # get length of segment to plot
     start_x_value = min(start_genome_pos.values())
     end_x_value = max(end_genome_pos.values()) + 1
-    all_attentions_mean = []
-    for v in attentions_mean.values():
-        all_attentions_mean += v
-    max_y_value = max(all_attentions_mean)
-    print(f'max y value: {max_y_value}')
     print(f'length of fragment shown: {end_x_value-start_x_value}')
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
     # gv.set_scale_xticks()
+    non_matching_pos = defaultdict(list)
 
     # add track for FN
-    list_reads_id = [fn_read_id[0], ]
-    fn_track = gv.add_feature_track(f'{fn_read_id[0]} - FN', end_x_value-start_x_value)
-    fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
+    fn_track_all = gv.add_feature_track(f'FN full sequence', end_x_value-start_x_value)
+    fn_track_non_match = gv.add_feature_track(f'FN non-matching\nsequence', end_x_value-start_x_value)
+    # fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
-    for match in matching_pos:
-        print(f'FN - matching positions: {genome_pos_to_segment[match[0]]}\t{genome_pos_to_segment[match[1]]}')
-        fn_track.add_feature(genome_pos_to_segment[match[0]], genome_pos_to_segment[match[1]], strand, plotstyle='box', fc='darkorange')
-        right_non_matching_regions = []
-        left_non_matching_regions = []
-        for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
-            if i > match[1]:
-                right_non_matching_regions.append(i)
-            if i < match[0]:
-                left_non_matching_regions.append(i)
+    fn_track.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
+    right_non_matching_regions = []
+    left_non_matching_regions = []
+    for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
+        if i > matching_pos[1]:
+            right_non_matching_regions.append(i)
+        if i < matching_pos[0]:
+            left_non_matching_regions.append(i)
 
-        if len(right_non_matching_regions) != 0:
-            print(f'FN - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
-            fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
-        if len(left_non_matching_regions) != 0:
-            print(f'FN - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
-            fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+    if len(right_non_matching_regions) != 0:
+        non_matching_pos[args.fn_read] += right_non_matching_regions
+        print(f'FN - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
+        fn_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+        fn_track_non_match.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+    if len(left_non_matching_regions) != 0:
+        non_matching_pos[args.fn_read] += left_non_matching_regions
+        print(f'FN - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
+        fn_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+        fn_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
     # add tracks for TP + matching and non matching sequences with FN read
-    for idx, tp_read in enumerate(tp_read_id, 0):
-        list_reads_id.append(tp_read)
-        print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[idx][0]]}\t{genome_pos_to_segment[matching_pos[idx][1]]}')
-        tp_track = gv.add_feature_track(f'{tp_read} - TP', end_x_value-start_x_value)
-        tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
-        tp_track.add_feature(genome_pos_to_segment[matching_pos[idx][0]], genome_pos_to_segment[matching_pos[idx][1]], strand, plotstyle='box', fc='darkorange')
-        right_non_matching_regions = []
-        left_non_matching_regions = []
-        for i in range(start_genome_pos[tp_read], end_genome_pos[tp_read]+1, 1):
-            if i > match[1]:
-                right_non_matching_regions.append(i)
-            if i < match[0]:
-                left_non_matching_regions.append(i)
+    print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
+    tp_track = gv.add_feature_track(f'TP full sequence', end_x_value-start_x_value)
+    tp_track_non_match = gv.add_feature_track(f'TP non-matching\nsequence', end_x_value-start_x_value)
+    # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
+    tp_track.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
+    right_non_matching_regions = []
+    left_non_matching_regions = []
+    for i in range(start_genome_pos[args.tp_read], end_genome_pos[args.tp_read]+1, 1):
+        if i > matching_pos[1]:
+            right_non_matching_regions.append(i)
+        if i < matching_pos[0]:
+            left_non_matching_regions.append(i)
 
-        if len(right_non_matching_regions) != 0:
-            print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
-            tp_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
-        if len(left_non_matching_regions) != 0:
-            print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
-            tp_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+    if len(right_non_matching_regions) != 0:
+        non_matching_pos[args.tp_read] += right_non_matching_regions
+        print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
+        tp_track.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+        tp_track_non_match.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle='box', fc='black')
+
+    if len(left_non_matching_regions) != 0:
+        non_matching_pos[args.tp_read] += left_non_matching_regions
+        print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
+        tp_track.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+        tp_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
+
 
     fig = gv.plotfig()
+
+    # get kmers and position of first and last nucleotide
+    kmers_pos = defaultdict(dict)
+    list_reads = [args.fn_read, args.tp_read]
+    for read_id in list_reads:
+        genome_pos = start_genome_pos[read_id]
+        for i in range(0, len(reads_seq[read_id])-4+1, 1):
+            kmer = reads_seq[read_id][i:i+4]
+            kmers_pos[read_id][kmer] = [genome_pos, genome_pos+4]
+            genome_pos += 1
+
     # add attention scores
-    for idx, track in enumerate(gv.feature_tracks, 0):
-        print(track)
-        subtrack = track.get_subtrack('attentions')
-        read_id = list_reads_id[idx]
-        print(read_id)
-        x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
-        for segment in track.segments:
-            subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
+    all_attention_scores = []
+    for v in attentions_df.values():
+        all_attention_scores += v
+    min_attention_score = min(all_attention_scores)
+    color, inverted_color = "grey", "red"
+    for idx, track in enumerate(gv.feature_tracks, 1):
+        if idx %2 == 0:
+            # subtrack = track.get_subtrack('attentions')
+            read_id = list_reads[idx]
+            print(read_id, classification_group[read_id])
+            # get attentions with all kmers in sequence for each kmer in the non matching sequence
+            for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
+                # check if position is in a non-matching region
+                if i in non_matching_pos[read_id]:
+                    # get position of first and last nucleotide in the kmer
+                    query_kmer = reads_seq[genome_pos_to_segment[i]:genome_pos_to_segment[i+4]]
+                    query_first_pos = genome_pos_to_segment[i]
+                    query_last_pos = genome_pos_to_segment[i+4]
+                    for j in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
+                        key_kmer = reads_seq[genome_pos_to_segment[j]:genome_pos_to_segment[j+4]]
+                        key_first_pos = genome_pos_to_segment[j]
+                        key_last_pos = genome_pos_to_segment[j+4]
+                        attention_score = attentions_df.loc[query_kmer, key_kmer]
+                        if classification_group[read_id] == 'fn':
+                            query_info = (f'FN non-matching\nsequence', f'FN non-matching\nsequence', query_first_pos, query_last_pos)
+                            key_info = (f'FN full sequence', f'FN full sequence', key_first_pos, key_last_pos)
+                        gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score)
+            gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
+            
+            # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
+            # for segment in track.segments:
+                # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
 
     
     fig.savefig(os.path.join(args.output_dir, f'plot.png'), dpi=300)
-
-    print(non_matching_seq)
-
-    # # plot histogram of attention weights for other labels
-    # confidence_scores_label_0_correct = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'c']
-    # confidence_scores_label_0_incorrect = [confidence_scores_label_0[i] for i in range(len(confidence_scores_label_0)) if predictions_label_0[i] == 'i']
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=confidence_scores_label_0_correct)
-    # plt.xlabel('Confidence Scores')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_other.png'))
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=confidence_scores_label_0_incorrect)
-    # plt.xlabel('Confidence Scores')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_other.png'))
-
-    # # plot histogram of attention weights for label investigated
-    # confidence_scores_label_1_correct = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'c']
-    # confidence_scores_label_1_incorrect = [confidence_scores_label_1[i] for i in range(len(confidence_scores_label_1)) if predictions_label_1[i] == 'i']
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=confidence_scores_label_1_correct)
-    # plt.xlabel('Confidence Scores')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_correct_hist_label.png'))
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=confidence_scores_label_1_incorrect)
-    # plt.xlabel('Confidence Scores')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_incorrect_hist_label.png'))
-
-    # # plot histogram of confidence scores for other labels
-    # attention_weights_label_0_correct = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'c']
-    # attention_weights_label_0_incorrect = [attention_weights_label_0[i] for i in range(len(attention_weights_label_0)) if predictions_label_0[i] == 'i']
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_0_correct)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_other.png'))
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_0_incorrect)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_other.png'))
-
-    # # plot histogram of attention weights for label investigated
-    # attention_weights_label_1_correct = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'c']
-    # attention_weights_label_1_incorrect = [attention_weights_label_1[i] for i in range(len(attention_weights_label_1)) if predictions_label_1[i] == 'i']
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_1_correct)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_correct_hist_label.png'))
-    # plt.figure(figsize=(10, 6))
-    # sn.histplot(data=attention_weights_label_1_incorrect)
-    # plt.xlabel('Attention Weights')
-    # plt.ylabel('Frequency')
-    # plt.grid(True)
-    # plt.savefig(os.path.join(args.output_dir, 'attention_weights_incorrect_hist_label.png'))
-
-    # # store list of relevant kmers
-    # print(f'# relevant kmers for label 0: {len(set(kmers_label_0))}')
-    # print(f'# relevant kmers for label 1: {len(set(kmers_label_1))}')
-    # kmers_label_0_correct = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'c'])
-    # kmers_label_0_incorrect = set([kmers_label_0[i] for i in range(len(kmers_label_0)) if predictions_label_0[i] == 'i'])
-    # with open(os.path.join(args.output_dir, 'relevant_kmers_correct_other'), 'w') as f:
-    #     f.write('\n'.join(list(kmers_label_0_correct)))
-    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_other'), 'w') as f:
-    #     f.write('\n'.join(list(kmers_label_0_incorrect)))
-
-    # kmers_label_1_correct = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'c'])
-    # kmers_label_1_incorrect = set([kmers_label_1[i] for i in range(len(kmers_label_1)) if predictions_label_1[i] == 'i'])
-    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
-    #     f.write('\n'.join(list(kmers_label_1_correct)))
-    # with open(os.path.join(args.output_dir, 'relevant_kmers_incorrect_label'), 'w') as f:
-    #     f.write('\n'.join(list(kmers_label_1_incorrect)))
-
-    # label_0_correct = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'c'])
-    # label_0_incorrect = set([labels_0[i] for i in range(len(labels_0)) if predictions_label_0[i] == 'i'])
-    # with open(os.path.join(args.output_dir, 'labels_other_correct'), 'w') as f:
-    #     f.write('\n'.join(list(label_0_correct)))
-    # with open(os.path.join(args.output_dir, 'labels_other_incorrect'), 'w') as f:
-    #     f.write('\n'.join(list(label_0_incorrect)))
-
-
-        # 3. get original DNA sequence form sequence of kmers
-        # 4. show parts of the DNA sequence with the meaningful kmers
-        # 7. amongst the species investigated, which ones are part and important to the marine microbiomes
-        # 8. map sequences of interest (and less interesting) to the training and testing genome
-        # + show the regions of interest (and less interesting) on the genome
-        # 9. are the sequences with less relevant kmers less well classified?
-        # 10. what can be done with this information to improve taxonomic classification
-
-        # this study can help develop new methods to improve taxonomic classification of metagenomics data
 
 
 
