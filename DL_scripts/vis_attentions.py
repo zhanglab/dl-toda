@@ -369,7 +369,7 @@ def main():
             fn_non_matching_seq += reads_seq[args.fn_read][i]
         genome_pos += 1
 
-    assert fn_matching_seq == tp_matching_seq
+    assert fn_matching_seq == tp_matching_seq, f'{fn_matching_seq} - {tp_matching_seq}'
 
     with open(os.path.join(args.output_dir, f'{args.tp_read}_{args.fn_read}_matching_seq'), 'w') as f:
         f.write(f'matching positions: {matching_pos[0]}\t{matching_pos[1]}\n')
@@ -565,7 +565,7 @@ def main():
                                 query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
                             query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_last_pos}\t{key_kmer}\t{key_first_pos}\t{key_last_pos}\t{attention_score}\n')
-                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
+                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=False)
             gv.set_colorbar([color], vmin=0.0)
     print(filtered_attention_scores)
             
