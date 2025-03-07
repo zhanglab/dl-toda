@@ -510,11 +510,11 @@ def main():
 
 
      # normalize attention scores
-    min_attention_score = min(attentions_df[args.fn_read].values.flatten().tolist())
-    max_attention_scores = max(attentions_df[args.fn_read].values.flatten().tolist())
+    min_attention_score = min(attentions_df[args.tp_read].values.flatten().tolist())
+    max_attention_scores = max(attentions_df[args.tp_read].values.flatten().tolist())
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
-    attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+    attentions_df[args.tp_read] = attentions_df[args.tp_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
     print(f'mean: {statistics.mean(list_attention_scores)}\tmedian: {statistics.median(list_attention_scores)}\tmin: {min(list_attention_scores)}\tmax: {max(list_attention_scores)}')
 
