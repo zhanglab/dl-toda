@@ -20,7 +20,7 @@ from dataprep_scripts.utils import load_fq_file
 from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 from pygenomeviz.parser import Fasta
 from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
-from pygenomeviz.align import AlignCoord, Blast
+# from pygenomeviz.align import AlignCoord, Blast
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
