@@ -468,8 +468,9 @@ def main():
     print(f'max attention score: {max_attention_scores}')
     for k, v in attentions_df.items():
         print(v)
+        print(v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores)))
         attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-        print(v)
+        # print(v)
     sys.exit(1)
     # normalize values in dataframes
     color, inverted_color = "grey", "red"
