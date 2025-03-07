@@ -472,14 +472,16 @@ def main():
                 # check if position is in a non-matching region
                 if i in non_matching_pos[read_id]:
                     # get position of first and last nucleotide in the kmer
-                    query_kmer = reads_seq[read_id][genome_pos_to_segment[i]:genome_pos_to_segment[i+4]]
                     query_first_pos = genome_pos_to_segment[i]
                     query_last_pos = genome_pos_to_segment[i+4]
+                    query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
+                    print(query_first_pos, query_last_pos)
                     for j in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
-                        key_kmer = reads_seq[read_id][genome_pos_to_segment[j]:genome_pos_to_segment[j+4]]
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
-                        attention_score = attentions_df[read_id].loc[query_kmer, key_kmer]
+                        key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
+                        print(key_first_pos, key_last_pos)
+                        attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
                         print(attention_score)
                         print(type(attention_score))
                         if classification_group[read_id] == 'fn':
