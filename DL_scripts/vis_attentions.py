@@ -330,7 +330,6 @@ def main():
     plt.close()
 
     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
-    non_matching_pos = defaultdict(dict)
     fn_genome_pos_start = min([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
     fn_genome_pos_end = max([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
     start_genome_pos = {args.fn_read : fn_genome_pos_start}
@@ -356,7 +355,6 @@ def main():
             tp_matching_seq += reads_seq[args.tp_read][i]
         if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
             tp_non_matching_seq += reads_seq[args.tp_read][i]
-            non_matching_pos[args.tp_read]
         genome_pos += 1
 
     fn_matching_seq = ''
@@ -564,8 +562,8 @@ def main():
                             elif classification_group[read_id] == 'tp':
                                 query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
-                            query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_last_pos}\t{key_kmer}\t{key_first_pos}\t{key_last_pos}\t{attention_score}\n')
-                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=False)
+                            query_key_out.write(f'{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
+                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
             gv.set_colorbar([color], vmin=0.0)
     print(filtered_attention_scores)
             
