@@ -468,7 +468,7 @@ def main():
     print(f'max attention score: {max_attention_scores}')
     for v in attentions_df.values():
         print(v)
-        v = v.applymap(Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+        v = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
         print(v)
     # normalize values in dataframes
     color, inverted_color = "grey", "red"
@@ -487,20 +487,24 @@ def main():
                     # get position of first and last nucleotide in the kmer
                     query_first_pos = query_read_pos
                     query_last_pos = query_read_pos + 4
+                    query_first_genome_pos = genome_pos_to_segment[i]
+                    query_last_genome_pos = genome_pos_to_segment[i+4]
                     print('query', i, query_first_pos, i+4, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
                     for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1), 0):
                         key_first_pos = key_read_pos
                         key_last_pos = key_read_pos + 4
+                        key_first_genome_pos = genome_pos_to_segment[j]
+                        key_last_genome_pos = genome_pos_to_segment[j+4]
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape)
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
                         if classification_group[read_id] == 'fn':
-                            query_info = (f'FN - query', query_first_pos, query_last_pos)
-                            key_info = (f'FN - key', key_first_pos, key_last_pos)
+                            query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
+                            key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
                         elif classification_group[read_id] == 'tp':
-                            query_info = (f'TP - query', query_first_pos, query_last_pos)
-                            key_info = (f'TP - key', key_first_pos, key_last_pos)
+                            query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
+                            key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
                         gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score, curve=True)
             gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
             
