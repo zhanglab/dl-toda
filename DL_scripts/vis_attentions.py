@@ -392,7 +392,7 @@ def main():
     end_x_value = max(end_genome_pos.values())
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
     print(f'length of fragment shown: {end_x_value-start_x_value}\t{end_x_value}\t{start_x_value}')
-    gv.set_scale_xticks(start=start_x_value, unit=bp)
+    gv.set_scale_xticks(start=start_x_value)
     non_matching_pos = defaultdict(list)
 
     # add track for FN
@@ -487,7 +487,7 @@ def main():
 
     # add tracks for TP + matching and non matching sequences with FN read
     gv = GenomeViz()
-    gv.set_scale_xticks(start=start_x_value, unit=bp)
+    gv.set_scale_xticks(start=start_x_value)
     print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
     tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
     tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
