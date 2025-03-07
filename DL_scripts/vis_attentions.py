@@ -339,7 +339,7 @@ def main():
     tp_matching_seq = ''
     tp_non_matching_seq = ''
     genome_pos = tp_genome_pos_start
-    for i in range(len(reads_seq[tp_read])):
+    for i in range(len(reads_seq[args.tp_read])):
         if genome_pos >= matching_pos[0] and genome_pos <= matching_pos[1]:
             tp_matching_seq += reads_seq[args.tp_read][i]
         if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
