@@ -9,6 +9,7 @@ import math
 import argparse
 import seaborn as sn
 import pandas as pd
+import statistics
 import matplotlib.pyplot as plt 
 from collections import defaultdict
 import random
@@ -426,11 +427,14 @@ def main():
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
     attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-    
+    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    print(f'mean: {statistics.mean(list_attention_scores)}\tmedian: {statistics.median(list_attention_scores)}\tmin: {min(list_attention_scores)}\tmax: {max(list_attention_scores)}')
+
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
     cutoff = args.cutoff
+    filtered_attention_scores = []
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -448,7 +452,6 @@ def main():
                     query_last_pos = query_read_pos + 4
                     query_first_genome_pos = genome_pos_to_segment[i]
                     query_last_genome_pos = genome_pos_to_segment[i+4]
-                    print('query', i, query_first_pos, i+4, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
                     for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
                         key_first_pos = key_read_pos
@@ -458,7 +461,7 @@ def main():
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
                         if attention_score > cutoff:
-                            print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
+                            filtered_attention_scores.append(attention_score)
                             if classification_group[read_id] == 'fn':
                                 query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
                                 key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
@@ -471,6 +474,8 @@ def main():
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
             # for segment in track.segments:
                 # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
+
+    print(filtered_attention_scores)
 
     fig = gv.plotfig()
     fig.savefig(os.path.join(args.output_dir, f'plot_fn_{args.cutoff}.png'), dpi=300)
@@ -510,11 +515,14 @@ def main():
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
     attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-    
+    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    print(f'mean: {statistics.mean(list_attention_scores)}\tmedian: {statistics.median(list_attention_scores)}\tmin: {min(list_attention_scores)}\tmax: {max(list_attention_scores)}')
+
     # normalize values in dataframes
     color = 'red'
     # set cutoff for attention scores to display
     cutoff = args.cutoff
+    filtered_attention_scores = []
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -532,7 +540,6 @@ def main():
                     query_last_pos = query_read_pos + 4
                     query_first_genome_pos = genome_pos_to_segment[i]
                     query_last_genome_pos = genome_pos_to_segment[i+4]
-                    print('query', i, query_first_pos, i+4, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
                     for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
                         key_first_pos = key_read_pos
@@ -542,7 +549,7 @@ def main():
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
                         if attention_score > cutoff:
-                            print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
+                            filtered_attention_scores.append(attention_score)
                             if classification_group[read_id] == 'fn':
                                 query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
                                 key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
@@ -551,6 +558,7 @@ def main():
                                 key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
                             gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
             gv.set_colorbar([color], vmin=0.0)
+    print(filtered_attention_scores)
             
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
             # for segment in track.segments:
