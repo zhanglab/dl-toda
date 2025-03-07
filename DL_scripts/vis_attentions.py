@@ -451,21 +451,21 @@ def main():
         all_attention_scores += v.values.flatten().tolist()
     min_attention_score = min(all_attention_scores)
     color, inverted_color = "grey", "red"
-    for idx, track in enumerate(gv.feature_tracks, 1):
-        if idx %2 == 0:
+    for idx, track in enumerate(gv.feature_tracks, 0):
+        if idx in [1, 2]:
             # subtrack = track.get_subtrack('attentions')
-            read_id = list_reads[idx-1]
+            read_id = list_reads[idx]
             print(read_id, classification_group[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
             for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
                 # check if position is in a non-matching region
                 if i in non_matching_pos[read_id]:
                     # get position of first and last nucleotide in the kmer
-                    query_kmer = reads_seq[genome_pos_to_segment[i]:genome_pos_to_segment[i+4]]
+                    query_kmer = reads_seq[read_id][genome_pos_to_segment[i]:genome_pos_to_segment[i+4]]
                     query_first_pos = genome_pos_to_segment[i]
                     query_last_pos = genome_pos_to_segment[i+4]
                     for j in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
-                        key_kmer = reads_seq[genome_pos_to_segment[j]:genome_pos_to_segment[j+4]]
+                        key_kmer = reads_seq[read_id][genome_pos_to_segment[j]:genome_pos_to_segment[j+4]]
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
                         attention_score = attentions_df.loc[query_kmer, key_kmer]
