@@ -467,8 +467,6 @@ def main():
             read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
             print(attentions_df[read_id])
-            print(start_genome_pos[read_id], end_genome_pos[read_id], end_genome_pos[read_id]-4+1)
-            print(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]-4+1])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
             for i in range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1):
                 # check if position is in a non-matching region
@@ -477,15 +475,11 @@ def main():
                     query_first_pos = genome_pos_to_segment[i]
                     query_last_pos = genome_pos_to_segment[i+4]
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
-                    print(attentions_df[read_id])
-                    print(query_first_pos, query_last_pos, query_kmer)
                     for j in range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1):
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
-                        print(key_first_pos, key_last_pos)
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
-                        print(key_kmer, attention_score)
                         if classification_group[read_id] == 'fn':
                             query_info = (f'FN - query', query_first_pos, query_last_pos)
                             key_info = (f'FN - key', key_first_pos, key_last_pos)
@@ -493,9 +487,7 @@ def main():
                             query_info = (f'TP - query', query_first_pos, query_last_pos)
                             key_info = (f'TP - key', key_first_pos, key_last_pos)
                         gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score, curve=True)
-                break
             gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
-            break
             
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
             # for segment in track.segments:
