@@ -527,6 +527,7 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 		else:
 			fn_start_pos = fn_data[3]
 			fn_end_pos = fn_data[2]
+		fn_strand = fn_data[6]
 
 		for tp_readid, tp_data in tp_alignments_pos_test.items():
 			if tp_data[2] < tp_data[3]:
@@ -535,14 +536,16 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 			else:
 				tp_start_pos = tp_data[3]
 				tp_end_pos = tp_data[2]
+			tp_strand = tp_data[6]
 
 			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
 				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
-				reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'])
-				reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-				reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
+				if tp_strand == fn_strand:
+					reads.append([tp_readid, f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', fn_readid, f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'])
+					reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+					reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
@@ -640,11 +643,12 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				seq_label = seq_to_labels[seq_id]
 				evalue = float(line.rstrip().split(',')[7])
 				pident = float(line.rstrip().split(',')[8])
+				strand = line.rstrip().split(',')[11]
 				if readid in alignments:
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
-						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]						
+						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]						
 				else:
-					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
+					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]
 
 	if outfilename:
 		with open(outfilename, 'w') as f:
