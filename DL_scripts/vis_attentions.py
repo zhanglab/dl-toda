@@ -470,8 +470,7 @@ def main():
         print(v)
         print(v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores)))
         attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-        # print(v)
-    sys.exit(1)
+    print(attentions_df)
     # normalize values in dataframes
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
