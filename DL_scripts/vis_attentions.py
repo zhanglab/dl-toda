@@ -389,8 +389,8 @@ def main():
     non_matching_pos = defaultdict(list)
 
     # add track for FN
-    fn_track_all = gv.add_feature_track(f'FN-key', end_x_value-start_x_value)
-    fn_track_non_match = gv.add_feature_track(f'FN-query', end_x_value-start_x_value)
+    fn_track_all = gv.add_feature_track(f'FN - key', end_x_value-start_x_value)
+    fn_track_non_match = gv.add_feature_track(f'FN - query', end_x_value-start_x_value)
     # fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
     fn_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
@@ -415,8 +415,8 @@ def main():
 
     # add tracks for TP + matching and non matching sequences with FN read
     print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
-    tp_track_all = gv.add_feature_track(f'TP-key', end_x_value-start_x_value)
-    tp_track_non_match = gv.add_feature_track(f'TP-query', end_x_value-start_x_value)
+    tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
+    tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
     # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
     right_non_matching_regions = []
@@ -461,9 +461,8 @@ def main():
     print(f'min attention score: {min_attention_score}')
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
-        print(track)
-        print(track.get_segment())
         if idx in [1, 3]:
+            print(track)
             # subtrack = track.get_subtrack('attentions')
             read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
@@ -482,11 +481,11 @@ def main():
                         key_last_pos = genome_pos_to_segment[j+4]
                         attention_score = attentions_df[read_id].loc[query_kmer, key_kmer]
                         if classification_group[read_id] == 'fn':
-                            query_info = (f'FN-query', f'FN-query', query_first_pos, query_last_pos)
-                            key_info = (f'FN-key', f'FN-key', key_first_pos, key_last_pos)
+                            query_info = (f'FN - query', query_first_pos, query_last_pos)
+                            key_info = (f'FN - key', key_first_pos, key_last_pos)
                         elif classification_group[read_id] == 'tp':
-                            query_info = (f'TP-query', f'TP-query', query_first_pos, query_last_pos)
-                            key_info = (f'TP-key', f'TP-key', key_first_pos, key_last_pos)
+                            query_info = (f'TP - query', query_first_pos, query_last_pos)
+                            key_info = (f'TP - key', key_first_pos, key_last_pos)
                         gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score)
             gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
             
