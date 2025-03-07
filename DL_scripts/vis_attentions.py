@@ -448,7 +448,7 @@ def main():
     # add attention scores
     all_attention_scores = []
     for v in attentions_df.values():
-        all_attention_scores += v
+        all_attention_scores += v.flatten().tolist()
     min_attention_score = min(all_attention_scores)
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 1):
