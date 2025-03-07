@@ -482,7 +482,7 @@ def main():
             print(attentions_df[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
 
-            for query_read_pos, i in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1), 0):
+            for query_read_pos, i in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
                 # check if position is in a non-matching region
                 if i in non_matching_pos[read_id]:
                     # get position of first and last nucleotide in the kmer
@@ -492,7 +492,7 @@ def main():
                     query_last_genome_pos = genome_pos_to_segment[i+4]
                     print('query', i, query_first_pos, i+4, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
-                    for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1), 0):
+                    for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1), 0):
                         key_first_pos = key_read_pos
                         key_last_pos = key_read_pos + 4
                         key_first_genome_pos = genome_pos_to_segment[j]
