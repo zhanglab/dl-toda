@@ -468,17 +468,18 @@ def main():
             print(read_id, classification_group[read_id])
             print(attentions_df[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
-            for i in range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1):
+
+            for query_read_pos, i in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1), 0):
                 # check if position is in a non-matching region
                 if i in non_matching_pos[read_id]:
                     # get position of first and last nucleotide in the kmer
-                    query_first_pos = genome_pos_to_segment[i]
-                    query_last_pos = genome_pos_to_segment[i+4]
+                    query_first_pos = query_read_pos
+                    query_last_pos = query_read_pos + 4
                     print('query', i, query_first_pos, i+4, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
-                    for j in range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1):
-                        key_first_pos = genome_pos_to_segment[j]
-                        key_last_pos = genome_pos_to_segment[j+4]
+                    for key_read_pos, j in enumerate(range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1), 0):
+                        key_first_pos = key_read_pos
+                        key_last_pos = key_read_pos + 4
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape)
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
