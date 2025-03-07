@@ -435,7 +435,6 @@ def main():
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     filtered_attention_scores = []
-    query_key_out.write(f'FN\n')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -529,7 +528,6 @@ def main():
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     filtered_attention_scores = []
-    query_key_out.write(f'\nTP\n')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
