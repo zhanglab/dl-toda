@@ -432,7 +432,7 @@ def main():
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     for idx, track in enumerate(gv.feature_tracks, 0):
-        if idx in == 1:
+        if idx == 1:
             print(track)
             # subtrack = track.get_subtrack('attentions')
             read_id = args.fn_read
@@ -515,7 +515,7 @@ def main():
     # set cutoff for attention scores to display
     cutoff = args.cutoff
     for idx, track in enumerate(gv.feature_tracks, 0):
-        if idx in == 1:
+        if idx == 1:
             print(track)
             # subtrack = track.get_subtrack('attentions')
             read_id = args.tp_read
