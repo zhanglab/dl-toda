@@ -104,6 +104,11 @@ def get_attentions(data, model, test_accuracy):
 
     return outputs, pred_labels, pred_probs
 
+
+def Normalize(x, x_min=0.0, x_max=np.inf):
+    scaled_value = (x - x_min) / (x_max - x_min)
+    return scaled_value
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
@@ -255,10 +260,10 @@ def main():
 
                 # get sum of attention weights by column
                 df_sum = df.sum(axis=0).tolist()
-                # get mean of attention weights by column
-                df_mean = df.mean(axis=0).tolist()
-                # get max value of attention weights by column
-                df_max = df.max(axis=0).tolist()
+                # # get mean of attention weights by column
+                # df_mean = df.mean(axis=0).tolist()
+                # # get max value of attention weights by column
+                # df_max = df.max(axis=0).tolist()
                 
                 attentions_df[reads_id[batch]] = df
                             
@@ -458,7 +463,14 @@ def main():
     for v in attentions_df.values():
         all_attention_scores += v.values.flatten().tolist()
     min_attention_score = min(all_attention_scores)
+    max_attention_scores = max(all_attention_scores)
     print(f'min attention score: {min_attention_score}')
+    print(f'max attention score: {max_attention_scores}')
+    for v in attentions_df.values():
+        print(v)
+        v = v.applymap(Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+        print(v)
+    # normalize values in dataframes
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx in [1, 3]:
