@@ -222,25 +222,27 @@ def main():
                 label = data["labels"][i].numpy()
                 seq_ids = data["input_ids"][i].numpy()
                 print(seq_ids)
-                seq_kmers = [vocab[i] for i in seq_ids]
-                print(seq_kmers)
+                tokens = [vocab[i] for i in seq_ids]
+                print(tokens)
+                assert '[UKN]' not in tokens
                 # reconstruct original sequence
-                dna_seq = seq_kmers[1]
-                for j in range(2, len(seq_kmers), 1):
-                    if seq_kmers[j] not in ['[PAD]', '[SEP]', '[UNK]']:
-                        dna_seq += seq_kmers[j][-1]
+                dna_seq = tokens[1]
+                for j in range(2, len(tokens), 1):
+                    if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
+                        dna_seq += tokens[j][-1]
                 print(dna_seq)
                 assert dna_seq == reads_seq[reads_id[batch]]
-                print(seq_kmers)
-                print(len(seq_kmers))
+                print(tokens)
+                print(len(tokens))
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                 attentions_weights = attentions[-1][-1][i].numpy()
                 df = pd.DataFrame(attentions_weights)
                 print(df.shape)
-                df.columns = seq_kmers
-                # remove rows ['PAD']
-                pad_idx = [idx for idx in range(len(seq_kmers)) if seq_kmers[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-                df = df.drop(pad_idx, axis='index')
+                print(df.columns.tolist())
+                df.columns = tokens
+                # remove rows ['PAD'], ['CLS'] and ['SEP']
+                idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+                df = df.drop(idx_to_rm, axis='index')
                 # remove columns ['PAD'], ['CLS'] and ['SEP']
                 df = df.drop('[PAD]', axis='columns')
                 df = df.drop('[CLS]', axis='columns')
@@ -388,7 +390,7 @@ def main():
 
     # add track for FN
     fn_track_all = gv.add_feature_track(f'FN full sequence', end_x_value-start_x_value)
-    fn_track_non_match = gv.add_feature_track(f'FN non-matching\nsequence', end_x_value-start_x_value)
+    fn_track_non_match = gv.add_feature_track(f'FN non-matching sequence', end_x_value-start_x_value)
     # fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
     fn_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
@@ -414,7 +416,7 @@ def main():
     # add tracks for TP + matching and non matching sequences with FN read
     print(f'TP - matching positions: {genome_pos_to_segment[matching_pos[0]]}\t{genome_pos_to_segment[matching_pos[1]]}')
     tp_track_all = gv.add_feature_track(f'TP full sequence', end_x_value-start_x_value)
-    tp_track_non_match = gv.add_feature_track(f'TP non-matching\nsequence', end_x_value-start_x_value)
+    tp_track_non_match = gv.add_feature_track(f'TP non-matching sequence', end_x_value-start_x_value)
     # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
     right_non_matching_regions = []
@@ -458,7 +460,7 @@ def main():
     min_attention_score = min(all_attention_scores)
     print(f'min attention score: {min_attention_score}')
     color, inverted_color = "grey", "red"
-    for track in enumerate(gv.feature_tracks, 0):
+    for idx, track in enumerate(gv.feature_tracks, 0):
         if idx in [1, 3]:
             print(track)
             # subtrack = track.get_subtrack('attentions')
@@ -479,7 +481,7 @@ def main():
                         key_last_pos = genome_pos_to_segment[j+4]
                         attention_score = attentions_df[read_id].loc[query_kmer, key_kmer]
                         if classification_group[read_id] == 'fn':
-                            query_info = (f'FN non-matching\nsequence', f'FN non-matching\nsequence', query_first_pos, query_last_pos)
+                            query_info = (f'FN non-matching sequence', f'FN non-matching sequence', query_first_pos, query_last_pos)
                             key_info = (f'FN full sequence', f'FN full sequence', key_first_pos, key_last_pos)
                         gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score)
             gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
