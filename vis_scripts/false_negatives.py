@@ -544,15 +544,18 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
 				if tp_strand == fn_strand:
 					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
-						print(abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])))
-						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', tp_strand, fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', fn_strand])
+						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
 						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
 						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
 	for r in reads:
-		sum_file.write(f'{r[0]}\t{r[1]}\t{len(test_readid_to_read[r[0]])}\t{r[2]}\t{r[3]}\t{r[4]}\t{len(test_readid_to_read[r[3]])}\t{r[5]}\n')
+		sum_file.write(f'{r[0]}')
+		for idx in range(1, len(r), 1):
+			sum_file.write(f'\t{r[idx]}')
+		sum_file.write('\n')
 	for k, v in reads_id.items():
 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
 	tsv_file.close()
