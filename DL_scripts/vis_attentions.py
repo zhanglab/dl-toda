@@ -90,7 +90,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 @tf.function
 def get_attentions(data, model, test_accuracy):
-    outputs = model(**data)
+    outputs = model(**data, output_attentions=True)
     logits = model(**data).logits
     probs = tf.nn.softmax(logits, axis=-1)
     labels = data["labels"]
@@ -170,7 +170,7 @@ def main():
         model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
     
     # make output of attentions possible
-    bert_config.output_attentions=True
+    # bert_config.output_attentions=True
     print(bert_config)
     
     # load weights from checkpoint file created with tf.train.Checkpoint() and checkpoint.save()
