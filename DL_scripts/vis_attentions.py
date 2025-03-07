@@ -515,15 +515,15 @@ def main():
         tp_track_non_match.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle='box', fc='black')
 
 
-     # normalize attention scores
+    # normalize attention scores
     min_attention_score = min(attentions_df[args.tp_read].values.flatten().tolist())
     max_attention_scores = max(attentions_df[args.tp_read].values.flatten().tolist())
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
-    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    list_attention_scores  = attentions_df[args.tp_read].values.flatten().tolist()
     att_scores_out.write(f'\nTP - before normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
     attentions_df[args.tp_read] = attentions_df[args.tp_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-    list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
+    list_attention_scores  = attentions_df[args.tp_read].values.flatten().tolist()
     att_scores_out.write(f'TP - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
 
     # normalize values in dataframes
