@@ -454,7 +454,7 @@ def main():
     for idx, track in enumerate(gv.feature_tracks, 1):
         if idx %2 == 0:
             # subtrack = track.get_subtrack('attentions')
-            read_id = list_reads[idx]
+            read_id = list_reads[idx-1]
             print(read_id, classification_group[read_id])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
             for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
