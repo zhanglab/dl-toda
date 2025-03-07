@@ -382,7 +382,7 @@ def main():
     gv = GenomeViz()
     # get length of segment to plot
     start_x_value = min(start_genome_pos.values())
-    end_x_value = max(end_genome_pos.values()) + 1
+    end_x_value = max(end_genome_pos.values())
     print(f'length of fragment shown: {end_x_value-start_x_value}')
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
     # gv.set_scale_xticks()
@@ -467,8 +467,10 @@ def main():
             read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
             print(attentions_df[read_id])
+            print(start_genome_pos[read_id], end_genome_pos[read_id], end_genome_pos[read_id]-4+1)
+            print(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]-4+1])
             # get attentions with all kmers in sequence for each kmer in the non matching sequence
-            for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
+            for i in range(start_genome_pos[read_id], end_genome_pos[read_id]-4, 1):
                 # check if position is in a non-matching region
                 if i in non_matching_pos[read_id]:
                     # get position of first and last nucleotide in the kmer
@@ -477,7 +479,7 @@ def main():
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
                     print(attentions_df[read_id])
                     print(query_first_pos, query_last_pos, query_kmer)
-                    for j in range(start_genome_pos[read_id], end_genome_pos[read_id]-4+1, 1):
+                    for j in range(start_genome_pos[read_id], end_genome_pos[read_id]-4, 1):
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
                         print(key_first_pos, key_last_pos)
