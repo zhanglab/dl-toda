@@ -474,10 +474,12 @@ def main():
                     # get position of first and last nucleotide in the kmer
                     query_first_pos = genome_pos_to_segment[i]
                     query_last_pos = genome_pos_to_segment[i+4]
+                    print('query', query_first_pos, query_last_pos)
                     query_kmer = reads_seq[read_id][query_first_pos:query_last_pos]
                     for j in range(start_genome_pos[read_id], end_genome_pos[read_id]+1-4+1, 1):
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
+                        print('key', key_first_pos, key_last_pos)
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
                         if classification_group[read_id] == 'fn':
