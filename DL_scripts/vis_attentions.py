@@ -461,8 +461,9 @@ def main():
     print(f'min attention score: {min_attention_score}')
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
+        print(track)
+        print(track.get_segment())
         if idx in [1, 3]:
-            print(track)
             # subtrack = track.get_subtrack('attentions')
             read_id = list_reads[0] if idx == 1 else list_reads[1]
             print(read_id, classification_group[read_id])
