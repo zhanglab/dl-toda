@@ -341,16 +341,16 @@ def main():
     genome_pos = tp_genome_pos_start
     for i in range(len(reads_seq[tp_read])):
         if genome_pos >= matching_pos[0] and genome_pos <= matching_pos[1]:
-            tp_matching_seq += reads_seq[tp_read][i]
+            tp_matching_seq += reads_seq[args.tp_read][i]
         if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
-            tp_non_matching_seq += reads_seq[tp_read][i]
-            non_matching_pos[tp_read]
+            tp_non_matching_seq += reads_seq[args.tp_read][i]
+            non_matching_pos[args.tp_read]
         genome_pos += 1
 
     fn_matching_seq = ''
     fn_non_matching_seq = ''
     genome_pos = fn_genome_pos_start
-    for i in range(len(reads_seq[fn_read_id[0]])):
+    for i in range(len(reads_seq[args.fn_read])):
         if genome_pos >= matching_pos[0] and genome_pos <= matching_pos[1]:
             fn_matching_seq += reads_seq[args.fn_read][i]
         if genome_pos <= matching_pos[0] or genome_pos >= matching_pos[1]:
@@ -362,7 +362,7 @@ def main():
     with open(os.path.join(args.output_dir, f'{args.tp_read}_{args.fn_read}_matching_seq'), 'w') as f:
         f.write(f'matching positions: {matching_pos[0]}\t{matching_pos[1]}\n')
         f.write(f'tp start: {tp_genome_pos_start}\ttp end: {tp_genome_pos_end}\n')
-        f.write(f'tp seq: {reads_seq[tp_read]}\n')
+        f.write(f'tp seq: {reads_seq[args.tp_read]}\n')
         f.write(f'tp non matching seq: {tp_non_matching_seq}\n')
         f.write(f'tp matching seq: {tp_matching_seq}\n')
         f.write(f'fn start: {fn_genome_pos_start}\tfn end: {fn_genome_pos_end}\n')
