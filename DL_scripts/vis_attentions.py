@@ -482,7 +482,7 @@ def main():
     print(filtered_attention_scores)
 
     fig = gv.plotfig()
-    fig.savefig(os.path.join(args.output_dir, f'plot_fn_{args.cutoff}.png'), dpi=300)
+    fig.savefig(os.path.join(args.output_dir, f'plot_fn_{args.fn_read}_{args.cutoff}.png'), dpi=300)
 
 
     # add tracks for TP + matching and non matching sequences with FN read
@@ -574,7 +574,7 @@ def main():
                 # subtrack.ax.fill_between(x_values, attentions_mean[read_id], color="grey")
 
     fig = gv.plotfig()
-    fig.savefig(os.path.join(args.output_dir, f'plot_tp_{args.cutoff}.png'), dpi=300)
+    fig.savefig(os.path.join(args.output_dir, f'plot_tp_{args.tp_read}_{args.cutoff}.png'), dpi=300)
 
 
 if __name__ == "__main__":
