@@ -107,7 +107,7 @@ def get_attentions(data, model, test_accuracy):
 
 def Normalize(x, x_min=0.0, x_max=np.inf):
     scaled_value = (x - x_min) / (x_max - x_min)
-    return scaled_value
+    return round(scaled_value, 3)*100
 
 def main():
     parser = argparse.ArgumentParser()
@@ -398,7 +398,7 @@ def main():
     fn_track_non_match = gv.add_feature_track(f'FN - query', end_x_value-start_x_value)
     # fn_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
     # add matching and non matching sequences with TP reads
-    fn_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
+    fn_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='blue')
     right_non_matching_regions = []
     left_non_matching_regions = []
     for i in range(fn_genome_pos_start, fn_genome_pos_end+1, 1):
@@ -423,7 +423,7 @@ def main():
     tp_track_all = gv.add_feature_track(f'TP - key', end_x_value-start_x_value)
     tp_track_non_match = gv.add_feature_track(f'TP - query', end_x_value-start_x_value)
     # tp_track.add_subtrack(name='attentions', ylim=(0, max_y_value))
-    tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='darkorange')
+    tp_track_all.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle='box', fc='blue')
     right_non_matching_regions = []
     left_non_matching_regions = []
     for i in range(start_genome_pos[args.tp_read], end_genome_pos[args.tp_read]+1, 1):
@@ -467,10 +467,15 @@ def main():
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
     for k, v in attentions_df.items():
-        print(v)
-        print(v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores)))
         attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-    print(attentions_df)
+    # add attention scores
+    all_attention_scores = []
+    for v in attentions_df.values():
+        all_attention_scores += v.values.flatten().tolist()
+    min_attention_score = min(all_attention_scores)
+    max_attention_scores = max(all_attention_scores)
+    print(f'min attention score: {min_attention_score}')
+    print(f'max attention score: {max_attention_scores}')
     # normalize values in dataframes
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
@@ -498,8 +503,8 @@ def main():
                         key_first_genome_pos = genome_pos_to_segment[j]
                         key_last_genome_pos = genome_pos_to_segment[j+4]
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
-                        print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape)
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
+                        print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
                         if classification_group[read_id] == 'fn':
                             query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
                             key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
