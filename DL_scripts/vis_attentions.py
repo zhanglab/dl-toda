@@ -480,13 +480,15 @@ def main():
                         key_first_pos = genome_pos_to_segment[j]
                         key_last_pos = genome_pos_to_segment[j+4]
                         attention_score = attentions_df[read_id].loc[query_kmer, key_kmer]
+                        print(attention_score)
+                        print(type(attention_score))
                         if classification_group[read_id] == 'fn':
                             query_info = (f'FN - query', query_first_pos, query_last_pos)
                             key_info = (f'FN - key', key_first_pos, key_last_pos)
                         elif classification_group[read_id] == 'tp':
                             query_info = (f'TP - query', query_first_pos, query_last_pos)
                             key_info = (f'TP - key', key_first_pos, key_last_pos)
-                        gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score)
+                        gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score, curve=True)
             gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
             
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
