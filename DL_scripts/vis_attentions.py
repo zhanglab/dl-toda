@@ -389,9 +389,7 @@ def main():
     start_x_value = min(start_genome_pos.values())
     end_x_value = max(end_genome_pos.values())
     genome_pos_to_segment = {pos:idx for idx, pos in enumerate(range(start_x_value, end_x_value+1, 1), 0)}
-    print(genome_pos_to_segment)
     print(f'length of fragment shown: {end_x_value-start_x_value}\t{end_x_value}\t{start_x_value}')
-    sys.exit(1)
     # gv.set_scale_xticks()
     non_matching_pos = defaultdict(list)
 
@@ -468,10 +466,11 @@ def main():
     max_attention_scores = max(all_attention_scores)
     print(f'min attention score: {min_attention_score}')
     print(f'max attention score: {max_attention_scores}')
-    for v in attentions_df.values():
+    for k, v in attentions_df.items():
         print(v)
-        v = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+        attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
         print(v)
+    sys.exit(1)
     # normalize values in dataframes
     color, inverted_color = "grey", "red"
     for idx, track in enumerate(gv.feature_tracks, 0):
