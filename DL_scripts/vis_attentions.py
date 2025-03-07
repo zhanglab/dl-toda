@@ -468,16 +468,11 @@ def main():
     print(f'max attention score: {max_attention_scores}')
     for k, v in attentions_df.items():
         attentions_df[k] = v.applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
-    # add attention scores
-    all_attention_scores = []
-    for v in attentions_df.values():
-        all_attention_scores += v.values.flatten().tolist()
-    min_attention_score = min(all_attention_scores)
-    max_attention_scores = max(all_attention_scores)
-    print(f'min attention score: {min_attention_score}')
-    print(f'max attention score: {max_attention_scores}')
+    
     # normalize values in dataframes
-    color, inverted_color = "grey", "red"
+    color = 'red'
+    # set cutoff for attention scores to display
+    cutoff = 50.0
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx in [1, 3]:
             print(track)
@@ -504,15 +499,16 @@ def main():
                         key_last_genome_pos = genome_pos_to_segment[j+4]
                         key_kmer = reads_seq[read_id][key_first_pos:key_last_pos]
                         attention_score = attentions_df[read_id].iloc[query_first_pos, key_first_pos]
-                        print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
-                        if classification_group[read_id] == 'fn':
-                            query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
-                            key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
-                        elif classification_group[read_id] == 'tp':
-                            query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
-                            key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
-                        gv.add_link(query_info, key_info, color=color, inverted_color=inverted_color, v=attention_score, vmin=min_attention_score, curve=True)
-            gv.set_colorbar([color, inverted_color], vmin=min_attention_score)
+                        if attention_score > cutoff:
+                            print('key', j, key_first_pos, j+4, key_last_pos, key_kmer, attentions_df[read_id].shape, attention_score)
+                            if classification_group[read_id] == 'fn':
+                                query_info = (f'FN - query', query_first_genome_pos, query_last_genome_pos)
+                                key_info = (f'FN - key', key_first_genome_pos, key_last_genome_pos)
+                            elif classification_group[read_id] == 'tp':
+                                query_info = (f'TP - query', query_first_pos, query_last_genome_pos)
+                                key_info = (f'TP - key', key_first_genome_pos, key_last_genome_pos)
+                            gv.add_link(query_info, key_info, color=color, v=attention_score, vmin=0.0, curve=True)
+            gv.set_colorbar([color], vmin=min_attention_score)
             
             # x_values = list(range(genome_pos_to_segment[start_genome_pos[read_id]], genome_pos_to_segment[end_genome_pos[read_id]], 1))
             # for segment in track.segments:
