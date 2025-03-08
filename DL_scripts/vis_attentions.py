@@ -559,7 +559,6 @@ def main():
 
 
     # add tracks for TP + matching and non matching sequences with FN read
-    query_key_out = open(os.path.join(args.output_dir, f'query_key_{args.cutoff}.tsv'), 'w')
     gv = GenomeViz()
     fn_color = 'darkviolet'
     tp_color = 'blue'
