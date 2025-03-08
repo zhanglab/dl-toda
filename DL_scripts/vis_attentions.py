@@ -569,8 +569,8 @@ def main():
     track_key = gv.add_feature_track(f'key', end_x_value-start_x_value)
     track_query = gv.add_feature_track(f'query', end_x_value-start_x_value)
     # add matching sequence 
-    track_key.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching)
-    track_query.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching)
+    track_key.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching, label="identical", text_kws=dict(rotation=0, hpos="center"))
+    track_query.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching, label="identical", text_kws=dict(rotation=0, hpos="center"))
 
     # find non-matching sequences of TP read
     right_non_matching_regions = []
@@ -585,13 +585,13 @@ def main():
         non_matching_pos[args.tp_read] += right_non_matching_regions
         print(f'TP - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
         track_query.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color)
-        track_key.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color)
+        track_key.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color, label="true positive", text_kws=dict(rotation=0, hpos="center", color=tp_color))
 
     if len(left_non_matching_regions) != 0:
         non_matching_pos[args.tp_read] += left_non_matching_regions
         print(f'TP - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
         track_query.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color)
-        track_key.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color)
+        track_key.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=tp_color, label="true positive", text_kws=dict(rotation=0, hpos="center", color=tp_color))
 
     # find non-matching sequences of FN read
     right_non_matching_regions = []
@@ -606,12 +606,12 @@ def main():
         non_matching_pos[args.fn_read] += right_non_matching_regions
         print(f'FN - right non matching positions: {genome_pos_to_segment[min(right_non_matching_regions)]}\t{genome_pos_to_segment[max(right_non_matching_regions)]}')
         track_query.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color)
-        track_key.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color)
+        track_key.add_feature(genome_pos_to_segment[min(right_non_matching_regions)], genome_pos_to_segment[max(right_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color, label="false negative", text_kws=dict(rotation=0, hpos="center", color=fn_color))
     if len(left_non_matching_regions) != 0:
         non_matching_pos[args.fn_read] += left_non_matching_regions
         print(f'FN - left non matching positions: {genome_pos_to_segment[min(left_non_matching_regions)]}\t{genome_pos_to_segment[max(left_non_matching_regions)]}')
         track_query.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color)
-        track_key.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color)
+        track_key.add_feature(genome_pos_to_segment[min(left_non_matching_regions)], genome_pos_to_segment[max(left_non_matching_regions)], strand, plotstyle="bigrbox", fc=fn_color, label="false negative", text_kws=dict(rotation=0, hpos="center", color=fn_color))
 
 
     # add attention scores info for TP
