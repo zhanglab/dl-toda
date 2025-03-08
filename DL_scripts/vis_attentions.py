@@ -382,7 +382,6 @@ def main():
 
     # plot TP and FN along with sum of attention scores
     att_scores_out = open(os.path.join(args.output_dir, f'attention_scores_stats_{args.cutoff}.tsv'), 'w')
-    fn_query_key_out = open(os.path.join(args.output_dir, f'fn_query_key_{args.cutoff}.tsv'), 'w')
     strand = 1
     # gv = GenomeViz()
     # get length of segment to plot
@@ -626,6 +625,7 @@ def main():
     attentions_df[args.tp_read] = attentions_df[args.tp_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.tp_read].values.flatten().tolist()
     att_scores_out.write(f'TP - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
+    tp_query_key_out = open(os.path.join(args.output_dir, f'tp_query_key_{args.cutoff}.tsv'), 'w')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -670,6 +670,7 @@ def main():
     attentions_df[args.tp_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
     att_scores_out.write(f'FN - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
+    fn_query_key_out = open(os.path.join(args.output_dir, f'fn_query_key_{args.cutoff}.tsv'), 'w')
     for idx, track in enumerate(gv.feature_tracks, 0):
         if idx == 1:
             print(track)
@@ -697,10 +698,10 @@ def main():
                         key_info = (f'key', key_first_genome_pos, key_last_genome_pos)
                         # check if position is in a non-matching region
                         if i in non_matching_pos[read_id]:
-                            tp_query_key_out.write(f'non-matching\t{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
+                            fn_query_key_out.write(f'non-matching\t{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
                             gv.add_link(query_info, key_info, color=fn_color, v=attention_score, vmin=0.0, curve=True)
                         elif i >= matching_pos[0] and i <= matching_pos[1]:
-                            tp_query_key_out.write(f'matching\t{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
+                            fn_query_key_out.write(f'matching\t{query_kmer}\t{query_first_pos}\t{query_first_genome_pos}\t{query_last_pos}\t{query_last_genome_pos}\t{key_kmer}\t{key_first_pos}\t{key_first_genome_pos}\t{key_last_pos}\t{key_last_genome_pos}\t{attention_score}\n')
                             gv.add_link(query_info, key_info, color=fn_color, v=attention_score, vmin=0.0, curve=True)
 
     gv.set_colorbar([fn_color, tp_color], vmin=0.0)
