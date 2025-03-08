@@ -570,7 +570,7 @@ def main():
     track_query = gv.add_feature_track(f'query', end_x_value-start_x_value)
     # add matching sequence 
     track_key.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching, label="identical", text_kws=dict(rotation=0, hpos="center"))
-    track_query.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching, label="identical", text_kws=dict(rotation=0, hpos="center"))
+    track_query.add_feature(genome_pos_to_segment[matching_pos[0]], genome_pos_to_segment[matching_pos[1]], strand, plotstyle="bigrbox", fc=color_matching)
 
     # find non-matching sequences of TP read
     right_non_matching_regions = []
