@@ -667,7 +667,7 @@ def main():
     print(f'max attention score: {max_attention_scores}')
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
     att_scores_out.write(f'\nFN - before normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
-    attentions_df[args.tp_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
+    attentions_df[args.fn_read] = attentions_df[args.fn_read].applymap(lambda x: Normalize(x, x_min=min_attention_score, x_max=max_attention_scores))
     list_attention_scores  = attentions_df[args.fn_read].values.flatten().tolist()
     att_scores_out.write(f'FN - after normalization\nmean\t{statistics.mean(list_attention_scores)}\nmedian\t{statistics.median(list_attention_scores)}\nmin\t{min(list_attention_scores)}\nmax\t{max(list_attention_scores)}\n')
     fn_query_key_out = open(os.path.join(args.output_dir, f'fn_query_key_{args.cutoff}.tsv'), 'w')
