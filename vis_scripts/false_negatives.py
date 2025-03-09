@@ -994,7 +994,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="darkorange")
-		y_values = list(range(min(shannon_scores), max(shannon_scores), 1))
+		y_values = list(range(math.floor(min(shannon_scores)), math.ceil(max(shannon_scores)), 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
 		scores_track.line(genome_pos, shannon_scores, color="darkorange")
