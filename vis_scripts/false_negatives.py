@@ -690,6 +690,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 		if num_tp+num_fn > 0:
 			ratio_fn = num_fn / (num_tp+num_fn)
+			print(f'ratio fn: {ratio_fn}\t{num_tp}\t{num_fn}')
 
 			if ratio_fn > 1:
 				scores.append(ratio_fn)
