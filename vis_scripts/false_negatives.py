@@ -667,8 +667,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 	return alignments
 
 
-# def GetShanningScore(testing_records, tp_alignments, fn_alignments):
-def GetScore(testing_records, tp_alignments, fn_alignments):
+def GetScores(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
@@ -1232,7 +1231,7 @@ if __name__ == "__main__":
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
 	# get shannon entropy scores
-	scores = GetShanningScore(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
+	scores = GetScores(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
 
 	# # get annotations info
 	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
