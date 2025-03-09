@@ -506,69 +506,70 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 
 
-# def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
-# 	reads = []
-# 	reads_id = {}
-# 	for fn_readid, fn_data in fn_alignments_pos_test.items():
-# 		if fn_data[2] < fn_data[3]:
-# 			fn_start_pos = fn_data[2]
-# 			fn_end_pos = fn_data[3]
-# 		else:
-# 			fn_start_pos = fn_data[3]
-# 			fn_end_pos = fn_data[2]
-# 		fn_strand = fn_data[6]
+def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
+	reads = []
+	reads_id = {}
+	for fn_readid, fn_data in fn_alignments_pos_test.items():
+		if fn_data[2] < fn_data[3]:
+			fn_start_pos = fn_data[2]
+			fn_end_pos = fn_data[3]
+		else:
+			fn_start_pos = fn_data[3]
+			fn_end_pos = fn_data[2]
+		fn_strand = fn_data[6]
 
-# 		for tp_readid, tp_data in tp_alignments_pos_test.items():
-# 			if tp_data[2] < tp_data[3]:
-# 				tp_start_pos = tp_data[2]
-# 				tp_end_pos = tp_data[3]
-# 			else:
-# 				tp_start_pos = tp_data[3]
-# 				tp_end_pos = tp_data[2]
-# 			tp_strand = tp_data[6]
+		for tp_readid, tp_data in tp_alignments_pos_test.items():
+			if tp_data[2] < tp_data[3]:
+				tp_start_pos = tp_data[2]
+				tp_end_pos = tp_data[3]
+			else:
+				tp_start_pos = tp_data[3]
+				tp_end_pos = tp_data[2]
+			tp_strand = tp_data[6]
 
-# 			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
-# 				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
-# 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
-# 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
-# 				if tp_strand == 'plus' and fn_strand == 'plus':
-# 					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
-# 						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
-# 							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
-# 						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-# 						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
+			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
+				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
+				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
+				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
+				if tp_strand == 'plus' and fn_strand == 'plus':
+					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
+						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
+						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
-# 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
-# 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
-# 	for r in reads:
-# 		sum_file.write(f'{r[0]}')
-# 		for idx in range(1, len(r), 1):
-# 			sum_file.write(f'\t{r[idx]}')
-# 		sum_file.write('\n')
-# 	for k, v in reads_id.items():
-# 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
-# 	tsv_file.close()
-# 	sum_file.close()
+	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
+	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
+	for r in reads:
+		sum_file.write(f'{r[0]}')
+		for idx in range(1, len(r), 1):
+			sum_file.write(f'\t{r[idx]}')
+		sum_file.write('\n')
+	for k, v in reads_id.items():
+		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+	tsv_file.close()
+	sum_file.close()
 
 
 
-def GetGenes(args, label, output_dir, annot_info, fn_alignments, sequence_length, readid_to_read, type):
+def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes = defaultdict(list)
 	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
-	pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
+	# pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
 
-	for readid, data in alignments.items():
+	for readid in fn_reads_kept:
+		data = fn_alignments[readid]
 		if data[2] < data[3]:
 			start_pos = data[2]
 			end_pos = data[3]
 		else:
 			start_pos = data[3]
 			end_pos = data[2]
-		for pos in range(start_pos, end_pos+1, 1):
-			pos_readid[pos-1].append(readid)
+		# for pos in range(start_pos, end_pos+1, 1):
+		# 	pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
 			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
 			(start_pos <= annot[1] and end_pos >= annot[1]) or \
@@ -580,10 +581,14 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, sequence_length
 				readid_w_gene[readid] = [data[2], data[3], gene_id]
 				genestype[annot[0]] += 1
 
-	pos_readid_count = [len(v) for v in pos_readid.values()]
+	# pos_readid_count = [len(v) for v in pos_readid.values()]
 	
-	if len(pos_readid_count) > 0:
-		print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+	# if len(pos_readid_count) > 0:
+	# 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+
+	with open(os.path.join(output_dir, f'{label}_fn_reads_kept_alignments_{args.prob_threshold}.tsv'), 'w') as outf:
+		for readid, data in readid_w_gene.items():
+			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
 
 	genes_of_interest = defaultdict(list)
 	for pos, list_readid in pos_readid.items():
@@ -1245,15 +1250,13 @@ if __name__ == "__main__":
 
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'FN')
 
-	# # GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
+	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
 	CreateTsvFile(fn_reads_kept, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.tsv'))
 	CreateTsvFile(fn_reads_kept, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.tsv'))
-
-
 
 	# blast testing reads to training genome from label 1
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
