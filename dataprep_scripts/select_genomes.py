@@ -17,7 +17,7 @@ def get_gtdb_info(gtdb_info):
 
     return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy
 
-def clean_fasta(genome_id, fastafile, path_to_db, output_dir, out_f):
+def clean_fasta(genome_id, fastafile, path_to_db, output_dir, outf):
     updated_seq = []
     updated_description = []
     for record in SeqIO.parse(fastafile, "fasta"):
@@ -33,7 +33,7 @@ def clean_fasta(genome_id, fastafile, path_to_db, output_dir, out_f):
         print(new_filepath)
         with open(new_filepath, 'w') as out_fasta:
             out_fasta.write(f'>{new_description}\n{"".join(updated_seq)}\n')
-        out_f.write(f'{genome_id}\t{new_filepath}\n')
+        outf.write(f'{genome_id}\t{new_filepath}\n')
 
 
 def get_genomes(path_to_db):
@@ -62,7 +62,7 @@ def main():
     ncbi_genomes = get_genomes(ncbi_refseq_db)
     gtdb_genomes = get_genomes(gtdb_db)
 
-    with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as out_f:
+    with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as outf:
         for i in range(len(genomes)):
             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                 print(ncbi_assembly_level[i], ncbi_genome_category[i], ncbi_genome_category[i])
@@ -70,9 +70,9 @@ def main():
                 # clean fasta file
                 if genomes[i] in ncbi_genomes:
                     outf.write(f'NCBI\n')
-                    # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, out_f)
+                    # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
                 elif genomes[i] in gtdb_genomes:
-                    # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, out_f)
+                    # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
                     outf.write(f'GTDB\n')
                 else:
                     outf.write(f'NOT IN\n')
