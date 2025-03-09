@@ -563,7 +563,7 @@ def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, 
 
 
 
-def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
+def GetGenes(args, label, output_dir, annot_info, fn_alignments, sequence_length, readid_to_read, type):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	genes = defaultdict(list)
 	functions = defaultdict(int)
@@ -667,9 +667,11 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 	return alignments
 
 
-def GetShanningScore(testing_records, tp_alignments, fn_alignments):
+# def GetShanningScore(testing_records, tp_alignments, fn_alignments):
+def GetScore(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
-	shannon_scores = []
+	# shannon_scores = []
+	scores = []
 	for i in range(1, genome_size+1, 1):
 		num_tp = 0
 		num_fn = 0
@@ -700,10 +702,14 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 			else:
 				# cases where the position exists in TP and FN reads
 				shannon_entropy = -(shannon_tp + shannon_fn)
+				assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
+
 		else:
 			shannon_entropy = 0
 
-		shannon_scores.append(shannon_entropy)
+		scores.append(shannon_entropy)
+
+
 
 	print(f'shannon entropy:\nmean\t{statistics.mean(shannon_scores)}\nmedian\t{statistics.median(shannon_scores)}\nmin\t{min(shannon_scores)}\nmax\t{max(shannon_scores)}')
 	return shannon_scores
@@ -762,7 +768,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=11, r=20)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=11, r=22)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -808,10 +814,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		if query_fasta.full_genome_length < 2000000:
 			if genomic_islands:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb", outer=False,)
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/2000000:.1f} Mb", outer=False,)
 				min_r_pos -= 6
 			else:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb",)
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/2000000:.1f} Mb",)
 				min_r_pos -= 1
 			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		
@@ -932,7 +938,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
 		for ac in align_coords:
-			print(ac)
 			# # percent_identity.append(ac.identity)
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
@@ -1016,7 +1021,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		print(f'added TP track')
 
 		# add tracks for FN reads 
-		min_r_pos -= 11
+		min_r_pos -= 13
 		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		fn_track.axis(ec="darkviolet")
 		pos_fn_count = [0]*query_fasta.full_genome_length
