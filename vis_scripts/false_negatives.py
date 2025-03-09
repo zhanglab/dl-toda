@@ -697,10 +697,10 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 		shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
 
 		# compute shannon entropy
-		shannon_entropy = -(shannon_tp + shannon_fn)
+		shannon_entropy = -(shannon_tp + shannon_fn) if (shannon_tp + shannon_fn) > 0 else 0
 		shannon_scores.append(shannon_entropy)
 
-	print(f'{statistics.mean(shannon_scores)}\t{statistics.median(shannon_scores)}\t{min(shannon_scores)}\t{max(shannon_scores)}')
+	print(f'shannon entropy:\nmean\t{statistics.mean(shannon_scores)}\nmedian\t{statistics.median(shannon_scores)}\nmin\t{min(shannon_scores)}\nmax\t{max(shannon_scores)}')
 	return shannon_scores
 
 
