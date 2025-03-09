@@ -6,14 +6,16 @@ import sys
 
 def get_gtdb_info(gtdb_info):
     # load gtdb info file
-    gtdb_df = pd.read_csv(gtdb_info, delimiter='\t', usecols=['accession', 'gtdb_genome_representative', 'gtdb_taxonomy', 'ncbi_genome_category', 'ncbi_assembly_level', 'ncbi_genome_representation'])
+    gtdb_df = pd.read_csv(gtdb_info, delimiter='\t', usecols=['accession', 'gtdb_genome_representative', 'gtdb_taxonomy', 'ncbi_taxonomy', 'ncbi_genome_category', 'ncbi_assembly_level', 'ncbi_genome_representation'])
     genomes = [i[3:] for i in gtdb_df['accession'].tolist()]
     ncbi_assembly_level = gtdb_df['ncbi_assembly_level'].tolist()
     ncbi_genome_category = gtdb_df['ncbi_genome_category'].tolist()
     ncbi_genome_representation = gtdb_df['ncbi_genome_representation'].tolist()
     gtdb_rep_genome = [i[3:] for i in gtdb_df['gtdb_genome_representative'].tolist()]
+    gtdb_taxonomy = gtdb_df['gtdb_taxonomy'].tolist()
+    ncbi_taxonomy = gtdb_df['ncbi_taxonomy'].tolist()
 
-    return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome
+    return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy
 
 def clean_fasta(genome_id, fastafile, path_to_db, output_dir, out_f):
     updated_seq = []
@@ -54,7 +56,7 @@ def main():
         os.makedirs(output_dir)
 
     # parse gtdb info file (bac120_metadata_r95.tsv)
-    genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome = get_gtdb_info(gtdb_info)
+    genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(gtdb_info)
 
     # get list of genomes available locally
     ncbi_genomes = get_genomes(ncbi_refseq_db)
@@ -64,11 +66,17 @@ def main():
         for i in range(len(genomes)):
             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                 print(ncbi_assembly_level[i], ncbi_genome_category[i], ncbi_genome_category[i])
+                outf.write(f'{genomes[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
                 # clean fasta file
                 if genomes[i] in ncbi_genomes:
-                    clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, out_f)
+                    outf.write(f'NCBI\n')
+                    # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, out_f)
                 elif genomes[i] in gtdb_genomes:
-                    clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, out_f)
+                    # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, out_f)
+                    outf.write(f'GTDB\n')
+                else:
+                    outf.write(f'NOT IN\n')
+
 
 
 
