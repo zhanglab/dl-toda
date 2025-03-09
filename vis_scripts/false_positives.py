@@ -918,7 +918,6 @@ if __name__ == "__main__":
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
-				print(test_ordered_reads_id[count])
 				if test_ordered_reads_id[count].split('|')[1] == args.neg_label:
 					# tfrecords contain the updated label which is set to 1
 					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
