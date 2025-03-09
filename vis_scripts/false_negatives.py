@@ -684,20 +684,21 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 			if i >= data[2] and i <= data[3]:
 				num_fn += 1
 
+		print(i, num_tp, num_fn)
 		# compute probability for each group
 		if num_tp+num_fn > 0:
 			prob_tp = num_tp / (num_tp+num_fn)
 			prob_fn = num_fn / (num_tp+num_fn)
+
+			# compute tp and fn contribution to shannon score
+			shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
+			shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
+
+			# compute shannon entropy
+			shannon_entropy = -(shannon_tp + shannon_fn)
 		else:
-			prob_tp = 0
-			prob_fn = 0
+			shannon_entropy = 0
 
-		# compute tp and fn contribution to shannon score
-		shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
-		shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
-
-		# compute shannon entropy
-		shannon_entropy = -(shannon_tp + shannon_fn) if (shannon_tp + shannon_fn) > 0 else 0
 		shannon_scores.append(shannon_entropy)
 
 	print(f'shannon entropy:\nmean\t{statistics.mean(shannon_scores)}\nmedian\t{statistics.median(shannon_scores)}\nmin\t{min(shannon_scores)}\nmax\t{max(shannon_scores)}')
@@ -757,7 +758,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}\n(testing genome)', size=11, r=20)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=11, r=20)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -974,11 +975,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# add track for shannon entropy scores
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		scores_track.axis(ec="red")
+		scores_track.axis(ec="darkorange")
 		y_values = list(range(min(shannon_scores), max(shannon_scores), 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
-		scores_track.line(genome_pos, shannon_scores, color="red")
+		scores_track.line(genome_pos, shannon_scores, color="darkorange")
 		print(f'added Scores track')
 
 		# add track for TP reads
@@ -1063,9 +1064,12 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		content = f.readline()
 	train_strain = ' '.join(content.split(',')[0].split(' ')[1:])
 
-	handles = [
-		Patch(color='red', label='Pathogenicity Islands'),
+	handles = []
+	if genomic_islands:
+		handles.append(Patch(color='red', label='Genomic Islands'))
+	handles += [
 		Patch(color='black', label=f'{train_strain}\n(training genome)'),
+		Patch(color='darkorange', label='Shannon Entropy'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
