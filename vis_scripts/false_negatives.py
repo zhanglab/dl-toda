@@ -695,28 +695,28 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 				scores.append(ratio_fn)
 				reads_kept += fn_reads
 
-		# compute probability for each group
-		if num_tp+num_fn > 0:
-			prob_tp = num_tp / (num_tp+num_fn)
-			prob_fn = num_fn / (num_tp+num_fn)
+		# # compute probability for each group
+		# if num_tp+num_fn > 0:
+		# 	prob_tp = num_tp / (num_tp+num_fn)
+		# 	prob_fn = num_fn / (num_tp+num_fn)
 
-			# compute tp and fn contribution to shannon score
-			shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
-			shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
+		# 	# compute tp and fn contribution to shannon score
+		# 	shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
+		# 	shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
 
-			# compute shannon entropy
-			if (shannon_tp + shannon_fn) == 0:
-				# cases where the position exists only in TP or FN reads
-				shannon_entropy = 0
-			else:
-				# cases where the position exists in TP and FN reads
-				shannon_entropy = -(shannon_tp + shannon_fn)
-				assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
+		# 	# compute shannon entropy
+		# 	if (shannon_tp + shannon_fn) == 0:
+		# 		# cases where the position exists only in TP or FN reads
+		# 		shannon_entropy = 0
+		# 	else:
+		# 		# cases where the position exists in TP and FN reads
+		# 		shannon_entropy = -(shannon_tp + shannon_fn)
+		# 		assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
 
-		else:
-			shannon_entropy = 0
+		# else:
+		# 	shannon_entropy = 0
 
-		scores.append(shannon_entropy)
+		# scores.append(shannon_entropy)
 
 
 	print(f'# fn reads kept: {len(set(reads_kept))}')
