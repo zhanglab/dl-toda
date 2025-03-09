@@ -671,7 +671,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
-	fn_reads_kept = []
+	reads_kept = []
 	tp_evalue = dict()
 	tp_pident = dict()
 	fn_evalue = dict()
@@ -704,7 +704,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 			if ratio_fn > 0.5:
 				scores.append(ratio_fn)
-				fn_reads_kept += list(fn_reads)
+				reads_kept += list(fn_reads)
 
 		# # compute probability for each group
 		# if num_tp+num_fn > 0:
