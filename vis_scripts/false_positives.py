@@ -907,7 +907,7 @@ if __name__ == "__main__":
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_file)
 	elif args.testing_file[-3:] == 'tsv':
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
-	print(test_readid_to_read)
+
 	# get FP and TP sequences
 	fp_sequences = set()
 	tp_sequences = set()
@@ -918,11 +918,13 @@ if __name__ == "__main__":
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
+				print(test_ordered_reads_id[count])
 				if test_ordered_reads_id[count].split('|')[1] == args.neg_label:
-					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
+					# tfrecords contain the updated label which is set to 1
+					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
 						fp_sequences.add(test_ordered_reads_id[count])
 						fp_cs.append(prob)
-					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '0':
+					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
 						tp_sequences.add(test_ordered_reads_id[count])
 						tp_cs.append(prob)
 
