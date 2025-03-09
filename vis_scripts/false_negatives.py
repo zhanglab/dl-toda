@@ -670,7 +670,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	shannon_scores = []
-	for i in range(1, len(genome_size)+1, 1):
+	for i in range(1, genome_size+1, 1):
 		num_tp = 0
 		num_fn = 0
 		
