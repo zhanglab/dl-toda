@@ -428,20 +428,9 @@ def GetFNOtherInfo(args, pos_test_alignments, neg_train_alignments, annot_info, 
 	return list_reads_id
 
 
-def CreateFastaFile(genes_of_interest, alignments, readid_to_read, filename):
-	reads_of_interest = set()
-	for readid, data in alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for gene_id, annot in genes_of_interest.items():
-			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
-			(start_pos <= annot[1] and end_pos >= annot[1]) or \
-			(start_pos >= annot[1] and end_pos <= annot[2]) or \
-			(start_pos <= annot[2] and end_pos >= annot[2]):
-				reads_of_interest.add(readid)
-	
+def CreateTsvFile(reads_id, readid_to_read, filename):	
 	with open(filename, 'w') as f:
-		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_of_interest)]))
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
@@ -517,49 +506,49 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 
 
-def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
-	reads = []
-	reads_id = {}
-	for fn_readid, fn_data in fn_alignments_pos_test.items():
-		if fn_data[2] < fn_data[3]:
-			fn_start_pos = fn_data[2]
-			fn_end_pos = fn_data[3]
-		else:
-			fn_start_pos = fn_data[3]
-			fn_end_pos = fn_data[2]
-		fn_strand = fn_data[6]
+# def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
+# 	reads = []
+# 	reads_id = {}
+# 	for fn_readid, fn_data in fn_alignments_pos_test.items():
+# 		if fn_data[2] < fn_data[3]:
+# 			fn_start_pos = fn_data[2]
+# 			fn_end_pos = fn_data[3]
+# 		else:
+# 			fn_start_pos = fn_data[3]
+# 			fn_end_pos = fn_data[2]
+# 		fn_strand = fn_data[6]
 
-		for tp_readid, tp_data in tp_alignments_pos_test.items():
-			if tp_data[2] < tp_data[3]:
-				tp_start_pos = tp_data[2]
-				tp_end_pos = tp_data[3]
-			else:
-				tp_start_pos = tp_data[3]
-				tp_end_pos = tp_data[2]
-			tp_strand = tp_data[6]
+# 		for tp_readid, tp_data in tp_alignments_pos_test.items():
+# 			if tp_data[2] < tp_data[3]:
+# 				tp_start_pos = tp_data[2]
+# 				tp_end_pos = tp_data[3]
+# 			else:
+# 				tp_start_pos = tp_data[3]
+# 				tp_end_pos = tp_data[2]
+# 			tp_strand = tp_data[6]
 
-			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
-				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
-				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
-				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
-				if tp_strand == 'plus' and fn_strand == 'plus':
-					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
-						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
-							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
-						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
+# 			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
+# 				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
+# 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
+# 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
+# 				if tp_strand == 'plus' and fn_strand == 'plus':
+# 					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
+# 						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+# 							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
+# 						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+# 						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
-	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
-	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
-	for r in reads:
-		sum_file.write(f'{r[0]}')
-		for idx in range(1, len(r), 1):
-			sum_file.write(f'\t{r[idx]}')
-		sum_file.write('\n')
-	for k, v in reads_id.items():
-		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
-	tsv_file.close()
-	sum_file.close()
+# 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
+# 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
+# 	for r in reads:
+# 		sum_file.write(f'{r[0]}')
+# 		for idx in range(1, len(r), 1):
+# 			sum_file.write(f'\t{r[idx]}')
+# 		sum_file.write('\n')
+# 	for k, v in reads_id.items():
+# 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+# 	tsv_file.close()
+# 	sum_file.close()
 
 
 
@@ -671,7 +660,8 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
-	reads_kept = []
+	fn_reads_kept = []
+	tp_reads_kept = []
 	tp_evalue = dict()
 	tp_pident = dict()
 	fn_evalue = dict()
@@ -681,11 +671,13 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		num_fn = 0
 
 		fn_reads = set()
+		tp_reads = set()
 		
 		# check if position is located in a read assigned to TP
 		for read_id, data in tp_alignments.items():
 			if data[4] == 0 and data[5] == 100 :
 				if i >= data[2] and i <= data[3]:
+					tp_reads.add(read_id)
 					tp_evalue[read_id] = data[4]
 					tp_pident[read_id] = data[5]
 					num_tp += 1
@@ -704,7 +696,8 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 			if ratio_fn > 0.5:
 				scores.append(ratio_fn)
-				reads_kept += list(fn_reads)
+				fn_reads_kept += list(fn_reads)
+				tp_reads_kept += list(tp_reads)
 
 		# # compute probability for each group
 		# if num_tp+num_fn > 0:
@@ -730,14 +723,15 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		# scores.append(shannon_entropy)
 
 
-	print(f'# fn reads kept: {len(set(reads_kept))}')
+	print(f'# fn reads kept: {len(set(fn_reads_kept))}')
+	print(f'# tp reads kept: {len(set(tp_reads_kept))}')
 	print(f'scores:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
 	print(f'fn evalue:\nmean\t{statistics.mean(fn_evalue.values())}\nmedian\t{statistics.median(fn_evalue.values())}\nmin\t{min(fn_evalue.values())}\nmax\t{max(fn_evalue.values())}')
 	print(f'tp evalue:\nmean\t{statistics.mean(tp_evalue.values())}\nmedian\t{statistics.median(tp_evalue.values())}\nmin\t{min(tp_evalue.values())}\nmax\t{max(tp_evalue.values())}')
 	print(f'fn pident:\nmean\t{statistics.mean(fn_pident.values())}\nmedian\t{statistics.median(fn_pident.values())}\nmin\t{min(fn_pident.values())}\nmax\t{max(fn_pident.values())}')
 	print(f'tp pident:\nmean\t{statistics.mean(tp_pident.values())}\nmedian\t{statistics.median(tp_pident.values())}\nmin\t{min(tp_pident.values())}\nmax\t{max(tp_pident.values())}')
 
-	return scores
+	return scores, list(set(fn_reads_kept)), list(set(tp_reads_kept))
 
 
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
@@ -1247,34 +1241,36 @@ if __name__ == "__main__":
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
 	# get shannon entropy scores
-	scores = GetScores(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
+	scores, fn_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
 
-	# # get annotations info
-	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	# get annotations info
+	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
-	# GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
+	# # GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
-	# # create fastq files with FN and TP reads mapping positions of interest on the testing genome
-	# CreateFastaFile(fn_genes_of_interest, fn_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.fq'))
-	# CreateFastaFile(fn_genes_of_interest, tp_alignments_pos_test, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.fq'))
+	# create fastq files with FN and TP reads mapping positions of interest on the testing genome
+	CreateTsvFile(fn_reads_kept, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.tsv'))
+	CreateTsvFile(fn_reads_kept, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.tsv'))
+
+
 
 	# blast testing reads to training genome from label 1
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
 	# test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
-	# # get info about genomic islands
-	# if args.genomic_islands is not None:
-	# 	if os.path.isdir(args.genomic_islands):
-	# 		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
-	# 	else:
-	# 		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+	# get info about genomic islands
+	if args.genomic_islands is not None:
+		if os.path.isdir(args.genomic_islands):
+			gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+		else:
+			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores, genomic_islands=gis_align)
-	# else:
-	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores)
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), scores, genomic_islands=gis_align)
+	else:
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), scores)
 	
 	# # # do FP analysis
 	# # # blast FP reads to ncbi nt database
