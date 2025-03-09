@@ -685,8 +685,12 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 				num_fn += 1
 
 		# compute probability for each group
-		prob_tp = num_tp / (num_tp+num_fn)
-		prob_fn = num_fn / (num_tp+num_fn)
+		if num_tp+num_fn > 0:
+			prob_tp = num_tp / (num_tp+num_fn)
+			prob_fn = num_fn / (num_tp+num_fn)
+		else:
+			prob_tp = 0
+			prob_fn = 0
 
 		# compute tp and fn contribution to shannon score
 		shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
