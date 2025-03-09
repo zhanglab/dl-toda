@@ -907,7 +907,7 @@ if __name__ == "__main__":
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_file)
 	elif args.testing_file[-3:] == 'tsv':
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
-	
+	print(test_readid_to_read)
 	# get FP and TP sequences
 	fp_sequences = set()
 	tp_sequences = set()
