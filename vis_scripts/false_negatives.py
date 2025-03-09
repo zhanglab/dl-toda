@@ -672,9 +672,12 @@ def GetScore(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
+	reads_kept = []
 	for i in range(1, genome_size+1, 1):
 		num_tp = 0
 		num_fn = 0
+
+		fn_reads = []
 		
 		# check if position is located in a read assigned to TP
 		for read_id, data in tp_alignments.items():
@@ -685,6 +688,13 @@ def GetScore(testing_records, tp_alignments, fn_alignments):
 		for read_id, data in fn_alignments.items():
 			if i >= data[2] and i <= data[3]:
 				num_fn += 1
+
+		if num_tp+num_fn > 0:
+			ratio_fn = num_fn / (num_tp+num_fn)
+
+			if ratio_fn > 1:
+				scores.append(ratio_fn)
+				reads_kept += fn_reads
 
 		# compute probability for each group
 		if num_tp+num_fn > 0:
@@ -710,9 +720,9 @@ def GetScore(testing_records, tp_alignments, fn_alignments):
 		scores.append(shannon_entropy)
 
 
-
-	print(f'shannon entropy:\nmean\t{statistics.mean(shannon_scores)}\nmedian\t{statistics.median(shannon_scores)}\nmin\t{min(shannon_scores)}\nmax\t{max(shannon_scores)}')
-	return shannon_scores
+	print(f'# fn reads kept: {len(set(reads_kept))}')
+	print(f'scores:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
+	return scores
 
 
 def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY):
@@ -768,7 +778,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	with open(testing_fasta, 'r') as f:
 		content = f.readline()
 	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=11, r=22)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
 	# print(f"Query: {query_fasta.name}\n({query_fasta.full_genome_length:,} bp)\n{query_fasta.full_genome_length}")
@@ -995,7 +1005,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
 
-		# add track for shannon entropy scores
+		# add track for scores
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="darkorange")
@@ -1092,7 +1102,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
 		Patch(color='black', label=f'{train_strain}\n(training genome)'),
-		Patch(color='darkorange', label='Shannon Entropy'),
+		Patch(color='darkorange', label='Scores'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
@@ -1222,11 +1232,11 @@ if __name__ == "__main__":
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
 	# get shannon entropy scores
-	shannon_scores = GetShanningScore(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
+	scores = GetShanningScore(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
 
-	# get annotations info
-	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
+	# # get annotations info
+	# pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	# fn_genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, test_sequence_length, test_readid_to_read, 'FN')
 
 	# GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
@@ -1238,18 +1248,18 @@ if __name__ == "__main__":
 	# RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_train_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[training_fasta], outfilename=f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out')
 	# test_alignments_pos_train = GetReadsAlignments(fn_sequences.union(tp_sequences), f'{args.output_dir}/blast/test_reads_train_genome/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_train_genome/pos_test_pos_train_{args.prob_threshold}_mapping_info.tsv'))
 	
-	# get info about genomic islands
-	if args.genomic_islands is not None:
-		if os.path.isdir(args.genomic_islands):
-			gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
-		else:
-			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
+	# # get info about genomic islands
+	# if args.genomic_islands is not None:
+	# 	if os.path.isdir(args.genomic_islands):
+	# 		gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+	# 	else:
+	# 		gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores, genomic_islands=gis_align)
-	else:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores)
+	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores, genomic_islands=gis_align)
+	# else:
+	# 	FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, fn_genes_of_interest, 
+	# 		os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), shannon_scores)
 	
 	# # # do FP analysis
 	# # # blast FP reads to ncbi nt database
