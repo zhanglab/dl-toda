@@ -676,7 +676,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		num_tp = 0
 		num_fn = 0
 
-		fn_reads = []
+		fn_reads = set()
 		
 		# check if position is located in a read assigned to TP
 		for read_id, data in tp_alignments.items():
@@ -686,6 +686,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		# check if position is located in a read assigned to FN
 		for read_id, data in fn_alignments.items():
 			if i >= data[2] and i <= data[3]:
+				fn_reads.add(read_id)
 				num_fn += 1
 
 		if num_tp+num_fn > 0:
@@ -693,7 +694,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 			if ratio_fn > 0.5:
 				scores.append(ratio_fn)
-				reads_kept += fn_reads
+				reads_kept += list(fn_reads)
 
 		# # compute probability for each group
 		# if num_tp+num_fn > 0:
