@@ -688,8 +688,12 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 		prob_tp = num_tp / (num_tp+num_fn)
 		prob_fn = num_fn / (num_tp+num_fn)
 
+		# compute tp and fn contribution to shannon score
+		shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
+		shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
+
 		# compute shannon entropy
-		shannon_entropy = -(prob_tp*math.log(prob_tp, 2) + prob_fn*math.log(prob_fn, 2))
+		shannon_entropy = -(shannon_tp + shannon_fn)
 		shannon_scores.append(shannon_entropy)
 
 	print(f'{statistics.mean(shannon_scores)}\t{statistics.median(shannon_scores)}\t{min(shannon_scores)}\t{max(shannon_scores)}')
