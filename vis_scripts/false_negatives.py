@@ -684,7 +684,6 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 			if i >= data[2] and i <= data[3]:
 				num_fn += 1
 
-		print(i, num_tp, num_fn)
 		# compute probability for each group
 		if num_tp+num_fn > 0:
 			prob_tp = num_tp / (num_tp+num_fn)
@@ -695,7 +694,12 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 			shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
 
 			# compute shannon entropy
-			shannon_entropy = -(shannon_tp + shannon_fn)
+			if (shannon_tp + shannon_fn) == 0:
+				print('equal to 0', num_tp, prob_tp, shannon_tp, num_fn, prob_fn, shannon_fn, shannon_entropy)
+				shannon_entropy = 0
+			else:
+				shannon_entropy = -(shannon_tp + shannon_fn)
+				print(' NOT equal to 0', num_tp, prob_tp, shannon_tp, num_fn, prob_fn, shannon_fn, shannon_entropy)
 		else:
 			shannon_entropy = 0
 
@@ -794,8 +798,12 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
-		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
-		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		if query_fasta.full_genome_length > 4000000:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		if query_fasta.full_genome_length < 2000000:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb", outer=False,)
+			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		min_r_pos -= 6
 
 		# create tracks for genomics features
