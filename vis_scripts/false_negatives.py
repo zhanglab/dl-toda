@@ -680,14 +680,16 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		
 		# check if position is located in a read assigned to TP
 		for read_id, data in tp_alignments.items():
-			if i >= data[2] and i <= data[3]:
-				num_tp += 1
+			if data[4] == 0 and data[5] == 100 :
+				if i >= data[2] and i <= data[3]:
+					num_tp += 1
 
 		# check if position is located in a read assigned to FN
 		for read_id, data in fn_alignments.items():
-			if i >= data[2] and i <= data[3]:
-				fn_reads.add(read_id)
-				num_fn += 1
+			if data[4] == 0 and data[5] == 100 :
+				if i >= data[2] and i <= data[3]:
+					fn_reads.add(read_id)
+					num_fn += 1
 
 		if num_tp+num_fn > 0:
 			ratio_fn = num_fn / (num_tp+num_fn)
