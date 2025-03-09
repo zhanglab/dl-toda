@@ -695,11 +695,11 @@ def GetShanningScore(testing_records, tp_alignments, fn_alignments):
 
 			# compute shannon entropy
 			if (shannon_tp + shannon_fn) == 0:
+				# cases where the position exists only in TP or FN reads
 				shannon_entropy = 0
-				print('equal to 0', num_tp, prob_tp, shannon_tp, num_fn, prob_fn, shannon_fn, shannon_entropy)
 			else:
+				# cases where the position exists in TP and FN reads
 				shannon_entropy = -(shannon_tp + shannon_fn)
-				print(' NOT equal to 0', num_tp, prob_tp, shannon_tp, num_fn, prob_fn, shannon_fn, shannon_entropy)
 		else:
 			shannon_entropy = 0
 
