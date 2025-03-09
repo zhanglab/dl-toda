@@ -274,6 +274,16 @@ def LoadFnaFile(fasta_file):
 	return readsid_to_seq, readsid_to_length, ordered_reads_id
 
 
+def LoadTsvFile(tsv_file):
+	with open(tsv_file, 'r') as f:
+		content = f.readlines()
+	ordered_reads_id = [content[i].rstrip().split('\t')[0] for i in range(len(content))]
+	readsid_to_seq = dict(zip([content[i].rstrip().split('\t')[0] for i in range(len(content))], [content[i].rstrip().split('\t')[1] for i in range(len(content))]))
+	readsid_to_length = dict(zip([content[i].rstrip().split('\t')[0] for i in range(len(content))], [len(content[i].rstrip().split('\t')[1]) for i in range(len(content))]))
+
+	return readsid_to_seq, readsid_to_length, ordered_reads_id
+
+
 def RunBowtie(args, target, query, outfilename):
 	# build index
 	process = subprocess.run([bowtie2_build_exec, '--quiet', '--threads', f'{args.num_processes}', f'{target}', f'{args.output_dir}/train_coverage/ref'])
@@ -847,7 +857,7 @@ if __name__ == "__main__":
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files of training genomes')
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of testing genomes')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
-	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
+	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads from label 0')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	parser.add_argument('--neg_label', type=str, help='label to analyze', required=True)
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
@@ -893,7 +903,10 @@ if __name__ == "__main__":
 	outfile_sum = open(os.path.join(args.output_dir, f'{args.neg_label}_summary.tsv'), 'w')
 
 	# get reads in testing set fasta file
-	test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_fna_file)
+	if args.testing_file[:-3] == 'fna':
+		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_file)
+	elif args.testing_file[:-3] == 'tsv':
+		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
 	
 	# get FP and TP sequences
 	fp_sequences = set()
