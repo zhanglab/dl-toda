@@ -903,9 +903,9 @@ if __name__ == "__main__":
 	outfile_sum = open(os.path.join(args.output_dir, f'{args.neg_label}_summary.tsv'), 'w')
 
 	# get reads in testing set fasta file
-	if args.testing_file[:-3] == 'fna':
+	if args.testing_file[-3:] == 'fna':
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_file)
-	elif args.testing_file[:-3] == 'tsv':
+	elif args.testing_file[-3:] == 'tsv':
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
 	
 	# get FP and TP sequences
