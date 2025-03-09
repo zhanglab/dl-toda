@@ -799,10 +799,16 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
 		if query_fasta.full_genome_length > 4000000:
-			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+			if genomic_islands:
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+			else:
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
 			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		if query_fasta.full_genome_length < 2000000:
-			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb", outer=False,)
+			if genomic_islands:
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb", outer=False,)
+			else:
+				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/500000:.1f} Mb",)
 			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		min_r_pos -= 6
 
