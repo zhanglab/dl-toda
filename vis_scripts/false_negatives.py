@@ -671,7 +671,11 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
-	reads_kept = []
+	fn_reads_kept = []
+	tp_evalue = dict()
+	tp_pident = dict()
+	fn_evalue = dict()
+	fn_pident = dict()
 	for i in range(1, genome_size+1, 1):
 		num_tp = 0
 		num_fn = 0
@@ -682,6 +686,8 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 		for read_id, data in tp_alignments.items():
 			if data[4] == 0 and data[5] == 100 :
 				if i >= data[2] and i <= data[3]:
+					tp_evalue[read_id] = data[4]
+					tp_pident[read_id] = data[5]
 					num_tp += 1
 
 		# check if position is located in a read assigned to FN
@@ -689,6 +695,8 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 			if data[4] == 0 and data[5] == 100 :
 				if i >= data[2] and i <= data[3]:
 					fn_reads.add(read_id)
+					fn_evalue[read_id] = data[4]
+					fn_pident[read_id] = data[5]
 					num_fn += 1
 
 		if num_tp+num_fn > 0:
@@ -696,7 +704,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 			if ratio_fn > 0.5:
 				scores.append(ratio_fn)
-				reads_kept += list(fn_reads)
+				fn_reads_kept += list(fn_reads)
 
 		# # compute probability for each group
 		# if num_tp+num_fn > 0:
@@ -724,6 +732,11 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 	print(f'# fn reads kept: {len(set(reads_kept))}')
 	print(f'scores:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
+	print(f'fn evalue:\nmean\t{statistics.mean(fn_evalue.values())}\nmedian\t{statistics.median(fn_evalue.values())}\nmin\t{min(fn_evalue.values())}\nmax\t{max(fn_evalue.values())}')
+	print(f'tp evalue:\nmean\t{statistics.mean(tp_evalue.values())}\nmedian\t{statistics.median(tp_evalue.values())}\nmin\t{min(tp_evalue.values())}\nmax\t{max(tp_evalue.values())}')
+	print(f'fn pident:\nmean\t{statistics.mean(fn_pident.values())}\nmedian\t{statistics.median(fn_pident.values())}\nmin\t{min(fn_pident.values())}\nmax\t{max(fn_pident.values())}')
+	print(f'tp pident:\nmean\t{statistics.mean(tp_pident.values())}\nmedian\t{statistics.median(tp_pident.values())}\nmin\t{min(tp_pident.values())}\nmax\t{max(tp_pident.values())}')
+
 	return scores
 
 
