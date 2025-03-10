@@ -668,6 +668,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
+	fn_scores = []
 	fn_reads_kept = []
 	tp_reads_kept = []
 	tp_evalue = dict()
@@ -704,6 +705,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 			if ratio_fn > 0.5:
 				scores.append(ratio_fn)
+				fn_scores.append(ratio_fn)
 				fn_reads_kept += list(fn_reads)
 				tp_reads_kept += list(tp_reads)
 			else:
@@ -738,7 +740,8 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 	print(f'# fn reads kept: {len(set(fn_reads_kept))}')
 	print(f'# tp reads kept: {len(set(tp_reads_kept))}')
-	print(f'scores:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
+	print(f'FN rate all positions:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
+	print(f'only FN rate > 0.5:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
 	print(f'fn evalue:\nmean\t{statistics.mean(fn_evalue.values())}\nmedian\t{statistics.median(fn_evalue.values())}\nmin\t{min(fn_evalue.values())}\nmax\t{max(fn_evalue.values())}')
 	print(f'tp evalue:\nmean\t{statistics.mean(tp_evalue.values())}\nmedian\t{statistics.median(tp_evalue.values())}\nmin\t{min(tp_evalue.values())}\nmax\t{max(tp_evalue.values())}')
 	print(f'fn pident:\nmean\t{statistics.mean(fn_pident.values())}\nmedian\t{statistics.median(fn_pident.values())}\nmin\t{min(fn_pident.values())}\nmax\t{max(fn_pident.values())}')
