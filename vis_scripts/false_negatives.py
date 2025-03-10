@@ -1120,7 +1120,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	if genomic_islands:
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
-		Patch(color='black', label=f'{train_strain}\n(training genome)'),
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome)'),
 		Patch(color='darkorange', label='False Negative rate'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
@@ -1178,8 +1178,8 @@ if __name__ == "__main__":
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
 		os.makedirs(os.path.join(args.output_dir, 'blast'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'FP_analysis')):
-		os.makedirs(os.path.join(args.output_dir, 'FP_analysis'))
+	# if not os.path.isdir(os.path.join(args.output_dir, 'fp_analysis')):
+	# 	os.makedirs(os.path.join(args.output_dir, 'fp_analysis'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
@@ -1241,7 +1241,7 @@ if __name__ == "__main__":
 	# # blast testing reads to training genomes from other species
 	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
 	# RunBlast(args, os.path.join(args.output_dir, 'blast'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=training_genomes, outfilename=f'{args.output_dir}/blast/all_test_pos_train_blastn.out')
-	# fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FN_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
+	# fn_alignments_pos_neg_train = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/all_test_pos_train_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'fn_pos_test_neg_train_{args.prob_threshold}_mapping_info.tsv'))
 	# # get taxonomy of mapped training genomes and taxon with most reads mapped
 	# _ = GetFNOtherInfo(args, fn_alignments_pos_test, fn_alignments_pos_neg_train, pos_test_annot_info, test_sequence_length, test_readid_to_read)
 	
