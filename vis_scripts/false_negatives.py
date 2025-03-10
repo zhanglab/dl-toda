@@ -836,22 +836,14 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
-		if query_fasta.full_genome_length > 4000000:
-			if genomic_islands:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
-				min_r_pos -= 6
-			else:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
-				min_r_pos -= 1
-			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
-		if query_fasta.full_genome_length < 2000000:
-			if genomic_islands:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/2000000:.1f} Mb", outer=False,)
-				min_r_pos -= 6
-			else:
-				outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/2000000:.1f} Mb",)
-				min_r_pos -= 1
-			outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		if genomic_islands:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+			min_r_pos -= 6
+		else:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+			min_r_pos -= 1
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+
 		
 
 		# create tracks for genomics features
@@ -954,8 +946,6 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
 	# colors = ["black", "gray"]
-	# store percentage identity between matching regions
-	percent_identity = []
 	# run blast using pygenomeviz
 	# align_coords = Blast([query_fasta, ref_fasta]).run()
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
@@ -965,7 +955,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
-	matching_regions = []
+	# matching_regions = []
+	# count the number of identical positions across the aligned regions
+	identical_positions = 0
+	# store percentage identity between matching regions
+	percent_identity = []
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
@@ -974,54 +968,57 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			print(f'{ac[2]}\t{ac[0]}\t{ac[1]}\t{(ac[1]-ac[0])}\t{ac[2]/100*(ac[1]-ac[0])}')
 			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
 			blast_track.rect(ac[0], ac[1], color=rect_color)
-			matching_regions.append([ac[0], ac[1], ac[2]])
+			# matching_regions.append([ac[0], ac[1], ac[2]])
 			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
-	pos_matching_regions = set()
-	for i in range(len(matching_regions)):
-		for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
-			pos_matching_regions.add(j)
+	# pos_matching_regions = set()
+	# for i in range(len(matching_regions)):
+	# 	for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
+	# 		pos_matching_regions.add(j)
 
-	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
+	# pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
 
-	fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
-	for read_id, data in fn_alignments_pos_test.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or \
-				(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or  \
-				(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-				(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				fn_matching_regions.add(read_id)
-	fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
+	# fn_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
+	# for read_id, data in fn_alignments_pos_test.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or \
+	# 			(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or  \
+	# 			(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
+	# 			(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			fn_matching_regions.add(read_id)
+	# fn_not_matching_regions = [r for r in fn_alignments_pos_test.keys() if r not in fn_matching_regions]	
 
-	tp_matching_regions = set()
-	for read_id, data in tp_alignments_pos_test.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or \
-				(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or \
-				(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-				(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				tp_matching_regions.add(read_id)
-	tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
+	# tp_matching_regions = set()
+	# for read_id, data in tp_alignments_pos_test.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or \
+	# 			(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or \
+	# 			(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
+	# 			(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			tp_matching_regions.add(read_id)
+	# tp_not_matching_regions = [r for r in tp_alignments_pos_test.keys() if r not in tp_matching_regions]
 			
-	with open(os.path.join(args.output_dir, f'{args.label}_FN_TP_matching_regions.tsv'), 'w') as f:
-		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}')
-		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}')
+	# with open(os.path.join(args.output_dir, f'{args.label}_fn_tp_matching_regions.tsv'), 'w') as f:
+	# 	f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}\n')
+	# 	f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}\n')
+	# 	f.write(f'% of FN reads mapped to matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_matching_regions)/len(fn_sequences), 3)*100}\n')
+	# 	f.write(f'% of FN reads mapped to not matching regions\t{len(fn_matching_regions)}\t{len(fn_not_matching_regions)}\t{len(fn_alignments_pos_test)}\t{round(len(fn_not_matching_regions)/len(fn_sequences), 3)*100}\n')
+	# 	f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_matching_regions)/len(tp_sequences), 3)*100}\n')
+	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}\n')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{identical_positions/query_fasta.full_genome_length*100}%\n')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
@@ -1031,11 +1028,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="darkorange")
-		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores)), 1))
+		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
 		scores_track.line(genome_pos, scores, color="darkorange")
-		print(f'added Scores track')
+		print(f'added FN rate track')
 
 		# add track for TP reads
 		min_r_pos -= 13
@@ -1105,10 +1102,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
 		# get average GC content for FN and TP reads
-		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'FN')
-		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'TP')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'FN_relative')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'TP_relative')
+		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'fn')
+		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'tp')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'fn_relative')
+		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'tp_relative')
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
@@ -1124,7 +1121,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
 		Patch(color='black', label=f'{train_strain}\n(training genome)'),
-		Patch(color='darkorange', label='Scores'),
+		Patch(color='darkorange', label='False Negative rate'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
 		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
@@ -1217,12 +1214,12 @@ if __name__ == "__main__":
 	print(f'#TP for label {args.label}: {len(tp_sequences)}')
 	print(f'#FP for label {args.label}: {len(fp_sequences)}')
 	outfile_sum.write(f'{len(fn_sequences)}\t{len(fp_sequences)}\t{len(tp_sequences)}\n')
-	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'FN')
-	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'TP')
-	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'FP')
-	StoreCS(args, fn_cs, 'FN')
-	StoreCS(args, tp_cs, 'TP')
-	StoreCS(args, fp_cs, 'FP')
+	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'fn')
+	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tp')
+	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'fp')
+	StoreCS(args, fn_cs, 'fp')
+	StoreCS(args, tp_cs, 'tp')
+	StoreCS(args, fp_cs, 'fp')
 
 	# get association between sequences in training set and labels
 	with open(args.sequences_info, 'r') as f:
@@ -1239,7 +1236,7 @@ if __name__ == "__main__":
 	# blast testing reads to testing genome		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.label}_test_reads.fna'), subject=[testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false negatives to testing genome from label 1
-	fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/FN_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	fn_alignments_pos_test = GetReadsAlignments(fn_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/fn_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 
 	# # blast testing reads to training genomes from other species
 	# training_genomes = [v[1] for k, v in args.train_genomes_info.items() if k != args.label]
@@ -1250,15 +1247,15 @@ if __name__ == "__main__":
 	
 	# do TP analysis
 	# get mapping of true positives to testing genome from label 1
-	tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/TP_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
+	tp_alignments_pos_test = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/tp_pos_test_pos_test_{args.prob_threshold}_mapping_info.tsv'))
 	# _ = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, 'TP')
 
-	# get shannon entropy scores
+	# get false negative or false positive rate
 	scores, fn_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
 
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
-	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'FN')
+	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'fn')
 
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
@@ -1278,69 +1275,69 @@ if __name__ == "__main__":
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
 		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), scores, genomic_islands=gis_align)
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores, genomic_islands=gis_align)
 	else:
 		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FN_genes_circos.tsv'), scores)
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores)
 	
-	# # # do FP analysis
-	# # # blast FP reads to ncbi nt database
-	# # with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
-	# # 	for k, v in test_readid_to_read.items():
-	# # 		if k in fp_sequences:
-	# # 			outf.write(f'>{k}\n{v}\n')
-	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
+	# # do FP analysis
+	# # blast FP reads to ncbi nt database
+	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
+	# 	for k, v in test_readid_to_read.items():
+	# 		if k in fp_sequences:
+	# 			outf.write(f'>{k}\n{v}\n')
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), db=True)		
 
-	# # # blast FP reads to train genome of label 1
-	# # # create fasta file with all FP reads
-	# # with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
-	# # 	for k, v in readid_to_read.items():
-	# # 		if k in fp_sequences:
-	# # 			outf.write(f'>{k}\n{v}\n')
+	# # blast FP reads to train genome of label 1
+	# # create fasta file with all FP reads
+	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), 'w') as outf:
+	# 	for k, v in readid_to_read.items():
+	# 		if k in fp_sequences:
+	# 			outf.write(f'>{k}\n{v}\n')
 
-	# # RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
+	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
 
-	# fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	# fp_taxa = defaultdict(int)
-	# print(f'# labels: {len(fp_labels)}')
+	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+	fp_taxa = defaultdict(int)
+	print(f'# labels: {len(fp_labels)}')
 	# outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
 
-	# for label in fp_labels:
-	# 	print(f'label: {label}')
-	# 	label_testing_fasta = args.test_genomes_info[label][1]
-	# 	label_testing_genome = args.test_genomes_info[label][0]
+	for label in fp_labels:
+		print(f'label: {label}')
+		# label_testing_fasta = args.test_genomes_info[label][1]
+		# label_testing_genome = args.test_genomes_info[label][0]
 
-	# 	# get fp sequences of label and create fasta file
-	# 	label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
+		# get fp sequences of label
+		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
 		
-	# 	mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
-	# 	if not os.path.isdir(mapping_output_dir):
-	# 		os.makedirs(mapping_output_dir)
+		# mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
+		# if not os.path.isdir(mapping_output_dir):
+		# 	os.makedirs(mapping_output_dir)
 
-	# 	with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
-	# 		for k, v in test_readid_to_read.items():
-	# 			if k in label_sequences:
-	# 				outf.write(f'>{k}\n{v}\n')
+		# with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
+		# 	for k, v in test_readid_to_read.items():
+		# 		if k in label_sequences:
+		# 			outf.write(f'>{k}\n{v}\n')
 
-	# 	# run blast
-	# 	RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
+		# # run blast
+		# RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
 
-	# 	# get alignments info
-	# 	fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
-	# 	if label_testing_genome == 'GCF_004421065.1':
-	# 		print(fp_alignments)
-	# 	# get annotations info
-	# 	neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
+		# # get alignments info
+		# fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 
-	# 	if len(neg_test_annot_info) != 0:
-	# 		# get genes 
-	# 		_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
+		# # get annotations info
+		# neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
 
-	# 	else:
-	# 		print(f'No annotations for genome {label_testing_genome}')
+		# if len(neg_test_annot_info) != 0:
+		# 	# get genes
+		# 	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fp_alignments)
+		# 	_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
 
-	# 	# monitor number of sequences per label
-	# 	fp_taxa[label] = len(label_sequences)
+		# else:
+		# 	print(f'No annotations for genome {label_testing_genome}')
+
+		# monitor number of sequences per label
+		fp_taxa[label] = len(label_sequences)
 
 	# genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
 	# functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
@@ -1354,11 +1351,12 @@ if __name__ == "__main__":
 	# ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
 	# ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
 
-	# fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_neg_taxa.tsv'), 'w') as f:
-	# 	for k, v in fp_taxa_sorted.items():
-	# 		f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
+	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+		for k, v in fp_taxa_sorted.items():
+			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 	
+	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.tsv'))
 	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
 	# 	f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
