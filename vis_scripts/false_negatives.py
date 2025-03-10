@@ -591,12 +591,15 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
 
 	genes_of_interest = defaultdict(list)
-	for pos, list_readid in pos_readid.items():
-		if len(list_readid) >= 3:
-			for readid in list_readid:
-				if readid in readid_w_gene:
-					gene_id = readid_w_gene[readid][2]
-					genes_of_interest[gene_id] = genes[gene_id]
+	for readid in readid_w_gene.keys():
+		gene_id = readid_w_gene[readid][2]
+		genes_of_interest[gene_id] = genes[gene_id]
+	# for pos, list_readid in pos_readid.items():
+	# 	if len(list_readid) >= 3:
+	# 		for readid in list_readid:
+	# 			if readid in readid_w_gene:
+	# 				gene_id = readid_w_gene[readid][2]
+	# 				genes_of_interest[gene_id] = genes[gene_id]
 
 	reads_wo_genes = []
 	if len(readid_w_gene) != len(alignments):
