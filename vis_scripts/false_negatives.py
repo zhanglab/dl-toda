@@ -602,9 +602,9 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 	# 				genes_of_interest[gene_id] = genes[gene_id]
 
 	reads_wo_genes = []
-	if len(readid_w_gene) != len(alignments):
+	if len(readid_w_gene) != len(fn_alignments):
 		with open(os.path.join(output_dir, f'{label}_{type}_reads_wo_gene_{args.prob_threshold}.tsv'), 'w') as f:
-			for readid, data in alignments.items():
+			for readid, data in fn_alignments.items():
 				if readid not in readid_w_gene:
 					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
 					reads_wo_genes.append(readid)
