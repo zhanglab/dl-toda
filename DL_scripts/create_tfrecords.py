@@ -206,6 +206,8 @@ def create_tfrecords(args):
                         dna_list = prepare_input_data(args, dna_sequence)  
                     if args.update_labels:
                         label = int(args.labels_mapping[label])
+                    else:
+                        label = int(label)
 
                     if count == 0:
                         reconstructed_token_list = []
