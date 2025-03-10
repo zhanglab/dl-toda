@@ -706,6 +706,10 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 				scores.append(ratio_fn)
 				fn_reads_kept += list(fn_reads)
 				tp_reads_kept += list(tp_reads)
+			else:
+				scores.append(0)
+		else:
+			scores.append(0)
 
 		# # compute probability for each group
 		# if num_tp+num_fn > 0:
@@ -730,6 +734,7 @@ def GetScores(testing_records, tp_alignments, fn_alignments):
 
 		# scores.append(shannon_entropy)
 
+	assert len(scores) == genome_size, f'{genome_size}\t{len(scores)}'
 
 	print(f'# fn reads kept: {len(set(fn_reads_kept))}')
 	print(f'# tp reads kept: {len(set(tp_reads_kept))}')
@@ -780,7 +785,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
 			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, \
-			outfilename, shannon_scores, genomic_islands=None):
+			outfilename, scores, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -1026,10 +1031,10 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="darkorange")
-		y_values = list(range(math.floor(min(shannon_scores)), math.ceil(max(shannon_scores)), 1))
+		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores)), 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
-		scores_track.line(genome_pos, shannon_scores, color="darkorange")
+		scores_track.line(genome_pos, scores, color="darkorange")
 		print(f'added Scores track')
 
 		# add track for TP reads
