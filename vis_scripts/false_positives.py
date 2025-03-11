@@ -181,7 +181,7 @@ def CheckGenomes(args, label):
 	assert len(test_records) == 1, f'{label}\t{args.testing_genomes} has more than 1 chromosome'
 	assert len(train_records) == 1, f'{label}\t{args.train_genomes_info[label][0]} has more than 1 chromosome'
 
-	return args.testing_fasta, test_records, args.train_genomes_info[label][1], train_records
+	return args.testing_fasta, test_records, args.train_genomes_info[args.pos_label][1], train_records
 
 
 def GetGCSkew(sequence):
