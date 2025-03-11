@@ -171,7 +171,7 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 
 def CheckGenomes(args):
 	# load testing fasta file
-	with open(args.test_genomes_info[args.label][1], "r") as handle:
+	with open(args.testing_fasta, "r") as handle:
 		test_records = list(SeqIO.parse(handle, "fasta"))
 
 	# load training fasta file
@@ -181,7 +181,7 @@ def CheckGenomes(args):
 	assert len(test_records) == 1, f'{arg.label}\t{args.test_genomes_info[args.label][0]} has more than 1 chromosome'
 	assert len(train_records) == 1, f'{arg.label}\t{args.train_genomes_info[args.label][0]} has more than 1 chromosome'
 
-	return args.test_genomes_info[args.label][1], test_records, args.train_genomes_info[args.label][1], train_records
+	return args.testing_fasta, test_records, args.train_genomes_info[args.label][1], train_records
 
 
 def GetGCSkew(sequence):
@@ -1141,9 +1141,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files')
-	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of training genomes')
+	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of testing genomes')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
-	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing all testing reads (label 1 and 0)')
+	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing testing reads')
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--label', type=str, help='label of species investigated', required=True)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
@@ -1164,10 +1164,10 @@ if __name__ == "__main__":
 		content = in_f.readlines()
 		args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# retrieve accession and fasta files of testing and training genomes associated with each label
-	with open(args.testing_fasta, 'r') as f:
-		content = f.readlines()
-		args.test_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
+	# # retrieve accession and fasta files of testing and training genomes associated with each label
+	# with open(args.testing_fasta, 'r') as f:
+	# 	content = f.readlines()
+	# 	args.test_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	with open(args.training_fasta, 'r') as f:
 		content = f.readlines()
@@ -1300,68 +1300,69 @@ if __name__ == "__main__":
 
 	# RunBlast(args, os.path.join(args.output_dir, 'mapping'), os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), subject=[args.train_genomes_info[args.label][1]], outfilename=f'{args.output_dir}/mapping/FP_pos_train_blastn.out')
 
-	fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
-	fp_taxa = defaultdict(int)
-	print(f'# labels: {len(fp_labels)}')
-	# outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
+	if len(fp_sequences) > 0:
+		fp_labels = set([s.split('|')[1] for s in list(fp_sequences)])
+		fp_taxa = defaultdict(int)
+		print(f'# labels: {len(fp_labels)}')
+		# outf = open(os.path.join(args.output_dir, 'FP_analysis', f'{args.label}_{args.prob_threshold}_FP_neg_genes.tsv'), 'w')
 
-	for label in fp_labels:
-		print(f'label: {label}')
-		# label_testing_fasta = args.test_genomes_info[label][1]
-		# label_testing_genome = args.test_genomes_info[label][0]
+		for label in fp_labels:
+			print(f'label: {label}')
+			# label_testing_fasta = args.test_genomes_info[label][1]
+			# label_testing_genome = args.test_genomes_info[label][0]
 
-		# get fp sequences of label
-		label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
+			# get fp sequences of label
+			label_sequences = set([seq_id for seq_id in fp_sequences if seq_id.split('|')[1] == label])
+			
+			# mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
+			# if not os.path.isdir(mapping_output_dir):
+			# 	os.makedirs(mapping_output_dir)
+
+			# with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
+			# 	for k, v in test_readid_to_read.items():
+			# 		if k in label_sequences:
+			# 			outf.write(f'>{k}\n{v}\n')
+
+			# # run blast
+			# RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
+
+			# # get alignments info
+			# fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+
+			# # get annotations info
+			# neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
+
+			# if len(neg_test_annot_info) != 0:
+			# 	# get genes
+			# 	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fp_alignments)
+			# 	_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
+
+			# else:
+			# 	print(f'No annotations for genome {label_testing_genome}')
+
+			# monitor number of sequences per label
+			fp_taxa[label] = len(label_sequences)
+
+		# genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
+		# functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
+		# geneinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_info_{args.prob_threshold}.tsv'))
+		# readswogenesinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.tsv'))
+		# readswogenesfna_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.fna'))
+
+		# ConcatenateFiles(genetypes_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_type_{args.prob_threshold}.tsv'), "gene_type")
+		# ConcatenateFiles(functions_files, os.path.join(args.output_dir, f'{args.label}_FP_functions_{args.prob_threshold}.tsv'), "function")
+		# ConcatenateFiles(geneinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_info_{args.prob_threshold}.tsv'), "gene_info")
+		# ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
+		# ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
+
+		fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
+		with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
+			for k, v in fp_taxa_sorted.items():
+				f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 		
-		# mapping_output_dir = f'{args.output_dir}/blast/label0/testing-genome/{label}'
-		# if not os.path.isdir(mapping_output_dir):
-		# 	os.makedirs(mapping_output_dir)
-
-		# with open(os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), 'w') as outf:
-		# 	for k, v in test_readid_to_read.items():
-		# 		if k in label_sequences:
-		# 			outf.write(f'>{k}\n{v}\n')
-
-		# # run blast
-		# RunBlast(args, mapping_output_dir, os.path.join(mapping_output_dir, f'{label}_FP_reads.fna'), subject=[label_testing_fasta], outfilename=os.path.join(mapping_output_dir, 'test_test_blastn.out'))
-
-		# # get alignments info
-		# fp_alignments = GetReadsAlignments(label_sequences, os.path.join(mapping_output_dir, 'test_test_blastn.out'), test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'FP_neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
-
-		# # get annotations info
-		# neg_test_annot_info, _ = GetAnnotInfo(args, label_testing_genome, input_dir)
-
-		# if len(neg_test_annot_info) != 0:
-		# 	# get genes
-		# 	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fp_alignments)
-		# 	_ = GetGenes(args, label, os.path.join(args.output_dir, 'FP_analysis'), neg_test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
-
-		# else:
-		# 	print(f'No annotations for genome {label_testing_genome}')
-
-		# monitor number of sequences per label
-		fp_taxa[label] = len(label_sequences)
-
-	# genetypes_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_type_{args.prob_threshold}.tsv'))
-	# functions_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_functions_{args.prob_threshold}.tsv'))
-	# geneinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_genes_info_{args.prob_threshold}.tsv'))
-	# readswogenesinfo_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.tsv'))
-	# readswogenesfna_files = glob.glob(os.path.join(args.output_dir, 'FP_analysis', f'*_FP_reads_wo_gene_{args.prob_threshold}.fna'))
-
-	# ConcatenateFiles(genetypes_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_type_{args.prob_threshold}.tsv'), "gene_type")
-	# ConcatenateFiles(functions_files, os.path.join(args.output_dir, f'{args.label}_FP_functions_{args.prob_threshold}.tsv'), "function")
-	# ConcatenateFiles(geneinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_genes_info_{args.prob_threshold}.tsv'), "gene_info")
-	# ConcatenateFiles(readswogenesinfo_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.tsv'), "reads_wo_genes")
-	# ConcatenateFiles(readswogenesfna_files, os.path.join(args.output_dir, f'{args.label}_FP_reads_wo_gene_{args.prob_threshold}.fna'), "reads_wo_genes")
-
-	fp_taxa_sorted = dict(sorted(fp_taxa.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_neg_taxa.tsv'), 'w') as f:
-		for k, v in fp_taxa_sorted.items():
-			f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
-	
-	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.tsv'))
-	# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
-	# 	f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
+		CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads.tsv'))
+		# with open(os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_FP_reads.fq'), 'w') as f:
+		# 	f.write(''.join([f'>{r}\n{test_readid_to_read[r]}\n' for r in list(fp_sequences)]))
 
 
 
