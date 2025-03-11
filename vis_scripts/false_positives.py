@@ -1132,7 +1132,7 @@ if __name__ == "__main__":
 	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
 	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
-			os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'),)
+			os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'), scores)
 
 
 
