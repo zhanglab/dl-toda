@@ -1121,7 +1121,7 @@ if __name__ == "__main__":
 	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get false negative or false positive rate
-	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments, fp_alignments_pos)
+	scores, fp_reads_kept, tp_reads_kept = GetScores(neg_testing_records, tp_alignments, fp_alignments_pos)
 
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
