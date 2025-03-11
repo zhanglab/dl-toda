@@ -566,6 +566,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				seq_label = seq_to_labels[seq_id]
 				evalue = float(line.rstrip().split(',')[7])
 				pident = float(line.rstrip().split(',')[8])
+				strand = line.rstrip().split(',')[11]
 				if readid in alignments:
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
 						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]
