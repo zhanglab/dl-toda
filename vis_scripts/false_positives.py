@@ -69,8 +69,8 @@ def GetGIAlignments(input_file):
 	return alignments
 
 def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
-	outf = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_gis.tsv'), 'w')
-	fna = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{args.testing_genome}_{genome_id}_gis.tsv'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{args.testing_genome}_{genome_id}_genomic_islands.fna'), 'w')
 
 	# get gene annotations 
 	pos_train_annot_info, locus_tags_info = GetAnnotInfo(args, genome_id, input_dir)
@@ -112,14 +112,14 @@ def GetGIsFromAnnotations(args, input_dir, sequence, genome_id, fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_{genome_id}_genomic_islands.fna'), subject=[fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 
 	return gis_align
 
 
 def GetGIsFromFasta(args, genome_id, ref_fasta):
-	fna = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), 'w')
+	fna = open(os.path.join(args.output_dir, f'{genome_id}_genomic_islands.fna'), 'w')
 	fasta_files = glob.glob(os.path.join(args.genomic_islands, '*.fna'))
 	info_file = glob.glob(os.path.join(args.genomic_islands, '*.tsv'))[0]
 	for fasta in fasta_files:
@@ -128,10 +128,10 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 	fna.close()
 
 	# blast GIs start and end loci to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', f'gis_{genome_id}_genome'), os.path.join(args.output_dir, f'{genome_id}_genomic_islands.fna'), subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	gis_align = GetGIAlignments(f'{args.output_dir}/blast/gis_{genome_id}_genome/gis_blastn.out')
 	# update GIs ID if the information provided consists of the junction sites and not the entire island
-	outf = open(os.path.join(args.output_dir, f'{args.neg_label}_{genome_id}_gis.tsv'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{genome_id}_gis.tsv'), 'w')
 	with open(info_file, 'r') as f:
 		for line in f:
 			gi_id = line.rstrip().split('\t')[1]
@@ -257,7 +257,7 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 			print(f'{readid}\t{data}\t{read_gc}\t{ave_read_gc}\t{read_pos}')
 		reads_gc_content.append(ave_read_gc)
 
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_{type}_gc_content.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{type}_gc_content.tsv'), 'w') as f:
 		f.write(f'#reads\t{len(reads_gc_content)}\n'
 				f'mean\t{statistics.mean(reads_gc_content)}\n'
 				f'median\t{statistics.median(reads_gc_content)}\n'
@@ -668,7 +668,7 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 
 
 def StoreCS(args, list_cs, type):
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join([str(x) for x in list_cs]))
 
 
@@ -677,7 +677,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 		seq_length_info = [sequence_length[s] for s in sequences_id]
 		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
 
-		with open(os.path.join(args.output_dir, f'{args.neg_label}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
+		with open(os.path.join(args.output_dir, f'{args.testing_genome}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
 			f.write('\n'.join([str(x) for x in seq_length_info]))
 
 
@@ -708,7 +708,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	test_strain = GetGenomesInfo(testing_fasta)
 	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_genomes_length.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Label 0 testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
 		f.write(f'Label 1 training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
@@ -816,8 +816,8 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# align_coords = Blast([query_fasta, ref_fasta]).run()
 	# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 	# run blast 		
-	RunBlast(args, os.path.join(args.output_dir, 'blast', args.neg_label, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.neg_label}/test_train_genomes/test_train_genomes_blastn.out')
-	align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{args.neg_label}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	RunBlast(args, os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 	# count the number of identical positions across the aligned regions
 	identical_positions = 0
 	# color = ColorCycler()
@@ -894,7 +894,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 
 	# get stats on percentage identity
 	pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_pct_identity_matching_regions.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
 		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{pct_identity}%\n')
 		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
@@ -980,7 +980,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		
 		# report GC content of train and test genomes
 		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		with open(os.path.join(args.output_dir, f'{args.neg_label}_GC_content.tsv'), 'w') as f:
+		with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
 			f.write(f'Testing genome:\t{test_genome_gc_content}')
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
@@ -1025,8 +1025,8 @@ if __name__ == "__main__":
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads from label 0')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
-	parser.add_argument('--neg_label', type=str, help='label to analyze', required=True)
 	parser.add_argument('--pos_label', type=str, help='positive label', required=True)
+	parser.add_argument('--neg_label', type=str, help='negative label', required=True)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
 	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
@@ -1054,11 +1054,11 @@ if __name__ == "__main__":
 		args.train_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	# verify that the genomes investigated only have one chromosome
-	neg_testing_fasta, neg_testing_records, _, _ = CheckGenomes(args, args.neg_label)
+	neg_testing_fasta, neg_testing_records, _, _ = CheckGenomes(args, args.testing_genome)
 	_, _, pos_training_fasta, pos_training_records = CheckGenomes(args, args.pos_label)
 	
 	# create output directories
-	args.output_dir = os.path.join(os.getcwd(), args.pos_label, args.neg_label)
+	args.output_dir = os.path.join(os.getcwd(), args.pos_label, args.testing_genome)
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
@@ -1066,7 +1066,7 @@ if __name__ == "__main__":
 	if not os.path.isdir(os.path.join(args.output_dir, 'Genomes_GTF_missing')):
 		os.makedirs(os.path.join(args.output_dir, 'Genomes_GTF_missing'))
 
-	outfile_sum = open(os.path.join(args.output_dir, f'{args.neg_label}_summary.tsv'), 'w')
+	outfile_sum = open(os.path.join(args.output_dir, f'{args.testing_genome}_summary.tsv'), 'w')
 
 	# get reads in testing set fasta file
 	if args.testing_file[-3:] == 'fna':
@@ -1094,8 +1094,8 @@ if __name__ == "__main__":
 						tp_cs.append(prob)
 
 
-	print(f'#FP for label {args.neg_label}: {len(fp_sequences)}')
-	print(f'#TP for label {args.neg_label}: {len(tp_sequences)}')
+	print(f'#FP for genome {args.testing_genome}: {len(fp_sequences)}')
+	print(f'#TP for genome {args.testing_genome}: {len(tp_sequences)}')
 	outfile_sum.write(f'{len(fp_sequences)}\t{len(tp_sequences)}\n')
 	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'fp')
 	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tp')
@@ -1108,13 +1108,13 @@ if __name__ == "__main__":
 		seq_to_labels = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
 	# create fasta file with testing reads from label 0
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_test_reads.fna'), 'w') as outf:
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), 'w') as outf:
 		for k, v in test_readid_to_read.items():
 			if k in fp_sequences or k in tp_sequences:
 				outf.write(f'>{k}\n{v}\n')
 
 	# blast testing reads to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.neg_label}_test_reads.fna'), subject=[neg_testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
+	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), subject=[neg_testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false and true positives to testing genome
 	fp_alignments = GetReadsAlignments(fp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
@@ -1123,14 +1123,14 @@ if __name__ == "__main__":
 	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments, fp_alignments_pos)
 
 	# get annotations info
-	test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.neg_label][0], input_dir)
-	fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
+	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
+	fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
 	# tp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, tp_alignments, test_sequence_length, test_readid_to_read, 'TP')
 
 	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
 	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
-			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_genes_circos.tsv'),)
+			os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'),)
 
 
 
