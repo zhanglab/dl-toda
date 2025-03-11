@@ -1152,6 +1152,7 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
 	parser.add_argument('--genomic_islands', type=str, help='path to file containing list of genomic islands')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
+	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	args = parser.parse_args()
 
 	input_dir = os.getcwd()
@@ -1176,7 +1177,6 @@ if __name__ == "__main__":
 	testing_fasta, testing_records, training_fasta, training_records = CheckGenomes(args)
 	
 	# create output directories
-	args.output_dir = os.path.join(os.getcwd(), args.label)
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
