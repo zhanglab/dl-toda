@@ -575,10 +575,18 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 			(start_pos <= annot[1] and end_pos >= annot[1]) or \
 			(start_pos >= annot[1] and end_pos <= annot[2]) or \
 			(start_pos <= annot[2] and end_pos >= annot[2]):
+				if (start_pos <= annot[1] and end_pos >= annot[2]):
+					length_mapped_seq = 100
+				elif (start_pos <= annot[1] and end_pos >= annot[1]):
+					length_mapped_seq = (end_pos - annot[1])/(annot[2]- annot[1])*100
+				elif (start_pos >= annot[1] and end_pos <= annot[2]):
+					length_mapped_seq = (end_pos - start_pos)/(annot[2]- annot[1])*100
+				elif (start_pos <= annot[2] and end_pos >= annot[2]):
+					length_mapped_seq = (annot[2] - start_pos)/(annot[2]- annot[1])*100
 				if annot[0] == 'protein_coding':
 					functions[annot[5]] += 1
 				genes[gene_id] = annot
-				readid_w_gene[readid] = [data[2], data[3], gene_id]
+				readid_w_gene[readid] = [data[2], data[3], gene_id, length_mapped_seq]
 				genestype[annot[0]] += 1
 
 	# pos_readid_count = [len(v) for v in pos_readid.values()]
@@ -591,9 +599,14 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
 
 	genes_of_interest = defaultdict(list)
+	genes_of_interest_count = defaultdict(int)
+	genes_of_interest_stat = defaultdict(list)
 	for readid in readid_w_gene.keys():
 		gene_id = readid_w_gene[readid][2]
 		genes_of_interest[gene_id] = genes[gene_id]
+		genes_of_interest_stat[gene_id] += 1
+		genes_of_interest_stat[gene_id] += [readid_w_gene[readid][3]]
+
 	# for pos, list_readid in pos_readid.items():
 	# 	if len(list_readid) >= 3:
 	# 		for readid in list_readid:
@@ -614,12 +627,12 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 	else:
 		print('all reads were found a gene')
 
-	with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
-		for gene_id, annot in genes_of_interest.items():
-			if annot[0] == 'protein_coding':
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\n')
-			else:
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\n')
+	# with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
+	# 	for gene_id, annot in genes_of_interest.items():
+	# 		if annot[0] == 'protein_coding':
+	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+	# 		else:
+	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(output_dir, f'{label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
@@ -630,7 +643,7 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 	with open(os.path.join(output_dir, f'{label}_{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
 
-	return genes_of_interest
+	return genes_of_interest, genes_of_interest_count, genes_of_interest_stat
 
 
 def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
@@ -787,8 +800,8 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 
 
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, outfigpath, \
-			outfilename, scores, genomic_islands=None):
+			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, \
+			genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -934,9 +947,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			gene_type = feature.qualifiers.get("gene_type", [None])[0]
 			if gene_type == 'protein_coding':
 				function = feature.qualifiers.get("function", [None])[0]
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 			else:
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
 		# 	if label == None:
 		# 		continue
@@ -1259,7 +1272,7 @@ if __name__ == "__main__":
 
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
-	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'fn')
+	genes_of_interest, genes_of_interest_count, genes_of_interest_stat = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'fn')
 
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
@@ -1278,10 +1291,10 @@ if __name__ == "__main__":
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, genes_of_interest_stat,
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores, genomic_islands=gis_align)
 	else:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, 
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, genes_of_interest_stat,
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores)
 	
 	# # do FP analysis
