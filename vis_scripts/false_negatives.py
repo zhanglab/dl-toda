@@ -178,7 +178,7 @@ def CheckGenomes(args):
 	with open(args.train_genomes_info[args.label][1], "r") as handle:
 		train_records = list(SeqIO.parse(handle, "fasta"))
 
-	assert len(test_records) == 1, f'{arg.label}\t{args.test_genomes_info[args.label][0]} has more than 1 chromosome'
+	assert len(test_records) == 1, f'{arg.label}\t{args.testing_genome} has more than 1 chromosome'
 	assert len(train_records) == 1, f'{arg.label}\t{args.train_genomes_info[args.label][0]} has more than 1 chromosome'
 
 	return args.testing_fasta, test_records, args.train_genomes_info[args.label][1], train_records
@@ -1142,6 +1142,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files')
 	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of testing genomes')
+	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing testing reads')
 	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
@@ -1257,7 +1258,7 @@ if __name__ == "__main__":
 	scores, fn_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments_pos_test, fn_alignments_pos_test)
 
 	# get annotations info
-	pos_test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.label][0], input_dir)
+	pos_test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	genes_of_interest = GetGenes(args, args.label, args.output_dir, pos_test_annot_info, fn_alignments_pos_test, fn_reads_kept, test_sequence_length, test_readid_to_read, 'fn')
 
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
@@ -1273,7 +1274,7 @@ if __name__ == "__main__":
 	# get info about genomic islands
 	if args.genomic_islands is not None:
 		if os.path.isdir(args.genomic_islands):
-			gis_align = GetGIsFromFasta(args, args.test_genomes_info[args.label][0], testing_fasta)
+			gis_align = GetGIsFromFasta(args, args.testing_genome, testing_fasta)
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
