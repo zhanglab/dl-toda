@@ -414,41 +414,117 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		return annot_info, locus_tags_info
 
 
-def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, readid_to_read, type):
-	# get length and function of fn sequences per mapped position on the genome investigated
+def GetReadsForAttentions(args, tp_alignments_pos_test, fp_alignments_pos_test, test_readid_to_read):
+	reads = []
+	reads_id = {}
+	for fp_readid, fp_data in fp_alignments_pos_test.items():
+		if fp_data[2] < fp_data[3]:
+			fp_start_pos = fp_data[2]
+			fp_end_pos = fp_data[3]
+		else:
+			fp_start_pos = fp_data[3]
+			fp_end_pos = fp_data[2]
+		fp_strand = fp_data[6]
+
+		for tp_readid, tp_data in tp_alignments_pos_test.items():
+			if tp_data[2] < tp_data[3]:
+				tp_start_pos = tp_data[2]
+				tp_end_pos = tp_data[3]
+			else:
+				tp_start_pos = tp_data[3]
+				tp_end_pos = tp_data[2]
+			tp_strand = tp_data[6]
+
+			if (tp_start_pos < fp_end_pos and tp_end_pos > fp_start_pos) or \
+				(fp_start_pos < tp_end_pos and fp_end_pos > tp_start_pos) or \
+				(tp_start_pos < fp_start_pos and tp_end_pos > fp_end_pos) or \
+				(fp_start_pos < tp_start_pos and fp_end_pos > tp_end_pos):
+				if tp_strand == 'plus' and fp_strand == 'plus':
+					if abs(len(test_readid_to_read[fp_readid])-len(test_readid_to_read[tp_readid])) < 200:
+						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+							fp_readid.split('|')[2], f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}', len(test_readid_to_read[fp_readid]), fp_strand])
+						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+						reads_id[fp_readid] = f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}'
+
+	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_reads.tsv'), 'w')
+	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fp_tp_id.tsv'), 'w')
+	for r in reads:
+		sum_file.write(f'{r[0]}')
+		for idx in range(1, len(r), 1):
+			sum_file.write(f'\t{r[idx]}')
+		sum_file.write('\n')
+	for k, v in reads_id.items():
+		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+	tsv_file.close()
+	sum_file.close()
+
+
+def GetGenes(args, label, output_dir, annot_info, fp_alignments, fp_reads_kept, sequence_length, readid_to_read, type):
+	# get length and function of fp sequences per mapped position on the genome investigated
 	genes = defaultdict(list)
 	functions = defaultdict(int)
 	genestype = defaultdict(int)
 	readid_w_gene = defaultdict(list)
-	pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
+	# pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
 
-	for readid, data in alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for pos in range(start_pos, end_pos+1, 1):
-			pos_readid[pos-1].append(readid)
+	for readid in fp_reads_kept:
+		data = fp_alignments[readid]
+		if data[2] < data[3]:
+			start_pos = data[2]
+			end_pos = data[3]
+		else:
+			start_pos = data[3]
+			end_pos = data[2]
+		# for pos in range(start_pos, end_pos+1, 1):
+		# 	pos_readid[pos-1].append(readid)
 		for gene_id, annot in annot_info.items():
-			if (start_pos <= annot[1] and end_pos >= annot[2]) or (start_pos <= annot[1] and end_pos >= annot[1]) or (start_pos >= annot[1] and end_pos <= annot[2]) or (start_pos <= annot[2] and end_pos >= annot[2]):
+			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
+			(start_pos <= annot[1] and end_pos >= annot[1]) or \
+			(start_pos >= annot[1] and end_pos <= annot[2]) or \
+			(start_pos <= annot[2] and end_pos >= annot[2]):
+				if (start_pos <= annot[1] and end_pos >= annot[2]):
+					length_mapped_seq = 100
+				elif (start_pos <= annot[1] and end_pos >= annot[1]):
+					length_mapped_seq = (end_pos - annot[1])/(annot[2]- annot[1])*100
+				elif (start_pos >= annot[1] and end_pos <= annot[2]):
+					length_mapped_seq = (end_pos - start_pos)/(annot[2]- annot[1])*100
+				elif (start_pos <= annot[2] and end_pos >= annot[2]):
+					length_mapped_seq = (annot[2] - start_pos)/(annot[2]- annot[1])*100
 				if annot[0] == 'protein_coding':
 					functions[annot[5]] += 1
 				genes[gene_id] = annot
-				readid_w_gene[readid] = [data[2], data[3], gene_id]
+				readid_w_gene[readid] = [data[2], data[3], gene_id, length_mapped_seq]
 				genestype[annot[0]] += 1
 
-	pos_readid_count = [len(v) for v in pos_readid.values()]
-	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+	# pos_readid_count = [len(v) for v in pos_readid.values()]
+	
+	# if len(pos_readid_count) > 0:
+	# 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+
+	with open(os.path.join(output_dir, f'{label}_fp_reads_kept_alignments_{args.prob_threshold}.tsv'), 'w') as outf:
+		for readid, data in readid_w_gene.items():
+			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
+
 	genes_of_interest = defaultdict(list)
-	for pos, list_readid in pos_readid.items():
-		if len(list_readid) >= 3:
-			for readid in list_readid:
-				if readid in readid_w_gene:
-					gene_id = readid_w_gene[readid][2]
-					genes_of_interest[gene_id] = genes[gene_id]
+	genes_of_interest_count = defaultdict(int)
+	genes_of_interest_stat = defaultdict(list)
+	for readid in readid_w_gene.keys():
+		gene_id = readid_w_gene[readid][2]
+		genes_of_interest[gene_id] = genes[gene_id]
+		genes_of_interest_count[gene_id] += 1
+		genes_of_interest_stat[gene_id] += [readid_w_gene[readid][3]]
+
+	# for pos, list_readid in pos_readid.items():
+	# 	if len(list_readid) >= 3:
+	# 		for readid in list_readid:
+	# 			if readid in readid_w_gene:
+	# 				gene_id = readid_w_gene[readid][2]
+	# 				genes_of_interest[gene_id] = genes[gene_id]
 
 	reads_wo_genes = []
-	if len(readid_w_gene) != len(alignments):
+	if len(readid_w_gene) != len(fp_alignments):
 		with open(os.path.join(output_dir, f'{label}_{type}_reads_wo_gene_{args.prob_threshold}.tsv'), 'w') as f:
-			for readid, data in alignments.items():
+			for readid, data in fp_alignments.items():
 				if readid not in readid_w_gene:
 					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
 					reads_wo_genes.append(readid)
@@ -458,12 +534,12 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	else:
 		print('all reads were found a gene')
 
-	with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
-		for gene_id, annot in genes_of_interest.items():
-			if annot[0] == 'protein_coding':
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\n')
-			else:
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\n')
+	# with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
+	# 	for gene_id, annot in genes_of_interest.items():
+	# 		if annot[0] == 'protein_coding':
+	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+	# 		else:
+	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(output_dir, f'{label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
@@ -474,7 +550,8 @@ def GetGenes(args, label, output_dir, annot_info, alignments, sequence_length, r
 	with open(os.path.join(output_dir, f'{label}_{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
 
-	return genes_of_interest
+	return genes_of_interest, genes_of_interest_count, genes_of_interest_stat
+
 
 
 def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
@@ -491,9 +568,9 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				pident = float(line.rstrip().split(',')[8])
 				if readid in alignments:
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
-						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
+						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]
 				else:
-					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident]
+					alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]
 
 	if outfilename:
 		with open(outfilename, 'w') as f:
@@ -505,6 +582,72 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\tNA\nmedian reads length:\tNA\nmin reads length:\tNA\nmax reads length:\tNA')
 
 	return alignments
+
+
+def GetScores(testing_records, tp_alignments, fp_alignments):
+	genome_size = len(testing_records[0].seq)
+	# shannon_scores = []
+	scores = []
+	fp_scores = []
+	fp_reads_kept = []
+	tp_reads_kept = []
+	tp_evalue = dict()
+	tp_pident = dict()
+	fp_evalue = dict()
+	fp_pident = dict()
+	for i in range(1, genome_size+1, 1):
+		num_tp = 0
+		num_fp = 0
+
+		fp_reads = set()
+		tp_reads = set()
+		
+		# check if position is located in a read assigned to TP
+		for read_id, data in tp_alignments.items():
+			if data[4] == 0 and data[5] == 100 :
+				if i >= data[2] and i <= data[3]:
+					tp_reads.add(read_id)
+					tp_evalue[read_id] = data[4]
+					tp_pident[read_id] = data[5]
+					num_tp += 1
+
+		# check if position is located in a read assigned to FP
+		for read_id, data in fp_alignments.items():
+			if data[4] == 0 and data[5] == 100 :
+				if i >= data[2] and i <= data[3]:
+					fp_reads.add(read_id)
+					fp_evalue[read_id] = data[4]
+					fp_pident[read_id] = data[5]
+					num_fp += 1
+
+		if num_tp+num_fp > 0:
+			ratio_fp = num_fp / (num_tp+num_fp)
+
+			if ratio_fp > 0.5:
+				scores.append(ratio_fp)
+				fp_scores.append(ratio_fp)
+				fp_reads_kept += list(fp_reads)
+				tp_reads_kept += list(tp_reads)
+			else:
+				scores.append(0)
+		else:
+			scores.append(0)
+
+	assert len(scores) == genome_size, f'{genome_size}\t{len(scores)}'
+
+	print(f'# fp reads kept: {len(set(fp_reads_kept))}')
+	print(f'# tp reads kept: {len(set(tp_reads_kept))}')
+	print(f'FP rate all positions:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
+	print(f'only FP rate > 0.5:\nmean\t{statistics.mean(fp_scores)}\nmedian\t{statistics.median(fp_scores)}\nmin\t{min(fp_scores)}\nmax\t{max(fp_scores)}')
+	print(f'fp evalue:\nmean\t{statistics.mean(fp_evalue.values())}\nmedian\t{statistics.median(fp_evalue.values())}\nmin\t{min(fp_evalue.values())}\nmax\t{max(fp_evalue.values())}')
+	print(f'tp evalue:\nmean\t{statistics.mean(tp_evalue.values())}\nmedian\t{statistics.median(tp_evalue.values())}\nmin\t{min(tp_evalue.values())}\nmax\t{max(tp_evalue.values())}')
+	print(f'fp pident:\nmean\t{statistics.mean(fp_pident.values())}\nmedian\t{statistics.median(fp_pident.values())}\nmin\t{min(fp_pident.values())}\nmax\t{max(fp_pident.values())}')
+	print(f'tp pident:\nmean\t{statistics.mean(tp_pident.values())}\nmedian\t{statistics.median(tp_pident.values())}\nmin\t{min(tp_pident.values())}\nmax\t{max(tp_pident.values())}')
+
+	return scores, list(set(fp_reads_kept)), list(set(tp_reads_kept))
+
+
+
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	align_coords = []
@@ -546,9 +689,10 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
-def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_seq, testing_fasta, training_fasta, fp_alignments, tp_alignments, genes_of_interest, outfigpath, \
-				outfilename, genomic_islands=None):
-	
+def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
+			fp_alignments, tp_alignments, genes_of_interest, genes_of_interest_count, \
+			genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
+
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
 	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
@@ -559,10 +703,10 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
-	
+
 	train_strain = GetGenomesInfo(training_fasta)
 	test_strain = GetGenomesInfo(testing_fasta)
-	circos.text(f'{test_strain}', size=11, r=20)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_genomes_length.tsv'), 'w') as f:
 		f.write(f'Label 0 testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
@@ -570,11 +714,39 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 
 	min_r_pos = 100
 	for sector in circos.sectors:
+		# Plot labels of genomic islands
+		if genomic_islands:
+			color = 'red'
+			# add track for genomic islands
+			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
+			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
+			min_r_pos -= 6
+			for gi_id in genomic_islands.keys():
+				start_locus = genomic_islands[gi_id][0]
+				end_locus = genomic_islands[gi_id][1]
+				if start_locus > end_locus:
+					start_gi = end_locus
+					end_gi = start_locus
+				else:
+					start_gi = start_locus
+					end_gi = end_locus
+
+				gis_track.rect(start_gi, end_gi, color=color)
+				label_pos = (start_gi + end_gi) / 2
+				gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
+			print(f'added GIs track')
+
 		# Setup outer track
 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
 		outer_track.axis(fc="black")
-		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb")
-		outer_track.xticks_by_interval(250000, tick_length=1, show_label=False)
+		if genomic_islands:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb", outer=False,)
+			min_r_pos -= 6
+		else:
+			outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+			min_r_pos -= 1
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
 		features = {}
 		for gene_id in genes_of_interest.keys():
@@ -605,28 +777,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			features[genes_of_interest[gene_id][1]] = feature
 
 		
-		# Plot labels of genomic islands
-		if genomic_islands:
-			color = 'red'
-			# add track for genomic islands
-			gis_track = sector.add_track((min_r_pos-4, min_r_pos), r_pad_ratio=0.1)
-			# f_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			# r_gis_track = sector.add_track((min_r_pos-3, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos -= 6
-			for gi_id in genomic_islands.keys():
-				start_locus = genomic_islands[gi_id][0]
-				end_locus = genomic_islands[gi_id][1]
-				if start_locus > end_locus:
-					start_gi = end_locus
-					end_gi = start_locus
-				else:
-					start_gi = start_locus
-					end_gi = end_locus
-
-				gis_track.rect(start_gi, end_gi, color=color)
-				label_pos = (start_gi + end_gi) / 2
-				gis_track.annotate(label_pos, f'{gi_id}', label_size=7)
-			print(f'added GIs track')
+		
 
 
 
@@ -644,9 +795,9 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			gene_type = feature.qualifiers.get("gene_type", [None])[0]
 			if gene_type == 'protein_coding':
 				function = feature.qualifiers.get("function", [None])[0]
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\n')
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 			else:
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\n')
+				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
 		# 	if label == None:
 		# 		continue
@@ -667,10 +818,11 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', args.neg_label, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.neg_label}/test_train_genomes/test_train_genomes_blastn.out')
 	align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{args.neg_label}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
-
+	# count the number of identical positions across the aligned regions
+	identical_positions = 0
 	# color = ColorCycler()
 	# comp_name2color[comp_fasta.name] = colors[idx]
-	matching_regions = []
+	# matching_regions = []
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		min_r_pos-5	
@@ -679,78 +831,90 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
 			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
 			blast_track.rect(ac[0], ac[1], color=rect_color)
-			matching_regions.append([ac[0], ac[1], ac[2]])
+			# matching_regions.append([ac[0], ac[1], ac[2]])
 			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
-	pos_matching_regions = set()
-	for i in range(len(matching_regions)):
-		for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
-			pos_matching_regions.add(j)
+	# pos_matching_regions = set()
+	# for i in range(len(matching_regions)):
+	# 	for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
+	# 		pos_matching_regions.add(j)
 
-	pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
+	# pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
 
-	fp_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
-	for read_id, data in fp_alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or \
-			(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or  \
-			(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-			(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				fp_matching_regions.add(read_id)
-	fp_not_matching_regions = [r for r in fp_alignments.keys() if r not in fp_matching_regions]	
+	# fp_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
+	# for read_id, data in fp_alignments.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or \
+	# 		(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or  \
+	# 		(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
+	# 		(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			fp_matching_regions.add(read_id)
+	# fp_not_matching_regions = [r for r in fp_alignments.keys() if r not in fp_matching_regions]	
 
-	tp_matching_regions = set()
-	for read_id, data in tp_alignments.items():
-		start_pos = data[2]
-		end_pos = data[3]
-		for i in range(len(matching_regions)):
-			if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or \
-			(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or \
-			(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-			(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-				tp_matching_regions.add(read_id)
-	tp_not_matching_regions = [r for r in tp_alignments.keys() if r not in tp_matching_regions]
+	# tp_matching_regions = set()
+	# for read_id, data in tp_alignments.items():
+	# 	start_pos = data[2]
+	# 	end_pos = data[3]
+	# 	for i in range(len(matching_regions)):
+	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or \
+	# 		(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or \
+	# 		(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
+	# 		(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
+	# 			tp_matching_regions.add(read_id)
+	# tp_not_matching_regions = [r for r in tp_alignments.keys() if r not in tp_matching_regions]
 			
-	with open(os.path.join(args.output_dir, f'{args.neg_label}_FN_TP_matching_regions.tsv'), 'w') as f:
-		f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	# with open(os.path.join(args.output_dir, f'{args.neg_label}_FP_TP_matching_regions.tsv'), 'w') as f:
+	# 	f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
+	# 	f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
 		
-		if len(fp_sequences) > 0:
-			fp_pct_matching_region = round(len(fp_matching_regions)/len(fp_sequences), 3)*100
-			fp_pct_not_matching_region = round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100
-		else:
-			fp_pct_matching_region = 0
-			fp_pct_not_matching_region = 0
+	# 	if len(fp_sequences) > 0:
+	# 		fp_pct_matching_region = round(len(fp_matching_regions)/len(fp_sequences), 3)*100
+	# 		fp_pct_not_matching_region = round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100
+	# 	else:
+	# 		fp_pct_matching_region = 0
+	# 		fp_pct_not_matching_region = 0
 
-		f.write(f'% of FP reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_matching_region}')
-		f.write(f'% of FP reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_not_matching_region}')
+	# 	f.write(f'% of FP reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_matching_region}')
+	# 	f.write(f'% of FP reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_not_matching_region}')
 		
-		if len(tp_sequences) > 0:
-			tp_pct_matching_region = round(len(tp_matching_regions)/len(tp_sequences), 3)*100
-			tp_pct_not_matching_region = round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100
-		else:
-			tp_pct_matching_region = 0
-			tp_pct_not_matching_region = 0
-		f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_matching_region}')
-		f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_not_matching_region}')
+	# 	if len(tp_sequences) > 0:
+	# 		tp_pct_matching_region = round(len(tp_matching_regions)/len(tp_sequences), 3)*100
+	# 		tp_pct_not_matching_region = round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100
+	# 	else:
+	# 		tp_pct_matching_region = 0
+	# 		tp_pct_not_matching_region = 0
+	# 	f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_matching_region}')
+	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_not_matching_region}')
 
 	# get stats on percentage identity
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'{statistics.mean(percent_identity)}\t{statistics.median(percent_identity)}\t{min(percent_identity)}\t{max(percent_identity)}')
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{identical_positions/query_fasta.full_genome_length*100}%\n')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
+
 
 	for sector in circos.sectors:
 		# define x-axis vector for the next tracks
 		genome_pos = list(range(query_fasta.full_genome_length))
 
+		# add track for scores
+		min_r_pos -= 5
+		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		scores_track.axis(ec="darkorange")
+		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
+		y_labels = list(map(str, y_values))
+		scores_track.yticks(y_values, y_labels)
+		scores_track.line(genome_pos, scores, color="darkorange")
+		print(f'added FP rate track')
 
 		# add track for TP reads
 		if len(tp_sequences) > 0:
-			min_r_pos -= 5
+			min_r_pos -= 13
 			tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 			tp_track.axis(ec="blue")
 			pos_tp_count = [0]*query_fasta.full_genome_length
@@ -819,7 +983,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			f.write(f'Testing genome:\t{test_genome_gc_content}')
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# get average GC content for FN and TP reads
+		# get average GC content for FP and TP reads
 		if len(fp_sequences) > 0:
 			GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'FP')
 			GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'FP_relative')
@@ -931,10 +1095,10 @@ if __name__ == "__main__":
 	print(f'#FP for label {args.neg_label}: {len(fp_sequences)}')
 	print(f'#TP for label {args.neg_label}: {len(tp_sequences)}')
 	outfile_sum.write(f'{len(fp_sequences)}\t{len(tp_sequences)}\n')
-	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'FP')
-	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'TP')
-	StoreCS(args, fp_cs, 'FP')
-	StoreCS(args, tp_cs, 'TP')
+	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'fp')
+	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tp')
+	StoreCS(args, fp_cs, 'fp')
+	StoreCS(args, tp_cs, 'tp')
 
 	# get association between sequences in training set and labels
 	with open(args.sequences_info, 'r') as f:
@@ -952,14 +1116,24 @@ if __name__ == "__main__":
 	# get mapping of false and true positives to testing genome
 	fp_alignments = GetReadsAlignments(fp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
+	
+	# get false negative or false positive rate
+	scores, fp_reads_kept, tp_reads_kept = GetScores(testing_records, tp_alignments, fp_alignments_pos)
+
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.test_genomes_info[args.neg_label][0], input_dir)
-	fp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, test_sequence_length, test_readid_to_read, 'FP')
+	fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
+	# tp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, tp_alignments, test_sequence_length, test_readid_to_read, 'TP')
+
+	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
 	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
-			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_FP_genes_circos.tsv'),)
+			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_genes_circos.tsv'),)
 
 
+	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, \
+			fp_alignments, tp_alignments, fp_genes_of_interest, fp_genes_of_interest_count, \
+			fp_genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
 	
 
 
