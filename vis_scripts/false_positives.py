@@ -171,17 +171,17 @@ def GetGIsFromFasta(args, genome_id, ref_fasta):
 
 def CheckGenomes(args, label):
 	# load testing fasta file
-	with open(args.test_genomes_info[label][1], "r") as handle:
+	with open(args.testing_fasta, "r") as handle:
 		test_records = list(SeqIO.parse(handle, "fasta"))
 
 	# load training fasta file
 	with open(args.train_genomes_info[label][1], "r") as handle:
 		train_records = list(SeqIO.parse(handle, "fasta"))
 
-	assert len(test_records) == 1, f'{label}\t{args.test_genomes_info[label][0]} has more than 1 chromosome'
+	assert len(test_records) == 1, f'{label}\t{args.testing_genomes} has more than 1 chromosome'
 	assert len(train_records) == 1, f'{label}\t{args.train_genomes_info[label][0]} has more than 1 chromosome'
 
-	return args.test_genomes_info[label][1], test_records, args.train_genomes_info[label][1], train_records
+	return args.testing_fasta, test_records, args.train_genomes_info[label][1], train_records
 
 
 def GetGCSkew(sequence):
@@ -893,8 +893,9 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_not_matching_region}')
 
 	# get stats on percentage identity
+	pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 	with open(os.path.join(args.output_dir, f'{args.neg_label}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{identical_positions/query_fasta.full_genome_length*100}%\n')
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{pct_identity}%\n')
 		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
 
@@ -998,7 +999,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# Add legend
 	handles = [
 		# Patch(color='darkorange', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{train_strain}')
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}')
 	]
 	if len(tp_sequences) > 0:
 		handles.append(Patch(color='blue', label='True Positives'))
@@ -1019,7 +1020,8 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files of training genomes')
-	parser.add_argument('--testing_fasta', type=str, help='path to file containing path to fasta files of testing genomes')
+	parser.add_argument('--testing_fasta', type=str, help='path to testing fasta file')
+	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads from label 0')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
@@ -1042,10 +1044,10 @@ if __name__ == "__main__":
 		content = in_f.readlines()
 		args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
 
-	# retrieve accession and fasta files of testing and training genomes associated with each label
-	with open(args.testing_fasta, 'r') as f:
-		content = f.readlines()
-		args.test_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
+	# # retrieve accession and fasta files of testing and training genomes associated with each label
+	# with open(args.testing_fasta, 'r') as f:
+	# 	content = f.readlines()
+	# 	args.test_genomes_info = {line.rstrip().split('\t')[0]: [line.rstrip().split('\t')[1], line.rstrip().split('\t')[2]] for line in content}
 
 	with open(args.training_fasta, 'r') as f:
 		content = f.readlines()
@@ -1129,13 +1131,6 @@ if __name__ == "__main__":
 
 	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
 			os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.neg_label}_{args.prob_threshold}_fp_genes_circos.tsv'),)
-
-
-	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, \
-			fp_alignments, tp_alignments, fp_genes_of_interest, fp_genes_of_interest_count, \
-			fp_genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
-	
-
 
 
 
