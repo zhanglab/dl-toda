@@ -798,6 +798,13 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 
 			# f.write(f'{statistics.mean(seq_length_info)}\t{statistics.median(seq_length_info)}\t{max(seq_length_info)}\t{min(seq_length_info)}')
 
+def GetGenomesInfo(fasta):
+	with open(fasta, 'r') as f:
+		content = f.readline()
+	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	
+	return strain
+
 
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
 			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, \
@@ -813,9 +820,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
 		space=10,
 	)
-	with open(testing_fasta, 'r') as f:
-		content = f.readline()
-	test_strain = ' '.join(content.split(',')[0].split(' ')[1:])
+
+	train_strain = GetGenomesInfo(training_fasta)
+	test_strain = GetGenomesInfo(testing_fasta)
 	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
 	# print(f"Ref: {ref_fasta.name}\n({ref_fasta.full_genome_length:,} bp)\n{ref_fasta.full_genome_length}")
@@ -985,7 +992,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 			# # rect_color = interpolate_color("black", v=ac.identity, vmin=MIN_IDENTITY) # type: ignore
 			percent_identity.append(ac[2])
 			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-			print(f'{ac[2]}\t{ac[0]}\t{ac[1]}\t{(ac[1]-ac[0])}\t{ac[2]/100*(ac[1]-ac[0])}')
+			# print(f'{ac[2]}\t{ac[0]}\t{ac[1]}\t{(ac[1]-ac[0])}\t{ac[2]/100*(ac[1]-ac[0])}')
 			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
 			blast_track.rect(ac[0], ac[1], color=rect_color)
 			# matching_regions.append([ac[0], ac[1], ac[2]])
@@ -1032,8 +1039,9 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments_pos_test)}\t{round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100}\n')
 
 	# get stats on percentage identity
+	pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{identical_positions/query_fasta.full_genome_length*100}%\n')
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{pct_identity}%\n')
 		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
 	for sector in circos.sectors:
@@ -1128,15 +1136,11 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	with open(training_fasta, 'r') as f:
-		content = f.readline()
-	train_strain = ' '.join(content.split(',')[0].split(' ')[1:])
-
 	handles = []
 	if genomic_islands:
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome)'),
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}'),
 		Patch(color='darkorange', label='False Negative rate'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
