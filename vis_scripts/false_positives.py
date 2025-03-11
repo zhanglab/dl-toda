@@ -175,7 +175,7 @@ def CheckGenomes(args, label):
 		test_records = list(SeqIO.parse(handle, "fasta"))
 
 	# load training fasta file
-	with open(args.train_genomes_info[label][1], "r") as handle:
+	with open(args.train_genomes_info[args.pos_label][1], "r") as handle:
 		train_records = list(SeqIO.parse(handle, "fasta"))
 
 	assert len(test_records) == 1, f'{label}\t{args.testing_genomes} has more than 1 chromosome'
