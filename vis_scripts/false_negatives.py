@@ -604,7 +604,7 @@ def GetGenes(args, label, output_dir, annot_info, fn_alignments, fn_reads_kept, 
 	for readid in readid_w_gene.keys():
 		gene_id = readid_w_gene[readid][2]
 		genes_of_interest[gene_id] = genes[gene_id]
-		genes_of_interest_stat[gene_id] += 1
+		genes_of_interest_count[gene_id] += 1
 		genes_of_interest_stat[gene_id] += [readid_w_gene[readid][3]]
 
 	# for pos, list_readid in pos_readid.items():
