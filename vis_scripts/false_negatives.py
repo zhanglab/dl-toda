@@ -1168,11 +1168,12 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		genome_pos = list(range(query_fasta.full_genome_length))
 
 		# add track for scores
-		above_zero = []
+		above_zero = {}
 		for i in range(len(scores)):
 			if scores[i] > 0:
-				above_zero.append(scores[i])
+				above_zero[i]= scores[i]
 		print(len(above_zero))
+		print(above_zero)
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="deeppink")		
