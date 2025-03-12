@@ -1171,9 +1171,8 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="deeppink")
-		print(scores[0:10])
-		print(type(scores[0]))
-		print(min(scores), max(scores))
+		print(len(scores[0]), len(scores))
+		
 		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
