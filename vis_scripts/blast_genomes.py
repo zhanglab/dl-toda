@@ -84,6 +84,14 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	return align_coords
 
 
+def GetGenomesInfo(fasta):
+	with open(fasta, 'r') as f:
+		content = f.readline()
+	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	
+	return strain
+
+
 def CircosPlot(args, outfigpath):
 	# get info on ref genomes
 	with open(args.input_ref_file, 'r') as f:
@@ -101,7 +109,8 @@ def CircosPlot(args, outfigpath):
 	with open(args.query_file, 'r') as f:
 		content = f.readline()
 		query_fasta_file = content.rstrip().split('\t')[3]
-		query_name = content.rstrip().split('\t')[0]
+		query_name = GetGenomesInfo(content.rstrip().split('\t')[3])
+		print(query_name)
 		content.rstrip().split('\t')[2]
 
 	# load data from fasta files
@@ -158,7 +167,6 @@ def CircosPlot(args, outfigpath):
 			# print(ac[2], (ac[1]-ac[0]))
 			# rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			# blast_track.rect(ac[0], ac[1], color=rect_color)
-			print(ac.identity, ac.query_end-ac.query_start)
 			percent_identity.append(ac.identity)
 			aligned_length.append(ac.query_end-ac.query_start)
 			identical_positions += (ac.identity/100*(ac.query_end-ac.query_start))
