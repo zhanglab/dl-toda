@@ -124,6 +124,7 @@ def CircosPlot(args, outfigpath):
 
 	query_name = GetGenomesInfo(args.query_fasta_file)
 	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp', size=9, r=22)
+	print(f'{query_fasta.full_genome_length:,} bp')
 
 	min_r_pos = 100
 	for sector in circos.sectors:
@@ -142,7 +143,7 @@ def CircosPlot(args, outfigpath):
 	genomes_size = []
 	# for idx, ref_fasta in enumerate(comp_ref_fasta):
 	for idx, ref_fasta in enumerate(ref_fasta_files):
-		genomes_size.append(comp_ref_fasta[idx].full_genome_length:,)
+		genomes_size.append(f'{comp_ref_fasta[idx].full_genome_length:,} bp')
 		print(comp_ref_fasta[idx].full_genome_length)
 		# store percentage identity between matching regions
 		percent_identity = []
@@ -189,7 +190,7 @@ def CircosPlot(args, outfigpath):
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles=[Patch(label=f'{ref_names[i]} - {genomes_size[i]} bp - {genomes_pct_identity[i]}% - {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
+	handles=[Patch(label=f'{ref_names[i]} - {genomes_size[i]} - {genomes_pct_identity[i]}% - {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
 	fig.savefig(outfigpath, dpi=300)
 
