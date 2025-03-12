@@ -147,15 +147,15 @@ def CircosPlot(args, outfigpath):
 		color = ColorCycler()
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
+		min_r_pos -= 5	
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-			min_r_pos-5	
-			for ac in align_coords:
-				percent_identity.append(ac[2])
-				identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-				print(ac[2], ac[0], ac[1])
-				rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
-				blast_track.rect(ac[0], ac[1], color=rect_color)
+		for ac in align_coords:
+			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			print(ac[2], ac[0], ac[1])
+			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
+			blast_track.rect(ac[0], ac[1], color=rect_color)
 		# get stats on percentage identity
 		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
