@@ -968,8 +968,8 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
-def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			fn_alignments_pos_test, tp_alignments_pos_test, outfigpath, outfilename, scores, genomic_islands=None):
+def FNCircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
+			fn_alignments_pos_test, tp_alignments_pos_test, outfigpath, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -1408,11 +1408,11 @@ if __name__ == "__main__":
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), scores, genomic_islands=gis_align)
+		FNCircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_align)
 	else:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), scores)
+		FNCircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 	
 
 
