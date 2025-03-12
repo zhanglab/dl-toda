@@ -77,7 +77,7 @@ def GetGenomesInfo(fasta):
 			print(e)
 			strain.append(e)
 
-	return ' '.join(strain)
+	return strain[-1]
 
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
@@ -139,8 +139,11 @@ def CircosPlot(args, outfigpath):
 	pct_out = open(os.path.join(args.output_dir, f'pct_identity_matching_regions.tsv'), 'w')
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
+	genomes_size = []
 	# for idx, ref_fasta in enumerate(comp_ref_fasta):
 	for idx, ref_fasta in enumerate(ref_fasta_files):
+		genomes_size.append(comp_ref_fasta[idx].full_genome_length)
+		print(comp_ref_fasta[idx].full_genome_length)
 		# store percentage identity between matching regions
 		percent_identity = []
 		# run blast using pygenomeviz
@@ -186,7 +189,7 @@ def CircosPlot(args, outfigpath):
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles=[Patch(label=f'{ref_names[i]} {genomes_pct_identity[i]}% | {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
+	handles=[Patch(label=f'{ref_names[i]} - {genomes_size[i]} bp - {genomes_pct_identity[i]}% - {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
 	fig.savefig(outfigpath, dpi=300)
 
