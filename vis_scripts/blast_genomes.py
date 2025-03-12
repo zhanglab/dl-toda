@@ -77,7 +77,10 @@ def GetGenomesInfo(fasta, type):
 			print(e)
 			strain.append(e)
 	if type == 'ref':
-		return ''.join(strain[-2:])
+		if len(strain[-1].split(' ')) > 1:
+			return ''.join(strain[-2:])
+		else:
+			return strain[-1]
 	elif type == 'query':
 		return ' '.join(strain)
 
