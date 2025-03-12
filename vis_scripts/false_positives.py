@@ -568,6 +568,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 				pident = float(line.rstrip().split(',')[8])
 				strand = line.rstrip().split(',')[11]
 				if readid in alignments:
+					# get best alignment
 					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
 						alignments[readid] = [seq_label, seq_id, sstart, send, evalue, pident, strand]
 				else:
@@ -585,23 +586,27 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 	return alignments
 
 
-def GetScores(testing_records, tp_alignments, fp_alignments):
+def GetScores(args, testing_records, tp_alignments, fp_alignments):
 	genome_size = len(testing_records[0].seq)
 	# shannon_scores = []
 	scores = []
 	fp_scores = []
 	fp_reads_kept = []
 	tp_reads_kept = []
-	tp_evalue = dict()
-	tp_pident = dict()
-	fp_evalue = dict()
-	fp_pident = dict()
+	sel_tp_evalue = dict()
+	sel_tp_pident = dict()
+	sel_fp_evalue = dict()
+	sel_fp_pident = dict()
 	for i in range(1, genome_size+1, 1):
 		num_tp = 0
 		num_fp = 0
 
 		fp_reads = set()
 		tp_reads = set()
+		tp_evalue = dict()
+		tp_pident = dict()
+		fp_evalue = dict()
+		fp_pident = dict()
 		
 		# check if position is located in a read assigned to TP
 		for read_id, data in tp_alignments.items():
@@ -612,7 +617,7 @@ def GetScores(testing_records, tp_alignments, fp_alignments):
 					tp_pident[read_id] = data[5]
 					num_tp += 1
 
-		# check if position is located in a read assigned to FP
+		# check if position is located in a read assigned to FN
 		for read_id, data in fp_alignments.items():
 			if data[4] == 0 and data[5] == 100 :
 				if i >= data[2] and i <= data[3]:
@@ -628,25 +633,52 @@ def GetScores(testing_records, tp_alignments, fp_alignments):
 				scores.append(ratio_fp)
 				fp_scores.append(ratio_fp)
 				fp_reads_kept += list(fp_reads)
+				sel_fp_evalue.update(fp_evalue)
+				sel_fp_pident.update(fp_pident)
+			elif ratio_tp > 0.5:
 				tp_reads_kept += list(tp_reads)
-			else:
+				sel_tp_evalue.update(tp_evalue)
+				sel_tp_pident.update(tp_pident)
 				scores.append(0)
 		else:
+			# no fn or tp with that position
 			scores.append(0)
 
+		# # compute probability for each group
+		# if num_tp+num_fn > 0:
+		# 	prob_tp = num_tp / (num_tp+num_fn)
+		# 	prob_fn = num_fn / (num_tp+num_fn)
+
+		# 	# compute tp and fn contribution to shannon score
+		# 	shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
+		# 	shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
+
+		# 	# compute shannon entropy
+		# 	if (shannon_tp + shannon_fn) == 0:
+		# 		# cases where the position exists only in TP or FN reads
+		# 		shannon_entropy = 0
+		# 	else:
+		# 		# cases where the position exists in TP and FN reads
+		# 		shannon_entropy = -(shannon_tp + shannon_fn)
+		# 		assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
+
+		# else:
+		# 	shannon_entropy = 0
+
+		# scores.append(shannon_entropy)
+
 	assert len(scores) == genome_size, f'{genome_size}\t{len(scores)}'
+	with open(os.path.join(args.output_dir, f'{args.label}_fp_tp_scores_info.tsv'), 'w') as outf:
+		outf.write(f'# fp reads kept: {len(set(fp_reads_kept))}\n')
+		outf.write(f'# tp reads kept: {len(set(tp_reads_kept))}\n')
+		outf.write(f'FP rate all positions:\tmean:{statistics.mean(scores)}\tmedian:{statistics.median(scores)}\tmin:{min(scores)}\tmax:{max(scores)}\n')
+		outf.write(f'only FP rate > 0.5:\nmean\t{statistics.mean(fp_scores)}\nmedian\t{statistics.median(fp_scores)}\nmin\t{min(fp_scores)}\nmax\t{max(fp_scores)}\n')
+		outf.write(f'fp evalue:\tmean:{statistics.mean(sel_fp_evalue.values())}\tmedian:{statistics.median(sel_fp_evalue.values())}\tmin:{min(sel_fp_evalue.values())}\tmax:{max(sel_fp_evalue.values())}\n')
+		outf.write(f'tp evalue:\tmean:{statistics.mean(sel_tp_evalue.values())}\tmedian:{statistics.median(sel_tp_evalue.values())}\tmin:{min(sel_tp_evalue.values())}\tmax:{max(sel_tp_evalue.values())}\n')
+		outf.write(f'fp pident:\tmean:{statistics.mean(sel_fp_pident.values())}\tmedian:{statistics.median(sel_fp_pident.values())}\tmin:{min(sel_fp_pident.values())}\tmax:{max(sel_fp_pident.values())}\n')
+		outf.write(f'tp pident:\tmean:{statistics.mean(sel_tp_pident.values())}\tmedian:{statistics.median(sel_tp_pident.values())}\tmin:{min(sel_tp_pident.values())}\tmax:{max(sel_tp_pident.values())}\n')
 
-	print(f'# fp reads kept: {len(set(fp_reads_kept))}')
-	print(f'# tp reads kept: {len(set(tp_reads_kept))}')
-	print(f'FP rate all positions:\nmean\t{statistics.mean(scores)}\nmedian\t{statistics.median(scores)}\nmin\t{min(scores)}\nmax\t{max(scores)}')
-	print(f'only FP rate > 0.5:\nmean\t{statistics.mean(fp_scores)}\nmedian\t{statistics.median(fp_scores)}\nmin\t{min(fp_scores)}\nmax\t{max(fp_scores)}')
-	print(f'fp evalue:\nmean\t{statistics.mean(fp_evalue.values())}\nmedian\t{statistics.median(fp_evalue.values())}\nmin\t{min(fp_evalue.values())}\nmax\t{max(fp_evalue.values())}')
-	print(f'tp evalue:\nmean\t{statistics.mean(tp_evalue.values())}\nmedian\t{statistics.median(tp_evalue.values())}\nmin\t{min(tp_evalue.values())}\nmax\t{max(tp_evalue.values())}')
-	print(f'fp pident:\nmean\t{statistics.mean(fp_pident.values())}\nmedian\t{statistics.median(fp_pident.values())}\nmin\t{min(fp_pident.values())}\nmax\t{max(fp_pident.values())}')
-	print(f'tp pident:\nmean\t{statistics.mean(tp_pident.values())}\nmedian\t{statistics.median(tp_pident.values())}\nmin\t{min(tp_pident.values())}\nmax\t{max(tp_pident.values())}')
-
-	return scores, list(set(fp_reads_kept)), list(set(tp_reads_kept))
-
+	return scores, list(set(fn_reads_kept)), list(set(tp_reads_kept))
 
 
 
@@ -838,60 +870,6 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			# # blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
-	# pos_matching_regions = set()
-	# for i in range(len(matching_regions)):
-	# 	for j in range(matching_regions[i][0], matching_regions[i][1]+1, 1):
-	# 		pos_matching_regions.add(j)
-
-	# pos_not_matching_regions = [i for i in range(1, query_fasta.full_genome_length+1, 1) if i not in pos_matching_regions]
-
-	# fp_matching_regions = set() # key = position on testing genome, value = 1 if mapped at least once by a false negative read
-	# for read_id, data in fp_alignments.items():
-	# 	start_pos = data[2]
-	# 	end_pos = data[3]
-	# 	for i in range(len(matching_regions)):
-	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][1]) or \
-	# 		(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or  \
-	# 		(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-	# 		(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-	# 			fp_matching_regions.add(read_id)
-	# fp_not_matching_regions = [r for r in fp_alignments.keys() if r not in fp_matching_regions]	
-
-	# tp_matching_regions = set()
-	# for read_id, data in tp_alignments.items():
-	# 	start_pos = data[2]
-	# 	end_pos = data[3]
-	# 	for i in range(len(matching_regions)):
-	# 		if (start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or \
-	# 		(start_pos >= matching_regions[i][0] and end_pos <= matching_regions[i][1]) or \
-	# 		(start_pos <= matching_regions[i][0] and end_pos >= matching_regions[i][0]) or  \
-	# 		(start_pos <= matching_regions[i][1] and end_pos >= matching_regions[i][1]):
-	# 			tp_matching_regions.add(read_id)
-	# tp_not_matching_regions = [r for r in tp_alignments.keys() if r not in tp_matching_regions]
-			
-	# with open(os.path.join(args.output_dir, f'{args.neg_label}_FP_TP_matching_regions.tsv'), 'w') as f:
-	# 	f.write(f'% testing genome that matches to training genome\t{len(pos_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-	# 	f.write(f'% testing genome that does not match to training genome\t{len(pos_not_matching_regions)}\t{query_fasta.full_genome_length}\t{round(len(pos_not_matching_regions)/query_fasta.full_genome_length, 3)*100}')
-		
-	# 	if len(fp_sequences) > 0:
-	# 		fp_pct_matching_region = round(len(fp_matching_regions)/len(fp_sequences), 3)*100
-	# 		fp_pct_not_matching_region = round(len(fp_not_matching_regions)/len(fp_sequences), 3)*100
-	# 	else:
-	# 		fp_pct_matching_region = 0
-	# 		fp_pct_not_matching_region = 0
-
-	# 	f.write(f'% of FP reads mapped to matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_matching_region}')
-	# 	f.write(f'% of FP reads mapped to not matching regions\t{len(fp_matching_regions)}\t{len(fp_not_matching_regions)}\t{len(fp_alignments)}\t{fp_pct_not_matching_region}')
-		
-	# 	if len(tp_sequences) > 0:
-	# 		tp_pct_matching_region = round(len(tp_matching_regions)/len(tp_sequences), 3)*100
-	# 		tp_pct_not_matching_region = round(len(tp_not_matching_regions)/len(tp_sequences), 3)*100
-	# 	else:
-	# 		tp_pct_matching_region = 0
-	# 		tp_pct_not_matching_region = 0
-	# 	f.write(f'% of TP reads mapped to matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_matching_region}')
-	# 	f.write(f'% of TP reads mapped to not matching regions\t{len(tp_matching_regions)}\t{len(tp_not_matching_regions)}\t{len(tp_alignments)}\t{tp_pct_not_matching_region}')
-
 	# get stats on percentage identity
 	pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
@@ -997,9 +975,12 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles = [
-		# Patch(color='darkorange', label='Pathogenicity Islands'),
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}')
+	handles = []
+	if genomic_islands:
+		handles.append(Patch(color='red', label='Genomic Islands'))
+	handles += [
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}%'),
+		Patch(color='darkorange', label='False Negative rate')
 	]
 	if len(tp_sequences) > 0:
 		handles.append(Patch(color='blue', label='True Positives'))
@@ -1121,7 +1102,7 @@ if __name__ == "__main__":
 	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get false negative or false positive rate
-	scores, fp_reads_kept, tp_reads_kept = GetScores(neg_testing_records, tp_alignments, fp_alignments)
+	scores, fp_reads_kept, tp_reads_kept = GetScores(args, neg_testing_records, tp_alignments, fp_alignments)
 
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
