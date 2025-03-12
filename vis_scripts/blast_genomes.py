@@ -114,7 +114,7 @@ def CircosPlot(args, outfigpath):
 
 	# load data from fasta files
 	query_fasta = Fasta(args.query_fasta_file) 
-	comp_ref_fasta = [map(Fasta, ref_fasta) for ref_fasta in ref_fasta_files]
+	comp_ref_fasta = list(map(Fasta, ref_fasta_files))
 
 	# Initialize circos instance
 	circos = Circos(
