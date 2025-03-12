@@ -1,0 +1,137 @@
+import sys
+import os
+import argparse
+import math
+import zipfile
+import subprocess
+import multiprocessing
+import random
+import statistics
+import numpy as np
+import json
+from collections import defaultdict
+from pycirclize import Circos, config
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from pygenomeviz.parser import Fasta
+from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
+from pygenomeviz.align import AlignCoord, Blast
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+
+ColorCycler.set_cmap("Set1")
+
+def GetGenomesInfo(fasta):
+	with open(fasta, 'r') as f:
+		content = f.readline()
+	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	
+	return strain
+
+
+def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
+	align_coords = []
+	with open(input_file, 'r') as f:
+		for count, line in enumerate(f, 1):
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			qstart = int(line.rstrip().split(',')[4])
+			qend = int(line.rstrip().split(',')[5])
+			pident = float(line.rstrip().split(',')[8])
+			qseq = line.rstrip().split(',')[9]
+			sseq = line.rstrip().split(',')[10]
+
+			if pident >= identity_thr:
+				align_coords.append([qstart, qend, pident])
+
+	return align_coords
+
+
+def CircosPlot(args):
+
+	# load data from fasta files
+	query_fasta = Fasta(args.query_fasta_file) 
+
+	# Initialize circos instance
+	circos = Circos(
+	    sectors=query_fasta.get_seqid2size(),
+		space=0
+	)
+
+	query_name = GetGenomesInfo(query_fasta_file)
+	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp\n(training genome)', size=9, r=22)
+
+	with open(args.input_ref_file, 'r') as f:
+		content = f.readlines()
+
+	ref_names = []
+	genomes = []
+	for line in content:
+		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2]))
+		genomes.append(line.rstrip().split('\t')[1])
+
+
+	min_r_pos = 100
+	for sector in circos.sectors:
+		# Setup outer track
+		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+		outer_track.axis(fc="black")
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		min_r_pos -= 1
+
+
+	pct_out = open(os.path.join(args.output_dir, f'pct_identity_matching_regions.tsv'), 'w')
+	# Blast genome comparison & plot match blocks
+	comp_name2color = {}
+	# for idx, ref_fasta in enumerate(comp_ref_fasta):
+	for idx, ref_fasta in enumerate(ref_fasta_files):
+		# store percentage identity between matching regions
+		percent_identity = []
+		# run blast using pygenomeviz
+		# align_coords = Blast([query_fasta, ref_fasta]).run()
+		# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+		# run blast 		
+		RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
+		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/_blastn.out', identity_thr=MIN_IDENTITY)
+		# count the number of identical positions across the aligned regions
+		identical_positions = 0
+		color = ColorCycler()
+		# comp_name2color[comp_ref_fasta.name] = color
+		comp_name2color[genomes[idx]] = color
+		for sector in circos.sectors:
+			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+			min_r_pos-5	
+			for ac in align_coords:
+				percent_identity.append(ac[2])
+				identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+				print(ac[2], ac[0], ac[1])
+				rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
+				blast_track.rect(ac[0], ac[1], color=rect_color)
+		# get stats on percentage identity
+		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
+		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
+
+	# Save figure
+	# Enable annotation text adjustment (Default)
+	# config.ann_adjust.enable = True
+	fig = circos.plotfig()
+	# Add legend
+	handles=[Patch(label=name, fc=color) for name, color in comp_name2color.items()]
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	fig.savefig(outfigpath, dpi=300)
+
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--query_fasta_file', type=str, help='path to query fasta file')
+	parser.add_argument('--input_ref_file', type=str, help='path to file containing list of reference fasta files and genomes')
+	parser.add_argument('--output_dir', type=str, help='path to output directory')
+	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
+	args = parser.parse_args()
+
+	CircosPlot(args)
+
+
+
