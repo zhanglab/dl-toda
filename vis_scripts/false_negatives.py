@@ -694,7 +694,7 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 			f.write('\n')
 
 	scores_list = [scores[i] for i in range(genome_size)]
-	with open(os.path.join(args.output_dir, f'{args.label}_fn_tp__scores_info.tsv'), 'w') as outf:
+	with open(os.path.join(args.output_dir, f'{args.label}_fn_tp_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# fn reads kept: {len(fn_reads_kept)}\n')
 		outf.write(f'# tp reads kept: {len(tp_reads_kept)}\n')
 		outf.write(f'FN rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
@@ -1408,12 +1408,14 @@ if __name__ == "__main__":
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, 
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores, genomic_islands=gis_align)
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), scores, genomic_islands=gis_align)
 	else:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test,
-			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores)
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), scores)
 	
+
+
 	# # do FP analysis
 	# # blast FP reads to ncbi nt database
 	# with open(os.path.join(args.output_dir, f'{args.label}_FP_reads.fna'), "w") as outf:
