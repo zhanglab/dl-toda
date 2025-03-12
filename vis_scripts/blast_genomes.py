@@ -99,9 +99,20 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 
 
 def CircosPlot(args, outfigpath):
+	# get info on ref genomes
+	ref_names = []
+	ref_fasta_files = []
+	genomes = []
+	for line in content:
+		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2]))
+		genomes.append(line.rstrip().split('\t')[1])
+		ref_fasta_files.append(line.rstrip().split('\t')[2])
+
+	assert len(colors_pool) >= len(ref_names), 'need more colors'
 
 	# load data from fasta files
 	query_fasta = Fasta(args.query_fasta_file) 
+	comp_ref_fasta = [map(Fasta, ref_fasta) for ref_fasta in ref_fasta_files]
 
 	# Initialize circos instance
 	circos = Circos(
@@ -114,17 +125,6 @@ def CircosPlot(args, outfigpath):
 
 	with open(args.input_ref_file, 'r') as f:
 		content = f.readlines()
-
-	ref_names = []
-	ref_fasta_files = []
-	genomes = []
-	for line in content:
-		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2]))
-		genomes.append(line.rstrip().split('\t')[1])
-		ref_fasta_files.append(line.rstrip().split('\t')[2])
-
-	assert len(colors_pool) >= len(ref_names), 'need more colors'
-
 
 	min_r_pos = 100
 	for sector in circos.sectors:
@@ -145,11 +145,11 @@ def CircosPlot(args, outfigpath):
 		# store percentage identity between matching regions
 		percent_identity = []
 		# run blast using pygenomeviz
-		# align_coords = Blast([query_fasta, ref_fasta]).run()
-		# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-		# run blast
-		RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), args.query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
-		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/blastn.out', identity_thr=MIN_IDENTITY)
+		align_coords = Blast([query_fasta, comp_ref_fasta[idx]]).run()
+		align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
+		# run blast installed on unity
+		# RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), args.query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
+		# align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/blastn.out', identity_thr=MIN_IDENTITY)
 		# count the number of identical positions across the aligned regions
 		identical_positions = 0
 		color = colors_pool[idx]
@@ -159,12 +159,18 @@ def CircosPlot(args, outfigpath):
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
-			percent_identity.append(ac[2])
-			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-			print(ac[2], (ac[1]-ac[0]))
-			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
-			blast_track.rect(ac[0], ac[1], color=rect_color)
-			ani.append(ac[2])
+			# percent_identity.append(ac[2])
+			# identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			# print(ac[2], (ac[1]-ac[0]))
+			# rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
+			# blast_track.rect(ac[0], ac[1], color=rect_color)
+			# ani.append(ac[2])
+			percent_identity.append(ac.identity)
+			identical_positions += (ac.identity/100*(ac.query_end-ac.query_start))
+			track = circos.get_sector(ac.query_name).tracks[-1]
+			rect_color = interpolate_color(color, v=ac.identity, vmin=MIN_IDENTITY)
+			track.rect(ac.query_start, ac.query_end, color=rect_color)
+
 		min_r_pos -= 5
 		# get stats on percentage identity
 		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
