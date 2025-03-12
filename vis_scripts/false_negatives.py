@@ -1383,7 +1383,7 @@ if __name__ == "__main__":
 
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
-	scores = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, tp_alignments_pos_test, test_sequence_length, test_genome_size, test_readid_to_read, len(testing_records[0].seq), fn_cs, tp_cs)
+	scores = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fn_cs, tp_cs)
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# blast testing reads to training genome from label 1
