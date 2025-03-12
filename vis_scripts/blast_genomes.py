@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 
 #ColorCycler.set_cmap("Set1")
 
-colors_pool = ['blue', 'darkviolet', 'black', 'royalblue', 'darkorange', 'green', 'deeppink', 'red', 'gold', 'seagreen']
+colors_pool = ['blue', 'darkviolet', 'black', 'royalblue', 'darkorange', 'green', 'deeppink', 'red', 'gold', 'grey']
 
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
@@ -154,6 +154,7 @@ def CircosPlot(args, outfigpath):
 		color = colors_pool[idx]
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
+		aligned_length = []
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
@@ -164,6 +165,7 @@ def CircosPlot(args, outfigpath):
 			# blast_track.rect(ac[0], ac[1], color=rect_color)
 			print(ac.identity, ac.query_end-ac.query_start)
 			percent_identity.append(ac.identity)
+			aligned_length.append(ac.query_end-ac.query_start)
 			identical_positions += (ac.identity/100*(ac.query_end-ac.query_start))
 			blast_track = circos.get_sector(ac.query_name).tracks[-1]
 			rect_color = interpolate_color(color, v=ac.identity, vmin=MIN_IDENTITY)
@@ -171,10 +173,12 @@ def CircosPlot(args, outfigpath):
 
 		min_r_pos -= 5
 		# get stats on percentage identity
-		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
-		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
-		genomes_pct_identity.append(pct_identity)
+		avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{avg_pct_identity}%\t{round(statistics.mean(percent_identity), 2)}%\n')
+		pct_out.write(f'Percent identity of aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
+		pct_out.write(f'Length of aligned regions\nmean:{statistics.mean(aligned_length)}\tmedian:{statistics.median(aligned_length)}\tmin:{min(aligned_length)}\tmax:{max(aligned_length)}\n')
+
+		genomes_pct_identity.append(avg_pct_identity)
 		genomes_ani.append(round(statistics.mean(percent_identity), 2))
 
 	# Save figure
