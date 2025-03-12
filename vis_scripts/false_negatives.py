@@ -627,9 +627,10 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 			fn_num_pos = sum([sequence_length[r] for r in fn_reads])
 			tp_num_pos = sum([sequence_length[r] for r in tp_reads])
 
+
 			ratio_fn = round(fn_num_pos / (tp_num_pos + fn_num_pos), 2)
 			ratio_tp = round(tp_num_pos / (tp_num_pos + fn_num_pos), 2)
-
+			print(fn_num_pos, tp_num_pos, ratio_fn, ratio_tp)
 			if ratio_fn > 0.5:
 				fn_genes[gene_id] = [ratio_fn, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
@@ -665,6 +666,14 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 	sel_tp_cs = [str(tp_cs[r]) for r in tp_reads_kept]
 	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_tp_cs))
+
+	sel_fn_length = [sequence_length[r] for r in fn_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_fn_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_fn_length))
+
+	sel_tp_length = [sequence_length[r] for r in tp_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_tp_length))
 
 
 	with open(os.path.join(args.output_dir, f'{args.label}_tp_genes_{args.prob_threshold}.tsv'), 'w') as f:
