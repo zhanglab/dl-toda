@@ -71,9 +71,13 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain', 'complete', 'genome']])
-	
-	return strain
+	strain = []
+	for e in content.split(',')[0].split(' ')[1:]:
+		if e not in ['chromosome', 'strain', 'complete', 'genome']:
+			print(e)
+			strain.append(e)
+
+	return ' '.join(strain)
 
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
@@ -167,14 +171,14 @@ def CircosPlot(args, outfigpath):
 		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
 		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
 		genomes_pct_identity.append(pct_identity)
-		genomes_ani.append(statistics.mean(ani))
+		genomes_ani.append(round(statistics.mean(ani), 2))
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles=[Patch(label=f'{ref_names[i]} - {genomes_pct_identity[i]}% | {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
+	handles=[Patch(label=f'{ref_names[i]} {genomes_pct_identity[i]}% | {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
 	fig.savefig(outfigpath, dpi=300)
 
