@@ -637,13 +637,16 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 				fn_reads_kept += fn_reads
 				sel_fn_evalue.update(fn_evalue)
 				sel_fn_pident.update(fn_pident)
-				fn_functions[data[5]] += 1
+				if data[0] == 'protein_coding':
+					fn_functions[data[5]] += 1
+					
 			elif ratio_tp > 0.5:
 				tp_genes[gene_id] = [ratio_tp, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
 				tp_reads_kept += list(tp_reads)
 				sel_tp_evalue.update(tp_evalue)
 				sel_tp_pident.update(tp_pident)
-				tp_functions[data[5]] += 1
+				if data[0] == 'protein_coding':
+					tp_functions[data[5]] += 1
 
 	fn_functions_sorted = dict(sorted(fn_functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_functions_{args.prob_threshold}.tsv'), 'w') as f:
