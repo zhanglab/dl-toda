@@ -132,6 +132,7 @@ def CircosPlot(args, outfigpath):
 		min_r_pos -= 1
 
 	genomes_pct_identity = []
+	genomes_ani = []
 	pct_out = open(os.path.join(args.output_dir, f'pct_identity_matching_regions.tsv'), 'w')
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
@@ -142,7 +143,7 @@ def CircosPlot(args, outfigpath):
 		# run blast using pygenomeviz
 		# align_coords = Blast([query_fasta, ref_fasta]).run()
 		# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
-		# run blast 		
+		# run blast
 		RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), args.query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
 		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/blastn.out', identity_thr=MIN_IDENTITY)
 		# count the number of identical positions across the aligned regions
@@ -150,27 +151,30 @@ def CircosPlot(args, outfigpath):
 		color = ColorCycler()
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
+		ani = []
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
 			percent_identity.append(ac[2])
 			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-			print(ac[2], ac[0], ac[1])
+			print(ac[2], (ac[1]-ac[0]))
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			blast_track.rect(ac[0], ac[1], color=rect_color)
+			ani.append(ac[2])
 		min_r_pos -= 5
 		# get stats on percentage identity
 		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
 		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
 		genomes_pct_identity.append(pct_identity)
+		genomes_ani.append(statistics.mean(ani))
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles=[Patch(label=f'{ref_names[i]} - {genomes_pct_identity[i]}', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
+	handles=[Patch(label=f'{ref_names[i]} - {genomes_pct_identity[i]}% | {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
 	fig.savefig(outfigpath, dpi=300)
 
