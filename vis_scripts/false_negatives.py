@@ -572,7 +572,7 @@ def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 	return length_mapped_seq
 
 
-def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, genome_size, readid_to_read, genome_size, fn_cs, tp_cs):
+def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, readid_to_read, genome_size, fn_cs, tp_cs):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	tp_genes = defaultdict(list)
 	fn_genes = defaultdict(list)
