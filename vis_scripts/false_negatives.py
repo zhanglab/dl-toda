@@ -621,28 +621,29 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 				tp_reads.append(read_id)
 				tp_evalue[read_id] = align_info[4]
 				tp_pident[read_id] = align_info[5]
-		
-		# compare number of tp and fn positions mapped to gene
-		fn_num_pos = sum([sequence_length[r] for r in fn_reads])
-		tp_num_pos = sum([sequence_length[r] for r in tp_reads])
 
-		ratio_fn = round(fn_num_pos / (tp_num_pos + fn_num_pos), 2)
-		ratio_tp = round(tp_num_pos / (tp_num_pos + fn_num_pos), 2)
+		if len(fn_reads) + len(tp_reads) > 0:
+			# compare number of tp and fn positions mapped to gene
+			fn_num_pos = sum([sequence_length[r] for r in fn_reads])
+			tp_num_pos = sum([sequence_length[r] for r in tp_reads])
 
-		if ratio_fn > 0.5:
-			fn_genes[gene_id] = [ratio_fn, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
-			for i in range(gene_start_pos, gene_end_pos+1, 1):
-				scores[i-1] = ratio_fn
-			fn_reads_kept += fn_reads
-			sel_fn_evalue.update(fn_evalue)
-			sel_fn_pident.update(fn_pident)
-			fn_functions[data[5]] += 1
-		elif ratio_tp > 0.5:
-			tp_genes[gene_id] = [ratio_tp, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
-			tp_reads_kept += list(tp_reads)
-			sel_tp_evalue.update(tp_evalue)
-			sel_tp_pident.update(tp_pident)
-			tp_functions[data[5]] += 1
+			ratio_fn = round(fn_num_pos / (tp_num_pos + fn_num_pos), 2)
+			ratio_tp = round(tp_num_pos / (tp_num_pos + fn_num_pos), 2)
+
+			if ratio_fn > 0.5:
+				fn_genes[gene_id] = [ratio_fn, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				for i in range(gene_start_pos, gene_end_pos+1, 1):
+					scores[i-1] = ratio_fn
+				fn_reads_kept += fn_reads
+				sel_fn_evalue.update(fn_evalue)
+				sel_fn_pident.update(fn_pident)
+				fn_functions[data[5]] += 1
+			elif ratio_tp > 0.5:
+				tp_genes[gene_id] = [ratio_tp, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				tp_reads_kept += list(tp_reads)
+				sel_tp_evalue.update(tp_evalue)
+				sel_tp_pident.update(tp_pident)
+				tp_functions[data[5]] += 1
 
 	fn_functions_sorted = dict(sorted(fn_functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_functions_{args.prob_threshold}.tsv'), 'w') as f:
