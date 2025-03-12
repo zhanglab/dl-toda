@@ -1140,7 +1140,7 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 	if genomic_islands:
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}'),
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}%'),
 		Patch(color='darkorange', label='False Negative rate'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
