@@ -21,6 +21,10 @@ import matplotlib.pyplot as plt
 
 ColorCycler.set_cmap("Set1")
 
+
+blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
+makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
+
 # QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
 TICKS_INTERVAL = 500000
