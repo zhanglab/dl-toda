@@ -71,7 +71,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain', 'complete', 'genome']])
 	
 	return strain
 
