@@ -692,10 +692,9 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 				f.write(f'\t{v[i]}')
 			f.write('\n')
 
-	for k, v in scores.items():
-		print(k, v)
+
 	scores_list = [scores[i] for i in range(genome_size)]
-	print(scores_list)
+
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_tp_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# fn reads kept: {len(fn_reads_kept)}\n')
 		outf.write(f'# tp reads kept: {len(tp_reads_kept)}\n')
@@ -970,7 +969,7 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
-def FNCircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
+def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
 			fn_alignments_pos_test, tp_alignments_pos_test, outfigpath, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
@@ -1400,6 +1399,7 @@ if __name__ == "__main__":
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	scores = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fn_cs, tp_cs)
+	print(scores[:10])
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# blast testing reads to training genome from label 1
@@ -1413,13 +1413,12 @@ if __name__ == "__main__":
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+		CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), genomic_islands=gis_align)
 	else:
-		FNCircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
+		CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, \
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'))
 	
-
 
 	# # do FP analysis
 	# # blast FP reads to ncbi nt database
