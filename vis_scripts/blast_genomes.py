@@ -104,17 +104,19 @@ def CircosPlot(args):
 		space=0
 	)
 
-	query_name = GetGenomesInfo(query_fasta_file)
+	query_name = GetGenomesInfo(args,query_fasta_file)
 	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp\n(training genome)', size=9, r=22)
 
 	with open(args.input_ref_file, 'r') as f:
 		content = f.readlines()
 
 	ref_names = []
+	ref_fasta_files = []
 	genomes = []
 	for line in content:
 		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2]))
 		genomes.append(line.rstrip().split('\t')[1])
+		ref_fasta_files.append(line.rstrip().split('\t')[2])
 
 
 	min_r_pos = 100
