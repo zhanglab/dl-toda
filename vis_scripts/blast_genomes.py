@@ -72,7 +72,7 @@ def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
 	strain = []
-	for e in content.split(',')[0].split(' ')[1:]:
+	for e in content.rstrip().split(',')[0].split(' ')[1:]:
 		if e not in ['chromosome', 'strain', 'complete', 'genome']:
 			print(e)
 			strain.append(e)
