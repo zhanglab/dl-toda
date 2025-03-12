@@ -162,6 +162,7 @@ def CircosPlot(args, outfigpath):
 			# print(ac[2], (ac[1]-ac[0]))
 			# rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			# blast_track.rect(ac[0], ac[1], color=rect_color)
+			print(ac.identity, ac.query_end-ac.query_start)
 			percent_identity.append(ac.identity)
 			identical_positions += (ac.identity/100*(ac.query_end-ac.query_start))
 			blast_track = circos.get_sector(ac.query_name).tracks[-1]
