@@ -564,7 +564,7 @@ def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 		if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos):
 			length_mapped_seq = 100
 		elif (read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos):
-			length_mapped_seq = (end_pos - annot[1])/(gene_end_pos - gene_start_pos)*100
+			length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
 		elif (read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos):
 			length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
 		elif (read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
