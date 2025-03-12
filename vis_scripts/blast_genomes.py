@@ -68,7 +68,7 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 
 
 
-def GetGenomesInfo(fasta):
+def GetGenomesInfo(fasta, type):
 	with open(fasta, 'r') as f:
 		content = f.readline()
 	strain = []
@@ -76,8 +76,10 @@ def GetGenomesInfo(fasta):
 		if e not in ['chromosome', 'strain', 'complete', 'genome']:
 			print(e)
 			strain.append(e)
-
-	return strain[-1]
+	if type == 'ref':
+		return strain[-1]
+	elif type == 'query':
+		return ' '.join(strain)
 
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
@@ -106,7 +108,7 @@ def CircosPlot(args, outfigpath):
 	ref_fasta_files = []
 	genomes = []
 	for line in content:
-		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2]))
+		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2], 'ref'))
 		genomes.append(line.rstrip().split('\t')[1])
 		ref_fasta_files.append(line.rstrip().split('\t')[2])
 
@@ -122,7 +124,7 @@ def CircosPlot(args, outfigpath):
 		space=0
 	)
 
-	query_name = GetGenomesInfo(args.query_fasta_file)
+	query_name = GetGenomesInfo(args.query_fasta_file, 'query')
 	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp', size=9, r=22)
 	print(f'{query_fasta.full_genome_length:,} bp')
 
@@ -191,7 +193,7 @@ def CircosPlot(args, outfigpath):
 	fig = circos.plotfig()
 	# Add legend
 	handles=[Patch(label=f'{ref_names[i]} - {genomes_size[i]} - {genomes_pct_identity[i]}% - {genomes_ani[i]}%', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
-	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 	fig.savefig(outfigpath, dpi=300)
 
 
