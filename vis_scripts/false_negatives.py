@@ -961,8 +961,7 @@ def GetGenomesInfo(fasta):
 
 
 def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, \
-			genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
+			fn_alignments_pos_test, tp_alignments_pos_test, outfigpath, outfilename, scores, genomic_islands=None):
 	
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -1039,33 +1038,33 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 		# trna_track = sector.add_track((min_r_pos-5, min_r_pos))
 		# min_r_pos -= 6
 		# features = []
-		features = {}
-		for gene_id in genes_of_interest.keys():
-			if genes_of_interest[gene_id][3] == '+':
-				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
-				if genes_of_interest[gene_id][0] == 'protein_coding':
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
-					# cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
-				else:
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
-					# if genes_of_interest[gene_id][0] == 'tRNA':
-						# cds_track.genomic_features(feature, fc="darkgreen")
-					# if genes_of_interest[gene_id][0] == 'rRNA':
-					# 	rrna_track.genomic_features(feature, fc="deeppink")
-			else:
-				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
-				if genes_of_interest[gene_id][0] == 'protein_coding':
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
-					# cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
-				else:
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
-					# if genes_of_interest[gene_id][0] == 'tRNA':
-						# cds_track.genomic_features(feature, fc="darkgreen")
-					# if genes_of_interest[gene_id][0] == 'rRNA':
-					# 	rrna_track.genomic_features(feature, fc="deeppink")
+		# features = {}
+		# for gene_id in genes_of_interest.keys():
+		# 	if genes_of_interest[gene_id][3] == '+':
+		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
+		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
+		# 			# cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
+		# 		else:
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
+		# 			# if genes_of_interest[gene_id][0] == 'tRNA':
+		# 				# cds_track.genomic_features(feature, fc="darkgreen")
+		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
+		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
+		# 	else:
+		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
+		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
+		# 			# cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
+		# 		else:
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
+		# 			# if genes_of_interest[gene_id][0] == 'tRNA':
+		# 				# cds_track.genomic_features(feature, fc="darkgreen")
+		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
+		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
 
-			# features.append(feature)
-			features[genes_of_interest[gene_id][1]] = feature
+		# 	# features.append(feature)
+		# 	features[genes_of_interest[gene_id][1]] = feature
 
 		
 		# # Plot labels of genomic islands
@@ -1093,32 +1092,32 @@ def FNCircosPlot(args, test_record_seq, train_record_seq, testing_fasta, trainin
 
 
 
-		# Get info about genes
-		outf = open(outfilename, 'w')
-		labels, label_pos_list = [], []
-		features_sorted = dict(sorted(features.items()))
-		for feature in features_sorted.values():
-		# for feature in features:
-			start = int(feature.location.start)
-			end = int(feature.location.end)
-			label_pos = (start + end) / 2
-			gene_id = feature.qualifiers.get("gene_id", [None])[0]
-			label = feature.qualifiers.get("gene_name", [None])[0]
-			strand = feature.qualifiers.get("strand", [None])[0]
-			gene_type = feature.qualifiers.get("gene_type", [None])[0]
-			if gene_type == 'protein_coding':
-				function = feature.qualifiers.get("function", [None])[0]
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
-			else:
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+		# # Get info about genes
+		# outf = open(outfilename, 'w')
+		# labels, label_pos_list = [], []
+		# features_sorted = dict(sorted(features.items()))
+		# for feature in features_sorted.values():
+		# # for feature in features:
+		# 	start = int(feature.location.start)
+		# 	end = int(feature.location.end)
+		# 	label_pos = (start + end) / 2
+		# 	gene_id = feature.qualifiers.get("gene_id", [None])[0]
+		# 	label = feature.qualifiers.get("gene_name", [None])[0]
+		# 	strand = feature.qualifiers.get("strand", [None])[0]
+		# 	gene_type = feature.qualifiers.get("gene_type", [None])[0]
+		# 	if gene_type == 'protein_coding':
+		# 		function = feature.qualifiers.get("function", [None])[0]
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+		# 	else:
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
-		# 	if label == None:
-		# 		continue
-		# 	if gene_id is not None:
-		# 		labels.append(gene_id)
-		# 		label_pos_list.append(label_pos)
-		# 	cds_track.annotate(label_pos, label, label_size=7)
-		outf.close()
+		# # 	if label == None:
+		# # 		continue
+		# # 	if gene_id is not None:
+		# # 		labels.append(gene_id)
+		# # 		label_pos_list.append(label_pos)
+		# # 	cds_track.annotate(label_pos, label, label_size=7)
+		# outf.close()
 
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
@@ -1401,10 +1400,10 @@ if __name__ == "__main__":
 		else:
 			gis_align = GetGIsFromAnnotations(args, input_dir, str(training_records[0].seq), args.train_genomes_info[args.label][0], testing_fasta)
 
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, genes_of_interest_stat,
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, 
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores, genomic_islands=gis_align)
 	else:
-		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test, genes_of_interest, genes_of_interest_count, genes_of_interest_stat,
+		FNCircosPlot(args, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, fn_alignments_pos_test, tp_alignments_pos_test,
 			os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_circos.png'), os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_genes_circos.tsv'), scores)
 	
 	# # do FP analysis
