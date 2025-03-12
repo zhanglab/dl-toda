@@ -93,7 +93,7 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	return align_coords
 
 
-def CircosPlot(args):
+def CircosPlot(args, outfigpath):
 
 	# load data from fasta files
 	query_fasta = Fasta(args.query_fasta_file) 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 
-	CircosPlot(args)
+	CircosPlot(args, os.path.join(args.output_dir, f'circos.png'))
 
 
 
