@@ -578,7 +578,6 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 	fn_genes = defaultdict(list)
 	fn_functions = defaultdict(int)
 	tp_functions = defaultdict(int)
-	scores = defaultdict(list)
 	fn_reads_kept = [] 
 	tp_reads_kept = []
 	sel_tp_evalue = dict()
@@ -693,7 +692,10 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 				f.write(f'\t{v[i]}')
 			f.write('\n')
 
+	for k, v in scores.items():
+		print(k, v)
 	scores_list = [scores[i] for i in range(genome_size)]
+	print(scores_list)
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_tp_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# fn reads kept: {len(fn_reads_kept)}\n')
 		outf.write(f'# tp reads kept: {len(tp_reads_kept)}\n')
