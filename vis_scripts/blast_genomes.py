@@ -21,6 +21,48 @@ import matplotlib.pyplot as plt
 
 ColorCycler.set_cmap("Set1")
 
+# QUERY_TRACK_SIZE = 5
+MIN_IDENTITY = 70
+TICKS_INTERVAL = 500000
+
+
+def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
+	if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
+	if db:
+		sys.executable = blastn_exec
+		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', \
+			f'{args.output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
+			'-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+	else:
+		if len(subject) > 1:
+			# put all training genomes into one fasta file
+			if not os.path.exists(os.path.join(output_dir, 'all_training_genomes.fna')):
+				with open(os.path.join(output_dir, 'all_training_genomes.fna'), 'w') as outf:
+					for count, fasta in enumerate(subject, 1):
+						print(f'{count}\t{fasta}')
+						with open(fasta, 'r') as inf:
+							outf.write(inf.read())
+				input_fasta = os.path.join(output_dir, 'all_training_genomes.fna')
+		else:
+			input_fasta = subject[0]
+
+		print(input_fasta)
+		# create database
+		result = subprocess.run([makeblastdb_exec, '-in', f'{input_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+		
+		# align reads to database or fasta file
+		if sam:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+		else:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
+			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+
+
+
+
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
