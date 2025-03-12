@@ -152,7 +152,7 @@ def CircosPlot(args, outfigpath):
 		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/blastn.out', identity_thr=MIN_IDENTITY)
 		# count the number of identical positions across the aligned regions
 		identical_positions = 0
-		color = ColorCycler()
+		color = colors_pool[idx]
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
 		ani = []
