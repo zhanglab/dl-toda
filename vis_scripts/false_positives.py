@@ -689,7 +689,6 @@ def GetGenomesInfo(fasta):
 	
 	return strain
 
-
 def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
 			fp_alignments, tp_alignments, genes_of_interest, genes_of_interest_count, \
 			genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
@@ -1132,7 +1131,7 @@ if __name__ == "__main__":
 	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
 	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
-			os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'), scores)
+			fp_genes_of_interest_count, fp_genes_of_interest_stat, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'), scores)
 
 
 
