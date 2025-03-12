@@ -933,7 +933,7 @@ def GetMatchRegions(args, input_file, genomic_islands, identity_thr=MIN_IDENTITY
 def StoreCS(args, dict_cs, type):
 	list_cs = []
 	for k, v in dict_cs.items():
-		list_cs += v
+		list_cs.append(v)
 	with open(os.path.join(args.output_dir, f'{args.label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join([str(x) for x in list_cs]))
 
