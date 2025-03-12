@@ -154,7 +154,6 @@ def CircosPlot(args, outfigpath):
 		color = colors_pool[idx]
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
-		ani = []
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
@@ -163,12 +162,11 @@ def CircosPlot(args, outfigpath):
 			# print(ac[2], (ac[1]-ac[0]))
 			# rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			# blast_track.rect(ac[0], ac[1], color=rect_color)
-			# ani.append(ac[2])
 			percent_identity.append(ac.identity)
 			identical_positions += (ac.identity/100*(ac.query_end-ac.query_start))
-			track = circos.get_sector(ac.query_name).tracks[-1]
+			blast_track = circos.get_sector(ac.query_name).tracks[-1]
 			rect_color = interpolate_color(color, v=ac.identity, vmin=MIN_IDENTITY)
-			track.rect(ac.query_start, ac.query_end, color=rect_color)
+			blast_track.rect(ac.query_start, ac.query_end, color=rect_color)
 
 		min_r_pos -= 5
 		# get stats on percentage identity
@@ -176,7 +174,7 @@ def CircosPlot(args, outfigpath):
 		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
 		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
 		genomes_pct_identity.append(pct_identity)
-		genomes_ani.append(round(statistics.mean(ani), 2))
+		genomes_ani.append(round(statistics.mean(percent_identity), 2))
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
