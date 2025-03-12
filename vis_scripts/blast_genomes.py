@@ -66,25 +66,6 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
 
-
-
-def GetGenomesInfo(fasta, type):
-	with open(fasta, 'r') as f:
-		content = f.readline()
-	strain = []
-	for e in content.rstrip().split(',')[0].split(' ')[1:]:
-		if e not in ['chromosome', 'strain', 'complete', 'genome']:
-			print(e)
-			strain.append(e)
-	if type == 'ref':
-		if len(strain[-1].split(' ')) > 1:
-			return ''.join(strain[-2:])
-		else:
-			return strain[-1]
-	elif type == 'query':
-		return ' '.join(strain)
-
-
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	align_coords = []
 	with open(input_file, 'r') as f:
@@ -111,14 +92,20 @@ def CircosPlot(args, outfigpath):
 	ref_fasta_files = []
 	genomes = []
 	for line in content:
-		ref_names.append(GetGenomesInfo(line.rstrip().split('\t')[2], 'ref'))
-		genomes.append(line.rstrip().split('\t')[1])
-		ref_fasta_files.append(line.rstrip().split('\t')[2])
+		ref_names.append(line.rstrip().split('\t')[0])
+		genomes.append(line.rstrip().split('\t')[2])
+		ref_fasta_files.append(line.rstrip().split('\t')[3])
 
 	assert len(colors_pool) >= len(ref_names), 'need more colors'
 
+	with open(args.query_file, 'r') as f:
+		content = f.readline()
+		query_fasta_file = content.rstrip().split('\t')[3]
+		query_name = content.rstrip().split('\t')[0]
+		content.rstrip().split('\t')[2]
+
 	# load data from fasta files
-	query_fasta = Fasta(args.query_fasta_file) 
+	query_fasta = Fasta(query_fasta_file) 
 	comp_ref_fasta = list(map(Fasta, ref_fasta_files))
 
 	# Initialize circos instance
@@ -127,7 +114,6 @@ def CircosPlot(args, outfigpath):
 		space=0
 	)
 
-	query_name = GetGenomesInfo(args.query_fasta_file, 'query')
 	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp', size=9, r=22)
 	print(f'{query_fasta.full_genome_length:,} bp')
 
@@ -202,7 +188,7 @@ def CircosPlot(args, outfigpath):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--query_fasta_file', type=str, help='path to query fasta file')
+	parser.add_argument('--query_file', type=str, help='path to file containing info on query sequence')
 	parser.add_argument('--input_ref_file', type=str, help='path to file containing list of reference fasta files and genomes')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
