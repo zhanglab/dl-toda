@@ -1168,107 +1168,112 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		genome_pos = list(range(query_fasta.full_genome_length))
 
 		# add track for scores
+		above_zero = []
+		for i in range(len(scores)):
+			if scores[i] > 0:
+				above_zero.append(scores[i])
+		print(len(above_zero))
 		min_r_pos -= 5
 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 		scores_track.axis(ec="deeppink")		
 		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
-		scores_track.line(genome_pos, scores, color="darkorange")
+		scores_track.line(genome_pos, scores, color="deeppink")
 		print(f'added FN rate track')
 
-		# add track for TP reads
-		min_r_pos -= 13
-		tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		tp_track.axis(ec="blue")
-		pos_tp_count = [0]*query_fasta.full_genome_length
-		for readid, data in tp_alignments_pos_test.items():
-			for pos in range(data[2], data[3]+1, 1):
-				pos_tp_count[pos-1] +=1
-		y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
-		y_labels = list(map(str, y_values))
-		tp_track.yticks(y_values, y_labels)
-		tp_track.line(genome_pos, pos_tp_count, color="blue")
-			# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
-		print(f'added TP track')
+	# 	# add track for TP reads
+	# 	min_r_pos -= 13
+	# 	tp_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	tp_track.axis(ec="blue")
+	# 	pos_tp_count = [0]*query_fasta.full_genome_length
+	# 	for readid, data in tp_alignments_pos_test.items():
+	# 		for pos in range(data[2], data[3]+1, 1):
+	# 			pos_tp_count[pos-1] +=1
+	# 	y_values = list(range(min(pos_tp_count), max(pos_tp_count), 5))
+	# 	y_labels = list(map(str, y_values))
+	# 	tp_track.yticks(y_values, y_labels)
+	# 	tp_track.line(genome_pos, pos_tp_count, color="blue")
+	# 		# tp_track.rect(data[1], data[2], color="orange", lw=0.1)
+	# 	print(f'added TP track')
 
-		# add tracks for FN reads 
-		min_r_pos -= 13
-		fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-		fn_track.axis(ec="darkviolet")
-		pos_fn_count = [0]*query_fasta.full_genome_length
-		for readid, data in fn_alignments_pos_test.items():
-			# if readid not in most_mapped_reads_id:
-			for pos in range(data[2], data[3]+1, 1):
-				pos_fn_count[pos-1] +=1
-		y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
-		y_labels = list(map(str, y_values))
-		fn_track.yticks(y_values, y_labels)
-		fn_track.line(genome_pos, pos_fn_count, color="darkviolet")
-		print(f'added FN track')
+	# 	# add tracks for FN reads 
+	# 	min_r_pos -= 13
+	# 	fn_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+	# 	fn_track.axis(ec="darkviolet")
+	# 	pos_fn_count = [0]*query_fasta.full_genome_length
+	# 	for readid, data in fn_alignments_pos_test.items():
+	# 		# if readid not in most_mapped_reads_id:
+	# 		for pos in range(data[2], data[3]+1, 1):
+	# 			pos_fn_count[pos-1] +=1
+	# 	y_values = list(range(min(pos_fn_count), max(pos_fn_count), 2))
+	# 	y_labels = list(map(str, y_values))
+	# 	fn_track.yticks(y_values, y_labels)
+	# 	fn_track.line(genome_pos, pos_fn_count, color="darkviolet")
+	# 	print(f'added FN track')
 
-		# Plot GC skew
-		min_r_pos -= 11
-		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gcskews = GetGCSkew(test_record_seq)
-		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		abs_max_gcskew = np.max(np.abs(gcskews))
-		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
-		)
-		gcskew_track.fill_between(
-			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		)
+	# 	# Plot GC skew
+	# 	min_r_pos -= 11
+	# 	gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+	# 	pos_list, gcskews = GetGCSkew(test_record_seq)
+	# 	positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+	# 	negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+	# 	abs_max_gcskew = np.max(np.abs(gcskews))
+	# 	vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+	# 	gcskew_track.fill_between(
+	# 		pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="blue"
+	# 	)
+	# 	gcskew_track.fill_between(
+	# 		pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="gold"
+	# 	)
 
-		# Plot GC content
-		min_r_pos -= 5
-		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		gc_content_updated = gc_content - test_genome_gc_content
-		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-		abs_max_gc_content = np.max(np.abs(gc_content_updated))
-		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-		gc_content_track.fill_between(
-			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-		)
-		gc_content_track.fill_between(
-			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-		)
+	# 	# Plot GC content
+	# 	min_r_pos -= 5
+	# 	gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+	# 	pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+	# 	gc_content_updated = gc_content - test_genome_gc_content
+	# 	positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+	# 	negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+	# 	abs_max_gc_content = np.max(np.abs(gc_content_updated))
+	# 	vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+	# 	gc_content_track.fill_between(
+	# 		pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="darkviolet"
+	# 	)
+	# 	gc_content_track.fill_between(
+	# 		pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="orangered"
+	# 	)
 		
-		# report GC content of train and test genomes
-		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
-			f.write(f'Testing genome:\t{test_genome_gc_content}')
-			f.write(f'Training genome:\t{train_genome_gc_content}')
+	# 	# report GC content of train and test genomes
+	# 	_, _, train_genome_gc_content = GetGCContent(train_record_seq)
+	# 	with open(os.path.join(args.output_dir, f'{args.label}_GC_content.tsv'), 'w') as f:
+	# 		f.write(f'Testing genome:\t{test_genome_gc_content}')
+	# 		f.write(f'Training genome:\t{train_genome_gc_content}')
 
-		# get average GC content for FN and TP reads
-		GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'fn')
-		GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'tp')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'fn_relative')
-		GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'tp_relative')
+	# 	# get average GC content for FN and TP reads
+	# 	GetReadsGCcontent(args, gc_content, pos_list, fn_alignments_pos_test, 'fn')
+	# 	GetReadsGCcontent(args, gc_content, pos_list, tp_alignments_pos_test, 'tp')
+	# 	GetReadsGCcontent(args, gc_content_updated, pos_list, fn_alignments_pos_test, 'fn_relative')
+	# 	GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments_pos_test, 'tp_relative')
 
-	# Save figure
-	# Enable annotation text adjustment (Default)
-	# config.ann_adjust.enable = True
-	fig = circos.plotfig()
-	# Add legend
-	handles = []
-	if genomic_islands:
-		handles.append(Patch(color='red', label='Genomic Islands'))
-	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}%'),
-		Patch(color='deeppink', label='False Negative rate'),
-		Patch(color='blue', label='True Positives'),
-		Patch(color='darkviolet', label='False Negatives'),
-		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='limegreen', label='Negative GC Skew', marker="v", ms=6, ls="None"),
-		Line2D([], [], color='black', label='Positive GC Content', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='deeppink', label='Negative GC Content', marker="v", ms=6, ls="None"),
-		]
-	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	# # Save figure
+	# # Enable annotation text adjustment (Default)
+	# # config.ann_adjust.enable = True
+	# fig = circos.plotfig()
+	# # Add legend
+	# handles = []
+	# if genomic_islands:
+	# 	handles.append(Patch(color='red', label='Genomic Islands'))
+	# handles += [
+	# 	Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}%'),
+	# 	Patch(color='deeppink', label='False Negative rate'),
+	# 	Patch(color='blue', label='True Positives'),
+	# 	Patch(color='darkviolet', label='False Negatives'),
+	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None"),
+	# 	]
+	# _ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 
 	fig.savefig(outfigpath, dpi=300)
 
