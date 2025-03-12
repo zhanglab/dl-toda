@@ -534,12 +534,12 @@ def GetGenes(args, label, output_dir, annot_info, fp_alignments, fp_reads_kept, 
 	else:
 		print('all reads were found a gene')
 
-	# with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
-	# 	for gene_id, annot in genes_of_interest.items():
-	# 		if annot[0] == 'protein_coding':
-	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
-	# 		else:
-	# 			outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+	with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
+		for gene_id, annot in genes_of_interest.items():
+			if annot[0] == 'protein_coding':
+				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+			else:
+				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(output_dir, f'{label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
@@ -1126,7 +1126,7 @@ if __name__ == "__main__":
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
-	# tp_genes_of_interest = GetGenes(args, args.neg_label, args.output_dir, test_annot_info, tp_alignments, test_sequence_length, test_readid_to_read, 'TP')
+	_, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
 
 	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
