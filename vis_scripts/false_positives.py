@@ -628,6 +628,7 @@ def GetScores(args, testing_records, tp_alignments, fp_alignments):
 
 		if num_tp+num_fp > 0:
 			ratio_fp = num_fp / (num_tp+num_fp)
+			ratio_tp = num_tp / (num_tp+num_fp)
 
 			if ratio_fp > 0.5:
 				scores.append(ratio_fp)
