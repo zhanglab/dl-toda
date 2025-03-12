@@ -131,6 +131,9 @@ if __name__ == "__main__":
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
 
+	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
+
 	CircosPlot(args)
 
 
