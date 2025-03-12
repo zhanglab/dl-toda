@@ -142,7 +142,7 @@ def CircosPlot(args, outfigpath):
 	genomes_size = []
 	# for idx, ref_fasta in enumerate(comp_ref_fasta):
 	for idx, ref_fasta in enumerate(ref_fasta_files):
-		genomes_size.append(comp_ref_fasta[idx].full_genome_length)
+		genomes_size.append(comp_ref_fasta[idx].full_genome_length:,)
 		print(comp_ref_fasta[idx].full_genome_length)
 		# store percentage identity between matching regions
 		percent_identity = []
