@@ -140,7 +140,7 @@ def CircosPlot(args):
 		# align_coords = Blast([query_fasta, ref_fasta]).run()
 		# align_coords = AlignCoord.filter(align_coords, identity_thr=MIN_IDENTITY)
 		# run blast 		
-		RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
+		RunBlast(args, os.path.join(args.output_dir, 'blast', genomes[idx]), args.query_fasta_file, subject=[ref_fasta], outfilename=f'{args.output_dir}/blast/{genomes[idx]}/blastn.out')
 		align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{genomes[idx]}/_blastn.out', identity_thr=MIN_IDENTITY)
 		# count the number of identical positions across the aligned regions
 		identical_positions = 0
