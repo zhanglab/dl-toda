@@ -100,6 +100,8 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 
 def CircosPlot(args, outfigpath):
 	# get info on ref genomes
+	with open(args.input_ref_file, 'r') as f:
+		content = f.readlines()
 	ref_names = []
 	ref_fasta_files = []
 	genomes = []
@@ -122,9 +124,6 @@ def CircosPlot(args, outfigpath):
 
 	query_name = GetGenomesInfo(args.query_fasta_file)
 	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp', size=9, r=22)
-
-	with open(args.input_ref_file, 'r') as f:
-		content = f.readlines()
 
 	min_r_pos = 100
 	for sector in circos.sectors:
