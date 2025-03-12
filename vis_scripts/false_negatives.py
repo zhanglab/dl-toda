@@ -708,7 +708,7 @@ def GetGenes(args, annot_info, fn_alignments, tp_alignments, sequence_length, re
 	CreateTsvFile(fn_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads.tsv'))
 	CreateTsvFile(tp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads.tsv'))
 
-	return scores_list, fn_reads_kept, tp_reads_kept
+	return scores_list
 
 
 
@@ -1398,7 +1398,6 @@ if __name__ == "__main__":
 	# get annotations info
 	pos_test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	scores = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fn_cs, tp_cs)
-	print(scores[:10])
 	GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# blast testing reads to training genome from label 1
