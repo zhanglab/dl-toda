@@ -19,8 +19,9 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 
-ColorCycler.set_cmap("Set1")
+#ColorCycler.set_cmap("Set1")
 
+colors_pool = ['blue', 'darkviolet', 'black', 'royalblue', 'darkorange', 'green', 'deeppink', 'red', 'gold', 'seagreen']
 
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
@@ -105,7 +106,7 @@ def CircosPlot(args, outfigpath):
 	)
 
 	query_name = GetGenomesInfo(args.query_fasta_file)
-	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp\n(training genome)', size=9, r=22)
+	circos.text(f'{query_name}\n{query_fasta.full_genome_length:,} bp', size=9, r=22)
 
 	with open(args.input_ref_file, 'r') as f:
 		content = f.readlines()
@@ -118,6 +119,8 @@ def CircosPlot(args, outfigpath):
 		genomes.append(line.rstrip().split('\t')[1])
 		ref_fasta_files.append(line.rstrip().split('\t')[2])
 
+	assert len(colors_pool) >= len(ref_names), 'need more colors'
+
 
 	min_r_pos = 100
 	for sector in circos.sectors:
@@ -128,7 +131,7 @@ def CircosPlot(args, outfigpath):
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 		min_r_pos -= 1
 
-
+	genomes_pct_identity = []
 	pct_out = open(os.path.join(args.output_dir, f'pct_identity_matching_regions.tsv'), 'w')
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
@@ -147,7 +150,6 @@ def CircosPlot(args, outfigpath):
 		color = ColorCycler()
 		# comp_name2color[comp_ref_fasta.name] = color
 		comp_name2color[genomes[idx]] = color
-		min_r_pos -= 5	
 		for sector in circos.sectors:
 			blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
 		for ac in align_coords:
@@ -156,18 +158,20 @@ def CircosPlot(args, outfigpath):
 			print(ac[2], ac[0], ac[1])
 			rect_color = interpolate_color(color, v=ac[2], vmin=MIN_IDENTITY)
 			blast_track.rect(ac[0], ac[1], color=rect_color)
+		min_r_pos -= 5
 		# get stats on percentage identity
 		pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
 		pct_out.write(f'{genomes[idx]}\t{ref_names[idx]}\t{identical_positions}\t{pct_identity}%\n')
 		pct_out.write(f'Stats on aligned regions\nmean:{statistics.mean(percent_identity)}\tmedian:{statistics.median(percent_identity)}\tmin:{min(percent_identity)}\tmax:{max(percent_identity)}\n')
+		genomes_pct_identity.append(pct_identity)
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
 	fig = circos.plotfig()
 	# Add legend
-	handles=[Patch(label=name, fc=color) for name, color in comp_name2color.items()]
-	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	handles=[Patch(label=f'{ref_names[i]} - {genomes_pct_identity[i]}', fc=comp_name2color[genomes[i]]) for i in range(len(ref_names))]
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=6)
 	fig.savefig(outfigpath, dpi=300)
 
 
