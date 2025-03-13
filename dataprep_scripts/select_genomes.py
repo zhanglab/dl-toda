@@ -20,7 +20,7 @@ def get_gtdb_info(gtdb_info):
 
     return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy
 
-def clean_fasta(fasta_file):
+def clean_fasta(args, fasta_file):
     updated_seq = []
     updated_description = []
 
@@ -42,7 +42,7 @@ def clean_fasta(fasta_file):
     if len("".join(updated_seq)) >= 500000:
         # if more than one chromosome, combine chromosomes into one sequence
         new_description = f'{updated_description[0]}, combined' if len(updated_description) > 1 else updated_description[0]
-        new_filepath = os.path.join(output_dir, f'updated_{fastafile.split("/")[-1]}')
+        new_filepath = os.path.join(args.output_dir, f'updated_{fastafile.split("/")[-1]}')
         print(new_filepath)
         with open(new_filepath, 'w') as out_fasta:
             out_fasta.write(f'>{new_description}\n{"".join(updated_seq)}\n')
@@ -115,7 +115,7 @@ def main():
                                 fasta_filename = source_path.split('/')[-1]
                                 dest_path = os.path.join(args.output_dir, fasta_filename)    
                                 shutil.copy(source_path, dest_path)
-                                clean_fasta(dest_path)
+                                clean_fasta(args, dest_path)
                             else:
                                 line += 'NOT IN\n'
                                 
