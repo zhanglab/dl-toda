@@ -110,7 +110,7 @@ def main():
                     if genomes_id[i] not in used_genomes:
                         if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                             if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
-                                line = f'{label}\t'
+                                line = '1\t'
                             else:
                                 if gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                                     line = '0\t'
