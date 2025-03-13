@@ -81,7 +81,7 @@ def main():
     with open(path_dl_toda_tax, 'r') as f:
         dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
-    with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as outf:
+    with open(os.path.join(args.output_dir, 'genomes.tsv'), 'w') as outf:
         for i in range(len(genomes_id)):
             if genomes_id[i] not in used_genomes:
                 if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
