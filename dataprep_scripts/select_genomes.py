@@ -4,6 +4,8 @@ import glob
 import os
 import sys
 import argparse
+import gzip
+import shutil
 
 def get_gtdb_info(gtdb_info):
     # load gtdb info file
@@ -18,14 +20,24 @@ def get_gtdb_info(gtdb_info):
 
     return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy
 
-def clean_fasta(genome_id, fastafile, path_to_db, output_dir, outf):
+def clean_fasta(fasta_file):
     updated_seq = []
     updated_description = []
-    for record in SeqIO.parse(fastafile, "fasta"):
-        # remove phages and plasmids
-        if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
-            updated_seq.append(str(record.seq))
-            updated_description.append(record.description)
+
+    if dest_path[-2:] == 'gz':
+        with gzip.open(fasta_file, 'rt') as handle:
+            for record in SeqIO.parse(handle, "fasta"):
+                # remove phages and plasmids
+                if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
+                    updated_seq.append(str(record.seq))
+                    updated_description.append(record.description)
+    else:
+        for record in SeqIO.parse(fasta_file, "fasta"):
+            # remove phages and plasmids
+            if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
+                updated_seq.append(str(record.seq))
+                updated_description.append(record.description)
+
     # only keep genomes with size equal or above 500000 bp
     if len("".join(updated_seq)) >= 500000:
         # if more than one chromosome, combine chromosomes into one sequence
@@ -37,13 +49,19 @@ def clean_fasta(genome_id, fastafile, path_to_db, output_dir, outf):
         outf.write(f'{genome_id}\t{new_filepath}\n')
 
 
-def get_fasta(fna_files):
-    with open(fna_files, 'r') as f:
-        genomes_to_fa = {line.rstrip().split('/')[-2]: line for line in f.readlines()}
-    # # get fasta files in database
-    # fasta_files = glob.glob(os.path.join(path_to_db, '*.fna'))
-    # # map genomes accession id to path to fasta files
-    # genomes = {"_".join(i.split('/')[-1].split('_')[0:2]): i for i in fasta_files}
+def get_fasta(args, genomes_id):
+    genomes_to_fa = {}
+    ncbi_fasta = glob.glob.()
+    with open(args.ncbi_refseq_db, 'r') as f:
+        for line in f:
+            genome = '_'.join(line.rstrip().split('/')[-2].split('_')[0:2])
+            genomes_to_fa[genome] = line
+
+    for genome in genomes_id:
+        genome = genome.replace('_', '').split('.')[0]
+        path = os.path.join(args.output_dir, '/'.join([genome[i:i+3] for i in range(0,10,3)]))
+        if genome not in genomes_to_fa:
+            genomes_to_fa[genome] = path
 
     return genomes_to_fa
 
@@ -51,8 +69,8 @@ def get_fasta(fna_files):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
-    parser.add_argument('--ncbi_refseq_db', type=str, help='file with list of ncbi fna files')
-    # parser.add_argument('--gtdb_db', type=str, help='path to gtdb database')
+    parser.add_argument('--ncbi_refseq_db', type=str, help='path to file containing list of fasta files in ncbi refseq db') # /datasets/bio/ncbi-refseq/bacterial_genomes
+    parser.add_argument('--gtdb_db', type=str, help='path to local gtdb database') # /datasets/bio/gtdb/release220/genomic_files_reps/gtdb_genomes_reps_r220/database/list-fna-files
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--used_genomes', type=str, help='file containing list of genomes already used for training or testing')
     parser.add_argument('--labels', type=str, help='file with list of labels in dltoda')
@@ -66,8 +84,7 @@ def main():
     genomes_id, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
 
     # get list of genomes available locally
-    ncbi_genomes_to_fa = get_fasta(args.ncbi_refseq_db)
-    # gtdb_genomes = get_genomes(args.gtdb_db)
+    genomes_to_fa = get_fasta(args, genomes_id)
 
     if args.used_genomes is None:
         used_genomes = []
@@ -92,17 +109,17 @@ def main():
                     if genomes_id[i] not in used_genomes:
                         if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                             line = f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
-                            # clean fasta file
-                            if genomes_id[i] in ncbi_genomes_to_fa:
-                                # outf.write(f'NCBI\n')
-                                line += 'NCBI\n'
-                            #     # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
-                            # elif genomes_id[i] in gtdb_genomes:
-                            #     # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
-                            #     outf.write(f'GTDB\n')
+                            if genomes_id[i] in genomes_to_fa:
+                                line += 'IN\n'
+                                # copy fasta file to output directory
+                                source_path = genomes_to_fa[genomes_id[i]]
+                                fasta_filename = source_path.split('/')[-1]
+                                dest_path = os.path.join(args.output_dir, fasta_filename)    
+                                shutil.copy(source_path, dest_path)
+                                clean_fasta(dest_path)
                             else:
                                 line += 'NOT IN\n'
-                                # outf.write(f'NOT IN\n')
+                                
                             selected_genomes.append(line)
             
             if len(selected_genomes) > 0:
