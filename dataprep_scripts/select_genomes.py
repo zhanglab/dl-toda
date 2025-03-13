@@ -24,7 +24,7 @@ def clean_fasta(fasta_file):
     updated_seq = []
     updated_description = []
 
-    if dest_path[-2:] == 'gz':
+    if fasta_file[-2:] == 'gz':
         with gzip.open(fasta_file, 'rt') as handle:
             for record in SeqIO.parse(handle, "fasta"):
                 # remove phages and plasmids
