@@ -102,13 +102,19 @@ def main():
         for label in f:
             label = label.rstrip()
             species = dl_toda_tax[label].split(';')[0]
-            print(label, species)
+            genus = dl_toda_tax[label].split(';')[1]
+            print(label, species, genus)
             selected_genomes = list()
             for i in range(len(genomes_id)):
-                if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
+                if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                     if genomes_id[i] not in used_genomes:
                         if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                            line = f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
+                            if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
+                                line = f'{label}\t'
+                            else:
+                                if gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
+                                    line = '0\t'
+                            line += f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
                             if genomes_id[i] in genomes_to_fa:
                                 line += 'IN\n'
                                 # copy fasta file to output directory
