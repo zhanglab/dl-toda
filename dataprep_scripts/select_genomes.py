@@ -51,7 +51,6 @@ def clean_fasta(fasta_file):
 
 def get_fasta(args, genomes_id):
     genomes_to_fa = {}
-    ncbi_fasta = glob.glob.()
     with open(args.ncbi_refseq_db, 'r') as f:
         for line in f:
             genome = '_'.join(line.rstrip().split('/')[-2].split('_')[0:2])
