@@ -42,7 +42,7 @@ def clean_fasta(args, fasta_file):
     if len("".join(updated_seq)) >= 500000:
         # if more than one chromosome, combine chromosomes into one sequence
         new_description = f'{updated_description[0]}, combined' if len(updated_description) > 1 else updated_description[0]
-        new_filepath = os.path.join(args.output_dir, f'updated_{fasta_file.split("/")[-1]}')
+        new_filepath = os.path.join(args.output_dir, 'cleaned_genomes', f'updated_{fasta_file.split("/")[-1]}')
         print(new_filepath)
         with open(new_filepath, 'w') as out_fasta:
             out_fasta.write(f'>{new_description}\n{"".join(updated_seq)}\n')
@@ -75,7 +75,9 @@ def main():
     args = parser.parse_args()
 
     # create directory to store cleaned fasta files
-    if not os.path.exists(args.output_dir):
+    if not os.path.exists(args.output_dir, 'original_genomes'):
+        os.makedirs(args.output_dir)
+    if not os.path.exists(args.output_dir, 'cleaned_genomes'):
         os.makedirs(args.output_dir)
 
     # parse gtdb info file (bac120_metadata_r95.tsv)
@@ -112,7 +114,7 @@ def main():
                                 # copy fasta file to output directory
                                 source_path = genomes_to_fa[genomes_id[i]]
                                 fasta_filename = source_path.split('/')[-1]
-                                dest_path = os.path.join(args.output_dir, fasta_filename)    
+                                dest_path = os.path.join(args.output_dir, 'original_genomes', fasta_filename)    
                                 shutil.copy(source_path, dest_path)
                                 clean_fasta(args, dest_path)
                             else:
