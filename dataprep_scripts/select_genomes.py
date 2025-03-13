@@ -88,8 +88,8 @@ def main():
             print(species)
             with open(os.path.join(args.output_dir, f'{label}_genomes.tsv'), 'w') as outf:
                 for i in range(len(genomes_id)):
-                    print(gtdb_taxonomy[i].split(';')[-1].split('__')[1])
                     if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
+                        print(gtdb_taxonomy[i].split(';')[-1].split('__')[1])
                         if genomes_id[i] not in used_genomes:
                             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                                 outf.write(f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
