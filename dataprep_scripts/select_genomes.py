@@ -84,7 +84,7 @@ def main():
     with open(args.labels, 'r') as f:
         for line in f:
             label = line.rstrip()
-            species = dl_toda_tax[label]
+            species = dl_toda_tax[label].split(';')[0]
             print(species)
             with open(os.path.join(args.output_dir, f'{label}_genomes.tsv'), 'w') as outf:
                 for i in range(len(genomes_id)):
