@@ -3,6 +3,7 @@ import pandas as pd
 import glob
 import os
 import sys
+import argparse
 
 def get_gtdb_info(gtdb_info):
     # load gtdb info file
@@ -46,36 +47,51 @@ def get_genomes(path_to_db):
 
 
 def main():
-    gtdb_info = sys.argv[1]
-    ncbi_refseq_db = sys.argv[2]
-    gtdb_db = sys.argv[3]
-    output_dir = sys.argv[4]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
+    parser.add_argument('--ncbi_refseq_db', type=str, help='path to ncbi refseq database')
+    parser.add_argument('--gtdb_db', type=str, help='path to gtdb database')
+    parser.add_argument('--output_dir', type=str, help='path to output directory')
+    parser.add_argument('--used_genomes', type=str, help='file containing list of genomes already used for training or testing')
+    parser.add_argument('--labels', nargs='+', help='list of labels in dltoda')
+    args = parser.parse_args()
 
     # create directory to store cleaned fasta files
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     # parse gtdb info file (bac120_metadata_r95.tsv)
-    genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(gtdb_info)
+    genomes_id, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
 
     # get list of genomes available locally
-    ncbi_genomes = get_genomes(ncbi_refseq_db)
-    gtdb_genomes = get_genomes(gtdb_db)
+    ncbi_genomes = get_genomes(args.ncbi_refseq_db)
+    gtdb_genomes = get_genomes(args.gtdb_db)
 
+    if args.used_genomes is None:
+        used_genomes = []
+    else:
+        with open(args.used_genomes, 'r') as f:
+            used_genomes = [line.rstrip() for line in f.readlines()]
+
+    # retrieve gtdb taxonomy of species in dltoda
+    path_dl_toda_tax = '/'.join(
+                os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
+    dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+    
     with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as outf:
-        for i in range(len(genomes)):
-            if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                print(ncbi_assembly_level[i], ncbi_genome_category[i], ncbi_genome_category[i])
-                outf.write(f'{genomes[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
-                # clean fasta file
-                if genomes[i] in ncbi_genomes:
-                    outf.write(f'NCBI\n')
-                    # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
-                elif genomes[i] in gtdb_genomes:
-                    # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
-                    outf.write(f'GTDB\n')
-                else:
-                    outf.write(f'NOT IN\n')
+        for i in range(len(genomes_id)):
+            if genomes_id[i] not in used_genomes:
+                if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
+                    outf.write(f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
+                    # clean fasta file
+                    if genomes_id[i] in ncbi_genomes:
+                        outf.write(f'NCBI\n')
+                        # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
+                    elif genomes_id[i] in gtdb_genomes:
+                        # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
+                        outf.write(f'GTDB\n')
+                    else:
+                        outf.write(f'NOT IN\n')
 
 
 
