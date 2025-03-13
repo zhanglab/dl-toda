@@ -75,10 +75,10 @@ def main():
     args = parser.parse_args()
 
     # create directory to store cleaned fasta files
-    if not os.path.exists(args.output_dir, 'original_genomes'):
-        os.makedirs(args.output_dir)
-    if not os.path.exists(args.output_dir, 'cleaned_genomes'):
-        os.makedirs(args.output_dir)
+    if not os.path.exists(os.path.join(args.output_dir, 'original_genomes')):
+        os.makedirs(os.path.join(args.output_dir, 'original_genomes'))
+    if not os.path.exists(os.path.join(args.output_dir, 'cleaned_genomes')):
+        os.makedirs(os.path.join(args.output_dir, 'cleaned_genomes'))
 
     # parse gtdb info file (bac120_metadata_r95.tsv)
     genomes_id, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
