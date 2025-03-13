@@ -37,20 +37,22 @@ def clean_fasta(genome_id, fastafile, path_to_db, output_dir, outf):
         outf.write(f'{genome_id}\t{new_filepath}\n')
 
 
-def get_genomes(path_to_db):
-    # get fasta files in database
-    fasta_files = glob.glob(os.path.join(path_to_db, '*.fna'))
-    # map genomes accession id to path to fasta files
-    genomes = {"_".join(i.split('/')[-1].split('_')[0:2]): i for i in fasta_files}
+def get_fasta(fna_files):
+    with open(fna_files, 'r') as f:
+        genomes_to_fa = {line.rstrip().split('/')[-2]: line for line in f.readlines()}
+    # # get fasta files in database
+    # fasta_files = glob.glob(os.path.join(path_to_db, '*.fna'))
+    # # map genomes accession id to path to fasta files
+    # genomes = {"_".join(i.split('/')[-1].split('_')[0:2]): i for i in fasta_files}
 
-    return genomes
+    return genomes_to_fa
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
-    parser.add_argument('--ncbi_refseq_db', type=str, help='path to ncbi refseq database')
-    parser.add_argument('--gtdb_db', type=str, help='path to gtdb database')
+    parser.add_argument('--ncbi_refseq_db', type=str, help='file with list of ncbi fna files')
+    # parser.add_argument('--gtdb_db', type=str, help='path to gtdb database')
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--used_genomes', type=str, help='file containing list of genomes already used for training or testing')
     parser.add_argument('--labels', nargs='+', help='list of labels in dltoda')
@@ -64,8 +66,8 @@ def main():
     genomes_id, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
 
     # get list of genomes available locally
-    ncbi_genomes = get_genomes(args.ncbi_refseq_db)
-    gtdb_genomes = get_genomes(args.gtdb_db)
+    ncbi_genomes_to_fa = get_fasta(args.ncbi_refseq_db)
+    # gtdb_genomes = get_genomes(args.gtdb_db)
 
     if args.used_genomes is None:
         used_genomes = []
@@ -77,11 +79,12 @@ def main():
     path_dl_toda_tax = '/'.join(
                 os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
     dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
-    
+
     with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as outf:
         for i in range(len(genomes_id)):
             if genomes_id[i] not in used_genomes:
                 if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
+                    print(gtdb_taxonomy[i])
                     outf.write(f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
                     # clean fasta file
                     if genomes_id[i] in ncbi_genomes:
