@@ -78,7 +78,8 @@ def main():
     # retrieve gtdb taxonomy of species in dltoda
     path_dl_toda_tax = '/'.join(
                 os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]) + '/data/dl_toda_taxonomy.tsv'
-    dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in content}
+    with open(path_dl_toda_tax, 'r') as f:
+        dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
     with open(os.path.join(output_dir, 'genomes.tsv'), 'w') as outf:
         for i in range(len(genomes_id)):
