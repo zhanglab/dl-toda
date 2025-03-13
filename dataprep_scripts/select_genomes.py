@@ -100,7 +100,7 @@ def main():
         for label in f:
             label = label.rstrip()
             species = dl_toda_tax[label].split(';')[0]
-            print(species)
+            print(label, species)
             selected_genomes = list()
             for i in range(len(genomes_id)):
                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
