@@ -46,7 +46,6 @@ def clean_fasta(args, fasta_file):
         print(new_filepath)
         with open(new_filepath, 'w') as out_fasta:
             out_fasta.write(f'>{new_description}\n{"".join(updated_seq)}\n')
-        outf.write(f'{genome_id}\t{new_filepath}\n')
 
 
 def get_fasta(args, genomes_id):
