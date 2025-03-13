@@ -54,7 +54,7 @@ def get_fasta(args, genomes_id):
     with open(args.ncbi_refseq_db, 'r') as f:
         for line in f:
             genome = '_'.join(line.rstrip().split('/')[-2].split('_')[0:2])
-            genomes_to_fa[genome] = line
+            genomes_to_fa[genome] = line.rstrip()
 
     for genome in genomes_id:
         genome = genome.replace('_', '').split('.')[0]
