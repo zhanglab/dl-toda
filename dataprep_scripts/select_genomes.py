@@ -82,27 +82,35 @@ def main():
         dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
     with open(args.labels, 'r') as f:
-        for line in f:
-            label = line.rstrip()
+        for label in f:
+            label = label.rstrip()
             species = dl_toda_tax[label].split(';')[0]
             print(species)
-            with open(os.path.join(args.output_dir, f'{label}_genomes.tsv'), 'w') as outf:
-                for i in range(len(genomes_id)):
-                    if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
-                        print(gtdb_taxonomy[i].split(';')[-1].split('__')[1])
-                        if genomes_id[i] not in used_genomes:
-                            if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                                outf.write(f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
-                                print(f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
-                                # clean fasta file
-                                if genomes_id[i] in ncbi_genomes:
-                                    outf.write(f'NCBI\n')
-                                    # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
-                                elif genomes_id[i] in gtdb_genomes:
-                                    # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
-                                    outf.write(f'GTDB\n')
-                                else:
-                                    outf.write(f'NOT IN\n')
+            selected_genomes = list()
+            for i in range(len(genomes_id)):
+                if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
+                    if genomes_id[i] not in used_genomes:
+                        if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
+                            line = f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
+                            # clean fasta file
+                            if genomes_id[i] in ncbi_genomes_to_fa:
+                                # outf.write(f'NCBI\n')
+                                line += 'NCBI\n'
+                            #     # clean_fasta(genomes[i], ncbi_genomes[genomes[i]], ncbi_refseq_db, output_dir, outf)
+                            # elif genomes_id[i] in gtdb_genomes:
+                            #     # clean_fasta(genomes[i], gtdb_genomes[genomes[i]], gtdb_db, output_dir, outf)
+                            #     outf.write(f'GTDB\n')
+                            else:
+                                line += 'NOT IN\n'
+                                # outf.write(f'NOT IN\n')
+                            selected_genomes.append(line)
+            
+            if len(selected_genomes) > 0:
+                with open(os.path.join(args.output_dir, f'{label}_genomes.tsv'), 'w') as outf:
+                    for g in selected_genomes:
+                        outf.write(g)
+
+
 
 
 
