@@ -91,7 +91,7 @@ def main():
                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
                     if genomes_id[i] not in used_genomes:
                         if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                            line = f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t')
+                            line = f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
                             # clean fasta file
                             if genomes_id[i] in ncbi_genomes_to_fa:
                                 # outf.write(f'NCBI\n')
