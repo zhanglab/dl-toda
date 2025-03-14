@@ -113,7 +113,7 @@ def main():
             print(label, species, genus)
             for i in range(len(genomes_id)):
                 if genomes_id[i] in ['GCF_000195975.1', 'GCF_000013785.1']:
-                    print(gtdb_taxonomy[i], ncbi_assembly_level[i], ncbi_genome_category[i])
+                    print(gtdb_taxonomy[i].split(';')[-1].split('__')[1], gtdb_taxonomy[i].split(';')[-2].split('__')[1], ncbi_assembly_level[i], ncbi_genome_category[i])
                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                     if genomes_id[i] not in used_genomes:
                         print(genomes_id[i])
