@@ -86,6 +86,11 @@ def main():
     # get list of genomes available locally
     genomes_to_fa = get_fasta(args, genomes_id)
 
+    if 'GCF_000195975.1' not in genomes_to_fa:
+        print(f'799\tGCF_000195975.1\tnot in ncbi or gtdb!')
+    if 'GCF_000013785.1' not in genomes_to_fa:
+        print(f'282\tGCF_000013785.1\tnot in ncbi or gtdb!')
+
     if args.used_genomes is None:
         used_genomes = []
     else:
@@ -102,33 +107,33 @@ def main():
     with open(args.labels, 'r') as f:
         for label in f:
             label = label.rstrip()
-            
-            species = dl_toda_tax[label].split(';')[0]
-            genus = dl_toda_tax[label].split(';')[1]
-            print(label, species, genus)
-            for i in range(len(genomes_id)):
-                if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
-                    if genomes_id[i] not in used_genomes:
-                        if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                            line = f'{label}\t'
-                            if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
-                                line += '1\t'
-                            else:
-                                if gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
-                                    line += '0\t'
-                            line += f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
-                            if genomes_id[i] in genomes_to_fa:
-                                line += 'IN\n'
-                                # copy fasta file to output directory
-                                source_path = genomes_to_fa[genomes_id[i]]
-                                fasta_filename = source_path.split('/')[-1]
-                                dest_path = os.path.join(args.output_dir, 'original_genomes', fasta_filename)    
-                                shutil.copy(source_path, dest_path)
-                                clean_fasta(args, dest_path)
-                            else:
-                                line += 'NOT IN\n'
-                                
-                            outf.write(line)
+            if label in ['799', '282']:
+                species = dl_toda_tax[label].split(';')[0]
+                genus = dl_toda_tax[label].split(';')[1]
+                print(label, species, genus)
+                for i in range(len(genomes_id)):
+                    if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
+                        if genomes_id[i] not in used_genomes:
+                            if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
+                                line = f'{label}\t'
+                                if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
+                                    line += '1\t'
+                                else:
+                                    if gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
+                                        line += '0\t'
+                                line += f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
+                                if genomes_id[i] in genomes_to_fa:
+                                    line += 'IN\n'
+                                    # copy fasta file to output directory
+                                    source_path = genomes_to_fa[genomes_id[i]]
+                                    fasta_filename = source_path.split('/')[-1]
+                                    dest_path = os.path.join(args.output_dir, 'original_genomes', fasta_filename)    
+                                    shutil.copy(source_path, dest_path)
+                                    clean_fasta(args, dest_path)
+                                else:
+                                    line += 'NOT IN\n'
+                                    
+                                outf.write(line)
 
 
 if __name__ == "__main__":
