@@ -98,7 +98,7 @@ def main():
     with open(path_dl_toda_tax, 'r') as f:
         dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
-    outf = open(os.path.join(args.output_dir, f'genomes.tsv'))
+    outf = open(os.path.join(args.output_dir, 'genomes.tsv'), 'w')
     with open(args.labels, 'r') as f:
         for label in f:
             label = label.rstrip()
