@@ -87,10 +87,10 @@ def main():
     genomes_to_fa = get_fasta(args, genomes_id)
 
     if 'GCF_000195975.1' in genomes_to_fa:
-        print(f'799\tGCF_000195975.1\t{genomes_to_fa['GCF_000195975.1']}')
+        print(f'799\tGCF_000195975.1\t{genomes_to_fa["GCF_000195975.1"]}')
 
     if 'GCF_000013785.1' not in genomes_to_fa:
-        print(f'282\tGCF_000013785.1\t{genomes_to_fa['GCF_000013785.1']}')
+        print(f'282\tGCF_000013785.1\t{genomes_to_fa["GCF_000013785.1"]}')
 
     if args.used_genomes is None:
         used_genomes = []
