@@ -86,10 +86,11 @@ def main():
     # get list of genomes available locally
     genomes_to_fa = get_fasta(args, genomes_id)
 
-    if 'GCF_000195975.1' not in genomes_to_fa:
-        print(f'799\tGCF_000195975.1\tnot in ncbi or gtdb!')
+    if 'GCF_000195975.1' in genomes_to_fa:
+        print(f'799\tGCF_000195975.1\t{genomes_to_fa['GCF_000195975.1']}')
+
     if 'GCF_000013785.1' not in genomes_to_fa:
-        print(f'282\tGCF_000013785.1\tnot in ncbi or gtdb!')
+        print(f'282\tGCF_000013785.1\t{genomes_to_fa['GCF_000013785.1']}')
 
     if args.used_genomes is None:
         used_genomes = []
@@ -114,6 +115,7 @@ def main():
                 for i in range(len(genomes_id)):
                     if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                         if genomes_id[i] not in used_genomes:
+                            print(genomes_id[i])
                             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                                 line = f'{label}\t'
                                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species:
