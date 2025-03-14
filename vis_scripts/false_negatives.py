@@ -1423,19 +1423,19 @@ if __name__ == "__main__":
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_unique_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in fn_genes.items():
 			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t')
-			if annot_info[k][0] == 'protein_coding':
-				f.write(f'{annot_info[k][0]}\t{annot_info[k][4]}\t{annot_info[k][5]}\n')
+			if pos_test_annot_info[k][0] == 'protein_coding':
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
 			else:
-				f.write(f'{annot_info[k][0]}\t{annot_info[k][4]}\tNA\n')
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
 
 	with open(os.path.join(args.output_dir, f'{args.label}_tp_shared_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in tp_genes.items():
 			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t')
-			if annot_info[k][0] == 'protein_coding':
-				f.write(f'{annot_info[k][0]}\t{annot_info[k][4]}\t{annot_info[k][5]}\n')
+			if pos_test_annot_info[k][0] == 'protein_coding':
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
 			else:
-				f.write(f'{annot_info[k][0]}\t{annot_info[k][4]}\tNA\n')
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
 	# get taxa of FP reads
 	if len(fp_sequences) > 0:
