@@ -268,50 +268,50 @@ def GetReadsGCcontent(args, gc_content, pos_list, alignments, type):
 				f'max\t{max(reads_gc_content)}\n')
 		
 
-def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
-	# get reads in training set fasta file
-	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
+# def GetTrainCoverage(args, training_fasta, fn_sequences, tp_sequences, test_alignments_pos_train):
+# 	# get reads in training set fasta file
+# 	readid_to_read, readsid_to_length, _ = LoadFnaFile(args.training_fna_file)
 
-	train_reads_id = []
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), 'w') as outf:
-		for k, v in readid_to_read.items():
-			if k.split('|')[1] == args.label:
-				outf.write(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
-				train_reads_id.append(k)
+# 	train_reads_id = []
+# 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), 'w') as outf:
+# 		for k, v in readid_to_read.items():
+# 			if k.split('|')[1] == args.label:
+# 				outf.write(f'@{k}\n{v}\n+\n{len(v)*"J"}\n')
+# 				train_reads_id.append(k)
 
-	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+# 	RunBowtie(args, training_fasta, os.path.join(args.output_dir, 'train_coverage', f'{args.label}_train_pos_reads.fq'), os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
 	
-	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
-	print(ref_info)
+# 	ref_info, alignments = LoadData(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_pos_train_coverage.sam'))
+# 	print(ref_info)
 
-	ref = ref_info[0][0]
-	length_ref = ref_info[0][1]
-	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
+# 	ref = ref_info[0][0]
+# 	length_ref = ref_info[0][1]
+# 	dict_coverage, reads_info = GetCoverageOfSample(alignments[ref], length_ref, label=None)
 
-	# get coverage per base
-	base_coverage = [dict_coverage[i] for i in range(length_ref)]
-	total_bases = sum(base_coverage)
-	coverage = round(total_bases / length_ref, 3)
+# 	# get coverage per base
+# 	base_coverage = [dict_coverage[i] for i in range(length_ref)]
+# 	total_bases = sum(base_coverage)
+# 	coverage = round(total_bases / length_ref, 3)
 
-	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
-		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
+# 	with open(os.path.join(args.output_dir, 'train_coverage', f'{args.label}_{ref}_train_coverage.tsv'), 'w') as f:
+# 		f.write(f'{total_bases}\t{length_ref}\t{coverage}')
 
-	# get train coverage in position mapped by TP reads
-	tp_cov = []
-	fn_cov = []
-	for read_id, data in test_alignments_pos_train.items():
-		base_read_cov = [base_coverage[pos-1] for pos in range(data[2], data[3]+1, 1)]
-		ave_read_cov = round(sum(base_read_cov)/(data[3]-data[2]), 3)
-		if read_id in tp_sequences:
-			tp_cov.append(ave_read_cov)
-		elif read_id in fn_sequences:
-			fn_cov.append(ave_read_cov)
+# 	# get train coverage in position mapped by TP reads
+# 	tp_cov = []
+# 	fn_cov = []
+# 	for read_id, data in test_alignments_pos_train.items():
+# 		base_read_cov = [base_coverage[pos-1] for pos in range(data[2], data[3]+1, 1)]
+# 		ave_read_cov = round(sum(base_read_cov)/(data[3]-data[2]), 3)
+# 		if read_id in tp_sequences:
+# 			tp_cov.append(ave_read_cov)
+# 		elif read_id in fn_sequences:
+# 			fn_cov.append(ave_read_cov)
 
-	with open(os.path.join(args.output_dir, f'{args.label}_test_train_average_coverage.tsv'), 'w') as f:
-		f.write(f'TP\t{len(tp_cov)}\t{len(tp_sequences)}\t{round(len(tp_cov)/len(tp_sequences),3)*100}\t{statistics.mean(tp_cov)}\t{statistics.median(tp_cov)}\t{min(tp_cov)}\t{max(tp_cov)}\n')
-		f.write(f'FN\t{len(fn_cov)}\t{len(fn_sequences)}\t{round(len(fn_cov)/len(fn_sequences),3)*100}\t{statistics.mean(fn_cov)}\t{statistics.median(fn_cov)}\t{min(fn_cov)}\t{max(fn_cov)}\n')
+# 	with open(os.path.join(args.output_dir, f'{args.label}_test_train_average_coverage.tsv'), 'w') as f:
+# 		f.write(f'TP\t{len(tp_cov)}\t{len(tp_sequences)}\t{round(len(tp_cov)/len(tp_sequences),3)*100}\t{statistics.mean(tp_cov)}\t{statistics.median(tp_cov)}\t{min(tp_cov)}\t{max(tp_cov)}\n')
+# 		f.write(f'FN\t{len(fn_cov)}\t{len(fn_sequences)}\t{round(len(fn_cov)/len(fn_sequences),3)*100}\t{statistics.mean(fn_cov)}\t{statistics.median(fn_cov)}\t{min(fn_cov)}\t{max(fn_cov)}\n')
 
-	return base_coverage, ref_info, train_reads_id, readsid_to_length
+# 	return base_coverage, ref_info, train_reads_id, readsid_to_length
 	
 
 def LoadFnaFile(fasta_file):
@@ -1284,7 +1284,7 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_fna_file', type=str, help='path to fasta file containing testing reads')
-	parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
+	# parser.add_argument('--training_fna_file', type=str, help='path to fasta file containing all training reads (label 1 and 0)')
 	parser.add_argument('--label', type=str, help='label of species investigated', required=True)
 	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
