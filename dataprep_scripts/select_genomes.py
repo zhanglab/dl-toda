@@ -98,13 +98,13 @@ def main():
     with open(path_dl_toda_tax, 'r') as f:
         dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
+    outf = open(os.path.join(args.output_dir, f'genomes.tsv'))
     with open(args.labels, 'r') as f:
         for label in f:
             label = label.rstrip()
             species = dl_toda_tax[label].split(';')[0]
             genus = dl_toda_tax[label].split(';')[1]
             print(label, species, genus)
-            selected_genomes = list()
             for i in range(len(genomes_id)):
                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                     if genomes_id[i] not in used_genomes:
@@ -126,16 +126,7 @@ def main():
                             else:
                                 line += 'NOT IN\n'
                                 
-                            selected_genomes.append(line)
-            
-            if len(selected_genomes) > 0:
-                with open(os.path.join(args.output_dir, f'{label}_genomes.tsv'), 'w') as outf:
-                    for g in selected_genomes:
-                        outf.write(g)
-
-
-
-
+                            outf.write(line)
 
 
 if __name__ == "__main__":
