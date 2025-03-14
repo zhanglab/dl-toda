@@ -509,49 +509,49 @@ def GetAnnotInfo(args, genome_id, input_dir):
 
 
 
-def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
-	reads = []
-	reads_id = {}
-	for fn_readid, fn_data in fn_alignments_pos_test.items():
-		if fn_data[2] < fn_data[3]:
-			fn_start_pos = fn_data[2]
-			fn_end_pos = fn_data[3]
-		else:
-			fn_start_pos = fn_data[3]
-			fn_end_pos = fn_data[2]
-		fn_strand = fn_data[6]
+# def GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read):
+# 	reads = []
+# 	reads_id = {}
+# 	for fn_readid, fn_data in fn_alignments_pos_test.items():
+# 		if fn_data[2] < fn_data[3]:
+# 			fn_start_pos = fn_data[2]
+# 			fn_end_pos = fn_data[3]
+# 		else:
+# 			fn_start_pos = fn_data[3]
+# 			fn_end_pos = fn_data[2]
+# 		fn_strand = fn_data[6]
 
-		for tp_readid, tp_data in tp_alignments_pos_test.items():
-			if tp_data[2] < tp_data[3]:
-				tp_start_pos = tp_data[2]
-				tp_end_pos = tp_data[3]
-			else:
-				tp_start_pos = tp_data[3]
-				tp_end_pos = tp_data[2]
-			tp_strand = tp_data[6]
+# 		for tp_readid, tp_data in tp_alignments_pos_test.items():
+# 			if tp_data[2] < tp_data[3]:
+# 				tp_start_pos = tp_data[2]
+# 				tp_end_pos = tp_data[3]
+# 			else:
+# 				tp_start_pos = tp_data[3]
+# 				tp_end_pos = tp_data[2]
+# 			tp_strand = tp_data[6]
 
-			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
-				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
-				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
-				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
-				if tp_strand == 'plus' and fn_strand == 'plus':
-					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
-						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
-							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
-						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
+# 			if (tp_start_pos < fn_end_pos and tp_end_pos > fn_start_pos) or \
+# 				(fn_start_pos < tp_end_pos and fn_end_pos > tp_start_pos) or \
+# 				(tp_start_pos < fn_start_pos and tp_end_pos > fn_end_pos) or \
+# 				(fn_start_pos < tp_start_pos and fn_end_pos > tp_end_pos):
+# 				if tp_strand == 'plus' and fn_strand == 'plus':
+# 					if abs(len(test_readid_to_read[fn_readid])-len(test_readid_to_read[tp_readid])) < 200:
+# 						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+# 							fn_readid.split('|')[2], f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}', len(test_readid_to_read[fn_readid]), fn_strand])
+# 						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+# 						reads_id[fn_readid] = f'{fn_readid}-fn-{fn_start_pos}-{fn_end_pos}'
 
-	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
-	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
-	for r in reads:
-		sum_file.write(f'{r[0]}')
-		for idx in range(1, len(r), 1):
-			sum_file.write(f'\t{r[idx]}')
-		sum_file.write('\n')
-	for k, v in reads_id.items():
-		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
-	tsv_file.close()
-	sum_file.close()
+# 	tsv_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_reads.tsv'), 'w')
+# 	sum_file = open(os.path.join(args.output_dir, f'{args.label}_contiguous_fn_tp_id.tsv'), 'w')
+# 	for r in reads:
+# 		sum_file.write(f'{r[0]}')
+# 		for idx in range(1, len(r), 1):
+# 			sum_file.write(f'\t{r[idx]}')
+# 		sum_file.write('\n')
+# 	for k, v in reads_id.items():
+# 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+# 	tsv_file.close()
+# 	sum_file.close()
 
 
 def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
@@ -1422,16 +1422,19 @@ if __name__ == "__main__":
 	genus = args.dl_toda_tax[args.label].split(';')[1]
 	with open(os.path.join(args.output_dir, f'{args.label}_fn_unique_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in fn_genes.items():
-			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t')
+			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
 			else:
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
 
+
 	with open(os.path.join(args.output_dir, f'{args.label}_tp_shared_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in tp_genes.items():
-			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t')
+			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
 			else:
