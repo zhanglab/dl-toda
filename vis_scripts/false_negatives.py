@@ -1401,8 +1401,8 @@ if __name__ == "__main__":
 	scores, fn_genes, tp_genes = GetGenes(args, pos_test_annot_info, fn_alignments_pos_test, tp_alignments_pos_test, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fn_cs, tp_cs)
 	
 	# store FN and TP reads in tsv files for analysis of the attentions weights
-	CreateTsvFile(tp_sequences, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_all.tsv'))
-	CreateTsvFile(fn_sequences, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads_all.tsv'))
+	CreateTsvFile(tp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_all.tsv'))
+	CreateTsvFile(fn_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fn_reads_all.tsv'))
 	# GetReadsForAttentions(args, tp_alignments_pos_test, fn_alignments_pos_test, test_readid_to_read)
 
 	# get info about genomic islands and/or create Circos plot
