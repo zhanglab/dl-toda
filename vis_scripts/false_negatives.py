@@ -1158,10 +1158,10 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 
 	# get stats on percentage identity
 	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-	ani = round(statistics.mean(avg_percent_identity), 2)
+	ani = round(statistics.mean(percent_identity), 2)
 	with open(os.path.join(args.output_dir, f'{args.label}_pct_identity_matching_regions.tsv'), 'w') as f:
 		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
-		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(avg_percent_identity)}\nmedian\t{statistics.median(avg_percent_identity)}\nmin\t{min(avg_percent_identity)}\nmax\t{max(avg_percent_identity)}')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
 
 
