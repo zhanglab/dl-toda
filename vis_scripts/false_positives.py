@@ -1253,7 +1253,7 @@ if __name__ == "__main__":
 
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
-	scores, fp_genes, tp_genes = GetGenes(args, test_annot_info, fp_alignments, tp_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fp_cs, tp_cs)
+	scores, fp_genes, tp_genes = GetGenes(args, test_annot_info, fp_alignments, tp_alignments, test_sequence_length, test_readid_to_read, len(neg_testing_records[0].seq), fp_cs, tp_cs)
 
 	# fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
 	# _, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
