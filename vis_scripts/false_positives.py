@@ -557,6 +557,23 @@ def CreateTsvFile(reads_id, readid_to_read, filename):
 # 	return genes_of_interest, genes_of_interest_count, genes_of_interest_stat
 
 
+def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
+	# check if read_id maps to gene
+	length_mapped_seq = 0
+	if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos) or \
+		(read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos) or \
+		(read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos) or \
+		(read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
+		if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos):
+			length_mapped_seq = 100
+		elif (read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos):
+			length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
+		elif (read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos):
+			length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+		elif (read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
+			length_mapped_seq = (gene_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+	return length_mapped_seq
+
 def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, readid_to_read, genome_size, fn_cs, tp_cs):
 	# get length and function of fn sequences per mapped position on the genome investigated
 	tp_genes = defaultdict(list)
