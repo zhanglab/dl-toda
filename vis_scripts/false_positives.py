@@ -1278,8 +1278,8 @@ if __name__ == "__main__":
 	# _, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
 
 	# store FP and TP reads in tsv files for analysis of the attentions weights
-	CreateTsvFile(tp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_all.tsv'))
-	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads_all.tsv'))
+	CreateTsvFile(tp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_tp_reads_all.tsv'))
+	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_fp_reads_all.tsv'))
 	# GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
 	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
@@ -1290,7 +1290,7 @@ if __name__ == "__main__":
 
 	with open(os.path.join(args.output_dir, f'{args.pos_label}_fp_shared_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in fp_genes.items():
-			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
@@ -1299,7 +1299,7 @@ if __name__ == "__main__":
 
 	with open(os.path.join(args.output_dir, f'{args.pos_label}_tp_unique_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in tp_genes.items():
-			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
