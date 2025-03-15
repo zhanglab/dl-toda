@@ -414,144 +414,285 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		return annot_info, locus_tags_info
 
 
-def GetReadsForAttentions(args, tp_alignments_pos_test, fp_alignments_pos_test, test_readid_to_read):
-	reads = []
-	reads_id = {}
-	for fp_readid, fp_data in fp_alignments_pos_test.items():
-		if fp_data[2] < fp_data[3]:
-			fp_start_pos = fp_data[2]
-			fp_end_pos = fp_data[3]
-		else:
-			fp_start_pos = fp_data[3]
-			fp_end_pos = fp_data[2]
-		fp_strand = fp_data[6]
+# def GetReadsForAttentions(args, tp_alignments_pos_test, fp_alignments_pos_test, test_readid_to_read):
+# 	reads = []
+# 	reads_id = {}
+# 	for fp_readid, fp_data in fp_alignments_pos_test.items():
+# 		if fp_data[2] < fp_data[3]:
+# 			fp_start_pos = fp_data[2]
+# 			fp_end_pos = fp_data[3]
+# 		else:
+# 			fp_start_pos = fp_data[3]
+# 			fp_end_pos = fp_data[2]
+# 		fp_strand = fp_data[6]
 
-		for tp_readid, tp_data in tp_alignments_pos_test.items():
-			if tp_data[2] < tp_data[3]:
-				tp_start_pos = tp_data[2]
-				tp_end_pos = tp_data[3]
-			else:
-				tp_start_pos = tp_data[3]
-				tp_end_pos = tp_data[2]
-			tp_strand = tp_data[6]
+# 		for tp_readid, tp_data in tp_alignments_pos_test.items():
+# 			if tp_data[2] < tp_data[3]:
+# 				tp_start_pos = tp_data[2]
+# 				tp_end_pos = tp_data[3]
+# 			else:
+# 				tp_start_pos = tp_data[3]
+# 				tp_end_pos = tp_data[2]
+# 			tp_strand = tp_data[6]
 
-			if (tp_start_pos < fp_end_pos and tp_end_pos > fp_start_pos) or \
-				(fp_start_pos < tp_end_pos and fp_end_pos > tp_start_pos) or \
-				(tp_start_pos < fp_start_pos and tp_end_pos > fp_end_pos) or \
-				(fp_start_pos < tp_start_pos and fp_end_pos > tp_end_pos):
-				if tp_strand == 'plus' and fp_strand == 'plus':
-					if abs(len(test_readid_to_read[fp_readid])-len(test_readid_to_read[tp_readid])) < 200:
-						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
-							fp_readid.split('|')[2], f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}', len(test_readid_to_read[fp_readid]), fp_strand])
-						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
-						reads_id[fp_readid] = f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}'
+# 			if (tp_start_pos < fp_end_pos and tp_end_pos > fp_start_pos) or \
+# 				(fp_start_pos < tp_end_pos and fp_end_pos > tp_start_pos) or \
+# 				(tp_start_pos < fp_start_pos and tp_end_pos > fp_end_pos) or \
+# 				(fp_start_pos < tp_start_pos and fp_end_pos > tp_end_pos):
+# 				if tp_strand == 'plus' and fp_strand == 'plus':
+# 					if abs(len(test_readid_to_read[fp_readid])-len(test_readid_to_read[tp_readid])) < 200:
+# 						reads.append([tp_readid.split('|')[2], f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}', len(test_readid_to_read[tp_readid]), tp_strand, \
+# 							fp_readid.split('|')[2], f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}', len(test_readid_to_read[fp_readid]), fp_strand])
+# 						reads_id[tp_readid] = f'{tp_readid}-tp-{tp_start_pos}-{tp_end_pos}'
+# 						reads_id[fp_readid] = f'{fp_readid}-fp-{fp_start_pos}-{fp_end_pos}'
 
-	tsv_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_fp_tp_reads.tsv'), 'w')
-	sum_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_fp_tp_id.tsv'), 'w')
-	for r in reads:
-		sum_file.write(f'{r[0]}')
-		for idx in range(1, len(r), 1):
-			sum_file.write(f'\t{r[idx]}')
-		sum_file.write('\n')
-	for k, v in reads_id.items():
-		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
-	tsv_file.close()
-	sum_file.close()
+# 	tsv_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_fp_tp_reads.tsv'), 'w')
+# 	sum_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_fp_tp_id.tsv'), 'w')
+# 	for r in reads:
+# 		sum_file.write(f'{r[0]}')
+# 		for idx in range(1, len(r), 1):
+# 			sum_file.write(f'\t{r[idx]}')
+# 		sum_file.write('\n')
+# 	for k, v in reads_id.items():
+# 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+# 	tsv_file.close()
+# 	sum_file.close()
 
 
-def GetGenes(args, label, output_dir, annot_info, fp_alignments, fp_reads_kept, sequence_length, readid_to_read, type):
-	# get length and function of fp sequences per mapped position on the genome investigated
-	genes = defaultdict(list)
-	functions = defaultdict(int)
-	genestype = defaultdict(int)
-	readid_w_gene = defaultdict(list)
-	# pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
+def CreateTsvFile(reads_id, readid_to_read, filename):	
+	with open(filename, 'w') as f:
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
 
-	for readid in fp_reads_kept:
-		data = fp_alignments[readid]
-		if data[2] < data[3]:
-			start_pos = data[2]
-			end_pos = data[3]
-		else:
-			start_pos = data[3]
-			end_pos = data[2]
-		# for pos in range(start_pos, end_pos+1, 1):
-		# 	pos_readid[pos-1].append(readid)
-		for gene_id, annot in annot_info.items():
-			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
-			(start_pos <= annot[1] and end_pos >= annot[1]) or \
-			(start_pos >= annot[1] and end_pos <= annot[2]) or \
-			(start_pos <= annot[2] and end_pos >= annot[2]):
-				if (start_pos <= annot[1] and end_pos >= annot[2]):
-					length_mapped_seq = 100
-				elif (start_pos <= annot[1] and end_pos >= annot[1]):
-					length_mapped_seq = (end_pos - annot[1])/(annot[2]- annot[1])*100
-				elif (start_pos >= annot[1] and end_pos <= annot[2]):
-					length_mapped_seq = (end_pos - start_pos)/(annot[2]- annot[1])*100
-				elif (start_pos <= annot[2] and end_pos >= annot[2]):
-					length_mapped_seq = (annot[2] - start_pos)/(annot[2]- annot[1])*100
-				if annot[0] == 'protein_coding':
-					functions[annot[5]] += 1
-				genes[gene_id] = annot
-				readid_w_gene[readid] = [data[2], data[3], gene_id, length_mapped_seq]
-				genestype[annot[0]] += 1
+# def GetGenes(args, label, output_dir, annot_info, fp_alignments, fp_reads_kept, sequence_length, readid_to_read, type):
+# 	# get length and function of fp sequences per mapped position on the genome investigated
+# 	genes = defaultdict(list)
+# 	functions = defaultdict(int)
+# 	genestype = defaultdict(int)
+# 	readid_w_gene = defaultdict(list)
+# 	# pos_readid = defaultdict(list) # key: position in target genome, value: list of reads id mapped to that position
 
-	# pos_readid_count = [len(v) for v in pos_readid.values()]
+# 	for readid in fp_reads_kept:
+# 		data = fp_alignments[readid]
+# 		if data[2] < data[3]:
+# 			start_pos = data[2]
+# 			end_pos = data[3]
+# 		else:
+# 			start_pos = data[3]
+# 			end_pos = data[2]
+# 		# for pos in range(start_pos, end_pos+1, 1):
+# 		# 	pos_readid[pos-1].append(readid)
+# 		for gene_id, annot in annot_info.items():
+# 			if (start_pos <= annot[1] and end_pos >= annot[2]) or \
+# 			(start_pos <= annot[1] and end_pos >= annot[1]) or \
+# 			(start_pos >= annot[1] and end_pos <= annot[2]) or \
+# 			(start_pos <= annot[2] and end_pos >= annot[2]):
+# 				if (start_pos <= annot[1] and end_pos >= annot[2]):
+# 					length_mapped_seq = 100
+# 				elif (start_pos <= annot[1] and end_pos >= annot[1]):
+# 					length_mapped_seq = (end_pos - annot[1])/(annot[2]- annot[1])*100
+# 				elif (start_pos >= annot[1] and end_pos <= annot[2]):
+# 					length_mapped_seq = (end_pos - start_pos)/(annot[2]- annot[1])*100
+# 				elif (start_pos <= annot[2] and end_pos >= annot[2]):
+# 					length_mapped_seq = (annot[2] - start_pos)/(annot[2]- annot[1])*100
+# 				if annot[0] == 'protein_coding':
+# 					functions[annot[5]] += 1
+# 				genes[gene_id] = annot
+# 				readid_w_gene[readid] = [data[2], data[3], gene_id, length_mapped_seq]
+# 				genestype[annot[0]] += 1
+
+# 	# pos_readid_count = [len(v) for v in pos_readid.values()]
 	
-	# if len(pos_readid_count) > 0:
-	# 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
+# 	# if len(pos_readid_count) > 0:
+# 	# 	print(f'mean: {statistics.mean(pos_readid_count)}\tmedian: {statistics.median(pos_readid_count)}\tmin: {min(pos_readid_count)}\tmax: {max(pos_readid_count)}')
 
-	with open(os.path.join(output_dir, f'{label}_fp_reads_kept_alignments_{args.prob_threshold}.tsv'), 'w') as outf:
-		for readid, data in readid_w_gene.items():
-			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
+# 	with open(os.path.join(output_dir, f'{label}_fp_reads_kept_alignments_{args.prob_threshold}.tsv'), 'w') as outf:
+# 		for readid, data in readid_w_gene.items():
+# 			outf.write(f'{readid}\t{data[0]}\t{data[1]}\t{data[2]}\n')
 
-	genes_of_interest = defaultdict(list)
-	genes_of_interest_count = defaultdict(int)
-	genes_of_interest_stat = defaultdict(list)
-	for readid in readid_w_gene.keys():
-		gene_id = readid_w_gene[readid][2]
-		genes_of_interest[gene_id] = genes[gene_id]
-		genes_of_interest_count[gene_id] += 1
-		genes_of_interest_stat[gene_id] += [readid_w_gene[readid][3]]
+# 	genes_of_interest = defaultdict(list)
+# 	genes_of_interest_count = defaultdict(int)
+# 	genes_of_interest_stat = defaultdict(list)
+# 	for readid in readid_w_gene.keys():
+# 		gene_id = readid_w_gene[readid][2]
+# 		genes_of_interest[gene_id] = genes[gene_id]
+# 		genes_of_interest_count[gene_id] += 1
+# 		genes_of_interest_stat[gene_id] += [readid_w_gene[readid][3]]
 
-	# for pos, list_readid in pos_readid.items():
-	# 	if len(list_readid) >= 3:
-	# 		for readid in list_readid:
-	# 			if readid in readid_w_gene:
-	# 				gene_id = readid_w_gene[readid][2]
-	# 				genes_of_interest[gene_id] = genes[gene_id]
+# 	# for pos, list_readid in pos_readid.items():
+# 	# 	if len(list_readid) >= 3:
+# 	# 		for readid in list_readid:
+# 	# 			if readid in readid_w_gene:
+# 	# 				gene_id = readid_w_gene[readid][2]
+# 	# 				genes_of_interest[gene_id] = genes[gene_id]
 
-	reads_wo_genes = []
-	if len(readid_w_gene) != len(fp_alignments):
-		with open(os.path.join(output_dir, f'{label}_{type}_reads_wo_gene_{args.prob_threshold}.tsv'), 'w') as f:
-			for readid, data in fp_alignments.items():
-				if readid not in readid_w_gene:
-					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
-					reads_wo_genes.append(readid)
+# 	reads_wo_genes = []
+# 	if len(readid_w_gene) != len(fp_alignments):
+# 		with open(os.path.join(output_dir, f'{label}_{type}_reads_wo_gene_{args.prob_threshold}.tsv'), 'w') as f:
+# 			for readid, data in fp_alignments.items():
+# 				if readid not in readid_w_gene:
+# 					f.write(f'{readid}\t{sequence_length[readid]}\t{data[0]}\t{data[1]}\t{data[2]}\t{data[3]}\n')
+# 					reads_wo_genes.append(readid)
 
-		with open(os.path.join(output_dir, f'{label}_{type}_wo_gene_{args.prob_threshold}.fna'), 'w') as f:
-			f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in reads_wo_genes]))
-	else:
-		print('all reads were found a gene')
+# 		with open(os.path.join(output_dir, f'{label}_{type}_wo_gene_{args.prob_threshold}.fna'), 'w') as f:
+# 			f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in reads_wo_genes]))
+# 	else:
+# 		print('all reads were found a gene')
 
-	with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
-		for gene_id, annot in genes_of_interest.items():
-			if annot[0] == 'protein_coding':
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+# 	with open(os.path.join(output_dir, f'{label}_{type}_genes_info_{args.prob_threshold}.tsv'), 'w') as outf:
+# 		for gene_id, annot in genes_of_interest.items():
+# 			if annot[0] == 'protein_coding':
+# 				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{annot[5]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+# 			else:
+# 				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+
+# 	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
+# 	with open(os.path.join(output_dir, f'{label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
+# 		for k, v in functions_sorted.items():
+# 			f.write(f'{k}\t{v}\n')
+
+# 	genestype_sorted = dict(sorted(genestype.items(), key=lambda item: item[1], reverse=True))
+# 	with open(os.path.join(output_dir, f'{label}_{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
+# 		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
+
+# 	return genes_of_interest, genes_of_interest_count, genes_of_interest_stat
+
+
+def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, readid_to_read, genome_size, fn_cs, tp_cs):
+	# get length and function of fn sequences per mapped position on the genome investigated
+	tp_genes = defaultdict(list)
+	fp_genes = defaultdict(list)
+	fp_functions = defaultdict(int)
+	tp_functions = defaultdict(int)
+	fp_reads_kept = [] 
+	tp_reads_kept = []
+	sel_tp_evalue = dict()
+	sel_tp_pident = dict()
+	sel_fp_evalue = dict()
+	sel_fp_pident = dict()
+	scores = {i:0 for i in range(genome_size)}
+
+	for gene_id, data in annot_info.items():
+		gene_start_pos = data[1]
+		gene_end_pos = data[2]
+		fp_reads = []
+		tp_reads = []
+		tp_evalue = dict()
+		tp_pident = dict()
+		fp_evalue = dict()
+		fp_pident = dict()
+		for read_id, align_info in fp_alignments.items():
+			if align_info[2] < align_info[3]:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[3]
 			else:
-				outf.write(f'{gene_id}\t{annot[3]}\t{annot[1]}\t{annot[2]}\t{annot[4]}\t{annot[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+				read_start_pos = align_info[3]
+				read_end_pos = align_info[2]
+			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			if length_mapped_seq > 0:
+				fp_reads.append(read_id)
+				fp_evalue[read_id] = align_info[4]
+				fp_pident[read_id] = align_info[5]
 
-	functions_sorted = dict(sorted(functions.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(output_dir, f'{label}_{type}_functions_{args.prob_threshold}.tsv'), 'w') as f:
-		for k, v in functions_sorted.items():
+		for read_id, align_info in tp_alignments.items():
+			if align_info[2] < align_info[3]:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[3]
+			else:
+				read_start_pos = align_info[3]
+				read_end_pos = align_info[2]
+			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			if length_mapped_seq > 0:
+				tp_reads.append(read_id)
+				tp_evalue[read_id] = align_info[4]
+				tp_pident[read_id] = align_info[5]
+
+		if len(fp_reads) + len(tp_reads) > 0:
+			# compare number of tp and fn positions mapped to gene
+			fp_num_pos = sum([sequence_length[r] for r in fp_reads])
+			tp_num_pos = sum([sequence_length[r] for r in tp_reads])
+
+
+			ratio_fp = round(fp_num_pos / (tp_num_pos + fp_num_pos), 2)
+			ratio_tp = round(tp_num_pos / (tp_num_pos + fp_num_pos), 2)
+			if ratio_fp > 0.5:
+				fn_genes[gene_id] = [ratio_fp, fp_num_pos, tp_num_pos, len(fp_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				for i in range(gene_start_pos, gene_end_pos+1, 1):
+					scores[i-1] = ratio_fp
+				fp_reads_kept += fp_reads
+				sel_fp_evalue.update(fp_evalue)
+				sel_fp_pident.update(fp_pident)
+				if data[0] == 'protein_coding':
+					fp_functions[data[5]] += 1
+
+			elif ratio_tp > 0.5:
+				tp_genes[gene_id] = [ratio_tp, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				tp_reads_kept += list(tp_reads)
+				sel_tp_evalue.update(tp_evalue)
+				sel_tp_pident.update(tp_pident)
+				if data[0] == 'protein_coding':
+					tp_functions[data[5]] += 1
+
+	fp_functions_sorted = dict(sorted(fp_functions.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_fp_functions_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in fp_functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
-	genestype_sorted = dict(sorted(genestype.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(output_dir, f'{label}_{type}_genes_type_{args.prob_threshold}.tsv'), 'w') as f:
-		f.write(f'{genestype["protein_coding"]}\t{genestype["tRNA"]}\t{genestype["rRNA"]}\n')
+	tp_functions_sorted = dict(sorted(tp_functions.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.label}_tp_functions_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in tp_functions_sorted.items():
+			f.write(f'{k}\t{v}\n')
 
-	return genes_of_interest, genes_of_interest_count, genes_of_interest_stat
+	sel_fp_cs = [str(fp_cs[r]) for r in fp_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_fp_cs_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_fp_cs))
+	
+	sel_tp_cs = [str(tp_cs[r]) for r in tp_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_cs_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_tp_cs))
 
+	sel_fp_length = [str(sequence_length[r]) for r in fp_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_fp_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_fp_length))
+
+	sel_tp_length = [str(sequence_length[r]) for r in tp_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_tp_length))
+
+
+	with open(os.path.join(args.output_dir, f'{args.label}_tp_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in tp_genes.items():
+			f.write(f'{k}')
+			for i in range(len(annot_info[k])):
+				f.write(f'\t{annot_info[k][i]}')
+			for i in range(len(v)):
+				f.write(f'\t{v[i]}')
+			f.write('\n')
+
+	with open(os.path.join(args.output_dir, f'{args.label}_fp_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in fp_genes.items():
+			f.write(f'{k}')
+			for i in range(len(annot_info[k])):
+				f.write(f'\t{annot_info[k][i]}')
+			for i in range(len(v)):
+				f.write(f'\t{v[i]}')
+			f.write('\n')
+
+	scores_list = [scores[i] for i in range(genome_size)]
+
+	with open(os.path.join(args.output_dir, f'{args.label}_fp_tp_scores_info.tsv'), 'w') as outf:
+		outf.write(f'# fp reads kept: {len(fp_reads_kept)}\n')
+		outf.write(f'# tp reads kept: {len(tp_reads_kept)}\n')
+		outf.write(f'FP rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
+		outf.write(f'fp evalue:\tmean:{statistics.mean(sel_fp_evalue.values())}\tmedian:{statistics.median(sel_fp_evalue.values())}\tmin:{min(sel_fp_evalue.values())}\tmax:{max(sel_fp_evalue.values())}\n')
+		outf.write(f'tp evalue:\tmean:{statistics.mean(sel_tp_evalue.values())}\tmedian:{statistics.median(sel_tp_evalue.values())}\tmin:{min(sel_tp_evalue.values())}\tmax:{max(sel_tp_evalue.values())}\n')
+		outf.write(f'fp pident:\tmean:{statistics.mean(sel_fp_pident.values())}\tmedian:{statistics.median(sel_fp_pident.values())}\tmin:{min(sel_fp_pident.values())}\tmax:{max(sel_fp_pident.values())}\n')
+		outf.write(f'tp pident:\tmean:{statistics.mean(sel_tp_pident.values())}\tmedian:{statistics.median(sel_tp_pident.values())}\tmin:{min(sel_tp_pident.values())}\tmax:{max(sel_tp_pident.values())}\n')
+
+	# create tsv files with FN and TP reads
+	CreateTsvFile(fp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads_genes.tsv'))
+	CreateTsvFile(tp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_genes.tsv'))
+
+	return scores_list, fp_genes, tp_genes
 
 
 def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, outfilename=None):
@@ -586,100 +727,100 @@ def GetReadsAlignments(sequences, input_file, sequence_length, seq_to_labels, ou
 	return alignments
 
 
-def GetScores(args, testing_records, tp_alignments, fp_alignments):
-	genome_size = len(testing_records[0].seq)
-	# shannon_scores = []
-	scores = []
-	fp_scores = []
-	fp_reads_kept = []
-	tp_reads_kept = []
-	sel_tp_evalue = dict()
-	sel_tp_pident = dict()
-	sel_fp_evalue = dict()
-	sel_fp_pident = dict()
-	for i in range(1, genome_size+1, 1):
-		num_tp = 0
-		num_fp = 0
+# def GetScores(args, testing_records, tp_alignments, fp_alignments):
+# 	genome_size = len(testing_records[0].seq)
+# 	# shannon_scores = []
+# 	scores = []
+# 	fp_scores = []
+# 	fp_reads_kept = []
+# 	tp_reads_kept = []
+# 	sel_tp_evalue = dict()
+# 	sel_tp_pident = dict()
+# 	sel_fp_evalue = dict()
+# 	sel_fp_pident = dict()
+# 	for i in range(1, genome_size+1, 1):
+# 		num_tp = 0
+# 		num_fp = 0
 
-		fp_reads = set()
-		tp_reads = set()
-		tp_evalue = dict()
-		tp_pident = dict()
-		fp_evalue = dict()
-		fp_pident = dict()
+# 		fp_reads = set()
+# 		tp_reads = set()
+# 		tp_evalue = dict()
+# 		tp_pident = dict()
+# 		fp_evalue = dict()
+# 		fp_pident = dict()
 		
-		# check if position is located in a read assigned to TP
-		for read_id, data in tp_alignments.items():
-			if data[4] == 0 and data[5] == 100 :
-				if i >= data[2] and i <= data[3]:
-					tp_reads.add(read_id)
-					tp_evalue[read_id] = data[4]
-					tp_pident[read_id] = data[5]
-					num_tp += 1
+# 		# check if position is located in a read assigned to TP
+# 		for read_id, data in tp_alignments.items():
+# 			if data[4] == 0 and data[5] == 100 :
+# 				if i >= data[2] and i <= data[3]:
+# 					tp_reads.add(read_id)
+# 					tp_evalue[read_id] = data[4]
+# 					tp_pident[read_id] = data[5]
+# 					num_tp += 1
 
-		# check if position is located in a read assigned to FN
-		for read_id, data in fp_alignments.items():
-			if data[4] == 0 and data[5] == 100 :
-				if i >= data[2] and i <= data[3]:
-					fp_reads.add(read_id)
-					fp_evalue[read_id] = data[4]
-					fp_pident[read_id] = data[5]
-					num_fp += 1
+# 		# check if position is located in a read assigned to FN
+# 		for read_id, data in fp_alignments.items():
+# 			if data[4] == 0 and data[5] == 100 :
+# 				if i >= data[2] and i <= data[3]:
+# 					fp_reads.add(read_id)
+# 					fp_evalue[read_id] = data[4]
+# 					fp_pident[read_id] = data[5]
+# 					num_fp += 1
 
-		if num_tp+num_fp > 0:
-			ratio_fp = num_fp / (num_tp+num_fp)
-			ratio_tp = num_tp / (num_tp+num_fp)
+# 		if num_tp+num_fp > 0:
+# 			ratio_fp = num_fp / (num_tp+num_fp)
+# 			ratio_tp = num_tp / (num_tp+num_fp)
 
-			if ratio_fp > 0.5:
-				scores.append(ratio_fp)
-				fp_scores.append(ratio_fp)
-				fp_reads_kept += list(fp_reads)
-				sel_fp_evalue.update(fp_evalue)
-				sel_fp_pident.update(fp_pident)
-			elif ratio_tp > 0.5:
-				tp_reads_kept += list(tp_reads)
-				sel_tp_evalue.update(tp_evalue)
-				sel_tp_pident.update(tp_pident)
-				scores.append(0)
-		else:
-			# no fn or tp with that position
-			scores.append(0)
+# 			if ratio_fp > 0.5:
+# 				scores.append(ratio_fp)
+# 				fp_scores.append(ratio_fp)
+# 				fp_reads_kept += list(fp_reads)
+# 				sel_fp_evalue.update(fp_evalue)
+# 				sel_fp_pident.update(fp_pident)
+# 			elif ratio_tp > 0.5:
+# 				tp_reads_kept += list(tp_reads)
+# 				sel_tp_evalue.update(tp_evalue)
+# 				sel_tp_pident.update(tp_pident)
+# 				scores.append(0)
+# 		else:
+# 			# no fn or tp with that position
+# 			scores.append(0)
 
-		# # compute probability for each group
-		# if num_tp+num_fn > 0:
-		# 	prob_tp = num_tp / (num_tp+num_fn)
-		# 	prob_fn = num_fn / (num_tp+num_fn)
+# 		# # compute probability for each group
+# 		# if num_tp+num_fn > 0:
+# 		# 	prob_tp = num_tp / (num_tp+num_fn)
+# 		# 	prob_fn = num_fn / (num_tp+num_fn)
 
-		# 	# compute tp and fn contribution to shannon score
-		# 	shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
-		# 	shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
+# 		# 	# compute tp and fn contribution to shannon score
+# 		# 	shannon_tp = prob_tp*math.log(prob_tp, 2) if prob_tp > 0 else 0
+# 		# 	shannon_fn = prob_tp*math.log(prob_fn, 2) if prob_fn > 0 else 0
 
-		# 	# compute shannon entropy
-		# 	if (shannon_tp + shannon_fn) == 0:
-		# 		# cases where the position exists only in TP or FN reads
-		# 		shannon_entropy = 0
-		# 	else:
-		# 		# cases where the position exists in TP and FN reads
-		# 		shannon_entropy = -(shannon_tp + shannon_fn)
-		# 		assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
+# 		# 	# compute shannon entropy
+# 		# 	if (shannon_tp + shannon_fn) == 0:
+# 		# 		# cases where the position exists only in TP or FN reads
+# 		# 		shannon_entropy = 0
+# 		# 	else:
+# 		# 		# cases where the position exists in TP and FN reads
+# 		# 		shannon_entropy = -(shannon_tp + shannon_fn)
+# 		# 		assert shannon_entropy < 1, f'{num_tp}\t{prob_tp}\t{shannon_tp}\t{num_fn}\t{prob_fn}\t{shannon_fn}\t{shannon_entropy}'
 
-		# else:
-		# 	shannon_entropy = 0
+# 		# else:
+# 		# 	shannon_entropy = 0
 
-		# scores.append(shannon_entropy)
+# 		# scores.append(shannon_entropy)
 
-	assert len(scores) == genome_size, f'{genome_size}\t{len(scores)}'
-	with open(os.path.join(args.output_dir, f'{args.label}_fp_tp_scores_info.tsv'), 'w') as outf:
-		outf.write(f'# fp reads kept: {len(set(fp_reads_kept))}\n')
-		outf.write(f'# tp reads kept: {len(set(tp_reads_kept))}\n')
-		outf.write(f'FP rate all positions:\tmean:{statistics.mean(scores)}\tmedian:{statistics.median(scores)}\tmin:{min(scores)}\tmax:{max(scores)}\n')
-		outf.write(f'only FP rate > 0.5:\nmean\t{statistics.mean(fp_scores)}\nmedian\t{statistics.median(fp_scores)}\nmin\t{min(fp_scores)}\nmax\t{max(fp_scores)}\n')
-		outf.write(f'fp evalue:\tmean:{statistics.mean(sel_fp_evalue.values())}\tmedian:{statistics.median(sel_fp_evalue.values())}\tmin:{min(sel_fp_evalue.values())}\tmax:{max(sel_fp_evalue.values())}\n')
-		outf.write(f'tp evalue:\tmean:{statistics.mean(sel_tp_evalue.values())}\tmedian:{statistics.median(sel_tp_evalue.values())}\tmin:{min(sel_tp_evalue.values())}\tmax:{max(sel_tp_evalue.values())}\n')
-		outf.write(f'fp pident:\tmean:{statistics.mean(sel_fp_pident.values())}\tmedian:{statistics.median(sel_fp_pident.values())}\tmin:{min(sel_fp_pident.values())}\tmax:{max(sel_fp_pident.values())}\n')
-		outf.write(f'tp pident:\tmean:{statistics.mean(sel_tp_pident.values())}\tmedian:{statistics.median(sel_tp_pident.values())}\tmin:{min(sel_tp_pident.values())}\tmax:{max(sel_tp_pident.values())}\n')
+# 	assert len(scores) == genome_size, f'{genome_size}\t{len(scores)}'
+# 	with open(os.path.join(args.output_dir, f'{args.label}_fp_tp_scores_info.tsv'), 'w') as outf:
+# 		outf.write(f'# fp reads kept: {len(set(fp_reads_kept))}\n')
+# 		outf.write(f'# tp reads kept: {len(set(tp_reads_kept))}\n')
+# 		outf.write(f'FP rate all positions:\tmean:{statistics.mean(scores)}\tmedian:{statistics.median(scores)}\tmin:{min(scores)}\tmax:{max(scores)}\n')
+# 		outf.write(f'only FP rate > 0.5:\nmean\t{statistics.mean(fp_scores)}\nmedian\t{statistics.median(fp_scores)}\nmin\t{min(fp_scores)}\nmax\t{max(fp_scores)}\n')
+# 		outf.write(f'fp evalue:\tmean:{statistics.mean(sel_fp_evalue.values())}\tmedian:{statistics.median(sel_fp_evalue.values())}\tmin:{min(sel_fp_evalue.values())}\tmax:{max(sel_fp_evalue.values())}\n')
+# 		outf.write(f'tp evalue:\tmean:{statistics.mean(sel_tp_evalue.values())}\tmedian:{statistics.median(sel_tp_evalue.values())}\tmin:{min(sel_tp_evalue.values())}\tmax:{max(sel_tp_evalue.values())}\n')
+# 		outf.write(f'fp pident:\tmean:{statistics.mean(sel_fp_pident.values())}\tmedian:{statistics.median(sel_fp_pident.values())}\tmin:{min(sel_fp_pident.values())}\tmax:{max(sel_fp_pident.values())}\n')
+# 		outf.write(f'tp pident:\tmean:{statistics.mean(sel_tp_pident.values())}\tmedian:{statistics.median(sel_tp_pident.values())}\tmin:{min(sel_tp_pident.values())}\tmax:{max(sel_tp_pident.values())}\n')
 
-	return scores, list(set(fn_reads_kept)), list(set(tp_reads_kept))
+# 	return scores, list(set(fn_reads_kept)), list(set(tp_reads_kept))
 
 
 
@@ -872,9 +1013,10 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			# # matching_regions.append([ac.query_start, ac.query_end, ac.identity])
 
 	# get stats on percentage identity
-	pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	ani = round(statistics.mean(percent_identity), 2)
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{pct_identity}%\n')
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
 		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
 
@@ -980,7 +1122,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	if genomic_islands:
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}%'),
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}% - {ani}%'),
 		Patch(color='darkorange', label='False Negative rate')
 	]
 	if len(tp_sequences) > 0:
@@ -997,6 +1139,8 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 	fig.savefig(outfigpath, dpi=300)
 
+	return avg_pct_identity, ani, test_strain, train_strain
+
 
 
 if __name__ == "__main__":
@@ -1004,6 +1148,8 @@ if __name__ == "__main__":
 	parser.add_argument('--training_fasta', type=str, help='path to file containing list of fasta files of training genomes')
 	parser.add_argument('--testing_fasta', type=str, help='path to testing fasta file')
 	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome')
+	parser.add_argument('--test_species', type=str, help='gtdb species of testing genome')
+	parser.add_argument('--test_genus', type=str, help='gtdb genus of testing genome')
 	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads from label 0')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
@@ -1103,18 +1249,43 @@ if __name__ == "__main__":
 	tp_alignments = GetReadsAlignments(tp_sequences, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, seq_to_labels, os.path.join(args.output_dir, f'blast/test_reads_test_genome/neg_test_neg_test_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get false negative or false positive rate
-	scores, fp_reads_kept, tp_reads_kept = GetScores(args, neg_testing_records, tp_alignments, fp_alignments)
+	# scores, fp_reads_kept, tp_reads_kept = GetScores(args, neg_testing_records, tp_alignments, fp_alignments)
 
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
-	fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
-	_, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
+	scores, fp_genes, tp_genes = GetGenes(args, test_annot_info, fp_alignments, tp_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), fp_cs, tp_cs)
 
-	GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
+	# fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
+	# _, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
 
-	CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
+	# store FP and TP reads in tsv files for analysis of the attentions weights
+	CreateTsvFile(tp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_all.tsv'))
+	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads_all.tsv'))
+	# GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
+
+	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
 			fp_genes_of_interest_count, fp_genes_of_interest_stat, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'), scores)
 
+	train_species = args.dl_toda_tax[args.pos_label].split(';')[0]
+	train_genus = args.dl_toda_tax[args.pos_label].split(';')[1]
+
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_fp_shared_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in fp_genes.items():
+			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
+			if pos_test_annot_info[k][0] == 'protein_coding':
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
+			else:
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
+
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_tp_unique_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in tp_genes.items():
+			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.label][0]}\t')
+			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
+			if pos_test_annot_info[k][0] == 'protein_coding':
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
+			else:
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
 
 
