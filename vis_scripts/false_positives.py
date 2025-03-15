@@ -1137,7 +1137,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	if genomic_islands:
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}% - {ani}%'),
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
 		Patch(color='deeppink', label='Score')
 	]
 	if len(tp_sequences) > 0:
@@ -1227,7 +1227,6 @@ if __name__ == "__main__":
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
-				print(test_ordered_reads_id[count])
 				if test_ordered_reads_id[count].split('|')[1] == args.neg_label:
 					# tfrecords contain the updated label which is set to 1
 					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
