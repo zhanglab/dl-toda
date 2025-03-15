@@ -1287,7 +1287,7 @@ if __name__ == "__main__":
 		for k, v in fp_genes.items():
 			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
-			if pos_test_annot_info[k][0] == 'protein_coding':
+			if test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\n')
 			else:
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\tNA\n')
@@ -1296,7 +1296,7 @@ if __name__ == "__main__":
 		for k, v in tp_genes.items():
 			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{args.test_species}\t{args.test_genus}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
-			if pos_test_annot_info[k][0] == 'protein_coding':
+			if test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\n')
 			else:
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\tNA\n')
