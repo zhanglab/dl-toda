@@ -105,6 +105,7 @@ def main():
         dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
     outf = open(os.path.join(args.output_dir, 'genomes.tsv'), 'w')
+    
     with open(args.labels, 'r') as f:
         for label in f:
             label = label.rstrip()
@@ -112,8 +113,6 @@ def main():
             genus = dl_toda_tax[label].split(';')[1]
             print(label, species, genus)
             for i in range(len(genomes_id)):
-                if genomes_id[i] in ['GCF_000195975.1', 'GCF_000013785.1']:
-                    print(gtdb_taxonomy[i].split(';')[-1].split('__')[1], gtdb_taxonomy[i].split(';')[-2].split('__')[1], ncbi_assembly_level[i], ncbi_genome_category[i])
                 if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                     if genomes_id[i] not in used_genomes:
                         print(genomes_id[i])
@@ -124,7 +123,7 @@ def main():
                             else:
                                 if gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
                                     line += '0\t'
-                            line += f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t{gtdb_rep_genome[i]}\t'
+                            line += f'{genomes_id[i]}\t{gtdb_taxonomy[i]}\t{ncbi_assembly_level[i]}\t{ncbi_genome_category[i]}\t{ncbi_genome_representation[i]}\t'
                             if genomes_id[i] in genomes_to_fa:
                                 line += 'IN\n'
                                 # copy fasta file to output directory
