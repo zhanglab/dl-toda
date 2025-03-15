@@ -859,10 +859,12 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	return align_coords
 
 
-def StoreCS(args, list_cs, type):
-	with open(os.path.join(args.output_dir, f'{args.testing_genome}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
+def StoreCS(args, dict_cs, type):
+	list_cs = []
+	for k, v in dict_cs.items():
+		list_cs.append(v)
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join([str(x) for x in list_cs]))
-
 
 def GetSeqLength(args, sequences_id, sequence_length, type):
 	if len(sequences_id) != 0:
@@ -1222,8 +1224,8 @@ if __name__ == "__main__":
 	# get FP and TP sequences
 	fp_sequences = set()
 	tp_sequences = set()
-	fp_cs = []
-	tp_cs = []
+	tp_cs = defaultdict(list)
+	fp_cs = defaultdict(list)
 
 	with open(args.testing_results, 'r') as f:
 		for count, line in enumerate(f):
@@ -1234,10 +1236,10 @@ if __name__ == "__main__":
 					# tfrecords contain the updated label which is set to 1
 					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
 						fp_sequences.add(test_ordered_reads_id[count])
-						fp_cs.append(prob)
+						fp_cs[test_ordered_reads_id[count]] = prob
 					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '0':
 						tp_sequences.add(test_ordered_reads_id[count])
-						tp_cs.append(prob)
+						tp_cs[test_ordered_reads_id[count]] = prob
 
 
 	print(f'#FP for genome {args.testing_genome}: {len(fp_sequences)}')
