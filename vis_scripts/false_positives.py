@@ -650,33 +650,33 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 					tp_functions[data[5]] += 1
 
 	fp_functions_sorted = dict(sorted(fp_functions.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_fp_functions_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_fp_functions_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in fp_functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
 	tp_functions_sorted = dict(sorted(tp_functions.items(), key=lambda item: item[1], reverse=True))
-	with open(os.path.join(args.output_dir, f'{args.label}_tp_functions_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_tp_functions_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in tp_functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
 	sel_fp_cs = [str(fp_cs[r]) for r in fp_reads_kept]
-	with open(os.path.join(args.output_dir, f'{args.label}_selected_fp_cs_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_selected_fp_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_fp_cs))
 	
 	sel_tp_cs = [str(tp_cs[r]) for r in tp_reads_kept]
-	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_cs_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_selected_tp_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_tp_cs))
 
 	sel_fp_length = [str(sequence_length[r]) for r in fp_reads_kept]
-	with open(os.path.join(args.output_dir, f'{args.label}_selected_fp_length_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_selected_fp_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_fp_length))
 
 	sel_tp_length = [str(sequence_length[r]) for r in tp_reads_kept]
-	with open(os.path.join(args.output_dir, f'{args.label}_selected_tp_length_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_selected_tp_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_tp_length))
 
 
-	with open(os.path.join(args.output_dir, f'{args.label}_tp_genes_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_tp_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in tp_genes.items():
 			f.write(f'{k}')
 			for i in range(len(annot_info[k])):
@@ -685,7 +685,7 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 				f.write(f'\t{v[i]}')
 			f.write('\n')
 
-	with open(os.path.join(args.output_dir, f'{args.label}_fp_genes_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_fp_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in fp_genes.items():
 			f.write(f'{k}')
 			for i in range(len(annot_info[k])):
@@ -696,7 +696,7 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 
 	scores_list = [scores[i] for i in range(genome_size)]
 
-	with open(os.path.join(args.output_dir, f'{args.label}_fp_tp_scores_info.tsv'), 'w') as outf:
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_fp_tp_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# fp reads kept: {len(fp_reads_kept)}\n')
 		outf.write(f'# tp reads kept: {len(tp_reads_kept)}\n')
 		outf.write(f'FP rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
@@ -706,8 +706,8 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 		outf.write(f'tp pident:\tmean:{statistics.mean(sel_tp_pident.values())}\tmedian:{statistics.median(sel_tp_pident.values())}\tmin:{min(sel_tp_pident.values())}\tmax:{max(sel_tp_pident.values())}\n')
 
 	# create tsv files with FN and TP reads
-	CreateTsvFile(fp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_fp_reads_genes.tsv'))
-	CreateTsvFile(tp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.label}_{args.prob_threshold}_tp_reads_genes.tsv'))
+	CreateTsvFile(fp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_fp_reads_genes.tsv'))
+	CreateTsvFile(tp_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_tp_reads_genes.tsv'))
 
 	return scores_list, fp_genes, tp_genes
 
