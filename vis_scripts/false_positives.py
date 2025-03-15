@@ -882,9 +882,9 @@ def GetGenomesInfo(fasta):
 	
 	return strain
 
-def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			fp_alignments, tp_alignments, genes_of_interest, genes_of_interest_count, \
-			genes_of_interest_stat, outfigpath, outfilename, scores, genomic_islands=None):
+
+def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
+			fp_alignments, tp_alignments, outfigpath, genomic_islands=None):
 
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -941,64 +941,64 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			min_r_pos -= 1
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
-		features = {}
-		for gene_id in genes_of_interest.keys():
-			if genes_of_interest[gene_id][3] == '+':
-				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
-				if genes_of_interest[gene_id][0] == 'protein_coding':
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
-					# cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
-				else:
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
-					# if genes_of_interest[gene_id][0] == 'tRNA':
-						# cds_track.genomic_features(feature, fc="darkgreen")
-					# if genes_of_interest[gene_id][0] == 'rRNA':
-					# 	rrna_track.genomic_features(feature, fc="deeppink")
-			else:
-				location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
-				if genes_of_interest[gene_id][0] == 'protein_coding':
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
-					# cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
-				else:
-					feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
-					# if genes_of_interest[gene_id][0] == 'tRNA':
-						# cds_track.genomic_features(feature, fc="darkgreen")
-					# if genes_of_interest[gene_id][0] == 'rRNA':
-					# 	rrna_track.genomic_features(feature, fc="deeppink")
+		# features = {}
+		# for gene_id in genes_of_interest.keys():
+		# 	if genes_of_interest[gene_id][3] == '+':
+		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=+1)
+		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"], "function": [genes_of_interest[gene_id][5]]})
+		# 			# cds_track.genomic_features(feature, plotstyle="arrow", fc="red")
+		# 		else:
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["plus"]})
+		# 			# if genes_of_interest[gene_id][0] == 'tRNA':
+		# 				# cds_track.genomic_features(feature, fc="darkgreen")
+		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
+		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
+		# 	else:
+		# 		location = FeatureLocation(start=genes_of_interest[gene_id][1], end=genes_of_interest[gene_id][2], strand=-1)
+		# 		if genes_of_interest[gene_id][0] == 'protein_coding':
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"], "function": [genes_of_interest[gene_id][5]]})
+		# 			# cds_track.genomic_features(feature, plotstyle="arrow", fc="blue")
+		# 		else:
+		# 			feature = SeqFeature(location=location, qualifiers={"gene_type": [genes_of_interest[gene_id][0]], "gene_id": [gene_id], "gene_name": [genes_of_interest[gene_id][4]], "strand": ["minus"]})
+		# 			# if genes_of_interest[gene_id][0] == 'tRNA':
+		# 				# cds_track.genomic_features(feature, fc="darkgreen")
+		# 			# if genes_of_interest[gene_id][0] == 'rRNA':
+		# 			# 	rrna_track.genomic_features(feature, fc="deeppink")
 
-			# features.append(feature)
-			features[genes_of_interest[gene_id][1]] = feature
+		# 	# features.append(feature)
+		# 	features[genes_of_interest[gene_id][1]] = feature
 
 		
 		
 
 
 
-		# Get info about genes
-		outf = open(outfilename, 'w')
-		labels, label_pos_list = [], []
-		features_sorted = dict(sorted(features.items()))
-		for feature in features_sorted.values():
-			start = int(feature.location.start)
-			end = int(feature.location.end)
-			label_pos = (start + end) / 2
-			gene_id = feature.qualifiers.get("gene_id", [None])[0]
-			label = feature.qualifiers.get("gene_name", [None])[0]
-			strand = feature.qualifiers.get("strand", [None])[0]
-			gene_type = feature.qualifiers.get("gene_type", [None])[0]
-			if gene_type == 'protein_coding':
-				function = feature.qualifiers.get("function", [None])[0]
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
-			else:
-				outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+		# # Get info about genes
+		# outf = open(outfilename, 'w')
+		# labels, label_pos_list = [], []
+		# features_sorted = dict(sorted(features.items()))
+		# for feature in features_sorted.values():
+		# 	start = int(feature.location.start)
+		# 	end = int(feature.location.end)
+		# 	label_pos = (start + end) / 2
+		# 	gene_id = feature.qualifiers.get("gene_id", [None])[0]
+		# 	label = feature.qualifiers.get("gene_name", [None])[0]
+		# 	strand = feature.qualifiers.get("strand", [None])[0]
+		# 	gene_type = feature.qualifiers.get("gene_type", [None])[0]
+		# 	if gene_type == 'protein_coding':
+		# 		function = feature.qualifiers.get("function", [None])[0]
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{function}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
+		# 	else:
+		# 		outf.write(f'{gene_id}\t{strand}\t{start}\t{end}\t{feature.qualifiers.get("gene_name", [None])[0]}\t{feature.qualifiers.get("gene_type", [None])[0]}\t{genes_of_interest_count[gene_id]}\t{statistics.mean(genes_of_interest_stat[gene_id])}\n')
 
-		# 	if label == None:
-		# 		continue
-		# 	if gene_id is not None:
-		# 		labels.append(gene_id)
-		# 		label_pos_list.append(label_pos)
-		# 	cds_track.annotate(label_pos, label, label_size=7)
-		outf.close()
+		# # 	if label == None:
+		# # 		continue
+		# # 	if gene_id is not None:
+		# # 		labels.append(gene_id)
+		# # 		label_pos_list.append(label_pos)
+		# # 	cds_track.annotate(label_pos, label, label_size=7)
+		# outf.close()
 
 	# Blast genome comparison & plot match blocks
 	comp_name2color = {}
@@ -1018,7 +1018,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 	# matching_regions = []
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos-5	
+		min_r_pos -= 5	
 		for ac in align_coords:
 			# # percent_identity.append(ac.identity)
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
@@ -1051,7 +1051,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
 		scores_track.line(genome_pos, scores, color="darkorange")
-		print(f'added FP rate track')
+		print(f'added score track')
 
 		# add track for TP reads
 		if len(tp_sequences) > 0:
@@ -1062,9 +1062,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			for readid, data in tp_alignments.items():
 				for pos in range(data[2], data[3]+1, 1):
 					pos_tp_count[pos-1] +=1
-			print(f'mean: {statistics.mean(pos_tp_count)}\tmedian: {statistics.median(pos_tp_count)}\tmin: {min(pos_tp_count)}\tmax: {max(pos_tp_count)}')
 			y_values = list(range(min(pos_tp_count), max(pos_tp_count), 1))
-			print(y_values)
 			y_labels = list(map(str, y_values))
 			tp_track.yticks(y_values, y_labels)
 			tp_track.line(genome_pos, pos_tp_count, color="blue")
@@ -1079,9 +1077,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 			for readid, data in fp_alignments.items():
 				for pos in range(data[2], data[3]+1, 1):
 					pos_fp_count[pos-1] +=1
-			print(f'mean: {statistics.mean(pos_fp_count)}\tmedian: {statistics.median(pos_fp_count)}\tmin: {min(pos_fp_count)}\tmax: {max(pos_fp_count)}')
 			y_values = list(range(min(pos_fp_count), max(pos_fp_count), 1))
-			print(y_values)
 			y_labels = list(map(str, y_values))
 			fp_track.yticks(y_values, y_labels)
 			fp_track.line(genome_pos, pos_fp_count, color="darkviolet")
@@ -1126,11 +1122,11 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 
 		# get average GC content for FP and TP reads
 		if len(fp_sequences) > 0:
-			GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'FP')
-			GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'FP_relative')
+			GetReadsGCcontent(args, gc_content, pos_list, fp_alignments, 'fp')
+			GetReadsGCcontent(args, gc_content_updated, pos_list, fp_alignments, 'fp_relative')
 		if len(tp_sequences) > 0:
-			GetReadsGCcontent(args, gc_content, pos_list, tp_alignments, 'TP')
-			GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments, 'TP_relative')
+			GetReadsGCcontent(args, gc_content, pos_list, tp_alignments, 'tp')
+			GetReadsGCcontent(args, gc_content_updated, pos_list, tp_alignments, 'tp_relative')
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
@@ -1142,7 +1138,7 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
 		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {pct_identity}% - {ani}%'),
-		Patch(color='darkorange', label='False Negative rate')
+		Patch(color='deeppink', label='Score')
 	]
 	if len(tp_sequences) > 0:
 		handles.append(Patch(color='blue', label='True Positives'))
@@ -1150,10 +1146,10 @@ def CircosPlot(args, fp_sequences, tp_sequences, test_record_seq, train_record_s
 		handles.append(Patch(color='darkviolet', label='False Positives'))
 		
 	handles += [
-		Line2D([], [], color='grey', label='Positive GC Skew', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='limegreen', label='Negative GC Skew', marker="v", ms=6, ls="None"),
-		Line2D([], [], color='black', label='Positive GC Content', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='deeppink', label='Negative GC Content', marker="v", ms=6, ls="None")
+		Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+		Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
 		]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 	fig.savefig(outfigpath, dpi=300)
@@ -1282,8 +1278,8 @@ if __name__ == "__main__":
 	CreateTsvFile(fp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_fp_reads_all.tsv'))
 	# GetReadsForAttentions(args, tp_alignments, fp_alignments, test_readid_to_read)
 
-	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, fp_sequences, tp_sequences, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, fp_genes_of_interest, \
-			fp_genes_of_interest_count, fp_genes_of_interest_stat, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'), os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_genes_circos.tsv'), scores)
+	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, neg_testing_records[0].seq, pos_training_records[0].seq, neg_testing_fasta, pos_training_fasta, fp_alignments, tp_alignments, \
+			 os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_fp_circos.png'))
 
 	train_species = args.dl_toda_tax[args.pos_label].split(';')[0]
 	train_genus = args.dl_toda_tax[args.pos_label].split(';')[1]
