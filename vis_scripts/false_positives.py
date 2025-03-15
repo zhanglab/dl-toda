@@ -632,7 +632,7 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 			ratio_fp = round(fp_num_pos / (tp_num_pos + fp_num_pos), 2)
 			ratio_tp = round(tp_num_pos / (tp_num_pos + fp_num_pos), 2)
 			if ratio_fp > 0.5:
-				fn_genes[gene_id] = [ratio_fp, fp_num_pos, tp_num_pos, len(fp_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				fp_genes[gene_id] = [ratio_fp, fp_num_pos, tp_num_pos, len(fp_reads), len(tp_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
 					scores[i-1] = ratio_fp
 				fp_reads_kept += fp_reads
