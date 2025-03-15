@@ -1143,7 +1143,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	percent_identity = []
 	for sector in circos.sectors:
 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos-5	
+		min_r_pos -= 5	
 		for ac in align_coords:
 			# # percent_identity.append(ac.identity)
 			# # track = circos.get_sector(ac.query_name).tracks[-1] # Last added track in sector
@@ -1177,7 +1177,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		y_labels = list(map(str, y_values))
 		scores_track.yticks(y_values, y_labels)
 		scores_track.line(genome_pos, scores, color="deeppink")
-		print(f'added FN rate track')
+		print(f'added score track')
 
 		# add track for TP reads
 		min_r_pos -= 13
@@ -1262,7 +1262,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
 		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
-		Patch(color='deeppink', label='False Negative rate'),
+		Patch(color='deeppink', label='Score'),
 		Patch(color='blue', label='True Positives'),
 		Patch(color='darkviolet', label='False Negatives'),
 		Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
