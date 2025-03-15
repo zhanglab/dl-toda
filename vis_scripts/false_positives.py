@@ -642,7 +642,7 @@ def GetGenes(args, annot_info, fp_alignments, tp_alignments, sequence_length, re
 					fp_functions[data[5]] += 1
 
 			elif ratio_tp > 0.5:
-				tp_genes[gene_id] = [ratio_tp, fn_num_pos, tp_num_pos, len(fn_reads), len(tp_reads), gene_start_pos, gene_end_pos]
+				tp_genes[gene_id] = [ratio_tp, fp_num_pos, tp_num_pos, len(fp_reads), len(tp_reads), gene_start_pos, gene_end_pos]
 				tp_reads_kept += list(tp_reads)
 				sel_tp_evalue.update(tp_evalue)
 				sel_tp_pident.update(tp_pident)
