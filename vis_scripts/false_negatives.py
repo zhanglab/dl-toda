@@ -486,6 +486,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 						biotype = e.split(' ')[2]
 					if 'old_locus_tag' in e:
 						old_locus_tag = e.split(' ')[2]
+					if 'protein_id' in e:
+						protein_id = e.split(' ')[2]
 
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
@@ -493,7 +495,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 					if function == '':
 						function = gene
-					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
 					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
