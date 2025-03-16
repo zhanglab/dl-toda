@@ -65,9 +65,10 @@ if __name__ == "__main__":
 	cogfncat_dict = defaultdict(str)
 	with open(cogfncat, 'r') as f:
 		for line in f:
-			if line.rstrip().split('\t')[0] not in ['1', '2', '3', '4']:
-				print('no', line)
-				cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
+			print(line.rstrip().split('\t')[0], line.rstrip().split('\t')[0].isdigit())
+			# if line.rstrip().split('\t')[0] not in ['1', '2', '3', '4']:
+			# 	print('no', line)
+			# 	cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
 	
 
 	# get COG functional category of coding sequences
