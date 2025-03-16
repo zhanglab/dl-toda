@@ -16,8 +16,11 @@ cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
 
 def RunRPSBLAST(args, protein_id):
 
-	result = subprocess.run([f'{edirect_exec}/esearch', '-query', f'{protein_id}', '-db', 'protein', '>', f'{args.output_dir}/proteins_fasta/esearch_out'], shell=True)
-	result = subprocess.run([f'{edirect_exec}/efetch', '-query', f'{args.output_dir}/proteins_fasta/esearch_out', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
+	# result = subprocess.run([f'{edirect_exec}/esearch', '-query', f'{protein_id}', '-db', 'protein', '>', f'{args.output_dir}/proteins_fasta/esearch_out'], shell=True)
+	# result = subprocess.run([f'{edirect_exec}/efetch', '-query', f'{args.output_dir}/proteins_fasta/esearch_out', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
+
+	result = subprocess.run(f'{edirect_exec}/esearch -query {protein_id} -db protein > {args.output_dir}/proteins_fasta/esearch_out', shell=True)
+	result = subprocess.run([f'{edirect_exec}/efetch -query {args.output_dir}/proteins_fasta/esearch_out -format fasta > {args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
 
 	 # 'protein', '|', f'{edirect_exec}/efetch', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
 
