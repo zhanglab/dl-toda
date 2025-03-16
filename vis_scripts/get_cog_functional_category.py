@@ -4,6 +4,7 @@ import glob
 import argparse
 import subprocess
 import pandas as pd
+from collections import defaultdict
 
 rpsblast_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/rpsblast"
 edirect_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/edirect"
