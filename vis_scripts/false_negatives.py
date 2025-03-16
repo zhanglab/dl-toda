@@ -1427,7 +1427,7 @@ if __name__ == "__main__":
 			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t')
 			f.write(f'{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
-				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\t{pos_test_annot_info[k][6]}\n')
 			else:
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
@@ -1438,7 +1438,7 @@ if __name__ == "__main__":
 			f.write(f'{args.label}\t1\t{args.testing_genome}\t{test_strain}\t{args.train_genomes_info[args.label][0]}\t')
 			f.write(f'{train_strain}\t{species}\t{genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if pos_test_annot_info[k][0] == 'protein_coding':
-				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\n')
+				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\t{pos_test_annot_info[k][5]}\t{pos_test_annot_info[k][6]}\n')
 			else:
 				f.write(f'{pos_test_annot_info[k][0]}\t{pos_test_annot_info[k][4]}\tNA\n')
 
