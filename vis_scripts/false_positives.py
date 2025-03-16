@@ -392,6 +392,8 @@ def GetAnnotInfo(args, genome_id, input_dir):
 						biotype = e.split(' ')[2]
 					if 'old_locus_tag' in e:
 						old_locus_tag = e.split(' ')[2]
+					if 'protein_id' in e:
+						protein_id = e.split(' ')[2]
 
 				if content[i].rstrip().split('\t')[2] == 'gene':
 					genes_type[gene_id] = biotype
@@ -399,7 +401,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 					if function == '':
 						function = gene
-					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function]
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
 					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
@@ -1271,6 +1273,8 @@ if __name__ == "__main__":
 
 	# fp_genes_of_interest, fp_genes_of_interest_count, fp_genes_of_interest_stat = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, fp_alignments, fp_reads_kept, test_sequence_length, test_readid_to_read, 'fp')
 	# _, _, _ = GetGenes(args, args.testing_genome, args.output_dir, test_annot_info, tp_alignments, tp_reads_kept, test_sequence_length, test_readid_to_read, 'tp')
+
+
 
 	# store FP and TP reads in tsv files for analysis of the attentions weights
 	CreateTsvFile(tp_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.pos_label}_{args.prob_threshold}_tp_reads_all.tsv'))
