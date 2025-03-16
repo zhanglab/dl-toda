@@ -19,7 +19,7 @@ def RunRPSBLAST(args, protein_id):
 	result = subprocess.run([f'{edirect_exec}/esearch', '-query', f'{protein_id}', '-db', \
 	 'protein', '|', f'{edirect_exec}/efetch', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
 
-	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}_fna', '-db', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}_fna', '-db', f'{cog_db}', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
 	 f'{cog_db}', '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
 
@@ -65,10 +65,11 @@ if __name__ == "__main__":
 	cogfncat_dict = defaultdict(str)
 	with open(cogfncat, 'r') as f:
 		for line in f:
-			print(line.rstrip().split('\t')[0], line.rstrip().split('\t')[0].isdigit())
-			# if line.rstrip().split('\t')[0] not in ['1', '2', '3', '4']:
-			# 	print('no', line)
-			# 	cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
+			if not line.rstrip().split('\t')[0].isdigit():
+				if len(line.rstrip().split('\t')) == 4:
+					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
+				else:
+					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 	
 
 	# get COG functional category of coding sequences
