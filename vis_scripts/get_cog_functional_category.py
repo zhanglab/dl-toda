@@ -66,8 +66,10 @@ if __name__ == "__main__":
 	with open(cogfncat, 'r') as f:
 		for line in f:
 			if line.rstrip().split('\t')[0].isdigit():
+				print(line)
 				continue
 			else:
+				print('no', line)
 				cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
 	
 
