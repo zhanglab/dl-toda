@@ -47,7 +47,7 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		return 'Function unknown'
 
 
-def GetSequence(fasta_file, protein_id):
+def GetSequence(args, fasta_file, protein_id):
 	fasta = open(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna'), 'w')
 	with open(fasta_file) as handle:
 	    for record in SeqIO.parse(handle, "fasta"):
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				assert protein_id in protein_id_to_faa, f'{protein_id} not in local refseq db'
-				GetSequence(protein_id_to_faa[protein_id], protein_id):
+				GetSequence(args, protein_id_to_faa[protein_id], protein_id)
 				# get fasta file of protein and run rpsblast to retrieve the associated CDD
 				RunRPSBLAST(args)
 				# get COG functional category
