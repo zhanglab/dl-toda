@@ -34,7 +34,11 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
 
 	# get COG ID from CDD ID
-	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==cdd_id].tolist()[0]
+	print(cdd_id)
+	print(cdd_to_cog_df.head(3))
+	type(cdd_to_cog_df.iloc[1,0])
+	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==cdd_id].tolist()
+	print(row)
 	cog_id = cdd_to_cog_df.iloc[row,1]
 
 	# get COG functional letter
