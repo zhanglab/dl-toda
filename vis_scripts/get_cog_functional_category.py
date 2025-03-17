@@ -15,6 +15,7 @@ cddtocog = "/work/pi_yingzhang_uri_edu/ccres/CDD-db/cddid.tbl"
 coglettertofn = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.def.tab"
 cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
 protein_id_to_faa = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria/protein_id_to_faa"
+refseq_dir = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria/"
 
 
 def RunRPSBLAST(args, protein_id):
@@ -56,7 +57,7 @@ def GetSequence(args, protein_id):
 				fasta_file = line.rstrip().split('\t')[1]
 	assert len(fasta_file) != 0, f'{protein_id} is not in local refseq db'
 	fasta = open(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna'), 'w')
-	with open(fasta_file) as handle:
+	with open(os.path.join(refseq_dir, fasta_file)) as handle:
 	    for record in SeqIO.parse(handle, "fasta"):
 	    	if record.id == protein_id:
 	    		print(record.id)
