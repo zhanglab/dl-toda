@@ -39,10 +39,13 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 		assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
 		cog_id = cdd_to_cog_df.iloc[row[0],1]
-
+		print(cog_id)
 		# get COG functional letter
 		cog_letter = coglettertofn_dict[cog_id]
 		print(cdd_id, cog_id, cog_letter)
+		if len(cog_letter) > 1:
+			# retrieve most important function
+			cog_letter = cog_letter[0]
 		return cogfncat_dict[cog_letter]
 	else:
 		return 'Function unknown'
