@@ -30,7 +30,7 @@ def RunRPSBLAST(args, protein_id):
 
 def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	# get best hit and its CDD ID
-	if os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0
+	if os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
 		with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
 			best_hit = f.readline()
 			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
