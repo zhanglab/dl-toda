@@ -103,7 +103,7 @@ if __name__ == "__main__":
 				protein_id = line.rstrip().split('\t')[-1]
 				GetSequence(args, protein_id)
 				# get fasta file of protein and run rpsblast to retrieve the associated CDD
-				RunRPSBLAST(args)
+				RunRPSBLAST(args, protein_id)
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 				print(cog_fn)
