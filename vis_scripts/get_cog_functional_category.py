@@ -35,17 +35,13 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
 
 	# get COG ID from CDD ID
-	print(cdd_id)
-	print(cdd_to_cog_df.head(3))
-	print(type(cdd_to_cog_df.iloc[1,0]))
-	print(type(cdd_id))
-	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()[0]
-	print(row)
-	cog_id = cdd_to_cog_df.iloc[row,1]
+	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+	assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
+	cog_id = cdd_to_cog_df.iloc[row[0],1]
 
 	# get COG functional letter
 	cog_letter = coglettertofn_dict[cog_id]
-
+	print(cog_letter)
 	return cogfncat_dict[cog_letter]
 
 
@@ -86,6 +82,7 @@ if __name__ == "__main__":
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
 	with open(args.input, 'r') as f:
 		for line in f:
+			print(line)
 			protein_id = line.rstrip().split('\t')[-1]
 			# get fasta file of protein and run rpsblast to retrieve the associated CDD
 			RunRPSBLAST(args, protein_id)
