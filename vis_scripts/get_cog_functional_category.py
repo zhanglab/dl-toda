@@ -36,7 +36,8 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 	# get COG ID from CDD ID
 	print(cdd_id)
 	print(cdd_to_cog_df.head(3))
-	type(cdd_to_cog_df.iloc[1,0])
+	print(type(cdd_to_cog_df.iloc[1,0]))
+	print(type(cdd_id))
 	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==cdd_id].tolist()
 	print(row)
 	cog_id = cdd_to_cog_df.iloc[row,1]
