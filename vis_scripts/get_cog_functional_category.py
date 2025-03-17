@@ -4,6 +4,7 @@ import glob
 import argparse
 import subprocess
 import pandas as pd
+import numpy as np
 from collections import defaultdict
 
 rpsblast_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/rpsblast"
@@ -38,7 +39,7 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 	print(cdd_to_cog_df.head(3))
 	print(type(cdd_to_cog_df.iloc[1,0]))
 	print(type(cdd_id))
-	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==cdd_id].tolist()
+	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 	print(row)
 	cog_id = cdd_to_cog_df.iloc[row,1]
 
