@@ -41,7 +41,7 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 
 	# get COG functional letter
 	cog_letter = coglettertofn_dict[cog_id]
-	print(cog_letter)
+	print(cdd_id, cog_id, cog_letter)
 	return cogfncat_dict[cog_letter]
 
 
