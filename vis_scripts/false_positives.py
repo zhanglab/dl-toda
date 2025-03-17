@@ -377,6 +377,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				biotype = ''
 				function = ''
 				old_locus_tag = ''
+				protein_id = ''
 				for e in content[i].rstrip().split('\t')[8].split(';'):
 					e = e.replace('"', '')
 					# get all go_function entries and choose go_function with the most details
@@ -1292,7 +1293,7 @@ if __name__ == "__main__":
 			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{" ".join(args.test_species)}\t{" ".join(args.test_genus)}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if test_annot_info[k][0] == 'protein_coding':
-				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{pos_test_annot_info[k][6]}\n')
+				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{test_annot_info[k][6]}\n')
 			else:
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\tNA\n')
 
@@ -1301,7 +1302,7 @@ if __name__ == "__main__":
 			f.write(f'{args.pos_label}\t0\t{args.testing_genome}\t{test_strain}\t{" ".join(args.test_species)}\t{" ".join(args.test_genus)}\t{args.train_genomes_info[args.pos_label][0]}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if test_annot_info[k][0] == 'protein_coding':
-				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{pos_test_annot_info[k][6]}\n')
+				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{test_annot_info[k][6]}\n')
 			else:
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\tNA\n')
 
