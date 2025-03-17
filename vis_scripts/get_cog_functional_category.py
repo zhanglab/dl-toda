@@ -83,11 +83,15 @@ if __name__ == "__main__":
 	with open(args.input, 'r') as f:
 		for line in f:
 			print(line)
-			protein_id = line.rstrip().split('\t')[-1]
-			# get fasta file of protein and run rpsblast to retrieve the associated CDD
-			RunRPSBLAST(args, protein_id)
-			# get COG functional category
-			cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-			outf.write(line.rstrip() + f'\t{cog_fn}\n') 
+			if line.rstrip().split('\t')[16] == 'protein_coding':
+				protein_id = line.rstrip().split('\t')[-1]
+				# get fasta file of protein and run rpsblast to retrieve the associated CDD
+				RunRPSBLAST(args, protein_id)
+				# get COG functional category
+				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
+			else:
+				molecule_type = line.rstrip().split('\t')[16]
+				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
 
 
