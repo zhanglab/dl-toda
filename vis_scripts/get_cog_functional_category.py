@@ -6,25 +6,19 @@ import subprocess
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+from Bio import SeqIO
 
 rpsblast_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/rpsblast"
-edirect_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/edirect"
 cog_db = "/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog"
 cddtocog = "/work/pi_yingzhang_uri_edu/ccres/CDD-db/cddid.tbl"
 coglettertofn = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.def.tab"
 cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
+protein_id_to_faa = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria/protein_id_to_faa"
 
 
 def RunRPSBLAST(args, protein_id):
 
-	# result = subprocess.run([f'{edirect_exec}/esearch', '-query', f'{protein_id}', '-db', 'protein', '>', f'{args.output_dir}/proteins_fasta/esearch_out'], shell=True)
-	# result = subprocess.run([f'{edirect_exec}/efetch', '-query', f'{args.output_dir}/proteins_fasta/esearch_out', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
-
-	result = subprocess.run(f'{edirect_exec}/esearch -query {protein_id} -db protein | efetch -format fasta > {args.output_dir}/proteins_fasta/{protein_id}_fna', shell=True)
-
-	 # 'protein', '|', f'{edirect_exec}/efetch', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
-
-	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}_fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}.fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
 	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
 
@@ -52,6 +46,14 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 	else:
 		return 'Function unknown'
 
+
+def GetSequence(fasta_file, protein_id):
+	fasta = open(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna'), 'w')
+	with open(fasta_file) as handle:
+	    for record in SeqIO.parse(handle, "fasta"):
+	    	if record.id == protein_id:
+	    		print(record.id)
+	    		fasta.write(f'>{record.id}\n{record.seq}')
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -84,6 +86,11 @@ if __name__ == "__main__":
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
+
+	prot_id_to_faa = dict()
+	with open(protein_id_to_faa, 'r') as f:
+		for line in f:
+			prot_id_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 	
 
 	# get COG functional category of coding sequences
@@ -93,8 +100,10 @@ if __name__ == "__main__":
 			print(line)
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
+				assert protein_id in protein_id_to_faa, f'{protein_id} not in local refseq db'
+				GetSequence(protein_id_to_faa[protein_id], protein_id):
 				# get fasta file of protein and run rpsblast to retrieve the associated CDD
-				RunRPSBLAST(args, protein_id)
+				RunRPSBLAST(args)
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
