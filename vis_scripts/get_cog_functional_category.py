@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 from Bio import SeqIO
+import gc
 
 rpsblast_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/rpsblast"
 cog_db = "/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog"
@@ -87,11 +88,15 @@ if __name__ == "__main__":
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 
-	prot_id_to_faa = dict()
 	with open(protein_id_to_faa, 'r') as f:
-		for line in f:
-			prot_id_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
-	
+		content = f.readlines()
+		prot_id_to_faa = dict(zip([line.rstrip().split('\t')[0] for line in content], [line.rstrip().split('\t')[1] for line in content]))
+		del content
+		gc.collect()
+
+	for k, v in prot_id_to_faa.items():
+		print(k, v)
+		break
 
 	# get COG functional category of coding sequences
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
