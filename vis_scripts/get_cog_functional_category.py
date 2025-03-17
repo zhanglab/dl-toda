@@ -49,6 +49,12 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 
 
 def GetSequence(args, fasta_file, protein_id):
+	fasta_file = ''
+	with open(protein_id_to_faa, 'r') as f:
+		for line in f:
+			if line.rstrip().split('\t')[0] == protein_id:
+				protein_fasta = line.rstrip().split('\t')[1]
+
 	fasta = open(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna'), 'w')
 	with open(fasta_file) as handle:
 	    for record in SeqIO.parse(handle, "fasta"):
@@ -88,16 +94,6 @@ if __name__ == "__main__":
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 
-	with open(protein_id_to_faa, 'r') as f:
-		content = f.readlines()
-		prot_id_to_faa = dict(zip([line.rstrip().split('\t')[0] for line in content], [line.rstrip().split('\t')[1] for line in content]))
-		del content
-		gc.collect()
-
-	for k, v in prot_id_to_faa.items():
-		print(k, v)
-		break
-
 	# get COG functional category of coding sequences
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
 	with open(args.input, 'r') as f:
@@ -105,7 +101,6 @@ if __name__ == "__main__":
 			print(line)
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
-				assert protein_id in protein_id_to_faa, f'{protein_id} not in local refseq db'
 				GetSequence(args, protein_id_to_faa[protein_id], protein_id)
 				# get fasta file of protein and run rpsblast to retrieve the associated CDD
 				RunRPSBLAST(args)
