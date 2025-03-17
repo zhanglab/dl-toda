@@ -30,19 +30,22 @@ def RunRPSBLAST(args, protein_id):
 
 def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	# get best hit and its CDD ID
-	with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
-		best_hit = f.readline()
-		cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
+	if os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0
+		with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
+			best_hit = f.readline()
+			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
 
-	# get COG ID from CDD ID
-	row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-	assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
-	cog_id = cdd_to_cog_df.iloc[row[0],1]
+		# get COG ID from CDD ID
+		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+		assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
+		cog_id = cdd_to_cog_df.iloc[row[0],1]
 
-	# get COG functional letter
-	cog_letter = coglettertofn_dict[cog_id]
-	print(cdd_id, cog_id, cog_letter)
-	return cogfncat_dict[cog_letter]
+		# get COG functional letter
+		cog_letter = coglettertofn_dict[cog_id]
+		print(cdd_id, cog_id, cog_letter)
+		return cogfncat_dict[cog_letter]
+	else:
+		return 'Function unknown'
 
 
 if __name__ == "__main__":
