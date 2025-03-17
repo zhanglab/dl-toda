@@ -24,7 +24,7 @@ def RunRPSBLAST(args, protein_id):
 	 # 'protein', '|', f'{edirect_exec}/efetch', '-format', 'fasta', '>', f'{args.output_dir}/proteins_fasta/{protein_id}_fna'], shell=True)
 
 	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}_fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
-	 f'{cog_db}', '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
+	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
 
 def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
