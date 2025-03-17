@@ -99,7 +99,6 @@ if __name__ == "__main__":
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
 	with open(args.input, 'r') as f:
 		for line in f:
-			print(line)
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				GetSequence(args, protein_id)
@@ -107,9 +106,11 @@ if __name__ == "__main__":
 				RunRPSBLAST(args)
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+				print(cog_fn)
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
 			else:
 				molecule_type = line.rstrip().split('\t')[16]
+				print(molecule_type)
 				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
 
 
