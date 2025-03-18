@@ -99,10 +99,13 @@ if __name__ == "__main__":
 	# get COG functional category of coding sequences
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
 	print(args.input)
+	if '_'.join(args.input.split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
+		index = 18
+	else:
+		index = 16
 	with open(args.input, 'r') as f:
 		for line in f:
-			print(line, line.rstrip().split('\t')[16])
-			if line.rstrip().split('\t')[16] == 'protein_coding':
+			if line.rstrip().split('\t')[18] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				GetSequence(args, protein_id)
 				# get fasta file of protein and run rpsblast to retrieve the associated CDD
