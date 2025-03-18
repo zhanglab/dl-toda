@@ -20,38 +20,45 @@ refseq_dir = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria
 
 def RunRPSBLAST(args, protein_id):
 
-	GetSequence(args, protein_id)
-	if os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) != 0:
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}.fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
+	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
-		result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}.fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
-		 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
 
 def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
-	# get best hit and its CDD ID
-	if os.path.exists(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
-		with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
-			best_hit = f.readline()
-			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
+	GetSequence(args, protein_id)
+	if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) and \
+		os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) != 0:
 
-		# get COG ID from CDD ID
-		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-		if len(row) == 1:
-			cog_id = cdd_to_cog_df.iloc[row[0],1]
-			# get COG functional letter
-			if cog_id not in coglettertofn_dict:
-				return 'Function unknown'
+		RunRPSBLAST(args, protein_id):
+
+		# get best hit and its CDD ID
+		if os.path.exists(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
+			with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
+				best_hit = f.readline()
+				cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
+
+			# get COG ID from CDD ID
+			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+			if len(row) == 1:
+				cog_id = cdd_to_cog_df.iloc[row[0],1]
+				# get COG functional letter
+				if cog_id not in coglettertofn_dict:
+					return 'Function unknown'
+				else:
+					cog_letter = coglettertofn_dict[cog_id]
+					if len(cog_letter) > 1:
+						# retrieve most important function
+						cog_letter = cog_letter[0]
+					return cogfncat_dict[cog_letter]
 			else:
-				cog_letter = coglettertofn_dict[cog_id]
-				if len(cog_letter) > 1:
-					# retrieve most important function
-					cog_letter = cog_letter[0]
-				return cogfncat_dict[cog_letter]
+				# cdd not found in database
+				return 'Function unknown'
 		else:
-			# cdd not found in database
+			# rpsblast didn't find any hit
 			return 'Function unknown'
 	else:
-		# protein id not found in local refseq db or rpsblast didn't find any hit
+		# protein id not found in local refseq db
 		return 'Function unknown'
 
 
@@ -111,8 +118,6 @@ if __name__ == "__main__":
 		for line in f:
 			if line.rstrip().split('\t')[18] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
-				# get fasta file of protein and run rpsblast to retrieve the associated CDD
-				RunRPSBLAST(args, protein_id)
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
