@@ -98,9 +98,10 @@ if __name__ == "__main__":
 
 	# get COG functional category of coding sequences
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
+	print(args.input)
 	with open(args.input, 'r') as f:
 		for line in f:
-			print(line.rstrip().split('\t')[16])
+			print(line, line.rstrip().split('\t')[16])
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				GetSequence(args, protein_id)
