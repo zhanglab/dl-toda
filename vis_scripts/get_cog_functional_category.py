@@ -30,7 +30,7 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 	if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) and \
 		os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) != 0:
 
-		RunRPSBLAST(args, protein_id):
+		RunRPSBLAST(args, protein_id)
 
 		# get best hit and its CDD ID
 		if os.path.exists(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
