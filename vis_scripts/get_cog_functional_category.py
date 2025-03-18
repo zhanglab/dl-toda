@@ -35,13 +35,11 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 		assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
 		cog_id = cdd_to_cog_df.iloc[row[0],1]
-		print('cog id', cog_id)
 		# get COG functional letter
 		if cog_id not in coglettertofn_dict:
 			return 'Function unknown'
 		else:
 			cog_letter = coglettertofn_dict[cog_id]
-			print(cog_letter, cogfncat_dict[cog_letter])
 			if len(cog_letter) > 1:
 				# retrieve most important function
 				cog_letter = cog_letter[0]
@@ -61,7 +59,6 @@ def GetSequence(args, protein_id):
 	with open(os.path.join(refseq_dir, fasta_file)) as handle:
 	    for record in SeqIO.parse(handle, "fasta"):
 	    	if record.id == protein_id:
-	    		print(record.id)
 	    		fasta.write(f'>{record.id}\n{record.seq}')
 
 if __name__ == "__main__":
@@ -98,7 +95,6 @@ if __name__ == "__main__":
 
 	# get COG functional category of coding sequences
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
-	print(args.input)
 	if '_'.join(args.input.split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
 		index = 18
 	else:
@@ -112,7 +108,6 @@ if __name__ == "__main__":
 				RunRPSBLAST(args, protein_id)
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-				print(cog_fn)
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
 			else:
 				molecule_type = line.rstrip().split('\t')[16]
