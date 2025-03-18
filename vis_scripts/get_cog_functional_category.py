@@ -35,7 +35,7 @@ def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_di
 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 		assert len(row) == 1, f'CDD ID {cdd_id} has not been found'
 		cog_id = cdd_to_cog_df.iloc[row[0],1]
-		print(cog_id)
+		print('cog id', cog_id)
 		# get COG functional letter
 		if cog_id not in coglettertofn_dict:
 			return 'Function unknown'
@@ -100,6 +100,7 @@ if __name__ == "__main__":
 	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
 	with open(args.input, 'r') as f:
 		for line in f:
+			print(line.rstrip().split('\t')[16])
 			if line.rstrip().split('\t')[16] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				GetSequence(args, protein_id)
@@ -111,7 +112,7 @@ if __name__ == "__main__":
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
 			else:
 				molecule_type = line.rstrip().split('\t')[16]
-				print(molecule_type)
+				# print(molecule_type)
 				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
 
 
