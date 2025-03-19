@@ -26,7 +26,7 @@ def RunRPSBLAST(args, fasta_file, file_num):
 def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
 	proteins_fn = defaultdict(list)
 	# get best hit and its CDD ID
-	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
+	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') != 0:
 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
 			for line in f:
 				protein_id = line.rstrip().split('\t')[0]
