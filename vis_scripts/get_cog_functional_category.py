@@ -126,7 +126,7 @@ if __name__ == "__main__":
 		# 	break
 			# for i in range(len(chunk)):
 			# 	print(chunk[i])
-			protein_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+			# protein_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 			# if not chunk:
 			# 	break
 
