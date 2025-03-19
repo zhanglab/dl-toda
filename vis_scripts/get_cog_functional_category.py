@@ -117,9 +117,10 @@ if __name__ == "__main__":
 	with open(protein_id_to_faa, 'r') as f:
 		while True:
 			chunk = f.read(4096)
-			for i in range(len(chunk)):
-				print(chunk[i])
-				protein_to_faa[chunk[i].rstrip().split('\t')[0]] = chunk[i].rstrip().split('\t')[1]
+			print(chunk)
+			# for i in range(len(chunk)):
+			# 	print(chunk[i])
+			# 	protein_to_faa[chunk[i].rstrip().split('\t')[0]] = chunk[i].rstrip().split('\t')[1]
 			if not chunk:
 				break
 
