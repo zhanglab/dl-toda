@@ -118,7 +118,7 @@ if __name__ == "__main__":
 				content = {count: line.rstrip().split('\t') for count, line in enumerate(f.readlines())}
 				
 				# get sequences of proteins into a fasta file
-				list_proteins_id = [line[-1] for line in content if line[index] == 'protein_coding']
+				list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
 				print(len(list_proteins_id))
 				GetSequence(args, list_proteins_id, i)
 				
