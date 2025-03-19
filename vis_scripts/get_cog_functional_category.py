@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 	# get all input files
 	input_files = glob.glob(os.path.join(args.output_dir, '*unique_genes_*.tsv')) + glob.glob(os.path.join(args.output_dir, '*shared_genes_*.tsv'))
-
+	print(input_files, len(input_files))
 	# load required files
 	cdd_to_cog_df = pd.read_csv(cddtocog, sep='\t', header=None)
 	
@@ -107,7 +107,8 @@ if __name__ == "__main__":
 
 	for i in range(len(input_files)):
 		# get COG functional category of coding sequences
-		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w')
+		print(input_files[i])
+		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w'):
 			if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
 				index = 18
 			else:
@@ -118,6 +119,7 @@ if __name__ == "__main__":
 				
 				# get sequences of proteins into a fasta file
 				list_proteins_id = [line[-1] for count, line in content if line[index] == 'protein_coding']
+				print(len(list_proteins_id))
 				GetSequence(args, list_proteins_id, i)
 				
 				# run rpsblast to get cdd id
@@ -127,17 +129,17 @@ if __name__ == "__main__":
 					RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), i)
 				
 
-				for line in f:
-					if line.rstrip().split('\t')[index] == 'protein_coding':
-						protein_id = line.rstrip().split('\t')[-1]
-						# get COG functional category
-						cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-						outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
-						print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
-					else:
-						molecule_type = line.rstrip().split('\t')[index]
-						# print(molecule_type)
-						outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
-						print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
+				# for line in f:
+				# 	if line.rstrip().split('\t')[index] == 'protein_coding':
+				# 		protein_id = line.rstrip().split('\t')[-1]
+				# 		# get COG functional category
+				# 		cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+				# 		outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
+				# 		print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
+				# 	else:
+				# 		molecule_type = line.rstrip().split('\t')[index]
+				# 		# print(molecule_type)
+				# 		outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
+				# 		print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
 
 
