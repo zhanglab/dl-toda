@@ -43,9 +43,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 
 	# get COG ID from CDD ID
 	for protein_id in list_proteins_id:
-		if protein_id not in proteins_fn:
-			proteins_fn[protein_id] = ['Function unknown']
-		else:
+		if protein_id in proteins_fn:
 			cdd_id = proteins_fn[protein_id][0]
 			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 			if len(row) == 1:
@@ -66,6 +64,9 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 			else:
 				# cdd not found in database
 				proteins_fn[protein_id].insert(0, 'Function unknown')
+		else:
+			proteins_fn[protein_id] = ['Function unknown']
+		
 
 	return proteins_fn
 
