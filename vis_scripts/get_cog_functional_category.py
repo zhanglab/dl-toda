@@ -29,11 +29,12 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') != 0:
 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
 			for line in f:
+				print(line)
 				protein_id = line.rstrip().split('\t')[0]
 				cdd_id = line.rstrip().split('\t')[1].split(':')[1]
 				evalue = float(line.rstrip().split('\t')[2])
 				pident = float(line.rstrip().split('\t')[3])
-				print(line)
+				
 				if protein_id not in proteins_fn:
 					proteins_fn[protein_id] = [cdd_id, evalue, pident]
 				else:
