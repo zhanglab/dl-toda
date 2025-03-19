@@ -35,7 +35,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 				evalue = float(line.rstrip().split('\t')[2])
 				pident = float(line.rstrip().split('\t')[3])
 				
-				if protein_id not in proteins_fn:
+				if protein_id not in proteins_cdd:
 					proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 				else:
 					if evalue < proteins_fn[protein_id][1] and pident > proteins_fn[protein_id][2]:
