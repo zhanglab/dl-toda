@@ -117,21 +117,9 @@ if __name__ == "__main__":
 	csv_iterator = pd.read_csv(protein_id_to_faa, chunksize=100000, header=None)
 	for chunk in csv_iterator:
 		for i in range(len(chunk)):
-			print(chunk.iloc[i, 0].split('\t'))
+			protein_to_faa[chunk.iloc[i, 0].split('\t')[0]] = chunk.iloc[i, 0].split('\t')[1]
 		break
-	# with open(protein_id_to_faa, 'r') as f:
-	# 	for line in f:
-		# while True:
-		# 	chunk = f.read(4096)
-		# 	print(chunk)
-		# 	break
-			# for i in range(len(chunk)):
-			# 	print(chunk[i])
-			# protein_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
-			# if not chunk:
-			# 	break
-
-		# protein_to_faa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+		print(protein_to_faa)
 	print('after: loading', datetime.datetime.now())
 	
 	for i in range(len(input_files)):
