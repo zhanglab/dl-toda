@@ -70,7 +70,7 @@ def GetSequence(args, list_proteins_id, file_num):
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
 				    for record in SeqIO.parse(handle, "fasta"):
 				    	if record.id == protein_id:
-				    		fasta.write(f'>{record.id}\n{record.seq}')
+				    		fasta.write(f'>{record.id}\n{record.seq}\n')
 			else:
 				proteins_missing.append(protein_id)
 	return proteins_missing
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 				os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) != 0:
 
 				RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna'), i)
-				
+			break
 				# for line in f:
 				# 	if line.rstrip().split('\t')[index] == 'protein_coding':
 				# 		protein_id = line.rstrip().split('\t')[-1]
