@@ -45,7 +45,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 	proteins_fn = {}
 	for protein_id in list_proteins_id:
 		if protein_id in proteins_cdd:
-			cdd_id = proteins_fn[protein_id][0]
+			cdd_id = proteins_cdd[protein_id][0]
 			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 			if len(row) == 1:
 				cog_id = cdd_to_cog_df.iloc[row[0],1]
