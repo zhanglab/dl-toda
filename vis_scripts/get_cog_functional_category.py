@@ -120,21 +120,20 @@ if __name__ == "__main__":
 			else:
 				index = 16
 			print('_'.join(input_files[i].split('/')[-1].split('_')[1:3]), index)
-			with open(input_files[i], 'r') as f:
-				content = {count: line.rstrip().split('\t') for count, line in enumerate(f.readlines())}
+			# with open(input_files[i], 'r') as f:
+			# 	content = {count: line.rstrip().split('\t') for count, line in enumerate(f.readlines())}
 				
-				# get sequences of proteins into a fasta file
-				list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
-				print(len(list_proteins_id))
-				proteins_missing = GetSequence(args, list_proteins_id, i)
+			# 	# get sequences of proteins into a fasta file
+			# 	list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
+			# 	print(len(list_proteins_id))
+			# 	proteins_missing = GetSequence(args, list_proteins_id, i)
 				
-				# run rpsblast to get cdd id
-				if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) and \
-					os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) != 0:
+			# run rpsblast to get cdd id
+			if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) and \
+				os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) != 0:
 
-					RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), i)
+				RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna'), i)
 				
-
 				# for line in f:
 				# 	if line.rstrip().split('\t')[index] == 'protein_coding':
 				# 		protein_id = line.rstrip().split('\t')[-1]
