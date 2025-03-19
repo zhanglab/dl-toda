@@ -118,8 +118,9 @@ if __name__ == "__main__":
 	for chunk in csv_iterator:
 		for i in range(len(chunk)):
 			protein_to_faa[chunk.iloc[i, 0].split('\t')[0]] = chunk.iloc[i, 0].split('\t')[1]
-		break
 		print(protein_to_faa)
+		break
+
 	print('after: loading', datetime.datetime.now())
 	
 	for i in range(len(input_files)):
