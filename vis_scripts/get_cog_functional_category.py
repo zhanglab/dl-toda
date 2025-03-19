@@ -54,7 +54,7 @@ def RunRPSBLAST(args, fasta_file, file_num):
 # 	return 'Function unknown'
 
 
-def GetSequence(args, list_proteins_id, file_num, protein_to_faa):
+def GetSequence(args, list_proteins_id, file_num):
 	proteins_missing = []
 	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
 		for protein_id in list_proteins_id:
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 				# get sequences of proteins into a fasta file
 				list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
 				print(len(list_proteins_id))
-				proteins_missing = GetSequence(args, list_proteins_id, i, protein_to_faa)
+				proteins_missing = GetSequence(args, list_proteins_id, i)
 				
 				# run rpsblast to get cdd id
 				if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) and \
