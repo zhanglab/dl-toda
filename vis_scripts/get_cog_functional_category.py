@@ -21,38 +21,52 @@ refseq_dir = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria
 
 def RunRPSBLAST(args, fasta_file, file_num):
 	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', \
-	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
+	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
-# def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
-# 	# get best hit and its CDD ID
-# 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
-# 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
-# 			best_hit = f.readline()
-# 			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
+def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
+	proteins_fn = defaultdict(list)
+	# get best hit and its CDD ID
+	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
+		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
+			for line in f:
+				protein_id = line.rstrip().split('\t')[0]
+				cdd_id = line.rstrip().split('\t')[1].split(':')[1]
+				evalue = float(line.rstrip().split('\t')[2])
+				pident = float(line.rstrip().split('\t')[3])
+				print(line)
+				if protein_id not in proteins_fn:
+					proteins_fn[protein_id] = [cdd_id, evalue, pident]
+				else:
+					if evalue < proteins_fn[protein_id][1] and pident > proteins_fn[protein_id][2]:
+						proteins_fn[protein_id] = [cdd_id, evalue, pident]
 
-# 		# get COG ID from CDD ID
-# 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-# 		if len(row) == 1:
-# 			cog_id = cdd_to_cog_df.iloc[row[0],1]
-# 			# get COG functional letter
-# 			if cog_id not in coglettertofn_dict:
-# 				return 'Function unknown'
-# 			else:
-# 				cog_letter = coglettertofn_dict[cog_id]
-# 				if len(cog_letter) > 1:
-# 					# retrieve most important function
-# 					cog_letter = cog_letter[0]
-# 				return cogfncat_dict[cog_letter]
-# 		else:
-# 			# cdd not found in database
-# 			return 'Function unknown'
-# 	else:
-# 		# rpsblast didn't find any hit
-# 		return 'Function unknown'
-# else:
-# 	# protein id not found in local refseq db
-# 	return 'Function unknown'
+	# get COG ID from CDD ID
+	for protein_id in list_proteins_id:
+		if protein_id not in proteins_fn:
+			proteins_fn[protein_id] = ['Function unknown']
+		else:
+			cdd_id = proteins_fn[protein_id][0]
+			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+			if len(row) == 1:
+				cog_id = cdd_to_cog_df.iloc[row[0],1]
+				# get COG functional letter
+				if cog_id not in coglettertofn_dict:
+					proteins_fn[protein_id].insert(0, 'Function unknown')
+				else:
+					cog_letter = coglettertofn_dict[cog_id]
+					if len(cog_letter) > 0:
+						if len(cog_letter) > 1:
+							# retrieve most important function
+							cog_letter = cog_letter[0]
+							proteins_fn[protein_id].insert(0, cogfncat_dict[cog_letter])
+					else:
+						# no letter associated with cog id
+						proteins_fn[protein_id].insert(0, 'Function unknown')
+			else:
+				# cdd not found in database
+				proteins_fn[protein_id].insert(0, 'Function unknown')
 
+	return proteins_fn
 
 def GetSequence(args, list_proteins_id, file_num):
 	proteins_missing = []
@@ -114,17 +128,16 @@ if __name__ == "__main__":
 	for i in range(len(input_files)):
 		# get COG functional category of coding sequences
 		print(input_files[i])
-		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w'):
+		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w') as outf:
 			if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
 				index = 18
 			else:
 				index = 16
 			print('_'.join(input_files[i].split('/')[-1].split('_')[1:3]), index)
-			# with open(input_files[i], 'r') as f:
-			# 	content = {count: line.rstrip().split('\t') for count, line in enumerate(f.readlines())}
+			with open(input_files[i], 'r') as f:
+				list_proteins_id = [line.rstrip().split('\t')[-1] for line in f.readlines() if line.rstrip().split('\t')[index] == 'protein_coding']
 				
 			# 	# get sequences of proteins into a fasta file
-			# 	list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
 			# 	print(len(list_proteins_id))
 			# 	proteins_missing = GetSequence(args, list_proteins_id, i)
 				
@@ -133,18 +146,16 @@ if __name__ == "__main__":
 				os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) != 0:
 
 				RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna'), i)
-			break
-				# for line in f:
-				# 	if line.rstrip().split('\t')[index] == 'protein_coding':
-				# 		protein_id = line.rstrip().split('\t')[-1]
-				# 		# get COG functional category
-				# 		cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-				# 		outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
-				# 		print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
-				# 	else:
-				# 		molecule_type = line.rstrip().split('\t')[index]
-				# 		# print(molecule_type)
-				# 		outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
-				# 		print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
 
+			proteins_fn = GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, i)
+			with open(input_files[i], 'r') as f:
+				for line in f:
+					if line.rstrip().split('\t')[index] == 'protein_coding':
+						protein_id = line.rstrip().split('\t')[-1]
+						if protein_id in proteins_fn:
+							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id][0]}\n')
+					else:
+						molecule = line.rstrip().split('\t')[index]
+						outf.write(f'{line.rstrip()}\t{molecule}\n')
 
+			
