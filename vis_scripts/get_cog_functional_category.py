@@ -31,7 +31,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 			for line in f:
 				print(line)
 				protein_id = line.rstrip().split('\t')[0]
-				cdd_id = line.rstrip().split('\t')[1].split(':')[1]
+				cdd_id = line.rstrip().split('\t')[1].split('|')[2]
 				evalue = float(line.rstrip().split('\t')[2])
 				pident = float(line.rstrip().split('\t')[3])
 				
