@@ -24,38 +24,39 @@ def RunRPSBLAST(args, fasta_file, file_num):
 
 
 
-# def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
-# 	# get best hit and its CDD ID
-# 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
-# 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
-# 			best_hit = f.readline()
-# 			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
+def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
+	# get best hit and its CDD ID
+	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
+		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
+			best_hit = f.readline()
+			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
 
-# 		# get COG ID from CDD ID
-# 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-# 		if len(row) == 1:
-# 			cog_id = cdd_to_cog_df.iloc[row[0],1]
-# 			# get COG functional letter
-# 			if cog_id not in coglettertofn_dict:
-# 				return 'Function unknown'
-# 			else:
-# 				cog_letter = coglettertofn_dict[cog_id]
-# 				if len(cog_letter) > 1:
-# 					# retrieve most important function
-# 					cog_letter = cog_letter[0]
-# 				return cogfncat_dict[cog_letter]
-# 		else:
-# 			# cdd not found in database
-# 			return 'Function unknown'
-# 	else:
-# 		# rpsblast didn't find any hit
-# 		return 'Function unknown'
-# else:
-# 	# protein id not found in local refseq db
-# 	return 'Function unknown'
+		# get COG ID from CDD ID
+		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+		if len(row) == 1:
+			cog_id = cdd_to_cog_df.iloc[row[0],1]
+			# get COG functional letter
+			if cog_id not in coglettertofn_dict:
+				return 'Function unknown'
+			else:
+				cog_letter = coglettertofn_dict[cog_id]
+				if len(cog_letter) > 1:
+					# retrieve most important function
+					cog_letter = cog_letter[0]
+				return cogfncat_dict[cog_letter]
+		else:
+			# cdd not found in database
+			return 'Function unknown'
+	else:
+		# rpsblast didn't find any hit
+		return 'Function unknown'
+else:
+	# protein id not found in local refseq db
+	return 'Function unknown'
 
 
 def GetSequence(args, list_proteins_id, file_num):
+	proteins_missing = []
 	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
 		for protein_id in list_proteins_id:
 			fasta_file = ''
@@ -63,12 +64,17 @@ def GetSequence(args, list_proteins_id, file_num):
 				for line in f:
 					if line.rstrip().split('\t')[0] == protein_id:
 						fasta_file = line.rstrip().split('\t')[1]
+			print(protein_id, fasta)
 
 			if len(fasta_file) != 0:
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
 				    for record in SeqIO.parse(handle, "fasta"):
 				    	if record.id == protein_id:
 				    		fasta.write(f'>{record.id}\n{record.seq}')
+			else:
+				proteins_missing.append(protein_id)
+	return proteins_missing
+
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -120,7 +126,7 @@ if __name__ == "__main__":
 				# get sequences of proteins into a fasta file
 				list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
 				print(len(list_proteins_id))
-				GetSequence(args, list_proteins_id, i)
+				proteins_missing = GetSequence(args, list_proteins_id, i)
 				
 				# run rpsblast to get cdd id
 				if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) and \
