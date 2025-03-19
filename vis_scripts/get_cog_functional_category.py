@@ -23,8 +23,6 @@ def RunRPSBLAST(args, fasta_file, file_num):
 	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', \
 	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
-
-
 # def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
 # 	# get best hit and its CDD ID
 # 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
@@ -60,14 +58,15 @@ def GetSequence(args, list_proteins_id, file_num, protein_to_faa):
 	proteins_missing = []
 	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
 		for protein_id in list_proteins_id:
-			if protein_id in protein_to_faa:
-				fasta_file = protein_to_faa[protein_id]
-			# with open(protein_id_to_faa, 'r') as f:
-			# 	for line in f:
-			# 		if line.rstrip().split('\t')[0] == protein_id:
-			# 			fasta_file = line.rstrip().split('\t')[1]
+			print(protein_id)
+			fasta_file = ''
+			with open(protein_id_to_faa, 'r') as f:
+				for line in f:
+					if line.rstrip().split('\t')[0] == protein_id:
+						fasta_file = line.rstrip().split('\t')[1]
 				print(protein_id, fasta_file)
 
+			if len(fasta_file) != 0:
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
 				    for record in SeqIO.parse(handle, "fasta"):
 				    	if record.id == protein_id:
@@ -112,14 +111,6 @@ if __name__ == "__main__":
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 	
-	print('before: loading', datetime.datetime.now())
-	protein_to_faa = {}
-	csv_iterator = pd.read_csv(protein_id_to_faa, chunksize=100000, header=None)
-	for chunk in csv_iterator:
-		for i in range(len(chunk)):
-			protein_to_faa[chunk.iloc[i, 0].split('\t')[0]] = chunk.iloc[i, 0].split('\t')[1]
-	print('after: loading', datetime.datetime.now())
-	print(len(protein_to_faa))
 	for i in range(len(input_files)):
 		# get COG functional category of coding sequences
 		print(input_files[i])
