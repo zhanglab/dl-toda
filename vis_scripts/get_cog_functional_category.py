@@ -114,9 +114,10 @@ if __name__ == "__main__":
 	
 	print('before: loading', datetime.datetime.now())
 	protein_to_faa = {}
-	csv_iterator = pd.read_csv(protein_id_to_faa, chunksize=100000)
+	csv_iterator = pd.read_csv(protein_id_to_faa, chunksize=100000, header=None)
 	for chunk in csv_iterator:
 		print(chunk)
+		print(chunk.iloc[:,0])
 		break
 	# with open(protein_id_to_faa, 'r') as f:
 	# 	for line in f:
