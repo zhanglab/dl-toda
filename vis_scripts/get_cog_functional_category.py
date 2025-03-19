@@ -56,18 +56,18 @@ def RunRPSBLAST(args, fasta_file, file_num):
 # 	return 'Function unknown'
 
 
-def GetSequence(args, list_proteins_id, file_num):
+def GetSequence(args, list_proteins_id, file_num, protein_to_faa):
 	proteins_missing = []
 	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
 		for protein_id in list_proteins_id:
-			fasta_file = ''
-			with open(protein_id_to_faa, 'r') as f:
-				for line in f:
-					if line.rstrip().split('\t')[0] == protein_id:
-						fasta_file = line.rstrip().split('\t')[1]
-			print(protein_id, fasta_file)
+			if protein_id in protein_to_faa:
+				fasta_file = protein_to_faa[protein_id]
+			# with open(protein_id_to_faa, 'r') as f:
+			# 	for line in f:
+			# 		if line.rstrip().split('\t')[0] == protein_id:
+			# 			fasta_file = line.rstrip().split('\t')[1]
+				print(protein_id, fasta_file)
 
-			if len(fasta_file) != 0:
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
 				    for record in SeqIO.parse(handle, "fasta"):
 				    	if record.id == protein_id:
@@ -113,8 +113,17 @@ if __name__ == "__main__":
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 	
 	print('before: loading', datetime.datetime.now())
+	protein_to_faa = {}
 	with open(protein_id_to_faa, 'r') as f:
-		content = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+		while True:
+	        chunk = f.read(4096)
+	        for i in range(len(chunk)):
+	        	print(chunk[i])
+	        	protein_to_faa[chunk[i].rstrip().split('\t')[0]] = chunk[i].rstrip().split('\t')[1]
+	        if not chunk:
+	            break
+
+		# protein_to_faa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 	print('after: loading', datetime.datetime.now())
 	
 	for i in range(len(input_files)):
@@ -132,7 +141,7 @@ if __name__ == "__main__":
 				# get sequences of proteins into a fasta file
 				list_proteins_id = [line[-1] for line in content.values() if line[index] == 'protein_coding']
 				print(len(list_proteins_id))
-				proteins_missing = GetSequence(args, list_proteins_id, i)
+				proteins_missing = GetSequence(args, list_proteins_id, i, protein_to_faa)
 				
 				# run rpsblast to get cdd id
 				if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) and \
