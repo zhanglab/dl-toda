@@ -114,6 +114,7 @@ if __name__ == "__main__":
 		index = 18
 	else:
 		index = 16
+	print('_'.join(args.input.split('/')[-1].split('_')[1:3]), index)
 	with open(args.input, 'r') as f:
 		for line in f:
 			if line.rstrip().split('\t')[18] == 'protein_coding':
@@ -127,5 +128,6 @@ if __name__ == "__main__":
 				# print(molecule_type)
 				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
 				print(f'old line: {line}\nnew line: {line.rstrip()} + \t{molecule_type}\n')
+	outf.close()
 
 
