@@ -117,17 +117,17 @@ if __name__ == "__main__":
 	print('_'.join(args.input.split('/')[-1].split('_')[1:3]), index)
 	with open(args.input, 'r') as f:
 		for line in f:
-			if line.rstrip().split('\t')[18] == 'protein_coding':
+			if line.rstrip().split('\t')[index] == 'protein_coding':
 				protein_id = line.rstrip().split('\t')[-1]
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
-				print(f'old line: {line}\nnew line: {line.rstrip()} + \t{cog_fn}\n')
+				outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
+				print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
 			else:
-				molecule_type = line.rstrip().split('\t')[16]
+				molecule_type = line.rstrip().split('\t')[index]
 				# print(molecule_type)
-				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
-				print(f'old line: {line}\nnew line: {line.rstrip()} + \t{molecule_type}\n')
+				outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
+				print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
 	outf.close()
 
 
