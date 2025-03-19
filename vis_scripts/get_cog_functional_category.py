@@ -116,8 +116,8 @@ if __name__ == "__main__":
 	protein_to_faa = {}
 	csv_iterator = pd.read_csv(protein_id_to_faa, chunksize=100000, header=None)
 	for chunk in csv_iterator:
-		print(chunk)
-		print(chunk.iloc[:,0])
+		for i in range(len(chunk)):
+    		print(chunk.iloc[i, 0].split('\t'))
 		break
 	# with open(protein_id_to_faa, 'r') as f:
 	# 	for line in f:
