@@ -18,67 +18,61 @@ protein_id_to_faa = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/b
 refseq_dir = "/datasets/bio/ncbi-refseq/ftp.ncbi.nih.gov/refseq/release/bacteria/"
 
 
-def RunRPSBLAST(args, protein_id):
-
-	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{args.output_dir}/proteins_fasta/{protein_id}.fna', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', \
+def RunRPSBLAST(args, fasta_file, file_num):
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', \
 	 '-outfmt', '6', '-num_threads', f'{args.num_processes}'])
 
 
 
-def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
-	GetSequence(args, protein_id)
-	if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) and \
-		os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna')) != 0:
+# def GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
+# 	# get best hit and its CDD ID
+# 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
+# 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
+# 			best_hit = f.readline()
+# 			cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
 
-		RunRPSBLAST(args, protein_id)
-
-		# get best hit and its CDD ID
-		if os.path.exists(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv') != 0:
-			with open(f'{args.output_dir}/rpsblast_results/{protein_id}_out.tsv', 'r') as f:
-				best_hit = f.readline()
-				cdd_id = best_hit.rstrip().split('\t')[1].split(':')[1]
-
-			# get COG ID from CDD ID
-			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-			if len(row) == 1:
-				cog_id = cdd_to_cog_df.iloc[row[0],1]
-				# get COG functional letter
-				if cog_id not in coglettertofn_dict:
-					return 'Function unknown'
-				else:
-					cog_letter = coglettertofn_dict[cog_id]
-					if len(cog_letter) > 1:
-						# retrieve most important function
-						cog_letter = cog_letter[0]
-					return cogfncat_dict[cog_letter]
-			else:
-				# cdd not found in database
-				return 'Function unknown'
-		else:
-			# rpsblast didn't find any hit
-			return 'Function unknown'
-	else:
-		# protein id not found in local refseq db
-		return 'Function unknown'
+# 		# get COG ID from CDD ID
+# 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+# 		if len(row) == 1:
+# 			cog_id = cdd_to_cog_df.iloc[row[0],1]
+# 			# get COG functional letter
+# 			if cog_id not in coglettertofn_dict:
+# 				return 'Function unknown'
+# 			else:
+# 				cog_letter = coglettertofn_dict[cog_id]
+# 				if len(cog_letter) > 1:
+# 					# retrieve most important function
+# 					cog_letter = cog_letter[0]
+# 				return cogfncat_dict[cog_letter]
+# 		else:
+# 			# cdd not found in database
+# 			return 'Function unknown'
+# 	else:
+# 		# rpsblast didn't find any hit
+# 		return 'Function unknown'
+# else:
+# 	# protein id not found in local refseq db
+# 	return 'Function unknown'
 
 
-def GetSequence(args, protein_id):
-	fasta_file = ''
-	with open(protein_id_to_faa, 'r') as f:
-		for line in f:
-			if line.rstrip().split('\t')[0] == protein_id:
-				fasta_file = line.rstrip().split('\t')[1]
+def GetSequence(args, list_proteins_id, file_num):
+	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
+		for protein_id in list_proteins_id:
+			fasta_file = ''
+			with open(protein_id_to_faa, 'r') as f:
+				for line in f:
+					if line.rstrip().split('\t')[0] == protein_id:
+						fasta_file = line.rstrip().split('\t')[1]
 
-	if len(fasta_file) != 0:
-		fasta = open(os.path.join(args.output_dir, 'proteins_fasta', f'{protein_id}.fna'), 'w')
-		with open(os.path.join(refseq_dir, fasta_file)) as handle:
-		    for record in SeqIO.parse(handle, "fasta"):
-		    	if record.id == protein_id:
-		    		fasta.write(f'>{record.id}\n{record.seq}')
+			if len(fasta_file) != 0:
+				with open(os.path.join(refseq_dir, fasta_file)) as handle:
+				    for record in SeqIO.parse(handle, "fasta"):
+				    	if record.id == protein_id:
+				    		fasta.write(f'>{record.id}\n{record.seq}')
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--input', type=str, help='one of the fn_unique_genes, tp_unique_genes, fp_shared_genes, tp_shared_genes files')
+	parser.add_argument('--input_dir', type=str, help='diretory containing results obtained from running false_negatives.py or false_positives.py')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
@@ -90,6 +84,9 @@ if __name__ == "__main__":
 		os.makedirs(os.path.join(args.output_dir, 'proteins_fasta'))
 	if not os.path.isdir(os.path.join(args.output_dir, 'rpsblast_results')):
 		os.makedirs(os.path.join(args.output_dir, 'rpsblast_results'))
+
+	# get all input files
+	input_files = glob.glob(os.path.join(args.output_dir, '*unique_genes_*.tsv')) + glob.glob(os.path.join(args.output_dir, '*shared_genes_*.tsv'))
 
 	# load required files
 	cdd_to_cog_df = pd.read_csv(cddtocog, sep='\t', header=None)
@@ -108,26 +105,39 @@ if __name__ == "__main__":
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 
-	# get COG functional category of coding sequences
-	outf = open(f'{args.input[:-4]}-w-COG.tsv', 'w')
-	if '_'.join(args.input.split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
-		index = 18
-	else:
-		index = 16
-	print('_'.join(args.input.split('/')[-1].split('_')[1:3]), index)
-	with open(args.input, 'r') as f:
-		for line in f:
-			if line.rstrip().split('\t')[index] == 'protein_coding':
-				protein_id = line.rstrip().split('\t')[-1]
-				# get COG functional category
-				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-				outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
-				print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
+	for i in range(len(input_files)):
+		# get COG functional category of coding sequences
+		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w')
+			if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
+				index = 18
 			else:
-				molecule_type = line.rstrip().split('\t')[index]
-				# print(molecule_type)
-				outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
-				print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
-	outf.close()
+				index = 16
+			print('_'.join(input_files[i].split('/')[-1].split('_')[1:3]), index)
+			with open(input_files[i], 'r') as f:
+				content = {count: line.rstrip().split('\t') for count, line in enumerate(f.readlines())}
+				
+				# get sequences of proteins into a fasta file
+				list_proteins_id = [line[-1] for count, line in content if line[index] == 'protein_coding']
+				GetSequence(args, list_proteins_id, i)
+				
+				# run rpsblast to get cdd id
+				if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) and \
+					os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna')) != 0:
+
+					RunRPSBLAST(args, os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), i)
+				
+
+				for line in f:
+					if line.rstrip().split('\t')[index] == 'protein_coding':
+						protein_id = line.rstrip().split('\t')[-1]
+						# get COG functional category
+						cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+						outf.write(f'{line.rstrip()}\t{cog_fn}\n') 
+						print(f'old line: {line}\nnew line: {line.rstrip()}\t{cog_fn}\n')
+					else:
+						molecule_type = line.rstrip().split('\t')[index]
+						# print(molecule_type)
+						outf.write(f'{line.rstrip()}\t{molecule_type}\n') 
+						print(f'old line: {line}\nnew line: {line.rstrip()}\t{molecule_type}\n')
 
 
