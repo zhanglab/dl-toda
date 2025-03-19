@@ -137,10 +137,10 @@ if __name__ == "__main__":
 			with open(input_files[i], 'r') as f:
 				list_proteins_id = [line.rstrip().split('\t')[-1] for line in f.readlines() if line.rstrip().split('\t')[index] == 'protein_coding']
 				
-			# 	# get sequences of proteins into a fasta file
-			# 	print(len(list_proteins_id))
-			# 	proteins_missing = GetSequence(args, list_proteins_id, i)
-				
+			# get sequences of proteins into a fasta file
+			print(len(list_proteins_id))
+			proteins_missing = GetSequence(args, list_proteins_id, i)
+			print(f'# proteins missing: {len(proteins_missing)}')
 			# run rpsblast to get cdd id
 			if os.path.exists(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) and \
 				os.path.getsize(os.path.join(args.output_dir, 'proteins_fasta', f'{i}_proteins.fna')) != 0:
