@@ -44,6 +44,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 	# get COG ID from CDD ID
 	for protein_id in list_proteins_id:
 		if protein_id in proteins_fn:
+			print(proteins_fn[protein_id])
 			cdd_id = proteins_fn[protein_id][0]
 			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 			if len(row) == 1:
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 		os.makedirs(os.path.join(args.output_dir, 'rpsblast_results'))
 
 	# get all input files
-	input_files = glob.glob(os.path.join(args.input_dir, '**/*unique_genes_*.tsv')) + glob.glob(os.path.join(args.input_dir, '**/*shared_genes_*.tsv'))
+	input_files = glob.glob(os.path.join(args.input_dir, '**/*unique_genes_0.9.tsv')) + glob.glob(os.path.join(args.input_dir, '**/*shared_genes_0.9.tsv'))
 	print(input_files, len(input_files))
 	# load required files
 	cdd_to_cog_df = pd.read_csv(cddtocog, sep='\t', header=None)
