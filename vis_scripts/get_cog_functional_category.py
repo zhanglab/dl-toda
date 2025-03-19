@@ -24,7 +24,7 @@ def RunRPSBLAST(args, fasta_file, file_num):
 	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
 def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict, file_num):
-	proteins_fn = defaultdict(list)
+	proteins_cdd = defaultdict(list)
 	# get best hit and its CDD ID
 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') != 0:
 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
@@ -36,36 +36,37 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 				pident = float(line.rstrip().split('\t')[3])
 				
 				if protein_id not in proteins_fn:
-					proteins_fn[protein_id] = [cdd_id, evalue, pident]
+					proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 				else:
 					if evalue < proteins_fn[protein_id][1] and pident > proteins_fn[protein_id][2]:
-						proteins_fn[protein_id] = [cdd_id, evalue, pident]
+						proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 
 	# get COG ID from CDD ID
+	proteins_fn = {}
 	for protein_id in list_proteins_id:
-		if protein_id in proteins_fn:
+		if protein_id in proteins_cdd:
 			cdd_id = proteins_fn[protein_id][0]
 			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 			if len(row) == 1:
 				cog_id = cdd_to_cog_df.iloc[row[0],1]
 				# get COG functional letter
 				if cog_id not in coglettertofn_dict:
-					proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
+					proteins_fn[protein_id] = 'Function unknown'
 				else:
 					cog_letter = coglettertofn_dict[cog_id]
 					if len(cog_letter) > 0:
 						if len(cog_letter) > 1:
 							# retrieve most important function
 							cog_letter = cog_letter[0]
-							proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, cogfncat_dict[cog_letter])
+							proteins_fn[protein_id] = cogfncat_dict[cog_letter]
 					else:
 						# no letter associated with cog id
-						proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
+						proteins_fn[protein_id] = 'Function unknown'
 			else:
 				# cdd not found in database
-				proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
+				proteins_fn[protein_id] = 'Function unknown'
 		else:
-			proteins_fn[protein_id] = ['Function unknown']
+			proteins_fn[protein_id] = 'Function unknown'
 		
 
 	return proteins_fn
@@ -156,7 +157,7 @@ if __name__ == "__main__":
 						protein_id = line.rstrip().split('\t')[-1]
 						if protein_id in proteins_fn:
 							print(proteins_fn[protein_id])
-							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id][0]}\n')
+							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
 					else:
 						molecule = line.rstrip().split('\t')[index]
 						outf.write(f'{line.rstrip()}\t{molecule}\n')
