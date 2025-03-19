@@ -115,15 +115,16 @@ if __name__ == "__main__":
 	print('before: loading', datetime.datetime.now())
 	protein_to_faa = {}
 	with open(protein_id_to_faa, 'r') as f:
-		while True:
-			chunk = f.read(4096)
-			print(chunk)
-			break
+		for line in f:
+		# while True:
+		# 	chunk = f.read(4096)
+		# 	print(chunk)
+		# 	break
 			# for i in range(len(chunk)):
 			# 	print(chunk[i])
-			# 	protein_to_faa[chunk[i].rstrip().split('\t')[0]] = chunk[i].rstrip().split('\t')[1]
-			if not chunk:
-				break
+			protein_to_faa[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+			# if not chunk:
+			# 	break
 
 		# protein_to_faa = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 	print('after: loading', datetime.datetime.now())
