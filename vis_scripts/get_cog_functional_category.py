@@ -29,7 +29,6 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 	if os.path.exists(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv') != 0:
 		with open(f'{args.output_dir}/rpsblast_results/{file_num}_out.tsv', 'r') as f:
 			for line in f:
-				print(line)
 				protein_id = line.rstrip().split('\t')[0]
 				cdd_id = line.rstrip().split('\t')[1].split('|')[2]
 				evalue = float(line.rstrip().split('\t')[2])
@@ -75,13 +74,11 @@ def GetSequence(args, list_proteins_id, file_num):
 	proteins_missing = []
 	with open(os.path.join(args.output_dir, 'proteins_fasta', f'{file_num}_proteins.fna'), 'w') as fasta:
 		for protein_id in list_proteins_id:
-			print(protein_id)
 			fasta_file = ''
 			with open(protein_id_to_faa, 'r') as f:
 				for line in f:
 					if line.rstrip().split('\t')[0] == protein_id:
 						fasta_file = line.rstrip().split('\t')[1]
-				print(protein_id, fasta_file)
 
 			if len(fasta_file) != 0:
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
@@ -156,11 +153,9 @@ if __name__ == "__main__":
 					if line.rstrip().split('\t')[index] == 'protein_coding':
 						protein_id = line.rstrip().split('\t')[-1]
 						if protein_id in proteins_fn:
-							print(proteins_fn[protein_id])
 							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
 					else:
 						molecule = line.rstrip().split('\t')[index]
 						outf.write(f'{line.rstrip()}\t{molecule}\n')
-			break
 
 			
