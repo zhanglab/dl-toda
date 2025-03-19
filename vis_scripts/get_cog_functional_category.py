@@ -44,7 +44,6 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 	# get COG ID from CDD ID
 	for protein_id in list_proteins_id:
 		if protein_id in proteins_fn:
-			print(proteins_fn[protein_id])
 			cdd_id = proteins_fn[protein_id][0]
 			row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
 			if len(row) == 1:
@@ -156,6 +155,7 @@ if __name__ == "__main__":
 					if line.rstrip().split('\t')[index] == 'protein_coding':
 						protein_id = line.rstrip().split('\t')[-1]
 						if protein_id in proteins_fn:
+							print(proteins_fn[protein_id])
 							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id][0]}\n')
 					else:
 						molecule = line.rstrip().split('\t')[index]
