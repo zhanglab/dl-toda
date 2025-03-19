@@ -2,6 +2,7 @@ import sys
 import os
 import glob
 import argparse
+import datetime
 import subprocess
 import pandas as pd
 import numpy as np
@@ -110,7 +111,12 @@ if __name__ == "__main__":
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[3]
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
-
+	
+	print('before: loading', datetime.datetime.now())
+	with open(protein_id_to_faa, 'r') as f:
+		content = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+	print('after: loading', datetime.datetime.now())
+	
 	for i in range(len(input_files)):
 		# get COG functional category of coding sequences
 		print(input_files[i])
