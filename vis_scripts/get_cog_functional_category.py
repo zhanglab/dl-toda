@@ -38,7 +38,7 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 				if protein_id not in proteins_cdd:
 					proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 				else:
-					if evalue < proteins_fn[protein_id][1] and pident > proteins_fn[protein_id][2]:
+					if evalue < proteins_cdd[protein_id][1] and pident > proteins_cdd[protein_id][2]:
 						proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 
 	# get COG ID from CDD ID
