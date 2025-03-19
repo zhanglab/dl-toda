@@ -64,7 +64,7 @@ def GetSequence(args, list_proteins_id, file_num):
 				for line in f:
 					if line.rstrip().split('\t')[0] == protein_id:
 						fasta_file = line.rstrip().split('\t')[1]
-			print(protein_id, fasta)
+			print(protein_id, fasta_file)
 
 			if len(fasta_file) != 0:
 				with open(os.path.join(refseq_dir, fasta_file)) as handle:
