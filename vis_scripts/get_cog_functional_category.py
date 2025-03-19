@@ -121,9 +121,11 @@ if __name__ == "__main__":
 				# get COG functional category
 				cog_fn = GetCOGFnCat(args, protein_id, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 				outf.write(line.rstrip() + f'\t{cog_fn}\n') 
+				print(f'old line: {line}\nnew line: {line.rstrip()} + \t{cog_fn}\n')
 			else:
 				molecule_type = line.rstrip().split('\t')[16]
 				# print(molecule_type)
 				outf.write(line.rstrip() + f'\t{molecule_type}\n') 
+				print(f'old line: {line}\nnew line: {line.rstrip()} + \t{molecule_type}\n')
 
 
