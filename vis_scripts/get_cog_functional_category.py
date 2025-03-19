@@ -50,20 +50,20 @@ def GetCOGFnCat(args, list_proteins_id, cdd_to_cog_df, coglettertofn_dict, cogfn
 				cog_id = cdd_to_cog_df.iloc[row[0],1]
 				# get COG functional letter
 				if cog_id not in coglettertofn_dict:
-					proteins_fn[protein_id].insert(0, 'Function unknown')
+					proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
 				else:
 					cog_letter = coglettertofn_dict[cog_id]
 					if len(cog_letter) > 0:
 						if len(cog_letter) > 1:
 							# retrieve most important function
 							cog_letter = cog_letter[0]
-							proteins_fn[protein_id].insert(0, cogfncat_dict[cog_letter])
+							proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, cogfncat_dict[cog_letter])
 					else:
 						# no letter associated with cog id
-						proteins_fn[protein_id].insert(0, 'Function unknown')
+						proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
 			else:
 				# cdd not found in database
-				proteins_fn[protein_id].insert(0, 'Function unknown')
+				proteins_fn[protein_id] = proteins_fn[protein_id].insert(0, 'Function unknown')
 		else:
 			proteins_fn[protein_id] = ['Function unknown']
 		
@@ -160,5 +160,6 @@ if __name__ == "__main__":
 					else:
 						molecule = line.rstrip().split('\t')[index]
 						outf.write(f'{line.rstrip()}\t{molecule}\n')
+			break
 
 			
