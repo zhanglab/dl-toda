@@ -471,6 +471,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				biotype = ''
 				function = ''
 				old_locus_tag = ''
+				protein_id = ''
 				for e in content[i].rstrip().split('\t')[8].split(';'):
 					e = e.replace('"', '')
 					# get all go_function entries and choose go_function with the most details
@@ -965,7 +966,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	strain = ' '.join([e for e in content.rstrip().split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
 	
 	return strain
 
