@@ -54,12 +54,12 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 				proteins_fn[protein_id] = 'Function unknown'
 			else:
 				cog_letter = coglettertofn_dict[cog_id]
+				print(cog_letter)
 				if len(cog_letter) > 0:
-					print(f'count: {count}\tprotein_id: {protein_id}\tcdd_id: {cdd_id}\trow: {row}\tcog id: {cog_id}')
-					if len(cog_letter) > 1:
-						# retrieve most important function
-						cog_letter = cog_letter[0]
-						proteins_fn[protein_id] = cogfncat_dict[cog_letter]
+					# retrieve most important function
+					cog_letter = cog_letter[0]
+					proteins_fn[protein_id] = cogfncat_dict[cog_letter]
+					print(f'count: {count}\tprotein_id: {protein_id}\tcdd_id: {cdd_id}\trow: {row}\tcog id: {cog_id}\t{cogfncat_dict[cog_letter]}')
 				else:
 					# no letter associated with cog id
 					proteins_fn[protein_id] = 'Function unknown'
