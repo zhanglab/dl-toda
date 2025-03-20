@@ -95,7 +95,7 @@ if __name__ == "__main__":
 		os.makedirs(os.path.join(args.output_dir, 'rpsblast_results'))
 
 	# get all input files
-	input_files = glob.glob(os.path.join(args.input_dir, '*unique_genes_*.tsv')) + glob.glob(os.path.join(args.input_dir, '*shared_genes_*.tsv'))
+	input_files = glob.glob(os.path.join(args.input_dir, '*unique_genes_0.9.tsv')) + glob.glob(os.path.join(args.input_dir, '*shared_genes_0.9.tsv'))
 	print(input_files, len(input_files))
 	# load required files
 	cdd_to_cog_df = pd.read_csv(cddtocog, sep='\t', header=None)
