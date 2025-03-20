@@ -123,9 +123,10 @@ if __name__ == "__main__":
 	# get COG function for each protein
 	proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 
-
 	for i in range(len(input_files)):
 		print(input_files[i])
+		if os.path.exists(f'{input_files[i][:-4]}-w-COG.tsv'):
+			os.remove(f'{input_files[i][:-4]}-w-COG.tsv')
 		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w') as outf:
 			if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
 				index = 18
