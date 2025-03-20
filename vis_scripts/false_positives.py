@@ -881,7 +881,7 @@ def GetSeqLength(args, sequences_id, sequence_length, type):
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
 		content = f.readline()
-	strain = ' '.join([e for e in content.split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	strain = ' '.join([e for e in content.rstrip().split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
 	
 	return strain
 
