@@ -47,7 +47,6 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	for count, protein_id in enumerate(proteins_cdd.keys()):
 		cdd_id = proteins_cdd[protein_id][0]
 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
-		print(f'count: {count}\tprotein_id: {protein_id}\tcdd_id: {cdd_id}\trow: {row}')
 		if len(row) == 1:
 			cog_id = cdd_to_cog_df.iloc[row[0],1]
 			# get COG functional letter
@@ -56,6 +55,7 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 			else:
 				cog_letter = coglettertofn_dict[cog_id]
 				if len(cog_letter) > 0:
+					print(f'count: {count}\tprotein_id: {protein_id}\tcdd_id: {cdd_id}\trow: {row}\tcog id: {cog_id}')
 					if len(cog_letter) > 1:
 						# retrieve most important function
 						cog_letter = cog_letter[0]
