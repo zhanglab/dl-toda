@@ -47,6 +47,7 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	for protein_id in proteins_cdd.keys():
 		cdd_id = proteins_cdd[protein_id][0]
 		row = cdd_to_cog_df.index[cdd_to_cog_df.iloc[:,0]==np.int64(cdd_id)].tolist()
+		print(f'protein_id: {protein_id}\tcdd_id: {cdd_id}\trow: {row}')
 		if len(row) == 1:
 			cog_id = cdd_to_cog_df.iloc[row[0],1]
 			# get COG functional letter
