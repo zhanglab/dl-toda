@@ -140,6 +140,8 @@ if __name__ == "__main__":
 						protein_id = line.rstrip().split('\t')[-1]
 						if protein_id in proteins_fn:
 							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
+						else:
+							outf.write(f'{line.rstrip()}\tFunction unknown\n')
 					else:
 						molecule = line.rstrip().split('\t')[index]
 						outf.write(f'{line.rstrip()}\t{molecule}\n')
