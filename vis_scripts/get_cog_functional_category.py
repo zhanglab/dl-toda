@@ -43,6 +43,7 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 						proteins_cdd[protein_id] = [cdd_id, evalue, pident]
 
 	# get COG ID and function for each protein
+	print(f'# proteins with cdd: {len(proteins_cdd)}')
 	proteins_fn = {}
 	for count, protein_id in enumerate(proteins_cdd.keys()):
 		cdd_id = proteins_cdd[protein_id][0]
