@@ -142,6 +142,8 @@ if __name__ == "__main__":
 						if protein_id in proteins_fn:
 							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
 						else:
+							fasta_file = os.path.join(args.output_dir, 'proteins_fasta', f'ncbi_dataset/data/{args.genome_id}/protein.faa')
+							print(f'{protein_id} not in fasta file {fasta_file}')
 							outf.write(f'{line.rstrip()}\tFunction unknown\n')
 					else:
 						molecule = line.rstrip().split('\t')[index]
