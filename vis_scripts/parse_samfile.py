@@ -53,11 +53,11 @@ def GetCoverageOfSample(list_of_reads, length_ref, label=None):
 
     for j in range(0, len(list_of_reads)):
         read_id = list_of_reads[j][0]
-        read_label = list_of_reads[j][0].split('|')[1]
         read_start = list_of_reads[j][1] - 1
         read_cigar = ExtendCigar(list_of_reads[j][2])
 
         if label:
+            read_label = list_of_reads[j][0].split('|')[1]
             if read_label == label:
                 ref_pos = GetCoverageOfRead(read_start, read_cigar, dict_coverage)
                 reads_info[read_id] = [read_start+1, ref_pos+1, list_of_reads[j][2]]
