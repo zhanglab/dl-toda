@@ -259,8 +259,9 @@ def main():
                 # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
                 # rename index to kmers
-                df.index = df_kmers
+                # df.index = df_kmers
                 print(df)
+                print(df.index)
                 # get sum of attention weights by row --> should be equal to 1 for each row
                 # df_sum = df.sum(axis=1).tolist()
                 # get index of max value of attention weights by row
