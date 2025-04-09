@@ -259,7 +259,7 @@ def main():
                 # rename index to kmers
                 df.index = df_kmers
                 print(df)
-
+                break
                 # get sum of attention weights by column
                 df_sum = df.sum(axis=0).tolist()
                 # # get mean of attention weights by column
