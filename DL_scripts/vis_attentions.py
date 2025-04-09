@@ -190,7 +190,7 @@ def main():
     # compute number of steps required to iterate over entire test set
     test_steps = math.ceil(num_reads/(args.batch_size))
 
-    print(f'# sequences: {num_reads}\n#test steps: {test_steps}')
+    print(f'# sequences: {num_reads}\n# test steps: {test_steps}')
 
     # get id of reads
     with open(args.tsv_file, 'r') as f:
@@ -247,8 +247,7 @@ def main():
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                 attentions_weights = attentions[-1][-1][i].numpy()
                 df = pd.DataFrame(attentions_weights)
-                print(df.shape)
-                print(df.columns.tolist())
+                print(f'dimensions of attentions matrix: {df.shape}')
                 df.columns = tokens
                 # remove rows ['PAD'], ['CLS'] and ['SEP']
                 idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
@@ -262,9 +261,12 @@ def main():
                 # rename index to kmers
                 df.index = df_kmers
                 print(df)
-                break
                 # get sum of attention weights by column
-                df_sum = df.sum(axis=0).tolist()
+                df_sum_cols = df.sum(axis=0).tolist()
+                # get sum of attention weights by row
+                df_sum_rows = df.sum(axis=1).tolist()
+                print(df_sum_rows)
+                break
                 # # get mean of attention weights by column
                 # df_mean = df.mean(axis=0).tolist()
                 # # get max value of attention weights by column
