@@ -271,7 +271,7 @@ def main():
                 df_max = df.max(axis=1).tolist()
                 print(df_max[0])
                 # get values in first row
-                df_first_token = df.iloc[0].values
+                df_first_token = df.iloc[0].values.tolist()
                 print(df_first_token[df_idx_max[0]])
                 break
                 
