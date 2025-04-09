@@ -275,7 +275,7 @@ def main():
                 # df_first_token = df.iloc[0].values.tolist()
                 for i in range(len(df_kmers)):
                     print(f'row: {i}\t{df_kmers[i]}')
-                    print(sort(df.iloc[i].values.tolist()))
+                    print(sorted(df.iloc[i].values.tolist()))
                 break                
                 attentions_df[reads_id[batch]] = df
 
