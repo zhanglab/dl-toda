@@ -270,7 +270,8 @@ def main():
 
                 # get max value of attention weights by row
                 df_max = df.max(axis=1).tolist()
-                print(df_max[0])
+                print(df_max)
+                break
                 # get values in first row
                 # df_first_token = df.iloc[0].values.tolist()
                 for i in range(len(df_kmers)):
@@ -279,7 +280,6 @@ def main():
                     sorted_lists = sorted(zip(df.iloc[i].values.tolist(), list(range(len(df_kmers)))))
                     sorted_attentions, sorted_indexes = zip(*sorted_lists)
                     print(list(sorted_lists))
-                    print(list(sorted_attentions))
                 break                
                 attentions_df[reads_id[batch]] = df
 
