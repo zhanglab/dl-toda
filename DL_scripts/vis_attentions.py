@@ -219,9 +219,9 @@ def main():
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
             attentions = list(outputs[-1])
             # print number of attention layers
-            print(len(attentions), attentions.shape)
+            print(f'# attentions layers: {len(attentions)}')
             # print dimensions of the output of the last attention layer
-            print(attentions[-1].shape)
+            print(f'dimensions of last attention layer: {attentions[-1].shape}')
             # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
             # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
