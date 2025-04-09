@@ -261,23 +261,20 @@ def main():
                 # rename index to kmers
                 df.index = df_kmers
                 print(df)
-                # get sum of attention weights by column
-                df_sum_cols = df.sum(axis=0).tolist()
-                # get sum of attention weights by row
-                df_sum_rows = df.sum(axis=1).tolist()
-                print(df_sum_rows)
-                break
-                # # get mean of attention weights by column
-                # df_mean = df.mean(axis=0).tolist()
-                # # get max value of attention weights by column
-                # df_max = df.max(axis=0).tolist()
+                # get sum of attention weights by row --> should be equal to 1 for each row
+                df_sum = df.sum(axis=1).tolist()
+                # get max value of attention weights by row
+                df_max = df.max(axis=1).tolist()
+                print(f'max values: {df_max}')
                 
                 attentions_df[reads_id[batch]] = df
 
                 df.to_csv(os.path.join(args.output_dir, f'{reads_id[batch]}_attention_map.csv'), index=False)
                             
                 # sort dictionary based on values
-                dict_kmers_sum = dict(zip(df_kmers, df_sum))
+                dict_kmers_max = dict(zip(df_kmers, df_max))
+                print(dict_kmers_max)
+                break
                 dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
                 with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                     for kmer, kmer_sum in dict_kmers_sum_sorted.items():
