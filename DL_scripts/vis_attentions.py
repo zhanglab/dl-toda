@@ -277,6 +277,10 @@ def main():
                 # get values in first row
                 df_first_token = df.iloc[0].values.tolist()
                 print(df_first_token[df_idx_max[0]])
+                print(df_kmers[df_idx_max[0]])
+                df.columns = tokens
+                df_idx_max = df.idxmax(axis=1).tolist()
+                print(f'idx max values: {df_idx_max}')
                 break
                 
                 attentions_df[reads_id[batch]] = df
