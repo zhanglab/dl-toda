@@ -262,10 +262,18 @@ def main():
                 df.index = df_kmers
                 print(df)
                 # get sum of attention weights by row --> should be equal to 1 for each row
-                df_sum = df.sum(axis=1).tolist()
+                # df_sum = df.sum(axis=1).tolist()
+                # get index of max value of attention weights by row
+                df_idx_max = df.idxmax(axis=1).tolist()
+                print(f'idx max values: {df_idx_max}')
+
                 # get max value of attention weights by row
                 df_max = df.max(axis=1).tolist()
-                print(f'max values: {df_max}')
+                print(df_max[0])
+                # get values in first row
+                df_first_token = df.iloc[0].values
+                print(df_first_token[df_idx_max[0]])
+                break
                 
                 attentions_df[reads_id[batch]] = df
 
@@ -274,7 +282,7 @@ def main():
                 # sort dictionary based on values
                 dict_kmers_max = dict(zip(df_kmers, df_max))
                 print(dict_kmers_max)
-                break
+                
                 dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
                 with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
                     for kmer, kmer_sum in dict_kmers_sum_sorted.items():
