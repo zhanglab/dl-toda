@@ -247,7 +247,7 @@ def main():
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                 attentions_weights = attentions[-1][-1][i].numpy()
                 df = pd.DataFrame(attentions_weights)
-                print(f'dimensions of attentions matrix: {df.shape}')
+                print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
                 df.columns = tokens
                 # remove rows ['PAD'], ['CLS'] and ['SEP']
                 idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
@@ -256,10 +256,13 @@ def main():
                 df = df.drop('[PAD]', axis='columns')
                 df = df.drop('[CLS]', axis='columns')
                 df = df.drop('[SEP]', axis='columns')
+                print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
                 # get list of kmers in the sequence
                 df_kmers = df.columns.tolist()
                 # rename index to kmers
                 # df.index = df_kmers
+                # rename columns to integers
+                df.columns = list(range(len(df_kmers)))
                 print(df)
                 print(df.index)
                 # get sum of attention weights by row --> should be equal to 1 for each row
