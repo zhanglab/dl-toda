@@ -186,9 +186,11 @@ def main():
 
     with open(num_reads_file[0], 'r') as infile:
         num_reads = int(infile.readline())
-    print(f'# sequences: {num_reads}')
+    
     # compute number of steps required to iterate over entire test set
     test_steps = math.ceil(num_reads/(args.batch_size))
+
+    print(f'# sequences: {num_reads}\n#test steps: {test_steps}')
 
     # get id of reads
     with open(args.tsv_file, 'r') as f:
@@ -210,27 +212,29 @@ def main():
     data_to_plot = defaultdict(list)
     attentions_df = defaultdict(list)
 
-    print(len(reads_id), test_steps)
+    # print(len(reads_id), test_steps)
     for batch, data in enumerate(test_input.take(test_steps), 0):
         if reads_id[batch] in [args.tp_read, args.fn_read]:
             outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
             # get attentions weights from the 12 attention heads in each of the 12 attention layers
             attentions = list(outputs[-1])
             # print number of attention layers
-            # print(len(attentions))
+            print(len(attentions), attentions.shape)
             # print dimensions of the output of the last attention layer
-            # print(attentions[-1].shape)
+            print(attentions[-1].shape)
             # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
             # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
-            print(reads_id[batch])
-            print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
+            # print(reads_id[batch])
+            # print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
+            print(f'# sequences in batch: {len(data["input_ids"])}')
             for i in range(len(data["input_ids"])):
                 label = data["labels"][i].numpy()
                 seq_ids = data["input_ids"][i].numpy()
                 print(seq_ids)
                 tokens = [vocab[i] for i in seq_ids]
                 print(tokens)
+                print(len(tokens))
                 assert '[UKN]' not in tokens
                 # reconstruct original sequence
                 dna_seq = tokens[1]
@@ -239,8 +243,7 @@ def main():
                         dna_seq += tokens[j][-1]
                 print(dna_seq)
                 assert dna_seq == reads_seq[reads_id[batch]]
-                print(tokens)
-                print(len(tokens))
+                
                 # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                 attentions_weights = attentions[-1][-1][i].numpy()
                 df = pd.DataFrame(attentions_weights)
@@ -298,6 +301,7 @@ def main():
                     sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=heatmap_palette) 
                 plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
                 plt.close()
+            break
 
         
             # if label == 0:
