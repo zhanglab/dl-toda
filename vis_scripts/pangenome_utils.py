@@ -1,0 +1,649 @@
+import sys
+import os
+import glob
+import argparse
+import math
+import zipfile
+import subprocess
+import multiprocessing
+import random
+import statistics
+import numpy as np
+import json
+from Bio import SeqIO, SeqUtils
+from collections import defaultdict
+from pycirclize import Circos, config
+from Bio.SeqFeature import SeqFeature, FeatureLocation
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from dataprep_scripts.utils import load_fq_file
+# from genomics_viz_utils import *
+from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
+from pygenomeviz.parser import Fasta
+from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
+from pygenomeviz.align import AlignCoord, Blast
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+
+ColorCycler.set_cmap("Set1")
+
+# QUERY_TRACK_SIZE = 5
+MIN_IDENTITY = 70
+TICKS_INTERVAL = 500000
+bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
+blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
+makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
+ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
+parallel_exec = "/modules/spack/packages/linux-ubuntu24.04-x86_64_v3/gcc-13.2.0/parallel-20240822-uwvjfxdji5ltqgl6vdu4in522ymhbhz7/bin/parallel"
+# set seed
+seed = 42
+# set the global python random seed
+random.seed(seed)
+
+
+def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
+	if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
+	if db:
+		sys.executable = blastn_exec
+		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', \
+			f'{args.output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
+			'-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+	else:
+		if len(subject) > 1:
+			# put all training genomes into one fasta file
+			if not os.path.exists(os.path.join(output_dir, 'all_training_genomes.fna')):
+				with open(os.path.join(output_dir, 'all_training_genomes.fna'), 'w') as outf:
+					for count, fasta in enumerate(subject, 1):
+						print(f'{count}\t{fasta}')
+						with open(fasta, 'r') as inf:
+							outf.write(inf.read())
+				input_fasta = os.path.join(output_dir, 'all_training_genomes.fna')
+		else:
+			input_fasta = subject[0]
+
+		print(input_fasta)
+		# create database
+		result = subprocess.run([makeblastdb_exec, '-in', f'{input_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+		
+		# align reads to database or fasta file
+		if sam:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+		else:
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
+			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+
+
+
+
+def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
+			incorrect_alignments, correct_alignments, outfigpath):
+
+	# load data from training and testing genomes of label 1
+	query_fasta = Fasta(testing_fasta) # query --> testing genome
+	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
+
+	# Initialize circos instance
+	circos = Circos(
+	    sectors=query_fasta.get_seqid2size(),
+	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
+		space=10,
+	)
+
+	train_strain = GetGenomesInfo(training_fasta)
+	test_strain = GetGenomesInfo(testing_fasta)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
+
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_genomes_length.tsv'), 'w') as f:
+		f.write(f'Label 0 testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
+		f.write(f'Label 1 training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
+
+	min_r_pos = 100
+	for sector in circos.sectors:
+		# Setup outer track
+		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+		outer_track.axis(fc="black")
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+		min_r_pos -= 1
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+
+	# Blast genome comparison & plot match blocks
+	comp_name2color = {}
+	# store percentage identity between matching regions
+	percent_identity = []
+	# run blast 		
+	RunBlast(args, os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	# count the number of identical positions across the aligned regions
+	identical_positions = 0
+	for sector in circos.sectors:
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos -= 5	
+		for ac in align_coords:
+			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+			blast_track.rect(ac[0], ac[1], color=rect_color)
+
+	# get stats on percentage identity
+	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	ani = round(statistics.mean(percent_identity), 2)
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
+
+	for sector in circos.sectors:
+		# define x-axis vector for the next tracks
+		genome_pos = list(range(query_fasta.full_genome_length))
+
+		# add track for scores
+		min_r_pos -= 5
+		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		scores_track.axis(ec="deeppink")
+		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
+		y_labels = list(map(str, y_values))
+		scores_track.yticks(y_values, y_labels)
+		scores_track.line(genome_pos, scores, color="deeppink")
+		print(f'added score track')
+
+		# add track for correct reads
+		if len(correct_sequences) > 0:
+			min_r_pos -= 13
+			correct_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			correct_track.axis(ec="blue")
+			pos_correct_count = [0]*query_fasta.full_genome_length
+			for readid, data in tp_alignments.items():
+				for pos in range(data[2], data[3]+1, 1):
+					pos_correct_count[pos-1] +=1
+			y_values = list(range(min(pos_correct_count), max(pos_correct_count), 1))
+			y_labels = list(map(str, y_values))
+			tp_track.yticks(y_values, y_labels)
+			tp_track.line(genome_pos, pos_correct_count, color="blue")
+			print(f'added correct track')
+
+		# add tracks for incorrect reads 
+		if len(incorrect_sequences) > 0:
+			min_r_pos -= 13
+			incorrect_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			incorrect_track.axis(ec="darkviolet")
+			pos_incorrect_count = [0]*query_fasta.full_genome_length
+			for readid, data in incorrect_alignments.items():
+				for pos in range(data[2], data[3]+1, 1):
+					pos_incorrect_count[pos-1] +=1
+			y_values = list(range(min(pos_incorrect_count), max(pos_incorrect_count), 1))
+			y_labels = list(map(str, y_values))
+			incorrect_track.yticks(y_values, y_labels)
+			incorrect_track.line(genome_pos, pos_incorrect_count, color="darkviolet")
+			print(f'added incorrect track')
+
+		# Plot GC skew
+		min_r_pos -= 11
+		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gcskews = GetGCSkew(test_record_seq)
+		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		abs_max_gcskew = np.max(np.abs(gcskews))
+		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		gcskew_track.fill_between(
+			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
+		)
+		gcskew_track.fill_between(
+			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		)
+
+		# Plot GC content
+		min_r_pos -= 5
+		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		gc_content_updated = gc_content - test_genome_gc_content
+		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+		abs_max_gc_content = np.max(np.abs(gc_content_updated))
+		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+		gc_content_track.fill_between(
+			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+		)
+		gc_content_track.fill_between(
+			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+		)
+		
+		# report GC content of train and test genomes
+		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
+			f.write(f'Testing genome:\t{test_genome_gc_content}')
+			f.write(f'Training genome:\t{train_genome_gc_content}')
+
+	# Save figure
+	# Enable annotation text adjustment (Default)
+	# config.ann_adjust.enable = True
+	fig = circos.plotfig()
+	# Add legend
+	handles = []
+	if genomic_islands:
+		handles.append(Patch(color='red', label='Genomic Islands'))
+	handles += [
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
+		Patch(color='deeppink', label='Score')
+	]
+	if len(tp_sequences) > 0:
+		handles.append(Patch(color='blue', label='True Positives'))
+	if len(fp_sequences) > 0:
+		handles.append(Patch(color='darkviolet', label='False Positives'))
+		
+	handles += [
+		Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+		Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+		Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
+		]
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	fig.savefig(outfigpath, dpi=300)
+
+	return avg_pct_identity, ani, test_strain, train_strain
+
+
+def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read):
+	reads = []
+	reads_id = {}
+	for incorrect_readid, incorrect_data in incorrect_alignments.items():
+		if incorrect_data[2] < incorrect_data[3]:
+			incorrect_start_pos = incorrect_data[2]
+			incorrect_end_pos = incorrect_data[3]
+		else:
+			incorrect_start_pos = incorrect_data[3]
+			incorrect_end_pos = incorrect_data[2]
+		incorrect_strand = fp_data[6]
+
+		for correct_readid, correct_data in correct_alignments.items():
+			if correct_data[2] < correct_data[3]:
+				correct_start_pos = correct_data[2]
+				correct_end_pos = correct_data[3]
+			else:
+				correct_start_pos = correct_data[3]
+				correct_end_pos = correct_data[2]
+			correct_strand = correct_data[6]
+
+			if (correct_start_pos < incorrect_end_pos and correct_end_pos > incorrect_start_pos) or \
+				(fp_start_pos < correct_end_pos and fp_end_pos > correct_start_pos) or \
+				(correct_start_pos < incorrect_start_pos and correct_end_pos > incorrect_end_pos) or \
+				(incorrect_start_pos < correct_start_pos and incorrect_end_pos > correct_end_pos):
+				if tp_strand == 'plus' and incorrect_strand == 'plus':
+					if abs(len(test_readid_to_read[incorrect_readid])-len(test_readid_to_read[correct_readid])) < 200:
+						reads.append([correct_readid.split('|')[2], f'{correct_readid}-correct-{correct_start_pos}-{correct_end_pos}', len(test_readid_to_read[correct_readid]), correct_strand, \
+							incorrect_readid.split('|')[2], f'{incorrect_readid}-incorrect-{incorrect_start_pos}-{incorrect_end_pos}', len(test_readid_to_read[incorrect_readid]), incorrect_strand])
+						reads_id[correct_readid] = f'{correct_readid}-correct-{correct_start_pos}-{correct_end_pos}'
+						reads_id[incorrect_readid] = f'{incorrect_readid}-incorrect-{incorrect_start_pos}-{incorrect_end_pos}'
+
+	tsv_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), 'w')
+	sum_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), 'w')
+	for r in reads:
+		sum_file.write(f'{r[0]}')
+		for idx in range(1, len(r), 1):
+			sum_file.write(f'\t{r[idx]}')
+		sum_file.write('\n')
+	for k, v in reads_id.items():
+		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
+	tsv_file.close()
+	sum_file.close()
+
+
+def CreateTsvFile(reads_id, readid_to_read, filename):	
+	with open(filename, 'w') as f:
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
+
+def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequence_length, readid_to_read, genome_size, incorrect_cs, correct_cs):
+	# get length and function of fn sequences per mapped position on the genome investigated
+	correct_genes = defaultdict(list)
+	incorrect_genes = defaultdict(list)
+	correct_functions = defaultdict(int)
+	incorrect_functions = defaultdict(int)
+	correct_reads_kept = [] 
+	incorrect_reads_kept = []
+	sel_correct_evalue = dict()
+	sel_correct_pident = dict()
+	sel_incorrect_evalue = dict()
+	sel_incorrect_pident = dict()
+	scores = {i:0 for i in range(genome_size)}
+
+	for gene_id, data in annot_info.items():
+		gene_start_pos = data[1]
+		gene_end_pos = data[2]
+		correct_reads = []
+		incorrect_reads = []
+		correct_evalue = dict()
+		correct_pident = dict()
+		incorrect_evalue = dict()
+		incorrect_pident = dict()
+		for read_id, align_info in incorrect_alignments.items():
+			if align_info[2] < align_info[3]:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[3]
+			else:
+				read_start_pos = align_info[3]
+				read_end_pos = align_info[2]
+			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			if length_mapped_seq > 0:
+				incorrect_reads.append(read_id)
+				incorrect_evalue[read_id] = align_info[4]
+				incorrect_pident[read_id] = align_info[5]
+
+		for read_id, align_info in correct_alignments.items():
+			if align_info[2] < align_info[3]:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[3]
+			else:
+				read_start_pos = align_info[3]
+				read_end_pos = align_info[2]
+			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			if length_mapped_seq > 0:
+				correct_reads.append(read_id)
+				correct_evalue[read_id] = align_info[4]
+				correct_pident[read_id] = align_info[5]
+
+		if len(incorrect_reads) + len(correct_reads) > 0:
+			# compare number of tp and fn positions mapped to gene
+			incorrect_num_pos = sum([sequence_length[r] for r in incorrect_reads])
+			correct_num_pos = sum([sequence_length[r] for r in correct_reads])
+
+
+			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
+			ratio_tp = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
+			if ratio_incorrect > 0.5:
+				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
+				for i in range(gene_start_pos, gene_end_pos+1, 1):
+					scores[i-1] = ratio_incorrect
+				incorrect_reads_kept += incorrect_reads
+				sel_incorrect_evalue.update(incorrect_evalue)
+				sel_incorrect_pident.update(incorrect_pident)
+				if data[0] == 'protein_coding':
+					incorrect_functions[data[5]] += 1
+
+			elif ratio_correct > 0.5:
+				correct_genes[gene_id] = [ratio_correct, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
+				correct_reads_kept += list(correct_reads)
+				sel_correct_evalue.update(correct_evalue)
+				sel_correct_pident.update(correct_pident)
+				if data[0] == 'protein_coding':
+					correct_functions[data[5]] += 1
+
+	incorrect_functions_sorted = dict(sorted(incorrect_functions.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_incorrect_functions_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in incorrect_functions_sorted.items():
+			f.write(f'{k}\t{v}\n')
+
+	correct_functions_sorted = dict(sorted(correct_functions.items(), key=lambda item: item[1], reverse=True))
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_correct_functions_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in correct_functions_sorted.items():
+			f.write(f'{k}\t{v}\n')
+
+	sel_incorrect_cs = [str(incorrect_cs[r]) for r in incorrect_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_cs_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_incorrect_cs))
+	
+	sel_correct_cs = [str(correct_cs[r]) for r in correct_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_cs_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_correct_cs))
+
+	sel_incorrect_length = [str(sequence_length[r]) for r in incorrect_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_incorrect_length))
+
+	sel_correct_length = [str(sequence_length[r]) for r in correct_reads_kept]
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_length_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join(sel_correct_length))
+
+
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_correct_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in correct_genes.items():
+			f.write(f'{k}')
+			for i in range(len(annot_info[k])):
+				f.write(f'\t{annot_info[k][i]}')
+			for i in range(len(v)):
+				f.write(f'\t{v[i]}')
+			f.write('\n')
+
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_incorrect_genes_{args.prob_threshold}.tsv'), 'w') as f:
+		for k, v in incorrect_genes.items():
+			f.write(f'{k}')
+			for i in range(len(annot_info[k])):
+				f.write(f'\t{annot_info[k][i]}')
+			for i in range(len(v)):
+				f.write(f'\t{v[i]}')
+			f.write('\n')
+
+	scores_list = [scores[i] for i in range(genome_size)]
+
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
+		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
+		outf.write(f'# correct reads kept: {len(tp_reads_kept)}\n')
+		outf.write(f'incorrect rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
+		outf.write(f'incorrect evalue:\tmean:{statistics.mean(sel_incorrect_evalue.values())}\tmedian:{statistics.median(sel_incorrect_evalue.values())}\tmin:{min(sel_incorrect_evalue.values())}\tmax:{max(sel_incorrect_evalue.values())}\n')
+		outf.write(f'correct evalue:\tmean:{statistics.mean(sel_correct_evalue.values())}\tmedian:{statistics.median(sel_correct_evalue.values())}\tmin:{min(sel_correct_evalue.values())}\tmax:{max(sel_correct_evalue.values())}\n')
+		outf.write(f'ubcorrect pident:\tmean:{statistics.mean(sel_incorrect_pident.values())}\tmedian:{statistics.median(sel_incorrect_pident.values())}\tmin:{min(sel_incorrect_pident.values())}\tmax:{max(sel_incorrect_pident.values())}\n')
+		outf.write(f'correct pident:\tmean:{statistics.mean(sel_correct_pident.values())}\tmedian:{statistics.median(sel_correct_pident.values())}\tmin:{min(sel_correct_pident.values())}\tmax:{max(sel_correct_pident.values())}\n')
+
+	# create tsv files with FN and TP reads
+	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.train_label}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
+	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.train_label}_{args.prob_threshold}_correct_reads_genes.tsv'))
+
+	return scores_list, incorrect_genes, correct_genes
+
+
+def GetAnnotInfo(args, genome_id, input_dir):
+	if f'{genome_id}_gtf' not in os.listdir(args.annotations_dir):
+		annot_output_dir = os.path.join(args.annotations_dir, f'{genome_id}_gtf')
+		os.makedirs(annot_output_dir)
+		os.chdir(annot_output_dir)
+		# download feature table in gtf if not present
+		result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'gtf'])
+		# unzip output folder
+		with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
+			zip_ref.extractall(os.getcwd())
+		os.chdir(input_dir)
+	else:
+		print(f'{genome_id}\tdownload already done')
+
+	
+	annot_file = glob.glob(os.path.join(args.annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	if len(annot_file) == 0:
+		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
+		f.close()
+		return {}
+	else:
+		genes_type = defaultdict(str)
+		annot_info = defaultdict(list)
+		locus_tags_info = defaultdict(list)
+		with open(annot_file[0], 'r') as f:
+			content = f.readlines()
+			for i in range(5,len(content)-1,1):
+				begin = int(content[i].rstrip().split('\t')[3])
+				end = int(content[i].rstrip().split('\t')[4])
+				strand = content[i].rstrip().split('\t')[6]
+				gene_id = ''
+				gene = ''
+				biotype = ''
+				function = ''
+				old_locus_tag = ''
+				protein_id = ''
+				for e in content[i].rstrip().split('\t')[8].split(';'):
+					e = e.replace('"', '')
+					# get all go_function entries and choose go_function with the most details
+					if 'go_function' in e:
+						fn = e.split('|')[0].split(' ')[2:]
+						if len(fn) > len(function):
+							function = ' '.join(fn)
+					if 'product' in e:
+						gene = ' '.join(e.split(' ')[2:])
+					if 'gene_id' in e:
+						gene_id = e.split(' ')[1]
+					if 'gene_biotype' in e:
+						biotype = e.split(' ')[2]
+					if 'old_locus_tag' in e:
+						old_locus_tag = e.split(' ')[2]
+					if 'protein_id' in e:
+						protein_id = e.split(' ')[2]
+
+				if content[i].rstrip().split('\t')[2] == 'gene':
+					genes_type[gene_id] = biotype
+					locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
+				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+					if function == '':
+						function = gene
+					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+				
+				assert gene_id != '', 'gene id should not be unknown'
+		
+		print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
+		print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
+
+		return annot_info, locus_tags_info
+
+
+def GetReadsAlignments(sequences, input_file, sequence_length, outfilename=None):
+	alignments = defaultdict(list)
+	with open(input_file, 'r') as f:
+		for line in f:
+			readid = line.rstrip().split(',')[0]
+			if readid in sequences:
+				sstart = int(line.rstrip().split(',')[2])
+				send = int(line.rstrip().split(',')[3])
+				seq_id = line.rstrip().split(',')[1]
+				evalue = float(line.rstrip().split(',')[7])
+				pident = float(line.rstrip().split(',')[8])
+				strand = line.rstrip().split(',')[11]
+				if readid in alignments:
+					# get best alignment
+					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
+						alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
+				else:
+					alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
+
+	if outfilename:
+		with open(outfilename, 'w') as f:
+			unmapped_reads_id = list(sequences.difference(set(alignments.keys())))
+			if len(unmapped_reads_id) != 0:
+				unmapped_reads_length = [sequence_length[r] for r in unmapped_reads_id]
+				f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\t{statistics.mean(unmapped_reads_length)}\nmedian reads length:\t{statistics.median(unmapped_reads_length)}\nmin reads length:\t{min(unmapped_reads_length)}\nmax reads length:\t{max(unmapped_reads_length)}')
+			else:
+				f.write(f'# unmapped reads:\t{len(unmapped_reads_id)}\nmean reads length:\tNA\nmedian reads length:\tNA\nmin reads length:\tNA\nmax reads length:\tNA')
+
+	return alignments
+
+
+def StoreCS(args, dict_cs, type):
+	list_cs = []
+	for k, v in dict_cs.items():
+		list_cs.append(v)
+	with open(os.path.join(args.output_dir, f'{args.pos_label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
+		f.write('\n'.join([str(x) for x in list_cs]))
+
+def GetSeqLength(args, sequences_id, sequence_length, type):
+	if len(sequences_id) != 0:
+		seq_length_info = [sequence_length[s] for s in sequences_id]
+		print(f'{type}\tmean: {statistics.mean(seq_length_info)}\tmedian: {statistics.median(seq_length_info)}\tmax: {max(seq_length_info)}\tmin: {min(seq_length_info)}')
+
+		with open(os.path.join(args.output_dir, f'{args.testing_genome}_{type}_{args.prob_threshold}_seq_length.tsv'), 'w') as f:
+			f.write('\n'.join([str(x) for x in seq_length_info]))
+
+
+def GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum):
+	# get FP and TN reads
+	tp_sequences = set()
+	fn_sequences = set()
+	tp_cs = defaultdict(list)
+	fn_cs = defaultdict(list)
+
+	with open(args.testing_results, 'r') as f:
+		for count, line in enumerate(f):
+			prob = float(line.rstrip().split('\t')[2])
+			if prob >= args.prob_threshold:
+				if test_ordered_reads_id[count].split('|')[1] == args.train_label:
+					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
+						fn_sequences.add(test_ordered_reads_id[count])
+						fn_cs[test_ordered_reads_id[count]] = prob
+					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
+						tp_sequences.add(test_ordered_reads_id[count])
+						tp_cs[test_ordered_reads_id[count]] = prob
+
+
+	print(f'#FN for genome {args.testing_genome}: {len(fn_sequences)}')
+	print(f'#TP for genome {args.testing_genome}: {len(tp_sequences)}')
+	outfile_sum.write(f'{len(fn_sequences)}\t{len(tp_sequences)}\n')
+	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'fp')
+	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tn')
+	StoreCS(args, fn_cs, 'fn')
+	StoreCS(args, tp_cs, 'tp')
+
+	return fn_sequences, tp_sequences
+
+
+def GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum):
+	# get FP and TN reads
+	tn_sequences = set()
+	fp_sequences = set()
+	tn_cs = defaultdict(list)
+	fp_cs = defaultdict(list)
+
+	with open(args.testing_results, 'r') as f:
+		for count, line in enumerate(f):
+			prob = float(line.rstrip().split('\t')[2])
+			if prob >= args.prob_threshold:
+				if test_ordered_reads_id[count].split('|')[1] == args.test_label:
+					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
+						fp_sequences.add(test_ordered_reads_id[count])
+						fp_cs[test_ordered_reads_id[count]] = prob
+					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '0':
+						tn_sequences.add(test_ordered_reads_id[count])
+						tn_cs[test_ordered_reads_id[count]] = prob
+
+
+	print(f'#FP for genome {args.testing_genome}: {len(fp_sequences)}')
+	print(f'#TN for genome {args.testing_genome}: {len(tn_sequences)}')
+	outfile_sum.write(f'{len(fp_sequences)}\t{len(tn_sequences)}\n')
+	GetSeqLength(args, list(fp_sequences), test_sequence_length, 'fp')
+	GetSeqLength(args, list(tn_sequences), test_sequence_length, 'tn')
+	StoreCS(args, fp_cs, 'fp')
+	StoreCS(args, tn_cs, 'tn')
+
+	return fp_sequences, tn_sequences
+
+
+def LoadFnaFile(fasta_file):
+	with open(fasta_file, 'r') as f:
+		content = f.readlines()
+	ordered_reads_id = [content[i].rstrip()[1:] for i in range(0,len(content),2)]
+	readsid_to_seq = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [content[i].rstrip() for i in range(1, len(content), 2)]))
+	readsid_to_length = dict(zip([content[i].rstrip()[1:] for i in range(0, len(content), 2)], [len(content[i].rstrip()) for i in range(1, len(content), 2)]))
+
+	return readsid_to_seq, readsid_to_length, ordered_reads_id
+
+
+def LoadTsvFile(tsv_file):
+	with open(tsv_file, 'r') as f:
+		content = f.readlines()
+	ordered_reads_id = [content[i].rstrip().split('\t')[0] for i in range(len(content))]
+	readsid_to_seq = dict(zip([content[i].rstrip().split('\t')[0] for i in range(len(content))], [content[i].rstrip().split('\t')[1] for i in range(len(content))]))
+	readsid_to_length = dict(zip([content[i].rstrip().split('\t')[0] for i in range(len(content))], [len(content[i].rstrip().split('\t')[1]) for i in range(len(content))]))
+
+	return readsid_to_seq, readsid_to_length, ordered_reads_id
+
+def CheckGenomes(args):
+	# load testing fasta file
+	with open(args.testing_fasta, "r") as handle:
+		test_records = list(SeqIO.parse(handle, "fasta"))
+
+	# load training fasta file
+	with open(args.training_fasta, "r") as handle:
+		train_records = list(SeqIO.parse(handle, "fasta"))
+
+	assert len(test_records) == 1, f'{args.label}\t{args.testing_genome} has more than 1 chromosome'
+	assert len(train_records) == 1, f'{args.label}\t{args.training_genome} has more than 1 chromosome'
+
+	return test_records, train_records
