@@ -379,7 +379,22 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id)
 	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id)
 
-
+def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
+	# check if read_id maps to gene
+	length_mapped_seq = 0
+	if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos) or \
+		(read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos) or \
+		(read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos) or \
+		(read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
+		if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos):
+			length_mapped_seq = 100
+		elif (read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos):
+			length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
+		elif (read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos):
+			length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+		elif (read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
+			length_mapped_seq = (gene_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+	return length_mapped_seq
 
 
 def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequence_length, readid_to_read, genome_size, incorrect_cs, correct_cs):
