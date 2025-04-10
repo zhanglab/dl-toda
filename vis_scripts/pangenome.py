@@ -66,7 +66,7 @@ if __name__ == "__main__":
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadFnaFile(args.testing_file)
 	elif args.testing_file[-3:] == 'tsv':
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
-
+	print(args.analysis)
 	if args.analysis == 'FP':
 		incorrect_seq, correct_seq, incorrect_cs, correct_cs = GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	elif args.analysis == 'FN':
