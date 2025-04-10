@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
 	GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read)
 
-	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, incorrect_alignments, correct_alignments, \
+	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, args.testing_fasta, args.training_fasta, incorrect_alignments, correct_alignments, \
 			 os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_circos.png'))
 
 	train_species = args.dl_toda_tax[args.train_label].split(';')[0]
