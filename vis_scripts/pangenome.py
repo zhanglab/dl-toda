@@ -71,7 +71,7 @@ if __name__ == "__main__":
 		incorrect_seq, correct_seq, incorrect_cs, correct_cs = GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	elif args.analysis == 'FN':
 		incorrect_seq, correct_seq, incorrect_cs, correct_cs = GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
-
+	print('train label',args.train_label)
 	# create fasta file with incorrect and correct testing reads
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), 'w') as outf:
 		for k, v in test_readid_to_read.items():
