@@ -33,7 +33,7 @@ seed = 42
 random.seed(seed)
 
 
-ef GetGCSkew(sequence):
+def GetGCSkew(sequence):
 	all_gc_skew = []
 	window_size = int(len(sequence) / 500)
 	step_size = int(len(sequence) / 1000)
@@ -310,54 +310,77 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	return avg_pct_identity, ani, test_strain, train_strain
 
 
-def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read):
-	reads = []
-	reads_id = {}
-	for incorrect_readid, incorrect_data in incorrect_alignments.items():
-		if incorrect_data[1] < incorrect_data[2]:
-			incorrect_start_pos = incorrect_data[1]
-			incorrect_end_pos = incorrect_data[2]
-		else:
-			incorrect_start_pos = incorrect_data[2]
-			incorrect_end_pos = incorrect_data[1]
-		incorrect_strand = incorrect_data[5]
-
-		for correct_readid, correct_data in correct_alignments.items():
-			if correct_data[1] < correct_data[2]:
-				correct_start_pos = correct_data[1]
-				correct_end_pos = correct_data[2]
-			else:
-				correct_start_pos = correct_data[2]
-				correct_end_pos = correct_data[1]
-			correct_strand = correct_data[5]
-
-			if (correct_start_pos < incorrect_end_pos and correct_end_pos > incorrect_start_pos) or \
-				(fp_start_pos < correct_end_pos and fp_end_pos > correct_start_pos) or \
-				(correct_start_pos < incorrect_start_pos and correct_end_pos > incorrect_end_pos) or \
-				(incorrect_start_pos < correct_start_pos and incorrect_end_pos > correct_end_pos):
-				if tp_strand == 'plus' and incorrect_strand == 'plus':
-					if abs(len(test_readid_to_read[incorrect_readid])-len(test_readid_to_read[correct_readid])) < 200:
-						reads.append([correct_readid.split('|')[2], f'{correct_readid}-correct-{correct_start_pos}-{correct_end_pos}', len(test_readid_to_read[correct_readid]), correct_strand, \
-							incorrect_readid.split('|')[2], f'{incorrect_readid}-incorrect-{incorrect_start_pos}-{incorrect_end_pos}', len(test_readid_to_read[incorrect_readid]), incorrect_strand])
-						reads_id[correct_readid] = f'{correct_readid}-correct-{correct_start_pos}-{correct_end_pos}'
-						reads_id[incorrect_readid] = f'{incorrect_readid}-incorrect-{incorrect_start_pos}-{incorrect_end_pos}'
-
-	tsv_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), 'w')
-	sum_file = open(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), 'w')
+def CreateTsvFile(tsv_filename, id_filename, reads, reads_id):
+	tsv_file = open(tsv_filename, 'w')
+	id_file = open(id_filename, 'w')
 	for r in reads:
-		sum_file.write(f'{r[0]}')
+		id_file.write(f'{r[0]}')
 		for idx in range(1, len(r), 1):
-			sum_file.write(f'\t{r[idx]}')
-		sum_file.write('\n')
+			id_file.write(f'\t{r[idx]}')
+		id_file.write('\n')
 	for k, v in reads_id.items():
 		tsv_file.write(f'{v}\t{test_readid_to_read[k]}\n')
 	tsv_file.close()
-	sum_file.close()
+	id_file.close()
 
 
-def CreateTsvFile(reads_id, readid_to_read, filename):	
-	with open(filename, 'w') as f:
-		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
+def ParseAlignments(alignments):
+	reads_id = []
+	start = []
+	end = []
+	strand = []
+	for readid, data in alignments.items():
+		if data[1] < data[2]:
+			start_pos = data[1]
+			end_pos = data[2]
+		else:
+			start_pos = data[2]
+			end_pos = data[1]
+		reads_id.append(readid)
+		start.append(start_pos)
+		end.append(end_pos)
+		strand.append(data[5])	
+	return reads_id, start, end, strand
+
+
+
+def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read):
+	
+	incorrect_reads_id, incorrect_start, incorrect_end, incorrect_strand = ParseAlignments(incorrect_alignments)
+	correct_reads_id, correct_start, correct_end, correct_strand = ParseAlignments(correct_alignments)
+
+	# get all reads
+	all_reads = []
+	all_reads_id = {}
+	for i in range(len(incorrect_reads_id)):
+		all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+		all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+
+	for i in range(len(correct_reads_id)):
+		all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-incorrect-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
+		all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-incorrect-{correct_start[i]}-{correct_end[i]}'
+
+	# get contiguous correct and incorrect reads
+	cont_reads = []
+	cont_reads_id = {}
+	for i in range(len(incorrect_reads_id)):
+		for j in range(len(correct_reads_id)):
+			if (correct_start[j] < incorrect_end[i] and correct_end[j] > incorrect_start[i]) or \
+				(incorrect_start[i] < correct_end[j] and incorrect_end[i] > correct_start[j]) or \
+				(correct_start[j] < incorrect_start[i] and correct_end[j] > incorrect_end[i]) or \
+				(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
+				if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
+					if abs(len(test_readid_to_read[incorrect_reads_id][i])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
+						cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
+							incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+						cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
+						cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+
+	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id)
+	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id)
+
+
+
 
 def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequence_length, readid_to_read, genome_size, incorrect_cs, correct_cs):
 	# get length and function of fn sequences per mapped position on the genome investigated
