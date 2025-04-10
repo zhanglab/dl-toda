@@ -503,7 +503,12 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			f.write('\n')
 
 	scores_list = [scores[i] for i in range(genome_size)]
-	print(f'size of list: {len(sel_incorrect_evalue)}')
+	print(f'correct_reads_kept: {len(correct_reads_kept)}')
+	print(f'incorrect_reads_kept: {len(incorrect_reads_kept)}')
+	print(f'sel_correct_evalue: {len(sel_correct_evalue)}')
+	print(f'sel_incorrect_evalue: {len(sel_incorrect_evalue)}')
+	print(f'sel_correct_pident: {len(sel_correct_pident)}')
+	print(f'sel_incorrect_pident: {len(sel_incorrect_pident)}')
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
 		outf.write(f'# correct reads kept: {len(correct_reads_kept)}\n')
