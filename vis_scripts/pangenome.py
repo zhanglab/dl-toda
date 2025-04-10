@@ -87,6 +87,7 @@ if __name__ == "__main__":
 	
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
+	# get genes and functions associated with incorrect and correct predictions
 	scores, incorrect_genes, correct_genes = GetGenes(args, test_annot_info, incorrect_alignments, correct_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), incorrect_cs, correct_cs)
 
 	GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read)
