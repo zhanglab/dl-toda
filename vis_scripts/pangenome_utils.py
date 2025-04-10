@@ -1,23 +1,15 @@
 import sys
 import os
 import glob
-import argparse
 import math
 import zipfile
 import subprocess
-import multiprocessing
 import random
 import statistics
 import numpy as np
-import json
 from Bio import SeqIO, SeqUtils
 from collections import defaultdict
 from pycirclize import Circos, config
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from dataprep_scripts.utils import load_fq_file
-# from genomics_viz_utils import *
-from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
 from pygenomeviz.parser import Fasta
 from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
 from pygenomeviz.align import AlignCoord, Blast
@@ -30,15 +22,90 @@ ColorCycler.set_cmap("Set1")
 # QUERY_TRACK_SIZE = 5
 MIN_IDENTITY = 70
 TICKS_INTERVAL = 500000
-bowtie2_build_exec = "/modules/uri_apps/software/Bowtie2/2.4.5-GCC-11.3.0/bin/bowtie2-build"
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
-parallel_exec = "/modules/spack/packages/linux-ubuntu24.04-x86_64_v3/gcc-13.2.0/parallel-20240822-uwvjfxdji5ltqgl6vdu4in522ymhbhz7/bin/parallel"
+
 # set seed
 seed = 42
+
 # set the global python random seed
 random.seed(seed)
+
+
+ef GetGCSkew(sequence):
+	all_gc_skew = []
+	window_size = int(len(sequence) / 500)
+	step_size = int(len(sequence) / 1000)
+	pos_list = list(range(0, len(sequence), step_size)) + [len(sequence)]
+	for pos in pos_list:
+		start = pos - int(window_size / 2)
+		end = pos + int(window_size / 2)
+		
+		# update start and end of window according to the size of the sequence
+		if start < 0:
+			start = 0
+
+		if end > len(sequence):
+			end = len(sequence)
+
+		gcskew_seq = sequence[start:end]
+		g_count = gcskew_seq.upper().count("G")
+		c_count = gcskew_seq.upper().count("C")
+
+		if float(g_count + c_count) == 0.0:
+			gcskew = 0.0
+		else:
+			gcskew = (g_count - c_count) / float(g_count + c_count)
+
+		all_gc_skew.append(gcskew)
+
+	return np.array(pos_list).astype(np.int64), np.array(all_gc_skew).astype(np.float64)
+
+
+def GetGCContent(sequence):
+	all_gc_content = []
+	window_size = int(len(sequence) / 500)
+	step_size = int(len(sequence) / 1000)
+
+	pos_list = list(range(0, len(sequence), step_size)) + [len(sequence)]
+	for pos in pos_list:
+		start = pos - int(window_size / 2)
+		end = pos + int(window_size / 2)
+
+		# update start and end of window according to the size of the sequence
+		if start < 0:
+			start = 0
+
+		if end > len(sequence):
+			end = len(sequence)
+
+		gccontent_seq = sequence[start:end]
+		gc_content = SeqUtils.gc_fraction(gccontent_seq) * 100
+		all_gc_content.append(gc_content)
+
+	genome_gc_content = SeqUtils.gc_fraction(sequence) * 100
+
+	return np.array(pos_list).astype(np.int64), np.array(all_gc_content).astype(np.float64), genome_gc_content
+
+
+
+def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
+	align_coords = []
+	with open(input_file, 'r') as f:
+		for count, line in enumerate(f, 1):
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			qstart = int(line.rstrip().split(',')[4])
+			qend = int(line.rstrip().split(',')[5])
+			pident = float(line.rstrip().split(',')[8])
+			qseq = line.rstrip().split(',')[9]
+			sseq = line.rstrip().split(',')[10]
+
+			if pident >= identity_thr:
+				align_coords.append([qstart, qend, pident])
+
+	return align_coords
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
@@ -110,7 +177,6 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
 	# Blast genome comparison & plot match blocks
-	comp_name2color = {}
 	# store percentage identity between matching regions
 	percent_identity = []
 	# run blast 		
@@ -154,13 +220,13 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 			correct_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 			correct_track.axis(ec="blue")
 			pos_correct_count = [0]*query_fasta.full_genome_length
-			for readid, data in tp_alignments.items():
-				for pos in range(data[2], data[3]+1, 1):
+			for readid, data in correct_alignments.items():
+				for pos in range(data[1], data[2]+1, 1):
 					pos_correct_count[pos-1] +=1
 			y_values = list(range(min(pos_correct_count), max(pos_correct_count), 1))
 			y_labels = list(map(str, y_values))
-			tp_track.yticks(y_values, y_labels)
-			tp_track.line(genome_pos, pos_correct_count, color="blue")
+			correct_track.yticks(y_values, y_labels)
+			correct_track.line(genome_pos, pos_correct_count, color="blue")
 			print(f'added correct track')
 
 		# add tracks for incorrect reads 
@@ -170,7 +236,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 			incorrect_track.axis(ec="darkviolet")
 			pos_incorrect_count = [0]*query_fasta.full_genome_length
 			for readid, data in incorrect_alignments.items():
-				for pos in range(data[2], data[3]+1, 1):
+				for pos in range(data[1], data[2]+1, 1):
 					pos_incorrect_count[pos-1] +=1
 			y_values = list(range(min(pos_incorrect_count), max(pos_incorrect_count), 1))
 			y_labels = list(map(str, y_values))
@@ -248,22 +314,22 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 	reads = []
 	reads_id = {}
 	for incorrect_readid, incorrect_data in incorrect_alignments.items():
-		if incorrect_data[2] < incorrect_data[3]:
-			incorrect_start_pos = incorrect_data[2]
-			incorrect_end_pos = incorrect_data[3]
-		else:
-			incorrect_start_pos = incorrect_data[3]
+		if incorrect_data[1] < incorrect_data[2]:
+			incorrect_start_pos = incorrect_data[1]
 			incorrect_end_pos = incorrect_data[2]
-		incorrect_strand = fp_data[6]
+		else:
+			incorrect_start_pos = incorrect_data[2]
+			incorrect_end_pos = incorrect_data[1]
+		incorrect_strand = incorrect_data[5]
 
 		for correct_readid, correct_data in correct_alignments.items():
-			if correct_data[2] < correct_data[3]:
-				correct_start_pos = correct_data[2]
-				correct_end_pos = correct_data[3]
-			else:
-				correct_start_pos = correct_data[3]
+			if correct_data[1] < correct_data[2]:
+				correct_start_pos = correct_data[1]
 				correct_end_pos = correct_data[2]
-			correct_strand = correct_data[6]
+			else:
+				correct_start_pos = correct_data[2]
+				correct_end_pos = correct_data[1]
+			correct_strand = correct_data[5]
 
 			if (correct_start_pos < incorrect_end_pos and correct_end_pos > incorrect_start_pos) or \
 				(fp_start_pos < correct_end_pos and fp_end_pos > correct_start_pos) or \
@@ -317,30 +383,30 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		incorrect_evalue = dict()
 		incorrect_pident = dict()
 		for read_id, align_info in incorrect_alignments.items():
-			if align_info[2] < align_info[3]:
-				read_start_pos = align_info[2]
-				read_end_pos = align_info[3]
-			else:
-				read_start_pos = align_info[3]
+			if align_info[1] < align_info[2]:
+				read_start_pos = align_info[1]
 				read_end_pos = align_info[2]
+			else:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[1]
 			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				incorrect_reads.append(read_id)
-				incorrect_evalue[read_id] = align_info[4]
-				incorrect_pident[read_id] = align_info[5]
+				incorrect_evalue[read_id] = align_info[3]
+				incorrect_pident[read_id] = align_info[4]
 
 		for read_id, align_info in correct_alignments.items():
-			if align_info[2] < align_info[3]:
-				read_start_pos = align_info[2]
-				read_end_pos = align_info[3]
-			else:
-				read_start_pos = align_info[3]
+			if align_info[1] < align_info[2]:
+				read_start_pos = align_info[1]
 				read_end_pos = align_info[2]
+			else:
+				read_start_pos = align_info[2]
+				read_end_pos = align_info[1]
 			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				correct_reads.append(read_id)
-				correct_evalue[read_id] = align_info[4]
-				correct_pident[read_id] = align_info[5]
+				correct_evalue[read_id] = align_info[3]
+				correct_pident[read_id] = align_info[4]
 
 		if len(incorrect_reads) + len(correct_reads) > 0:
 			# compare number of tp and fn positions mapped to gene
@@ -520,7 +586,7 @@ def GetReadsAlignments(sequences, input_file, sequence_length, outfilename=None)
 				strand = line.rstrip().split(',')[11]
 				if readid in alignments:
 					# get best alignment
-					if evalue < alignments[readid][4] and pident > alignments[readid][5]:
+					if evalue < alignments[readid][3] and pident > alignments[readid][4]:
 						alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
 				else:
 					alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
