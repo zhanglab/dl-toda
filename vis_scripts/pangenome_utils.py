@@ -503,6 +503,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			f.write('\n')
 
 	scores_list = [scores[i] for i in range(genome_size)]
+	print(f'incorrect_alignments: {len(incorrect_alignments)}')
+	print(f'correct_alignments: {len(correct_alignments)}')
 	print(f'correct_reads_kept: {len(correct_reads_kept)}')
 	print(f'incorrect_reads_kept: {len(incorrect_reads_kept)}')
 	print(f'sel_correct_evalue: {len(sel_correct_evalue)}')
