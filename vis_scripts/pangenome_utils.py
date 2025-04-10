@@ -453,7 +453,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 
 
 			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
-			ratio_tp = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
+			ratio_correct = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
 			if ratio_incorrect > 0.5:
 				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
