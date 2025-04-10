@@ -310,7 +310,11 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	return avg_pct_identity, ani, test_strain, train_strain
 
 
-def CreateTsvFile(tsv_filename, id_filename, reads, reads_id):
+def CreateTsvFile(reads_id, readid_to_read, filename):	
+	with open(filename, 'w') as f:
+		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
+
+def WriteInputAttentions(tsv_filename, id_filename, reads, reads_id, test_readid_to_read):
 	tsv_file = open(tsv_filename, 'w')
 	id_file = open(id_filename, 'w')
 	for r in reads:
@@ -376,8 +380,8 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 						cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
 						cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
 
-	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id)
-	CreateTsvFile(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id)
+	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
+	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id, test_readid_to_read)
 
 def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 	# check if read_id maps to gene
@@ -536,8 +540,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		outf.write(f'correct pident:\tmean:{statistics.mean(sel_correct_pident.values())}\tmedian:{statistics.median(sel_correct_pident.values())}\tmin:{min(sel_correct_pident.values())}\tmax:{max(sel_correct_pident.values())}\n')
 
 	# create tsv files with FN and TP reads
-	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.train_label}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
-	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.train_label}_{args.prob_threshold}_correct_reads_genes.tsv'))
+	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
+	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
 	return scores_list, incorrect_genes, correct_genes
 
