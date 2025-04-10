@@ -142,7 +142,12 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
 			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
 
-
+def GetGenomesInfo(fasta):
+	with open(fasta, 'r') as f:
+		content = f.readline()
+	strain = ' '.join([e for e in content.rstrip().split(',')[0].split(' ')[1:] if e not in ['chromosome', 'strain']])
+	
+	return strain
 
 
 def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
