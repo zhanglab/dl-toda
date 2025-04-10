@@ -26,9 +26,10 @@ if __name__ == "__main__":
 	input_dir = os.getcwd()
 
 	path_dl_toda = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
-
+	print(path_dl_toda)
+	print(os.path.join(path_dl_toda, 'data/training_genomes.tsv'))
 	# get label of training genome
-	with open(os.path.join(path_dl_toda, '/data/training_genomes.tsv'), 'r') as f:
+	with open(os.path.join(path_dl_toda, 'data/training_genomes.tsv'), 'r') as f:
 		for line in f:
 			if line.rstrip().split('\t')[0] == args.training_genome:
 				args.train_label = line.rstrip().split('\t')[1]
