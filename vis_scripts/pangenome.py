@@ -1,29 +1,9 @@
 import sys
 import os
-import glob
 import argparse
-import math
-import zipfile
-import subprocess
-import multiprocessing
-import random
-import statistics
-import numpy as np
-import json
-from Bio import SeqIO, SeqUtils
 from collections import defaultdict
-from pycirclize import Circos, config
-from Bio.SeqFeature import SeqFeature, FeatureLocation
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from dataprep_scripts.utils import load_fq_file
 from pangenome_utils import *
-from vis_scripts.parse_samfile import LoadData, GetCoverageOfSample
-from pygenomeviz.parser import Fasta
-from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpolate_color
-from pygenomeviz.align import AlignCoord, Blast
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
-import matplotlib.pyplot as plt
 
 
 
@@ -40,11 +20,6 @@ if __name__ == "__main__":
 	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
 	parser.add_argument('--testing_results', type=str, help='path to file containing testing results', required=True)
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel', required=True)
-
-	parser.add_argument('--test_species', nargs='+', help='gtdb species of testing genome')
-	parser.add_argument('--test_genus', nargs='+', help='gtdb genus of testing genome')
-	parser.add_argument('--sequences_info', type=str, help='path to file mapping labels of species in model to sequences id of all sequences in training set')
-	parser.add_argument('--rank', type=str, help='taxonomic rank investigated', choices=['species','genus','family','order','class', 'phylum'])
 	args = parser.parse_args()
 
 	# define input directory
