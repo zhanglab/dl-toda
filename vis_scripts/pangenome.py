@@ -86,8 +86,6 @@ if __name__ == "__main__":
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	scores, incorrect_genes, correct_genes = GetGenes(args, test_annot_info, incorrect_alignments, correct_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), incorrect_cs, correct_cs)
 
-	CreateTsvFile(correct_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_all.tsv'))
-	CreateTsvFile(incorrect_sequences, test_readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_all.tsv'))
 	GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read)
 
 	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, testing_fasta, training_fasta, incorrect_alignments, correct_alignments, \
