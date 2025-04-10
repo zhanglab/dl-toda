@@ -660,6 +660,7 @@ def GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
+				print(test_ordered_reads_id[count].split('|')[1])
 				if test_ordered_reads_id[count].split('|')[1] == args.train_label:
 					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
 						fn_sequences.add(test_ordered_reads_id[count])
@@ -691,7 +692,6 @@ def GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
-				print(test_ordered_reads_id[count].split('|')[1])
 				if test_ordered_reads_id[count].split('|')[1] == args.test_label:
 					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
 						fp_sequences.add(test_ordered_reads_id[count])
