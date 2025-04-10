@@ -68,9 +68,9 @@ if __name__ == "__main__":
 		test_readid_to_read, test_sequence_length, test_ordered_reads_id = LoadTsvFile(args.testing_file)
 
 	if args.analysis == 'FP':
-		incorrect_seq, correct_seq = GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
+		incorrect_seq, correct_seq, incorrect_cs, correct_cs = GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	elif args.analysis == 'FN':
-		incorrect_seq, correct_seq = GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
+		incorrect_seq, correct_seq, incorrect_cs, correct_cs = GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 
 	# create fasta file with incorrect and correct testing reads
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), 'w') as outf:
