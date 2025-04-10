@@ -660,15 +660,12 @@ def GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
-				print(test_ordered_reads_id[count].split('|')[1])
-				if test_ordered_reads_id[count].split('|')[1] == args.train_label:
-					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
-						fn_sequences.add(test_ordered_reads_id[count])
-						fn_cs[test_ordered_reads_id[count]] = prob
-					if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
-						tp_sequences.add(test_ordered_reads_id[count])
-						tp_cs[test_ordered_reads_id[count]] = prob
-
+				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '0':
+					fn_sequences.add(test_ordered_reads_id[count])
+					fn_cs[test_ordered_reads_id[count]] = prob
+				if line.rstrip().split('\t')[0] == '1' and line.rstrip().split('\t')[1] == '1':
+					tp_sequences.add(test_ordered_reads_id[count])
+					tp_cs[test_ordered_reads_id[count]] = prob
 
 	print(f'#FN for genome {args.testing_genome}: {len(fn_sequences)}')
 	print(f'#TP for genome {args.testing_genome}: {len(tp_sequences)}')
@@ -692,13 +689,12 @@ def GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 		for count, line in enumerate(f):
 			prob = float(line.rstrip().split('\t')[2])
 			if prob >= args.prob_threshold:
-				if test_ordered_reads_id[count].split('|')[1] == args.test_label:
-					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
-						fp_sequences.add(test_ordered_reads_id[count])
-						fp_cs[test_ordered_reads_id[count]] = prob
-					if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '0':
-						tn_sequences.add(test_ordered_reads_id[count])
-						tn_cs[test_ordered_reads_id[count]] = prob
+				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '1':
+					fp_sequences.add(test_ordered_reads_id[count])
+					fp_cs[test_ordered_reads_id[count]] = prob
+				if line.rstrip().split('\t')[0] == '0' and line.rstrip().split('\t')[1] == '0':
+					tn_sequences.add(test_ordered_reads_id[count])
+					tn_cs[test_ordered_reads_id[count]] = prob
 
 
 	print(f'#FP for genome {args.testing_genome}: {len(fp_sequences)}')
