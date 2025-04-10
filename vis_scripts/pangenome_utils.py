@@ -292,15 +292,13 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	fig = circos.plotfig()
 	# Add legend
 	handles = []
-	if genomic_islands:
-		handles.append(Patch(color='red', label='Genomic Islands'))
 	handles += [
 		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
 		Patch(color='deeppink', label='Score')
 	]
-	if len(tp_sequences) > 0:
+	if len(correct_alignments) > 0:
 		handles.append(Patch(color='blue', label='True Positives'))
-	if len(fp_sequences) > 0:
+	if len(incorrect_alignments) > 0:
 		handles.append(Patch(color='darkviolet', label='False Positives'))
 		
 	handles += [
