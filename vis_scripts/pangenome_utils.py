@@ -506,7 +506,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
-		outf.write(f'# correct reads kept: {len(tp_reads_kept)}\n')
+		outf.write(f'# correct reads kept: {len(correct_reads_kept)}\n')
 		outf.write(f'incorrect rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
 		outf.write(f'incorrect evalue:\tmean:{statistics.mean(sel_incorrect_evalue.values())}\tmedian:{statistics.median(sel_incorrect_evalue.values())}\tmin:{min(sel_incorrect_evalue.values())}\tmax:{max(sel_incorrect_evalue.values())}\n')
 		outf.write(f'correct evalue:\tmean:{statistics.mean(sel_correct_evalue.values())}\tmedian:{statistics.median(sel_correct_evalue.values())}\tmin:{min(sel_correct_evalue.values())}\tmax:{max(sel_correct_evalue.values())}\n')
