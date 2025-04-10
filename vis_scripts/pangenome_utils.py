@@ -630,7 +630,7 @@ def StoreCS(args, dict_cs, type):
 	list_cs = []
 	for k, v in dict_cs.items():
 		list_cs.append(v)
-	with open(os.path.join(args.output_dir, f'{args.pos_label}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
+	with open(os.path.join(args.output_dir, f'{args.testing_genome}_{type}_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join([str(x) for x in list_cs]))
 
 def GetSeqLength(args, sequences_id, sequence_length, type):
