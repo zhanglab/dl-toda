@@ -52,7 +52,7 @@ if __name__ == "__main__":
 	outfile_sum = open(os.path.join(args.output_dir, f'{args.testing_genome}_summary.tsv'), 'w')
 	
 	# get dltoda taxonomy
-	with open(os.path.join(path_dl_toda, '/data/dl_toda_taxonomy.tsv'), 'r') as f:
+	with open(os.path.join(path_dl_toda, 'data/dl_toda_taxonomy.tsv'), 'r') as f:
 		args.dl_toda_tax = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
 
 	# verify that the genomes investigated only have one chromosome
