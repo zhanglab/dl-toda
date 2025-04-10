@@ -374,7 +374,7 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 				(correct_start[j] < incorrect_start[i] and correct_end[j] > incorrect_end[i]) or \
 				(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
 				if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
-					if abs(len(test_readid_to_read[incorrect_reads_id][i])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
+					if abs(len(test_readid_to_read[incorrect_reads_id[i]])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
 						cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
 							incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
 						cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
