@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	assert len(args.test_label) != 0, f'label of testing genome {args.testing_genome} can not be found'
 
 	# create output directories
-	args.output_dir = os.path.join(os.getcwd(), args.train_label, args.testing_genome)
+	args.output_dir = os.path.join(args.output_dir, args.train_label, args.testing_genome)
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
