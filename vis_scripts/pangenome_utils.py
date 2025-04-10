@@ -220,7 +220,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		print(f'added score track')
 
 		# add track for correct reads
-		if len(correct_sequences) > 0:
+		if len(correct_alignments) > 0:
 			min_r_pos -= 13
 			correct_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 			correct_track.axis(ec="blue")
@@ -235,7 +235,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 			print(f'added correct track')
 
 		# add tracks for incorrect reads 
-		if len(incorrect_sequences) > 0:
+		if len(incorrect_alignments) > 0:
 			min_r_pos -= 13
 			incorrect_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
 			incorrect_track.axis(ec="darkviolet")
@@ -407,7 +407,7 @@ def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 
 
 def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequence_length, readid_to_read, genome_size, incorrect_cs, correct_cs):
-	# get length and function of fn sequences per mapped position on the genome investigated
+	
 	correct_genes = defaultdict(list)
 	incorrect_genes = defaultdict(list)
 	correct_functions = defaultdict(int)
