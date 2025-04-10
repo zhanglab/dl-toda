@@ -670,7 +670,7 @@ def GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	StoreCS(args, fn_cs, 'fn')
 	StoreCS(args, tp_cs, 'tp')
 
-	return fn_sequences, tp_sequences
+	return fn_sequences, tp_sequences, fn_cs, tp_cs
 
 
 def GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum):
@@ -701,7 +701,7 @@ def GetFPTNReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	StoreCS(args, fp_cs, 'fp')
 	StoreCS(args, tn_cs, 'tn')
 
-	return fp_sequences, tn_sequences
+	return fp_sequences, tn_sequences, fp_cs, tn_cs
 
 
 def LoadFnaFile(fasta_file):
