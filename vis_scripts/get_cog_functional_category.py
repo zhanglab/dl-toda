@@ -80,7 +80,7 @@ def GetProteins(args):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--input_dir', type=str, help='directory containing results obtained from running false_negatives.py or false_positives.py')
+	parser.add_argument('--input_dir', type=str, help='directory containing results obtained from running pangenome.py')
 	parser.add_argument('--genome_id', type=str, help='genome accession id')
 	parser.add_argument('--output_dir', type=str, help='path to output directory')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
