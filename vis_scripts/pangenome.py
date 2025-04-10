@@ -77,7 +77,8 @@ if __name__ == "__main__":
 		for k, v in test_readid_to_read.items():
 			if k in incorrect_seq or k in correct_seq:
 				outf.write(f'>{k}\n{v}\n')
-
+	print(f'incorrect_seq: {len(incorrect_seq)}')
+	print(f'correct_seq: {len(correct_seq)}')
 	# blast testing reads to testing genome
 	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), subject=[args.testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false and true positives to testing genome
