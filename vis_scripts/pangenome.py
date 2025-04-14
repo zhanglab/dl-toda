@@ -123,12 +123,12 @@ if __name__ == "__main__":
 
 	if args.analysis == 'FP':
 		# get taxa of FP reads
-		if len(incorrect_sequences) > 0:
-			incorrect_labels = set([s.split('|')[1] for s in list(incorrect_sequences)])
+		if len(incorrect_seq) > 0:
+			incorrect_labels = set([s.split('|')[1] for s in list(incorrect_seq)])
 			incorrect_taxa = defaultdict(int)
 			for label in incorrect_labels:
 				# get fp sequences of label
-				label_sequences = set([seq_id for seq_id in incorrect_sequences if seq_id.split('|')[1] == label])
+				label_sequences = set([seq_id for seq_id in incorrect_seq if seq_id.split('|')[1] == label])
 				# monitor number of sequences per label
 				incorrect_taxa[label] = len(label_sequences)
 			incorrect_taxa_sorted = dict(sorted(incorrect_taxa.items(), key=lambda item: item[1], reverse=True))
