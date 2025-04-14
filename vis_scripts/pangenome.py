@@ -36,9 +36,8 @@ if __name__ == "__main__":
 		for line in f:
 			if line.rstrip().split('\t')[0] == args.testing_genome:
 				args.test_label = line.rstrip().split('\t')[1]
-
-	assert len(args.train_label) != 0, f'label of training genome {args.training_genome} can not be found'
-	assert len(args.test_label) != 0, f'label of testing genome {args.testing_genome} can not be found'
+		if len(args.test_label) == 0:
+			args.test_label = 'NA'
 
 	# create output directories
 	args.output_dir = os.path.join(args.output_dir, args.train_label, args.testing_genome)
@@ -97,12 +96,16 @@ if __name__ == "__main__":
 
 	train_species = args.dl_toda_tax[args.train_label].split(';')[0]
 	train_genus = args.dl_toda_tax[args.train_label].split(';')[1]
-	test_species = args.dl_toda_tax[args.test_label].split(';')[0]
-	test_genus = args.dl_toda_tax[args.test_label].split(';')[1]
+	if args.test_label != 'NA':
+		test_species = args.dl_toda_tax[args.test_label].split(';')[0]
+		test_genus = args.dl_toda_tax[args.test_label].split(';')[1]
+	else:
+		test_species = 'NA'
+		test_genus = 'NA'
 
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_incorrect_shared_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in incorrect_genes.items():
-			f.write(f'{args.test_label}\t0\t{args.testing_genome}\t{test_strain}\t{" ".join(test_species)}\t{" ".join(test_genus)}\t{args.train_label}\t{args.training_genome}\t')
+			f.write(f'{args.test_label}\t{args.testing_genome}\t{test_strain}\t{" ".join(test_species)}\t{" ".join(test_genus)}\t{args.train_label}\t{args.training_genome}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{test_annot_info[k][6]}\n')
@@ -111,7 +114,7 @@ if __name__ == "__main__":
 
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_correct_unique_genes_{args.prob_threshold}.tsv'), 'w') as f:
 		for k, v in correct_genes.items():
-			f.write(f'{args.test_label}\t0\t{args.testing_genome}\t{test_strain}\t{" ".join(test_species)}\t{" ".join(test_genus)}\t{args.train_label}\t{args.training_genome}\t')
+			f.write(f'{args.test_label}\t{args.testing_genome}\t{test_strain}\t{" ".join(test_species)}\t{" ".join(test_genus)}\t{args.train_label}\t{args.training_genome}\t')
 			f.write(f'{train_strain}\t{train_species}\t{train_genus}\t{avg_pct_identity}\t{ani}\t{k}\t{v[0]}\t{v[1]}\t{v[2]}\t{v[3]}\t{v[4]}\t')
 			if test_annot_info[k][0] == 'protein_coding':
 				f.write(f'{test_annot_info[k][0]}\t{test_annot_info[k][4]}\t{test_annot_info[k][5]}\t{test_annot_info[k][6]}\n')
