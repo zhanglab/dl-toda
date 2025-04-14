@@ -33,11 +33,11 @@ if __name__ == "__main__":
 			if line.rstrip().split('\t')[0] == args.training_genome:
 				args.train_label = line.rstrip().split('\t')[1]
 	with open(os.path.join(path_dl_toda, 'data/testing_genomes.tsv'), 'r') as f:
+		args.test_label = 'NA'
 		for line in f:
 			if line.rstrip().split('\t')[0] == args.testing_genome:
 				args.test_label = line.rstrip().split('\t')[1]
-		if len(args.test_label) == 0:
-			args.test_label = 'NA'
+
 
 	# create output directories
 	args.output_dir = os.path.join(args.output_dir, args.train_label, args.testing_genome)
