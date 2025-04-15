@@ -219,6 +219,9 @@ def main():
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
+        print(outputs)
+        print(pred_labels)
+        print(pred_probs)
         # print number of attention layers
         # print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
