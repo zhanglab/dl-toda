@@ -221,6 +221,8 @@ def main():
         attentions = list(outputs[-1])
         print(pred_labels)
         print(pred_probs)
+        print(reads_id[batch])
+        break
         # print number of attention layers
         # print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
