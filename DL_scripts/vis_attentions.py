@@ -13,7 +13,7 @@ import statistics
 import matplotlib.pyplot as plt 
 from collections import defaultdict
 import random
-from pygenomeviz import GenomeViz
+# from pygenomeviz import GenomeViz
 
 
 # set seed
@@ -117,11 +117,11 @@ def main():
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--cutoff', type=float, help='cutoff for displaying attention scores', default=0.0)
-    parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
+    parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=1)
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
-    parser.add_argument('--fn_read', type=str, help='false negative read id', required=True)
-    parser.add_argument('--tp_read', type=str, help='true positive read id', required=True)
+    # parser.add_argument('--fn_read', type=str, help='false negative read id', required=True)
+    # parser.add_argument('--tp_read', type=str, help='true positive read id', required=True)
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
@@ -212,139 +212,149 @@ def main():
     data_to_plot = defaultdict(list)
     attentions_df = defaultdict(list)
 
-    # print(len(reads_id), test_steps)
-    for batch, data in enumerate(test_input.take(test_steps), 0):
-        if reads_id[batch] in [args.tp_read, args.fn_read]:
-            outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
-            # get attentions weights from the 12 attention heads in each of the 12 attention layers
-            attentions = list(outputs[-1])
-            # print number of attention layers
-            print(f'# attentions layers: {len(attentions)}')
-            # print dimensions of the output of the last attention layer
-            print(f'dimensions of last attention layer: {attentions[-1].shape}')
-            # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
-            # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
-
-            # print(reads_id[batch])
-            # print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
-            print(f'# sequences in batch: {len(data["input_ids"])}')
-            for i in range(len(data["input_ids"])):
-                label = data["labels"][i].numpy()
-                seq_ids = data["input_ids"][i].numpy()
-                print(seq_ids)
-                tokens = [vocab[i] for i in seq_ids]
-                print(tokens)
-                print(len(tokens))
-                assert '[UKN]' not in tokens
-                # reconstruct original sequence
-                dna_seq = tokens[1]
-                for j in range(2, len(tokens), 1):
-                    if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
-                        dna_seq += tokens[j][-1]
-                print(dna_seq)
-                assert dna_seq == reads_seq[reads_id[batch]]
-                
-                # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-                attentions_weights = attentions[-1][-1][i].numpy()
-                df = pd.DataFrame(attentions_weights)
-                print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
-                df.columns = tokens
-                # remove rows ['PAD'], ['CLS'] and ['SEP']
-                idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-                df = df.drop(idx_to_rm, axis='index')
-                # remove columns ['PAD'], ['CLS'] and ['SEP']
-                df = df.drop('[PAD]', axis='columns')
-                df = df.drop('[CLS]', axis='columns')
-                df = df.drop('[SEP]', axis='columns')
-                print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
-                # get list of kmers in the sequence
-                df_kmers = df.columns.tolist()
-                # rename index to kmers
-                df.index = df_kmers
-                print(df)
-                # get sum of attention weights by row --> should be equal to 1 for each row
-                # df_sum = df.sum(axis=1).tolist()
-                # get index of max value of attention weights by row
-                df_idx_max = df.idxmax(axis=1).tolist()
-                print(f'kmers with max values: {df_idx_max}')
-
-                # get max value of attention weights by row
-                df_max = df.max(axis=1).tolist()
-                print(df_max)
-                break
-                # get values in first row
-                # df_first_token = df.iloc[0].values.tolist()
-                for i in range(len(df_kmers)):
-                    print(f'row: {i}\t{df_kmers[i]}')
-                    # sort attention scores and their indexes together
-                    sorted_lists = sorted(zip(df.iloc[i].values.tolist(), list(range(len(df_kmers)))))
-                    sorted_attentions, sorted_indexes = zip(*sorted_lists)
-                    print(list(sorted_lists))
-                break                
-                attentions_df[reads_id[batch]] = df
-
-                df.to_csv(os.path.join(args.output_dir, f'{reads_id[batch]}_attention_map.csv'), index=False)
-                            
-                # sort dictionary based on values
-                dict_kmers_max = dict(zip(df_kmers, df_max))
-                print(dict_kmers_max)
-                
-                dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
-                with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
-                    for kmer, kmer_sum in dict_kmers_sum_sorted.items():
-                        f.write(f'{kmer}\t{kmer_sum}\n')
-
-                print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
-
-                df_values = df.values.flatten().tolist()
-                data_to_plot[reads_id[batch]] = df_values
-                # get kmers with high attention weights
-                # filtered_df = df[['col1', 'col3']]
-                # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
-                # print(f'cutoff value for attentions: {np.mean(df.values.tolist())}')
-                # print('filtered_df')
-                # print(filtered_df)
-                # print(df.shape)
-                # print(filtered_df.shape)
-                # plot heatmap of attention weights
-                plt.figure(figsize=(15, 15))
-                if df.shape[0] < 50:
-                    sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=heatmap_palette) 
-                else:
-                    sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=heatmap_palette) 
-                plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
-                plt.close()
-            break
-
-        
-            # if label == 0:
-            #     attention_weights_label_0.append(df.values.flatten().tolist())
-            #     # kmers_label_0 += filtered_df.columns.tolist()
-            #     confidence_scores_label_0.append(pred_probs[i])
-            #     # labels_0.append(label)
-            #     if pred_labels[i] == label:
-            #         predictions_label_0.append('c') 
-            #     else:
-            #         predictions_label_0.append('i')
-            # else:
-            #     attention_weights_label_1.append(df.values.flatten().tolist())
-            #     # kmers_label_1 += filtered_df.columns.tolist()
-            #     confidence_scores_label_1.append(pred_probs[i])
-            #     if pred_labels[i] == label:
-            #         predictions_label_1.append('c') 
-            #     else:
-            #         predictions_label_1.append('i') 
+    outfile = open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w')
     
-    # plot histograms of attention weights
-    hist_palette = sn.color_palette("husl", len(data_to_plot))
-    plt.figure(figsize=(10, 10))
-    for idx, (key, value) in enumerate(data_to_plot.items(),0):
-        sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}-{len(reads_seq[key])}')
-    plt.xlabel('Attention scores')
-    plt.ylabel('Frequency')
-    plt.legend()
-    plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
-    plt.close()
+    for batch, data in enumerate(test_input.take(test_steps), 0):
+        # if reads_id[batch] in [args.tp_read, args.fn_read]:
+        outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
+        # get attentions weights from the 12 attention heads in each of the 12 attention layers
+        attentions = list(outputs[-1])
+        # print number of attention layers
+        # print(f'# attentions layers: {len(attentions)}')
+        # print dimensions of the output of the last attention layer
+        # print(f'dimensions of last attention layer: {attentions[-1].shape}')
+        # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
+        # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
+
+        # print(reads_id[batch])
+        # print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
+        # print(f'# sequences in batch: {len(data["input_ids"])}')
+        # for i in range(len(data["input_ids"])):
+        label = data["labels"][batch].numpy()
+        seq_ids = data["input_ids"][batch].numpy()
+        # print(seq_ids)
+        tokens = [vocab[batch] for batch in seq_ids]
+        # print(tokens)
+        # print(len(tokens))
+        assert '[UKN]' not in tokens
+        # reconstruct original sequence
+        dna_seq = tokens[1]
+        for j in range(2, len(tokens), 1):
+            if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
+                dna_seq += tokens[j][-1]
+        # print(dna_seq)
+        assert dna_seq == reads_seq[reads_id[batch]]
+        
+        # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+        attentions_weights = attentions[-1][-1][batch].numpy()
+        df = pd.DataFrame(attentions_weights)
+        print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
+        df.columns = tokens
+        # remove rows ['PAD'], ['CLS'] and ['SEP']
+        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+        df = df.drop(idx_to_rm, axis='index')
+        # remove columns ['PAD'], ['CLS'] and ['SEP']
+        df = df.drop('[PAD]', axis='columns')
+        df = df.drop('[CLS]', axis='columns')
+        df = df.drop('[SEP]', axis='columns')
+        print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
+        # get list of kmers in the sequence
+        df_kmers = df.columns.tolist()
+        # rename index to kmers
+        df.index = df_kmers
+        print(df)
+        # get sum of attention weights by row --> should be equal to 1 for each row
+        # df_sum = df.sum(axis=1).tolist()
+        # get index of max value of attention weights by row
+        df_idx_max = df.idxmax(axis=1).tolist()
+        # print(f'kmers with max values: {df_idx_max}')
+        # get max value of attention weights by row
+        df_max = df.max(axis=1).tolist()
+        # print(df_max)
+        # get values in first row
+        # df_first_token = df.iloc[0].values.tolist()
+        for i in range(len(df_kmers)):
+            # sort attention scores and their indexes together
+            sorted_lists = sorted(zip(df.iloc[i].values.tolist(), list(range(len(df_kmers)))))
+            sorted_attentions, sorted_indexes = zip(*sorted_lists)
+            sorted_attentions = list(sorted_attentions)
+            sorted_indexes = list(sorted_indexes)
+            print(df_max[i], sorted_attentions[0], df_kmers[sorted_indexes[0]], df_idx_max[i])
+            max_rel_pos = 1 - ((len(df_kmers) - sorted_indexes[0])/len(df_kmers))
+            outfile.write(f'{reads_id[batch]}\t{classification_group[batch]}\t{df_kmers[i]}\t{df_kmers[sorted_indexes[0]]}\t{sorted_attentions[0]}\t{sorted_indexes[0]}\t{max_rel_pos}\t{len(df_kmers)}\n')
+        
+        # create boxplot of attention weights per token
+        tokens_per_plot = 100
+        num_plots = math.ceil(len(df_kmers)/tokens_per_plot)
+        plots = sns.FacetGrid(tips, row="smoker", col="time", margin_titles=True)
+        plots.map(sns.regplot, "size", "total_bill", color=".3", fit_reg=False, x_jitter=.1)
+
+
+        break                
+        # attentions_df[reads_id[batch]] = df
+
+        # df.to_csv(os.path.join(args.output_dir, f'{reads_id[batch]}_attention_map.csv'), index=False)
+                    
+        # # sort dictionary based on values
+        # dict_kmers_max = dict(zip(df_kmers, df_max))
+        # print(dict_kmers_max)
+        
+        # dict_kmers_sum_sorted = dict(sorted(dict_kmers_sum.items(), key=lambda item: item[1], reverse=True))
+        # with open(os.path.join(args.output_dir, f'kmers_{len(df)}_{reads_id[batch]}.tsv'), 'w') as f:
+        #     for kmer, kmer_sum in dict_kmers_sum_sorted.items():
+        #         f.write(f'{kmer}\t{kmer_sum}\n')
+
+        # print(np.mean(list(dict_kmers_sum.values())), np.median(list(dict_kmers_sum.values())), min(list(dict_kmers_sum.values())), max(list(dict_kmers_sum.values())))
+
+        # df_values = df.values.flatten().tolist()
+        # data_to_plot[reads_id[batch]] = df_values
+        # get kmers with high attention weights
+        # filtered_df = df[['col1', 'col3']]
+        # filtered_df = df.loc[:, (df >= np.mean(df.values.tolist())).any()]
+        # print(f'cutoff value for attentions: {np.mean(df.values.tolist())}')
+        # print('filtered_df')
+        # print(filtered_df)
+        # print(df.shape)
+        # print(filtered_df.shape)
+        # plot heatmap of attention weights
+        # plt.figure(figsize=(15, 15))
+        # if df.shape[0] < 50:
+        #     sn.heatmap(data=df, annot=False, xticklabels=df.columns, yticklabels=df.columns, cmap=heatmap_palette) 
+        # else:
+        #     sn.heatmap(data=df, annot=False, xticklabels=False, yticklabels=False, cmap=heatmap_palette) 
+        # plt.savefig(os.path.join(args.output_dir, f'attention_weights_heatmap_{len(df)}_{reads_id[batch]}.png'))
+        # plt.close()
+
+    
+        # if label == 0:
+        #     attention_weights_label_0.append(df.values.flatten().tolist())
+        #     # kmers_label_0 += filtered_df.columns.tolist()
+        #     confidence_scores_label_0.append(pred_probs[i])
+        #     # labels_0.append(label)
+        #     if pred_labels[i] == label:
+        #         predictions_label_0.append('c') 
+        #     else:
+        #         predictions_label_0.append('i')
+        # else:
+        #     attention_weights_label_1.append(df.values.flatten().tolist())
+        #     # kmers_label_1 += filtered_df.columns.tolist()
+        #     confidence_scores_label_1.append(pred_probs[i])
+        #     if pred_labels[i] == label:
+        #         predictions_label_1.append('c') 
+        #     else:
+        #         predictions_label_1.append('i') 
+
+    # # plot histograms of attention weights
+    # hist_palette = sn.color_palette("husl", len(data_to_plot))
+    # plt.figure(figsize=(10, 10))
+    # for idx, (key, value) in enumerate(data_to_plot.items(),0):
+    #     sn.histplot(data=value, color=hist_palette[idx], alpha=0.5, kde=True, label=f'{key}-{classification_group[key]}-{genomes_pos[key]}-{len(reads_seq[key])}')
+    # plt.xlabel('Attention scores')
+    # plt.ylabel('Frequency')
+    # plt.legend()
+    # plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
+    # plt.close()
+    outfile.close()
 
 #     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
 #     fn_genome_pos_start = min([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
