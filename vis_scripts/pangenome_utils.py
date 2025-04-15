@@ -283,7 +283,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		# report GC content of train and test genomes
 		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
 		with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
-			f.write(f'Testing genome:\t{test_genome_gc_content}')
+			f.write(f'Testing genome:\t{test_genome_gc_content}\n')
 			f.write(f'Training genome:\t{train_genome_gc_content}')
 
 	# Save figure
@@ -364,8 +364,8 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 		all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
 
 	for i in range(len(correct_reads_id)):
-		all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-incorrect-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
-		all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-incorrect-{correct_start[i]}-{correct_end[i]}'
+		all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
+		all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}'
 
 	# get contiguous correct and incorrect reads
 	cont_reads = []
@@ -454,7 +454,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				correct_pident[read_id] = align_info[4]
 
 		if len(incorrect_reads) + len(correct_reads) > 0:
-			# compare number of tp and fn positions mapped to gene
+			# compare number of correct and incorrect positions mapped to gene
 			incorrect_num_pos = sum([sequence_length[r] for r in incorrect_reads])
 			correct_num_pos = sum([sequence_length[r] for r in correct_reads])
 
@@ -536,11 +536,11 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
 		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
 		outf.write(f'# correct reads kept: {len(correct_reads_kept)}\n')
-		outf.write(f'incorrect rate all positions:\tmean:{statistics.mean(scores_list)}\tmedian:{statistics.median(scores_list)}\tmin:{min(scores_list)}\tmax:{max(scores_list)}\n')
-		outf.write(f'incorrect evalue:\tmean:{statistics.mean(sel_incorrect_evalue.values())}\tmedian:{statistics.median(sel_incorrect_evalue.values())}\tmin:{min(sel_incorrect_evalue.values())}\tmax:{max(sel_incorrect_evalue.values())}\n')
-		outf.write(f'correct evalue:\tmean:{statistics.mean(sel_correct_evalue.values())}\tmedian:{statistics.median(sel_correct_evalue.values())}\tmin:{min(sel_correct_evalue.values())}\tmax:{max(sel_correct_evalue.values())}\n')
-		outf.write(f'ubcorrect pident:\tmean:{statistics.mean(sel_incorrect_pident.values())}\tmedian:{statistics.median(sel_incorrect_pident.values())}\tmin:{min(sel_incorrect_pident.values())}\tmax:{max(sel_incorrect_pident.values())}\n')
-		outf.write(f'correct pident:\tmean:{statistics.mean(sel_correct_pident.values())}\tmedian:{statistics.median(sel_correct_pident.values())}\tmin:{min(sel_correct_pident.values())}\tmax:{max(sel_correct_pident.values())}\n')
+		outf.write(f'incorrect rate all positions:\tmean: {statistics.mean(scores_list)}\tmedian: {statistics.median(scores_list)}\tmin: {min(scores_list)}\tmax: {max(scores_list)}\n')
+		outf.write(f'incorrect evalue:\tmean: {statistics.mean(sel_incorrect_evalue.values())}\tmedian: {statistics.median(sel_incorrect_evalue.values())}\tmin: {min(sel_incorrect_evalue.values())}\tmax: {max(sel_incorrect_evalue.values())}\n')
+		outf.write(f'correct evalue:\tmean: {statistics.mean(sel_correct_evalue.values())}\tmedian: {statistics.median(sel_correct_evalue.values())}\tmin: {min(sel_correct_evalue.values())}\tmax: {max(sel_correct_evalue.values())}\n')
+		outf.write(f'incorrect pident:\tmean: {statistics.mean(sel_incorrect_pident.values())}\tmedian: {statistics.median(sel_incorrect_pident.values())}\tmin: {min(sel_incorrect_pident.values())}\tmax: {max(sel_incorrect_pident.values())}\n')
+		outf.write(f'correct pident:\tmean: {statistics.mean(sel_correct_pident.values())}\tmedian: {statistics.median(sel_correct_pident.values())}\tmin: {min(sel_correct_pident.values())}\tmax: {max(sel_correct_pident.values())}\n')
 
 	# create tsv files with FN and TP reads
 	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
@@ -692,8 +692,8 @@ def GetFNTPReads(args, test_ordered_reads_id, test_sequence_length, outfile_sum)
 	print(f'#FN for genome {args.testing_genome}: {len(fn_sequences)}')
 	print(f'#TP for genome {args.testing_genome}: {len(tp_sequences)}')
 	outfile_sum.write(f'{len(fn_sequences)}\t{len(tp_sequences)}\n')
-	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'fp')
-	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tn')
+	GetSeqLength(args, list(fn_sequences), test_sequence_length, 'fn')
+	GetSeqLength(args, list(tp_sequences), test_sequence_length, 'tp')
 	StoreCS(args, fn_cs, 'fn')
 	StoreCS(args, tp_cs, 'tp')
 
