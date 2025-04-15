@@ -222,7 +222,6 @@ def main():
         print(pred_labels)
         print(pred_probs)
         print(reads_id[batch])
-        break
         # print number of attention layers
         # print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
@@ -246,9 +245,9 @@ def main():
         for j in range(2, len(tokens), 1):
             if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                 dna_seq += tokens[j][-1]
-        # print(dna_seq)
+        print(dna_seq)
         assert dna_seq == reads_seq[reads_id[batch]]
-        
+        break
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         attentions_weights = attentions[-1][-1][batch].numpy()
         df = pd.DataFrame(attentions_weights)
