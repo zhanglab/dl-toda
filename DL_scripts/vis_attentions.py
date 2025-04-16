@@ -154,8 +154,8 @@ def main():
         os.makedirs(os.path.join(args.output_dir))
 
 
-    init_lr = args.init_lr
-    opt = tf.keras.optimizers.Adam(init_lr)
+    # init_lr = args.init_lr
+    # opt = tf.keras.optimizers.Adam(init_lr)
 
 
     # load model
@@ -174,7 +174,7 @@ def main():
     print(bert_config)
     
     # load weights from checkpoint file created with tf.train.Checkpoint() and checkpoint.save()
-    model = TFBertForSequenceClassification(config=bert_config)
+    # model = TFBertForSequenceClassification(config=bert_config)
     
 
     # update input vector size
