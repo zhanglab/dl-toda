@@ -223,8 +223,9 @@ def main():
 
     outfile = open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w')
 
-    relevant_kmers = defaultdict(list) # key = kmer, value = list of attention weights 
-    
+    kmers_attentions = defaultdict(list) # key = kmer, value = list of attention weights 
+    kmers_indexes = defaultdict(list) # key = kmer, value = list of indexes
+    kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
     for batch, data in enumerate(test_input.take(test_steps), 0):
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
@@ -279,16 +280,18 @@ def main():
         # print(df_sum)
 
         # get index of max value of attention weights by row
-        df_idx_max = df.idxmax(axis=1).tolist()
+        max_index = df.idxmax(axis=1).tolist()
         print(f'kmers with max values: {df_idx_max}')
         # get max value of attention weights by row
-        df_max = df.max(axis=1).tolist()
-        print(df_max)
+        max_attention = df.max(axis=1).tolist()
+        # get relevant kmers
+        max_kmer = [df_kmers[i] for i in max_index]
+        print(max_index[0], max_attention[0], max_kmer[0])
         for i in range(len(df)):
             row = df.iloc[i].tolist()
             max_index = row.index(max(row))
-            print(row)
-            print(df_kmers[i], df_kmers[max_index], max(row), max_index)
+            # print(row)
+            print(max_index, max(row), df_kmers[max_index])
             break
         break
 
