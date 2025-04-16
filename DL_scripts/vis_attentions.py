@@ -278,16 +278,16 @@ def main():
         # rename index to kmers
         df.index = df_kmers
         print(df)
-        # get sum of attention weights by row --> should be equal to 1 for each row
-        kmer_1_row = df.iloc[0].tolist()
-        kmer_1_col = df.iloc[:, 0].tolist()
-        print(len(kmer_1_row))
-        print(sum(kmer_1_row))
-        print(len(kmer_1_col))
-        print(sum(kmer_1_col))
-        break
-        df_sum = df.sum(axis=1).tolist()
+        # get sum of attention weights by columns --> should be equal to 1 for each column
+        # kmer_1_row = df.iloc[0].tolist()
+        # kmer_1_col = df.iloc[:, 0].tolist()
+        # print(len(kmer_1_row))
+        # print(sum(kmer_1_row))
+        # print(len(kmer_1_col))
+        # print(sum(kmer_1_col))
+        df_sum = df.sum(axis=0).tolist()
         print(df_sum)
+        break
         # get index of max value of attention weights by row
         df_idx_max = df.idxmax(axis=1).tolist()
         print(f'kmers with max values: {df_idx_max}')
