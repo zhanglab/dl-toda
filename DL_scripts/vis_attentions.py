@@ -258,8 +258,10 @@ def main():
         assert dna_seq == reads_seq[reads_id[batch]]
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-        attentions_weights = attentions.numpy()[-1][-1]
+        attentions_weights = attentions[-1][-1]
         print(attentions_weights)
+        print(type(attentions_weights))
+        print(attentions_weights.shape)
         df = pd.DataFrame(attentions_weights)
         print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
         df.columns = tokens
