@@ -264,6 +264,7 @@ def main():
         print(type(attentions_weights))
         print(attentions_weights.shape)
         df = pd.DataFrame(attentions_weights)
+        print(df)
         print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
         df.columns = tokens
         # remove rows ['PAD'], ['CLS'] and ['SEP']
