@@ -281,6 +281,8 @@ def main():
         # get sum of attention weights by row --> should be equal to 1 for each row
         kmer_1 = df.iloc[0].tolist()
         print(kmer_1)
+        print(len(kmer_1))
+        print(sum(kmer_1))
         break
         df_sum = df.sum(axis=1).tolist()
         print(df_sum)
