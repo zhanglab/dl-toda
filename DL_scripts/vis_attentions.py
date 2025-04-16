@@ -205,8 +205,10 @@ def main():
             print(reads_id[:10])
             print(reads_id[-1])
             classification_group = ['NA']*len(reads_id)
-            reads_seq = [content[i].rstrip() for i in range(1, len(content), 2)]
-            print(reads_seq[-1])
+            reads_seq = dict(zip(reads_id, [content[i].rstrip() for i in range(1, len(content), 2)]))
+            for key, value in reads_seq.items():
+                print(key, value)
+                break
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
