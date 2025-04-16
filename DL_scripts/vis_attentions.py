@@ -222,6 +222,8 @@ def main():
     attentions_df = defaultdict(list)
 
     outfile = open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w')
+
+    relevant_kmers = defaultdict(list) # key = kmer, value = list of attention weights 
     
     for batch, data in enumerate(test_input.take(test_steps), 0):
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
@@ -271,16 +273,31 @@ def main():
         # rename index to kmers
         df.index = df_kmers
         print(df)
-        # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
-        df_sum = df.sum(axis=1).tolist()
-        print(df_sum)
+        # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
+        # df_sum = df.sum(axis=1).tolist()
+        # print(df_sum)
+
         # get index of max value of attention weights by row
         df_idx_max = df.idxmax(axis=1).tolist()
         print(f'kmers with max values: {df_idx_max}')
         # get max value of attention weights by row
         df_max = df.max(axis=1).tolist()
         print(df_max)
+        for i in range(len(df)):
+            row = df.iloc[i].tolist()
+            max_index = row.index(max(row))
+            print(row)
+            print(df_kmers[i], df_kmers[max_index], max(row))
+            break
+
+        
+        
         break
+
+
+        # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
+        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
+        
         # get values in first row
         # df_first_token = df.iloc[0].values.tolist()
         # for i in range(len(df_kmers)):
