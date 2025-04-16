@@ -260,42 +260,23 @@ def main():
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         attentions_weights = attentions[-1][0][-1].numpy()
-        # print(attentions_weights)
-        print(type(attentions_weights))
-        print(attentions_weights.shape)
         df = pd.DataFrame(attentions_weights)
-        print(df)
-        print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
         df.columns = tokens
-        print(df)
         # remove rows ['PAD'], ['CLS'] and ['SEP']
         idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-        print(idx_to_rm)
         df = df.drop(idx_to_rm, axis='index')
-        print('rows removed')
-        print(df)
         # remove columns ['PAD'], ['CLS'] and ['SEP']
         df = df.drop('[PAD]', axis='columns')
         df = df.drop('[CLS]', axis='columns')
         df = df.drop('[SEP]', axis='columns')
-        print('columns removed')
-        print(df)
-        print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
         # get list of kmers in the sequence
         df_kmers = df.columns.tolist()
         # rename index to kmers
         df.index = df_kmers
         print(df)
-        # get sum of attention weights by columns --> should be equal to 1 for each column
-        # kmer_1_row = df.iloc[0].tolist()
-        # kmer_1_col = df.iloc[:, 0].tolist()
-        # print(len(kmer_1_row))
-        # print(sum(kmer_1_row))
-        # print(len(kmer_1_col))
-        # print(sum(kmer_1_col))
+        # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
         df_sum = df.sum(axis=1).tolist()
         print(df_sum)
-        break
         # get index of max value of attention weights by row
         df_idx_max = df.idxmax(axis=1).tolist()
         print(f'kmers with max values: {df_idx_max}')
@@ -315,7 +296,7 @@ def main():
         #     max_rel_pos = 1 - ((len(df_kmers) - sorted_indexes[0])/len(df_kmers))
         #     outfile.write(f'{reads_id[batch]}\t{classification_group[batch]}\t{df_kmers[i]}\t{df_kmers[sorted_indexes[0]]}\t{sorted_attentions[0]}\t{sorted_indexes[0]}\t{max_rel_pos}\t{len(df_kmers)}\n')
         
-        # # create boxplot of attention weights per token
+        # create boxplot of attention weights per token
         # tokens_per_plot = 100
         # num_plots = math.ceil(len(df_kmers)/tokens_per_plot)
         # plots = sns.FacetGrid(tips, row="smoker", col="time", margin_titles=True)
