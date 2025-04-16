@@ -243,12 +243,13 @@ def main():
         # print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
         # print(f'# sequences in batch: {len(data["input_ids"])}')
         # for i in range(len(data["input_ids"])):
-        label = data["labels"][batch].numpy()
-        seq_ids = data["input_ids"][batch].numpy()
-        # print(seq_ids)
-        tokens = [vocab[batch] for batch in seq_ids]
-        # print(tokens)
-        # print(len(tokens))
+        label = data["labels"].numpy()
+        print(label)
+        seq_ids = data["input_ids"].numpy()
+        print(seq_ids)
+        tokens = [vocab[i] for i in seq_ids]
+        print(tokens)
+        print(len(tokens))
         assert '[UKN]' not in tokens
         # reconstruct original sequence
         dna_seq = tokens[1]
