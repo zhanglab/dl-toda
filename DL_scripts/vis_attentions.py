@@ -258,6 +258,7 @@ def main():
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         attentions_weights = attentions[-1][-1].numpy()
+        print(attentions_weights)
         df = pd.DataFrame(attentions_weights)
         print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
         df.columns = tokens
