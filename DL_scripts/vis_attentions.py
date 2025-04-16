@@ -265,18 +265,21 @@ def main():
         print(attentions_weights.shape)
         df = pd.DataFrame(attentions_weights)
         print(df)
-        df_sum = df.sum(axis=1).tolist()
-        print(df_sum)
-        break
         print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
         df.columns = tokens
+        print(df)
         # remove rows ['PAD'], ['CLS'] and ['SEP']
         idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+        print(idx_to_rm)
         df = df.drop(idx_to_rm, axis='index')
+        print('rows removed')
+        print(df)
         # remove columns ['PAD'], ['CLS'] and ['SEP']
         df = df.drop('[PAD]', axis='columns')
         df = df.drop('[CLS]', axis='columns')
         df = df.drop('[SEP]', axis='columns')
+        print('columns removed')
+        print(df)
         print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
         # get list of kmers in the sequence
         df_kmers = df.columns.tolist()
