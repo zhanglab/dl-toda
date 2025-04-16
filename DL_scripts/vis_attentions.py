@@ -281,7 +281,6 @@ def main():
 
         # get index of max value of attention weights by row
         max_index = df.idxmax(axis=1).tolist()
-        print(f'kmers with max values: {df_idx_max}')
         # get max value of attention weights by row
         max_attention = df.max(axis=1).tolist()
         # get relevant kmers
