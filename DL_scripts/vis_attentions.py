@@ -243,19 +243,19 @@ def main():
         # print(f'# sequences in batch: {len(data["input_ids"])}')
         # for i in range(len(data["input_ids"])):
         label = data["labels"].numpy()[0]
-        print(label)
+        # print(label)
         seq_ids = data["input_ids"].numpy()[0]
-        print(seq_ids)
+        # print(seq_ids)
         tokens = [vocab[i] for i in seq_ids]
-        print(tokens)
-        print(len(tokens))
+        # print(tokens)
+        # print(len(tokens))
         assert '[UKN]' not in tokens
         # reconstruct original sequence
         dna_seq = tokens[1]
         for j in range(2, len(tokens), 1):
             if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                 dna_seq += tokens[j][-1]
-        print(dna_seq)
+        # print(dna_seq)
         assert dna_seq == reads_seq[reads_id[batch]]
         
         # # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
