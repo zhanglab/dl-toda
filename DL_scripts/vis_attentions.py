@@ -226,9 +226,10 @@ def main():
     for batch, data in enumerate(test_input.take(test_steps), 0):
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
+        print(outputs)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
-        attentions = list(outputs[-1])
-
+        attentions = outputs[-1]
+        print(type(attentions))
         # print number of attention layers
         print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
