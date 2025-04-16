@@ -407,8 +407,7 @@ def main():
             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
             # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
             batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-            print(batch_pred_sp, batch_prob_sp, labels)
-            break
+ 
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
