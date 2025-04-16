@@ -272,6 +272,7 @@ def main():
         df_kmers = df.columns.tolist()
         # rename index to kmers
         df.index = df_kmers
+        df.columns = list(range(len(df_kmers)))
         print(df)
         # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
         # df_sum = df.sum(axis=1).tolist()
@@ -287,7 +288,7 @@ def main():
             row = df.iloc[i].tolist()
             max_index = row.index(max(row))
             print(row)
-            print(df_kmers[i], df_kmers[max_index], max(row))
+            print(df_kmers[i], df_kmers[max_index], max(row), max_index)
             break
         break
 
