@@ -233,7 +233,7 @@ def main():
         # print number of attention layers
         print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
-        print(f'dimensions of last attention layer: {attentions[-1].shape}')
+        print(f'dimensions of last attention layer: {attentions[-1].shape}\t{len(attentions[-1])}')
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
@@ -279,10 +279,12 @@ def main():
         df.index = df_kmers
         print(df)
         # get sum of attention weights by row --> should be equal to 1 for each row
-        kmer_1 = df.iloc[0].tolist()
-        print(kmer_1)
-        print(len(kmer_1))
-        print(sum(kmer_1))
+        kmer_1_row = df.iloc[0].tolist()
+        kmer_1_col = df.iloc[:, 0].tolist()
+        print(len(kmer_1_row))
+        print(sum(kmer_1_row))
+        print(len(kmer_1_col))
+        print(sum(kmer_1_col))
         break
         df_sum = df.sum(axis=1).tolist()
         print(df_sum)
