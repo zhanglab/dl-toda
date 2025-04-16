@@ -113,7 +113,7 @@ def Normalize(x, x_min=0.0, x_max=np.inf):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
-    parser.add_argument('--tsv_file', type=str, help='path to tsv file', required=True)
+    parser.add_argument('--sequences_file', type=str, help='path to tsv or fna file', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--cutoff', type=float, help='cutoff for displaying attention scores', default=0.0)
@@ -192,14 +192,21 @@ def main():
 
     print(f'# sequences: {num_reads}\n# test steps: {test_steps}')
 
-    # get id of reads
-    with open(args.tsv_file, 'r') as f:
+    # get id of reads    
+    with open(args.sequences_file, 'r') as f:
         content = f.readlines()
-        reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
-        classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
-        genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
-        reads_seq = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[1] for line in content}
-
+        if args.sequences_file[-3:] == 'tsv':
+            reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
+            classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
+            # genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
+            reads_seq = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[1] for line in content}
+        elif args.sequences_file[-3:] == 'fna':
+            reads_id = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
+            print(reads_id[:10])
+            print(reads_id[-1])
+            classification_group = ['NA']*len(reads_id)
+            reads_seq = [content[i].rstrip() for i in range(1, len(content), 2)]
+            print(reads_seq[-1])
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
