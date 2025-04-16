@@ -233,6 +233,8 @@ def main():
         print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
         print(f'dimensions of last attention layer: {attentions[-1].shape}\t{len(attentions[-1])}')
+        print('last layer', attentions[-1][0])
+        print('last head of last layer', attentions[-1][0][-1])
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
