@@ -226,10 +226,9 @@ def main():
     for batch, data in enumerate(test_input.take(test_steps), 0):
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
-        print(outputs)
+        print(outputs.attentions)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
-        attentions = list(outputs[-1])
-        print(type(attentions))
+        attentions = list(outputs.attentions)
         # print number of attention layers
         print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
@@ -259,7 +258,7 @@ def main():
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         attentions_weights = attentions[-1][0][-1].numpy()
-        print(attentions_weights)
+        # print(attentions_weights)
         print(type(attentions_weights))
         print(attentions_weights.shape)
         df = pd.DataFrame(attentions_weights)
@@ -285,7 +284,7 @@ def main():
         # print(sum(kmer_1_row))
         # print(len(kmer_1_col))
         # print(sum(kmer_1_col))
-        df_sum = df.sum(axis=0).tolist()
+        df_sum = df.sum(axis=1).tolist()
         print(df_sum)
         break
         # get index of max value of attention weights by row
