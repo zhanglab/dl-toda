@@ -289,9 +289,6 @@ def main():
             print(row)
             print(df_kmers[i], df_kmers[max_index], max(row))
             break
-
-        
-        
         break
 
 
