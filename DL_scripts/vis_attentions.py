@@ -228,7 +228,7 @@ def main():
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         print(outputs)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
-        attentions = outputs[-1]
+        attentions = list(outputs[-1])
         print(type(attentions))
         # print number of attention layers
         print(f'# attentions layers: {len(attentions)}')
@@ -258,7 +258,7 @@ def main():
         assert dna_seq == reads_seq[reads_id[batch]]
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-        attentions_weights = attentions[-1][0][-1]
+        attentions_weights = attentions[-1][0][-1].numpy()
         print(attentions_weights)
         print(type(attentions_weights))
         print(attentions_weights.shape)
