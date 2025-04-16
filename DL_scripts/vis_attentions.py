@@ -228,13 +228,11 @@ def main():
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs[-1])
-        print(pred_labels)
-        print(pred_probs)
-        print(reads_id[batch])
+
         # print number of attention layers
-        # print(f'# attentions layers: {len(attentions)}')
+        print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
-        # print(f'dimensions of last attention layer: {attentions[-1].shape}')
+        print(f'dimensions of last attention layer: {attentions[-1].shape}')
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
@@ -258,34 +256,36 @@ def main():
         # print(dna_seq)
         assert dna_seq == reads_seq[reads_id[batch]]
         
-        # # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-        # attentions_weights = attentions[-1][-1][batch].numpy()
-        # df = pd.DataFrame(attentions_weights)
-        # print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
-        # df.columns = tokens
-        # # remove rows ['PAD'], ['CLS'] and ['SEP']
-        # idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-        # df = df.drop(idx_to_rm, axis='index')
-        # # remove columns ['PAD'], ['CLS'] and ['SEP']
-        # df = df.drop('[PAD]', axis='columns')
-        # df = df.drop('[CLS]', axis='columns')
-        # df = df.drop('[SEP]', axis='columns')
-        # print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
-        # # get list of kmers in the sequence
-        # df_kmers = df.columns.tolist()
-        # # rename index to kmers
-        # df.index = df_kmers
-        # print(df)
-        # # get sum of attention weights by row --> should be equal to 1 for each row
-        # # df_sum = df.sum(axis=1).tolist()
-        # # get index of max value of attention weights by row
-        # df_idx_max = df.idxmax(axis=1).tolist()
-        # # print(f'kmers with max values: {df_idx_max}')
-        # # get max value of attention weights by row
-        # df_max = df.max(axis=1).tolist()
-        # # print(df_max)
-        # # get values in first row
-        # # df_first_token = df.iloc[0].values.tolist()
+        # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+        attentions_weights = attentions[-1][-1].numpy()
+        df = pd.DataFrame(attentions_weights)
+        print(f'dimensions of attentions matrix before removing special tokens: {df.shape}')
+        df.columns = tokens
+        # remove rows ['PAD'], ['CLS'] and ['SEP']
+        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+        df = df.drop(idx_to_rm, axis='index')
+        # remove columns ['PAD'], ['CLS'] and ['SEP']
+        df = df.drop('[PAD]', axis='columns')
+        df = df.drop('[CLS]', axis='columns')
+        df = df.drop('[SEP]', axis='columns')
+        print(f'dimensions of attentions matrix after removing special tokens: {df.shape}')
+        # get list of kmers in the sequence
+        df_kmers = df.columns.tolist()
+        # rename index to kmers
+        df.index = df_kmers
+        print(df)
+        # get sum of attention weights by row --> should be equal to 1 for each row
+        df_sum = df.sum(axis=1).tolist()
+        print(df_sum)
+        # get index of max value of attention weights by row
+        df_idx_max = df.idxmax(axis=1).tolist()
+        print(f'kmers with max values: {df_idx_max}')
+        # get max value of attention weights by row
+        df_max = df.max(axis=1).tolist()
+        print(df_max)
+        break
+        # get values in first row
+        # df_first_token = df.iloc[0].values.tolist()
         # for i in range(len(df_kmers)):
         #     # sort attention scores and their indexes together
         #     sorted_lists = sorted(zip(df.iloc[i].values.tolist(), list(range(len(df_kmers)))))
@@ -301,9 +301,7 @@ def main():
         # num_plots = math.ceil(len(df_kmers)/tokens_per_plot)
         # plots = sns.FacetGrid(tips, row="smoker", col="time", margin_titles=True)
         # plots.map(sns.regplot, "size", "total_bill", color=".3", fit_reg=False, x_jitter=.1)
-
-        if batch == 10:
-            break                
+              
         # attentions_df[reads_id[batch]] = df
 
         # df.to_csv(os.path.join(args.output_dir, f'{reads_id[batch]}_attention_map.csv'), index=False)
