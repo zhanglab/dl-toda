@@ -226,15 +226,12 @@ def main():
     for batch, data in enumerate(test_input.take(test_steps), 0):
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
-        print(outputs.attentions)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs.attentions)
         # print number of attention layers
         print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
         print(f'dimensions of last attention layer: {attentions[-1].shape}\t{len(attentions[-1])}')
-        print('last layer', attentions[-1][0])
-        print('last head of last layer', attentions[-1][0][-1])
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
@@ -283,7 +280,7 @@ def main():
         # get max value of attention weights by row
         df_max = df.max(axis=1).tolist()
         print(df_max)
-        
+        break
         # get values in first row
         # df_first_token = df.iloc[0].values.tolist()
         # for i in range(len(df_kmers)):
