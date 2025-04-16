@@ -243,9 +243,9 @@ def main():
         # print(reads_seq[reads_id[batch]], len(reads_seq[reads_id[batch]]))
         # print(f'# sequences in batch: {len(data["input_ids"])}')
         # for i in range(len(data["input_ids"])):
-        label = data["labels"].numpy()
+        label = data["labels"].numpy()[0]
         print(label)
-        seq_ids = data["input_ids"].numpy()
+        seq_ids = data["input_ids"].numpy()[0]
         print(seq_ids)
         tokens = [vocab[i] for i in seq_ids]
         print(tokens)
