@@ -129,7 +129,7 @@ class DALIPreprocessor(object):
         return self.dalidataset
 
 
-def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
+def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder):
 
     def load_tfrecords_with_reads(proto_example):
         data_description = {
@@ -248,7 +248,6 @@ def main():
     start = datetime.datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
-    parser.add_argument('--data_type', type=str, help='type of data tested', required=True, choices=['sim', 'meta'])
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
@@ -266,11 +265,10 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
-    parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
+    parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format or in the new keras format (provide filename as well)')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the prefix)')
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
-    # parser.add_argument('--testing_epoch', type=str, help='path to file containnig testing epoch')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
@@ -337,15 +335,13 @@ def main():
             checkpoint.restore(args.ckpt).expect_partial()
 
     # define metrics
-    if args.data_type == 'sim':
-        loss = tf.losses.SparseCategoricalCrossentropy()
-        test_loss = tf.keras.metrics.Mean(name='test_loss')
-        test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
+    loss = tf.losses.SparseCategoricalCrossentropy()
+    test_loss = tf.keras.metrics.Mean(name='test_loss')
+    test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # get list of testing tfrecords, number of reads per tfrecords and reads id for metagenomic data
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
-    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv'))) if args.data_type == 'meta' else []
 
     if args.nvidia_dali:
         # get nvidia dali indexes
@@ -399,7 +395,7 @@ def main():
                     args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
             else:
                 args.datatype = 'reads'
-            test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
+            test_input = build_dataset_sim(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
         # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
@@ -408,14 +404,11 @@ def main():
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         for batch, data in enumerate(test_input.take(test_steps), 1):
-            if args.data_type == 'meta':
-                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-                batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
-            elif args.data_type == 'sim':
-                # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-                # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-                batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-
+            # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
+            # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
+            batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
+            print(batch_pred_sp, batch_prob_sp, labels)
+            break
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
@@ -449,35 +442,24 @@ def main():
             print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
 
-        if args.data_type == 'meta':
-            # get dictionary mapping read ids to labels
-            with open(os.path.join(args.tfrecords, read_ids_files[i]), 'r') as f:
-                content = f.readlines()
-                dict_read_ids = {content[j].rstrip().split('\t')[1]: '@' + content[j].rstrip().split('\t')[0] for j in range(len(content))}
-            # write results to file
-            with open(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv'), 'w') as out_f:
-                for j in range(num_reads):
-                    out_f.write(f'{dict_read_ids[str(all_labels[j])]}\t\t{all_pred_sp[j]}\t{all_prob_sp[j]}\n')
-
-        elif args.data_type == 'sim':
-            # write results to file
-            out_filename = os.path.join(args.output_dir, 'testing-results.tsv')
-            # out_filename = os.path.join(args.output_dir, f'{test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
-            with open(out_filename, 'w') as out_f:
-                for j in range(num_reads):
-                    if nvidia_dali:
-                        out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                    else:
-                        out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                    # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
-                    # if len(all_prob_sp[j]) == num_labels:
-                        # out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
-                    # else:
-                    # out_f.write(f'{all_prob_sp[j][all_pred_sp[j]]}\n')
-            # if args.save_probs:
-            #     # save predictions and labels to file
-            #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
-            #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
+        # write results to file
+        out_filename = os.path.join(args.output_dir, 'testing-results.tsv')
+        # out_filename = os.path.join(args.output_dir, f'{test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
+        with open(out_filename, 'w') as out_f:
+            for j in range(num_reads):
+                if nvidia_dali:
+                    out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                else:
+                    out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+                # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
+                # if len(all_prob_sp[j]) == num_labels:
+                    # out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
+                # else:
+                # out_f.write(f'{all_prob_sp[j][all_pred_sp[j]]}\n')
+        # if args.save_probs:
+        #     # save predictions and labels to file
+        #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
+        #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
         end_time = time.time()
         # elapsed_time = np.append(elapsed_time, end_time - start_time)
         elapsed_time.append(end_time - start_time)
@@ -489,12 +471,9 @@ def main():
 
     with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
         outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
-        if args.data_type == 'sim':
-            outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
+        outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
             outfile.write(f'{args.ckpt}')
-        # else:
-        #     outfile.write(f'model saved at last epoch')
         outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')
 
         if len(elapsed_time) > 1:
