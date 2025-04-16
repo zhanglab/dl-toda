@@ -91,9 +91,9 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 @tf.function
 def get_attentions(data, model, test_accuracy):
     outputs = model(**data, output_attentions=True)
-    logits = model(**data).logits
+    logits = outputs.logits
     probs = tf.nn.softmax(logits, axis=-1)
-    labels = data["labels"]
+    labels = data['labels']
     test_accuracy.update_state(labels, probs)
 
     # get predicted labels and confidence scores
@@ -125,8 +125,8 @@ def main():
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv or 'BERT_HUGGINGFACE' in sys.argv))
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
-    parser.add_argument('--model', type=str, help='path to directory containing keras model saved with .save()')
-    parser.add_argument('--pretrained', type=str, help='path to model saved with .save_pretrained()')
+    parser.add_argument('--model', type=str, help='path to model saved with .save_pretrained()')
+    # parser.add_argument('--pretrained', type=str, help='path to model saved with .save_pretrained()')
     args = parser.parse_args()
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -164,10 +164,10 @@ def main():
 
     bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
 
-    if args.model is not None:
-        model = tf.keras.models.load_model(args.model)
-    else:
-        model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+    # if args.model is not None:
+    #     model = tf.keras.models.load_model(args.model)
+    # else:
+    model = TFBertForSequenceClassification.from_pretrained(args.model, config=bert_config)
     
     # make output of attentions possible
     # bert_config.output_attentions=True
