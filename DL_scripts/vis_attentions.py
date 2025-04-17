@@ -305,8 +305,8 @@ def main():
                 incorrect_kmers_attention[max_kmer[i]].append(max_attention[i])
                 incorrect_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
                 incorrect_kmers_count[max_kmer[i]] += 1
-        if batch == 100:
-            break
+        # if batch == 100:
+        #     break
         # for i in range(len(df)):
         #     row = df.iloc[i].tolist()
         #     max_index = row.index(max(row))
