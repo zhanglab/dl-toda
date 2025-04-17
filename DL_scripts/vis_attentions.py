@@ -206,10 +206,12 @@ def main():
             reads_id = [line.rstrip().split('\t')[0].split('|')[2].split('-')[0] for line in content]
             classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
             # genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
-            reads_seq = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[1] for line in content}
-            for key, value in classification_group.items():
-                print(key, value)
-                break
+            reads_seq = {}
+            for line in content:
+                if len(line.rstrip().split('\t')[1]) > 510:
+                    reads_seq[line.rstrip().split('\t')[0].split('|')[2].split('-')[0]] = line.rstrip().split('\t')[1][:510]
+                else:
+                    reads_seq[line.rstrip().split('\t')[0].split('|')[2].split('-')[0]] = line.rstrip().split('\t')[1]
         elif args.sequences_file[-3:] == 'fna':
             reads_id = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
             print(reads_id[:10])
