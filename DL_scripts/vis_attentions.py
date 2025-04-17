@@ -236,15 +236,15 @@ def main():
     correct_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
     correct_kmers_count = defaultdict(int) # key = kmer, value = number of times a kmer has been attended to 
     for batch, data in enumerate(test_input.take(test_steps), 0):
-        print(reads_id[batch])
+        print(batch, reads_id[batch])
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
         attentions = list(outputs.attentions)
         # print number of attention layers
-        print(f'# attentions layers: {len(attentions)}')
+        # print(f'# attentions layers: {len(attentions)}')
         # print dimensions of the output of the last attention layer
-        print(f'dimensions of last attention layer: {attentions[-1].shape}\t{len(attentions[-1])}')
+        # print(f'dimensions of last attention layer: {attentions[-1].shape}\t{len(attentions[-1])}')
         # shape of the attentions output: (batch_size, num_attention_head, max_position_embeddings, max_position_embeddings)
         # shape of the last attention head output: (max_position_embeddings, max_position_embeddings)
 
@@ -284,7 +284,7 @@ def main():
         # rename index to kmers
         df.index = df_kmers
         df.columns = list(range(len(df_kmers)))
-        print(df)
+        # print(df)
         # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
         # df_sum = df.sum(axis=1).tolist()
         # print(df_sum)
@@ -295,7 +295,7 @@ def main():
         max_attention = df.max(axis=1).tolist()
         # get relevant kmers
         max_kmer = [df_kmers[i] for i in max_index]
-        print(max_index[0], max_attention[0], max_kmer[0], len(df))
+        # print(max_index[0], max_attention[0], max_kmer[0], len(df))
         for i in range(len(max_index)):
             if classification_group[reads_id[batch]] == 'correct':
                 correct_kmers_attention[max_kmer[i]].append(max_attention[i])
@@ -305,6 +305,8 @@ def main():
                 incorrect_kmers_attention[max_kmer[i]].append(max_attention[i])
                 incorrect_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
                 incorrect_kmers_count[max_kmer[i]] += 1
+        if batch == 100:
+            break
         # for i in range(len(df)):
         #     row = df.iloc[i].tolist()
         #     max_index = row.index(max(row))
