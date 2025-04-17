@@ -136,10 +136,17 @@ def main():
         tf.config.experimental.set_visible_devices(gpus, 'GPU')
 
     # get vocabulary
+    kmers = []
+    vocab = {}
     with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
-        content = f.readlines()
-        vocab = {i: content[i].strip() for i in range(len(content))}
+        for idx, line in enumerate(f,0):
+            vocab[idx] = line.rstrip()
+            if line.rstrip() not in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']:
+                kmers.append(line.rstrip())
+        
+    print(kmers)
     print(vocab)
+    print(len(kmers))
 
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
@@ -221,12 +228,14 @@ def main():
     data_to_plot = defaultdict(list)
     attentions_df = defaultdict(list)
 
-    outfile = open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w')
-
-    kmers_attentions = defaultdict(list) # key = kmer, value = list of attention weights 
-    kmers_indexes = defaultdict(list) # key = kmer, value = list of indexes
-    kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
+    incorrect_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
+    incorrect_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
+    incorrect_kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
+    correct_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
+    correct_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
+    correct_kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
     for batch, data in enumerate(test_input.take(test_steps), 0):
+        print(reads_id)
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
@@ -286,14 +295,20 @@ def main():
         # get relevant kmers
         max_kmer = [df_kmers[i] for i in max_index]
         print(max_index[0], max_attention[0], max_kmer[0], len(df))
-        for i in range(len(df)):
-            row = df.iloc[i].tolist()
-            max_index = row.index(max(row))
-            # print(row)
-            print(max_index, max(row), df_kmers[max_index])
-            break
-        break
-
+        for i in range(len(max_index)):
+            if classification_group[reads_id[batch]] == 'correct':
+                correct_kmers_attention[max_kmer[i]].append(max_attention[i])
+                correct_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
+                correct_kmers_count[max_kmer[i]] += 1
+            elif classification_group[reads_id[batch]] == 'incorrect':
+                incorrect_kmers_attention[max_kmer[i]].append(max_attention[i])
+                incorrect_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
+                incorrect_kmers_count[max_kmer[i]] += 1
+        # for i in range(len(df)):
+        #     row = df.iloc[i].tolist()
+        #     max_index = row.index(max(row))
+        #     print(max_index, max(row), df_kmers[max_index])
+            
 
         # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
         # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
@@ -379,7 +394,35 @@ def main():
     # plt.legend()
     # plt.savefig(os.path.join(args.output_dir, f'attention_weights_hist.png'))
     # plt.close()
-    outfile.close()
+    
+    with open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w') as f:
+        for kmer in kmers:
+            if kmer in correct_kmers_attention and kmer in correct_kmers_position:
+                attention_values = correct_kmers_attention[kmer]
+                position_values = correct_kmers_position[kmer]
+                assert len(attention_values) == len(position_values)
+                if len(attention_values) > 0:
+                    for i in range(len(attention_values)):
+                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\tcorrect\n')
+            if kmer in incorrect_kmers_attention and kmer in incorrect_kmers_position:
+                attention_values = incorrect_kmers_attention[kmer]
+                position_values = incorrect_kmers_position[kmer]
+                assert len(attention_values) == len(position_values)
+                if len(attention_values) > 0:
+                    for i in range(len(attention_values)):
+                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\tincorrect\n')
+
+    with open(os.path.join(args.output_dir, 'summary_attentions_kmers_count.tsv'), 'w') as f:
+        for kmer in kmers:
+            if kmer in correct_kmers_count:
+                f.write(f'{kmer}\t{correct_kmers_count[kmer]}\tcorrect\n')
+            else:
+                f.write(f'{kmer}\t0\tcorrect\n')
+            if kmer in incorrect_kmers_count:
+                f.write(f'{kmer}\t{incorrect_kmers_count[kmer]}\tincorrect\n')
+            else:
+                f.write(f'{kmer}\t0\tincorrect\n')
+        
 
 #     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
 #     fn_genome_pos_start = min([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
