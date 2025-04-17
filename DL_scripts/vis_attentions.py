@@ -266,7 +266,7 @@ def main():
             if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                 dna_seq += tokens[j][-1]
         # print(dna_seq)
-        assert dna_seq == reads_seq[reads_id[batch]]
+        assert dna_seq == reads_seq[reads_id[batch]], f'{dna_seq}\n{reads_seq[reads_id[batch]]}\n{tokens}\n{seq_ids}'
         
         # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         attentions_weights = attentions[-1][0][-1].numpy()
