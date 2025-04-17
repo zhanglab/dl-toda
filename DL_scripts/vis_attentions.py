@@ -207,15 +207,16 @@ def main():
             classification_group = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[0].split('-')[1] for line in content}
             # genomes_pos = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: '-'.join(line.rstrip().split('\t')[0].split('-')[2:]) for line in content}
             reads_seq = {line.rstrip().split('\t')[0].split('|')[2].split('-')[0]: line.rstrip().split('\t')[1] for line in content}
+            for key, value in classification_group.items():
+                print(key, value)
+                break
         elif args.sequences_file[-3:] == 'fna':
             reads_id = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
             print(reads_id[:10])
             print(reads_id[-1])
             classification_group = ['NA']*len(reads_id)
             reads_seq = dict(zip(reads_id, [content[i].rstrip() for i in range(1, len(content), 2)]))
-            for key, value in reads_seq.items():
-                print(key, value)
-                break
+            
 
     args.datatype = 'finetuning'
     test_input = build_dataset(args, test_file, num_labels, is_training=False, drop_remainder=False)
@@ -235,7 +236,7 @@ def main():
     correct_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
     correct_kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
     for batch, data in enumerate(test_input.take(test_steps), 0):
-        print(reads_id)
+        print(reads_id[batch])
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
         outputs, pred_labels, pred_probs = get_attentions(data, model, test_accuracy)
         # get attentions weights from the 12 attention heads in each of the 12 attention layers
