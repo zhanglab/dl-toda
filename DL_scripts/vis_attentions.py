@@ -231,10 +231,10 @@ def main():
 
     incorrect_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
     incorrect_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
-    incorrect_kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
+    incorrect_kmers_count = defaultdict(int) # key = kmer, value = number of times a kmer has been attended to 
     correct_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
     correct_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
-    correct_kmers_count = defaultdict(list) # key = kmer, value = number of times a kmer has been attended to 
+    correct_kmers_count = defaultdict(int) # key = kmer, value = number of times a kmer has been attended to 
     for batch, data in enumerate(test_input.take(test_steps), 0):
         print(reads_id[batch])
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
