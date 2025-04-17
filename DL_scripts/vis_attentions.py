@@ -285,7 +285,7 @@ def main():
         max_attention = df.max(axis=1).tolist()
         # get relevant kmers
         max_kmer = [df_kmers[i] for i in max_index]
-        print(max_index[0], max_attention[0], max_kmer[0])
+        print(max_index[0], max_attention[0], max_kmer[0], len(df))
         for i in range(len(df)):
             row = df.iloc[i].tolist()
             max_index = row.index(max(row))
