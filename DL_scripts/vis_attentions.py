@@ -241,6 +241,8 @@ def main():
     correct_kmers_vector_size = defaultdict(list) # key = kmer, value = list of vector size
     total_incorrect_kmer_count = {k: 0 for k in kmers}
     total_correct_kmer_count = {k: 0 for k in kmers}
+    num_correct_read = 0
+    num_incorrect_read = 0
     for batch, data in enumerate(test_input.take(test_steps), 0):
         print(batch, reads_id[batch])
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
@@ -290,8 +292,12 @@ def main():
             # rename index to kmers
             df.index = df_kmers
             df.columns = list(range(len(df_kmers)))
+            if classification_group[reads_id[batch]] == 'correct':
+                num_correct_read += 1
+            elif classification_group[reads_id[batch]] == 'incorrect':
+                num_incorrect_read += 1
             # print(df)
-            # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
+            # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
             # df_sum = df.sum(axis=1).tolist()
             # print(df_sum)
             # update kmer count for correct and incorrect dataset
