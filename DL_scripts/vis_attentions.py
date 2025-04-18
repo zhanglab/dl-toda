@@ -321,7 +321,7 @@ def main():
                     correct_kmers_count[df_kmers[idx]] += 1
                     correct_kmers_vector_size[df_kmers[idx]].append(len(df))
                 elif classification_group[reads_id[batch]] == 'incorrect':
-                    incorrect_kmers_attention[df_kmers[idx]].append(max_attention[i])
+                    incorrect_kmers_attention[df_kmers[idx]].append(max_attention[idx])
                     incorrect_kmers_position[df_kmers[idx]].append(round((len(df)-df_kmers[idx])/len(df), 3))
                     incorrect_kmers_count[df_kmers[idx]] += 1
                     incorrect_kmers_vector_size[df_kmers[idx]].append(len(df))
