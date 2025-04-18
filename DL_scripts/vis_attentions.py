@@ -428,7 +428,7 @@ def main():
                 if len(attention_values) > 0:
                     for i in range(len(attention_values)):
                         f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\t{vector_size_values[i]}\tcorrect\n')
-            if kmer in incorrect_kmers_attention and kmer in incorrect_kmers_position and kmer in incorrect_kmers_vector_siz:
+            if kmer in incorrect_kmers_attention and kmer in incorrect_kmers_position and kmer in incorrect_kmers_vector_size:
                 attention_values = incorrect_kmers_attention[kmer]
                 position_values = incorrect_kmers_position[kmer]
                 vector_size_values = incorrect_kmers_vector_size[kmer]
