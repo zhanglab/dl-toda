@@ -275,58 +275,58 @@ def main():
                 dna_seq += tokens[j][-1]
         # print(dna_seq)
         assert dna_seq == reads_seq[reads_id[batch]], f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[reads_id[batch]]}\n{tokens}\n{seq_ids}'
-        if len(dna_seq) > 400:
-            # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-            attentions_weights = attentions[-1][0][-1].numpy()
-            df = pd.DataFrame(attentions_weights)
-            df.columns = tokens
-            # remove rows ['PAD'], ['CLS'] and ['SEP']
-            idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-            df = df.drop(idx_to_rm, axis='index')
-            # remove columns ['PAD'], ['CLS'] and ['SEP']
-            df = df.drop('[PAD]', axis='columns')
-            df = df.drop('[CLS]', axis='columns')
-            df = df.drop('[SEP]', axis='columns')
-            # get list of kmers in the sequence
-            df_kmers = df.columns.tolist()
-            # rename index to kmers
-            df.index = df_kmers
-            df.columns = list(range(len(df_kmers)))
+        # if len(dna_seq) > 400:
+        # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+        attentions_weights = attentions[-1][0][-1].numpy()
+        df = pd.DataFrame(attentions_weights)
+        df.columns = tokens
+        # remove rows ['PAD'], ['CLS'] and ['SEP']
+        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+        df = df.drop(idx_to_rm, axis='index')
+        # remove columns ['PAD'], ['CLS'] and ['SEP']
+        df = df.drop('[PAD]', axis='columns')
+        df = df.drop('[CLS]', axis='columns')
+        df = df.drop('[SEP]', axis='columns')
+        # get list of kmers in the sequence
+        df_kmers = df.columns.tolist()
+        # rename index to kmers
+        df.index = df_kmers
+        df.columns = list(range(len(df_kmers)))
+        if classification_group[reads_id[batch]] == 'correct':
+            num_correct_read += 1
+        elif classification_group[reads_id[batch]] == 'incorrect':
+            num_incorrect_read += 1
+        # print(df)
+        # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
+        # df_sum = df.sum(axis=1).tolist()
+        # print(df_sum)
+        # update kmer count for correct and incorrect dataset
+        for k in df_kmers:
             if classification_group[reads_id[batch]] == 'correct':
-                num_correct_read += 1
+                total_correct_kmer_count[k] += 1
             elif classification_group[reads_id[batch]] == 'incorrect':
-                num_incorrect_read += 1
-            # print(df)
-            # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
-            # df_sum = df.sum(axis=1).tolist()
-            # print(df_sum)
-            # update kmer count for correct and incorrect dataset
-            for k in df_kmers:
-                if classification_group[reads_id[batch]] == 'correct':
-                    total_correct_kmer_count[k] += 1
-                elif classification_group[reads_id[batch]] == 'incorrect':
-                    total_incorrect_kmer_count[k] += 1
+                total_incorrect_kmer_count[k] += 1
 
-            # get index of max value of attention weights by row
-            max_index = list(set(df.idxmax(axis=1).tolist()))
-            # get max value of attention weights by row
-            max_attention = df.max(axis=1).tolist()
-            # get relevant kmers
-            # max_kmer = [df_kmers[i] for i in max_index]
-            # print(max_index[0], max_attention[0], max_kmer[0], len(df))
-            for idx in max_index:
-                if classification_group[reads_id[batch]] == 'correct':
-                    correct_kmers_attention[df_kmers[idx]].append(max_attention[idx])
-                    correct_kmers_position[df_kmers[idx]].append(round((len(df)-idx+1)/len(df), 3))
-                    correct_kmers_count[df_kmers[idx]] += 1
-                    correct_kmers_vector_size[df_kmers[idx]].append(len(df))
-                elif classification_group[reads_id[batch]] == 'incorrect':
-                    incorrect_kmers_attention[df_kmers[idx]].append(max_attention[idx])
-                    incorrect_kmers_position[df_kmers[idx]].append(round((len(df)-idx+1)/len(df), 3))
-                    incorrect_kmers_count[df_kmers[idx]] += 1
-                    incorrect_kmers_vector_size[df_kmers[idx]].append(len(df))
-        if batch == 100:
-            break
+        # get index of max value of attention weights by row
+        max_index = list(set(df.idxmax(axis=1).tolist()))
+        # get max value of attention weights by row
+        max_attention = df.max(axis=1).tolist()
+        # get relevant kmers
+        # max_kmer = [df_kmers[i] for i in max_index]
+        # print(max_index[0], max_attention[0], max_kmer[0], len(df))
+        for idx in max_index:
+            if classification_group[reads_id[batch]] == 'correct':
+                correct_kmers_attention[df_kmers[idx]].append(max_attention[idx])
+                correct_kmers_position[df_kmers[idx]].append(round((len(df)-idx+1)/len(df), 3))
+                correct_kmers_count[df_kmers[idx]] += 1
+                correct_kmers_vector_size[df_kmers[idx]].append(len(df))
+            elif classification_group[reads_id[batch]] == 'incorrect':
+                incorrect_kmers_attention[df_kmers[idx]].append(max_attention[idx])
+                incorrect_kmers_position[df_kmers[idx]].append(round((len(df)-idx+1)/len(df), 3))
+                incorrect_kmers_count[df_kmers[idx]] += 1
+                incorrect_kmers_vector_size[df_kmers[idx]].append(len(df))
+        # if batch == 100:
+        #     break
             # for i in range(len(df)):
             #     row = df.iloc[i].tolist()
             #     max_index = row.index(max(row))
