@@ -234,9 +234,13 @@ def main():
     incorrect_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
     incorrect_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
     incorrect_kmers_count = defaultdict(int) # key = kmer, value = number of times a kmer has been attended to 
+    incorrect_kmers_vector_size = defaultdict(list) # key = kmer, value = list of vector size
     correct_kmers_attention = defaultdict(list) # key = kmer, value = list of attention weights 
     correct_kmers_position = defaultdict(list) # key = kmer, value = position of kmer relative to the vector size
     correct_kmers_count = defaultdict(int) # key = kmer, value = number of times a kmer has been attended to 
+    correct_kmers_vector_size = defaultdict(list) # key = kmer, value = list of vector size
+    total_incorrect_kmer_count = {k: 0 for k in kmers}
+    total_correct_kmer_count = {k: 0 for k in kmers}
     for batch, data in enumerate(test_input.take(test_steps), 0):
         print(batch, reads_id[batch])
         # if reads_id[batch] in [args.tp_read, args.fn_read]:
@@ -269,50 +273,58 @@ def main():
                 dna_seq += tokens[j][-1]
         # print(dna_seq)
         assert dna_seq == reads_seq[reads_id[batch]], f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[reads_id[batch]]}\n{tokens}\n{seq_ids}'
-        
-        # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-        attentions_weights = attentions[-1][0][-1].numpy()
-        df = pd.DataFrame(attentions_weights)
-        df.columns = tokens
-        # remove rows ['PAD'], ['CLS'] and ['SEP']
-        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-        df = df.drop(idx_to_rm, axis='index')
-        # remove columns ['PAD'], ['CLS'] and ['SEP']
-        df = df.drop('[PAD]', axis='columns')
-        df = df.drop('[CLS]', axis='columns')
-        df = df.drop('[SEP]', axis='columns')
-        # get list of kmers in the sequence
-        df_kmers = df.columns.tolist()
-        # rename index to kmers
-        df.index = df_kmers
-        df.columns = list(range(len(df_kmers)))
-        # print(df)
-        # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
-        # df_sum = df.sum(axis=1).tolist()
-        # print(df_sum)
+        if len(dna_seq) > 400:
+            # get attention weights of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+            attentions_weights = attentions[-1][0][-1].numpy()
+            df = pd.DataFrame(attentions_weights)
+            df.columns = tokens
+            # remove rows ['PAD'], ['CLS'] and ['SEP']
+            idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+            df = df.drop(idx_to_rm, axis='index')
+            # remove columns ['PAD'], ['CLS'] and ['SEP']
+            df = df.drop('[PAD]', axis='columns')
+            df = df.drop('[CLS]', axis='columns')
+            df = df.drop('[SEP]', axis='columns')
+            # get list of kmers in the sequence
+            df_kmers = df.columns.tolist()
+            # rename index to kmers
+            df.index = df_kmers
+            df.columns = list(range(len(df_kmers)))
+            # print(df)
+            # # get sum of attention weights by rows --> should be equal to 1 for each row (before removing special tokens)
+            # df_sum = df.sum(axis=1).tolist()
+            # print(df_sum)
+            # update kmer count for correct and incorrect dataset
+            for k in df_kmers:
+                if classification_group[reads_id[batch]] == 'correct':
+                    total_correct_kmer_count[k] += 1
+                elif classification_group[reads_id[batch]] == 'incorrect':
+                    total_incorrect_kmer_count[k] += 1
 
-        # get index of max value of attention weights by row
-        max_index = df.idxmax(axis=1).tolist()
-        # get max value of attention weights by row
-        max_attention = df.max(axis=1).tolist()
-        # get relevant kmers
-        max_kmer = [df_kmers[i] for i in max_index]
-        # print(max_index[0], max_attention[0], max_kmer[0], len(df))
-        for i in range(len(max_index)):
-            if classification_group[reads_id[batch]] == 'correct':
-                correct_kmers_attention[max_kmer[i]].append(max_attention[i])
-                correct_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
-                correct_kmers_count[max_kmer[i]] += 1
-            elif classification_group[reads_id[batch]] == 'incorrect':
-                incorrect_kmers_attention[max_kmer[i]].append(max_attention[i])
-                incorrect_kmers_position[max_kmer[i]].append(round((len(df)-max_index[i])/len(df), 3))
-                incorrect_kmers_count[max_kmer[i]] += 1
-        # if batch == 100:
-        #     break
-        # for i in range(len(df)):
-        #     row = df.iloc[i].tolist()
-        #     max_index = row.index(max(row))
-        #     print(max_index, max(row), df_kmers[max_index])
+            # get index of max value of attention weights by row
+            max_index = list(set(df.idxmax(axis=1).tolist()))
+            # get max value of attention weights by row
+            max_attention = df.max(axis=1).tolist()
+            # get relevant kmers
+            # max_kmer = [df_kmers[i] for i in max_index]
+            # print(max_index[0], max_attention[0], max_kmer[0], len(df))
+            for idx in max_index:
+                if classification_group[reads_id[batch]] == 'correct':
+                    correct_kmers_attention[df_kmers[idx]].append(max_attention[idx])
+                    correct_kmers_position[df_kmers[idx]].append(round((len(df)-df_kmers[idx])/len(df), 3))
+                    correct_kmers_count[df_kmers[idx]] += 1
+                    correct_kmers_vector_size[df_kmers[idx]].append(len(df))
+                elif classification_group[reads_id[batch]] == 'incorrect':
+                    incorrect_kmers_attention[df_kmers[idx]].append(max_attention[i])
+                    incorrect_kmers_position[df_kmers[idx]].append(round((len(df)-df_kmers[idx])/len(df), 3))
+                    incorrect_kmers_count[df_kmers[idx]] += 1
+                    incorrect_kmers_vector_size[df_kmers[idx]].append(len(df))
+        if batch == 100:
+            break
+            # for i in range(len(df)):
+            #     row = df.iloc[i].tolist()
+            #     max_index = row.index(max(row))
+            #     print(max_index, max(row), df_kmers[max_index])
             
 
         # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
@@ -402,31 +414,33 @@ def main():
     
     with open(os.path.join(args.output_dir, 'summary_attentions.tsv'), 'w') as f:
         for kmer in kmers:
-            if kmer in correct_kmers_attention and kmer in correct_kmers_position:
+            if kmer in correct_kmers_attention and kmer in correct_kmers_position and kmer in correct_kmers_vector_size:
                 attention_values = correct_kmers_attention[kmer]
                 position_values = correct_kmers_position[kmer]
-                assert len(attention_values) == len(position_values)
+                vector_size_values = correct_kmers_vector_size[kmer]
+                assert len(attention_values) == len(position_values) == len(vector_size_values)
                 if len(attention_values) > 0:
                     for i in range(len(attention_values)):
-                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\tcorrect\n')
-            if kmer in incorrect_kmers_attention and kmer in incorrect_kmers_position:
+                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\t{vector_size_values[i]}\tcorrect\n')
+            if kmer in incorrect_kmers_attention and kmer in incorrect_kmers_position and kmer in incorrect_kmers_vector_siz:
                 attention_values = incorrect_kmers_attention[kmer]
                 position_values = incorrect_kmers_position[kmer]
-                assert len(attention_values) == len(position_values)
+                vector_size_values = incorrect_kmers_vector_size[kmer]
+                assert len(attention_values) == len(position_values) == len(vector_size_values)
                 if len(attention_values) > 0:
                     for i in range(len(attention_values)):
-                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\tincorrect\n')
+                        f.write(f'{kmer}\t{attention_values[i]}\t{position_values[i]}\t{vector_size_values[i]}\tincorrect\n')
 
     with open(os.path.join(args.output_dir, 'summary_attentions_kmers_count.tsv'), 'w') as f:
         for kmer in kmers:
             if kmer in correct_kmers_count:
-                f.write(f'{kmer}\t{correct_kmers_count[kmer]}\tcorrect\n')
+                f.write(f'{kmer}\t{correct_kmers_count[kmer]}\t{total_correct_kmer_count[kmer]}\tcorrect\n')
             else:
-                f.write(f'{kmer}\t0\tcorrect\n')
+                f.write(f'{kmer}\t0\t{total_correct_kmer_count[kmer]}\tcorrect\n')
             if kmer in incorrect_kmers_count:
-                f.write(f'{kmer}\t{incorrect_kmers_count[kmer]}\tincorrect\n')
+                f.write(f'{kmer}\t{incorrect_kmers_count[kmer]}\t{total_incorrect_kmer_count[kmer]}\tincorrect\n')
             else:
-                f.write(f'{kmer}\t0\tincorrect\n')
+                f.write(f'{kmer}\t0\t{total_incorrect_kmer_count[kmer]}\tincorrect\n')
         
 
 #     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
