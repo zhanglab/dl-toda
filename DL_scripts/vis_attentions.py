@@ -447,7 +447,7 @@ def main():
                 f.write(f'{kmer}\t{incorrect_kmers_count[kmer]}\t{total_incorrect_kmer_count[kmer]}\tincorrect\n')
             else:
                 f.write(f'{kmer}\t0\t{total_incorrect_kmer_count[kmer]}\tincorrect\n')
-        
+    print(f'# correct reads\t{num_correct_read}\n# incorrect reads\t{num_incorrect_read}')
 
 #     # get kmers inside matching and non matching regions between the FN read and the TP read(s)
 #     fn_genome_pos_start = min([int(genomes_pos[args.fn_read].split('-')[0]), int(genomes_pos[args.fn_read].split('-')[1])])
