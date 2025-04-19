@@ -394,13 +394,16 @@ def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 		(read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos) or \
 		(read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
 		if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos):
-			length_mapped_seq = 100
+			length_mapped_seq = read_end_pos - read_start_pos
 		elif (read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos):
-			length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
+			# length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
+			length_mapped_seq = read_end_pos - gene_start_pos
 		elif (read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos):
-			length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+			# length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+			length_mapped_seq = read_end_pos - read_start_pos
 		elif (read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
-			length_mapped_seq = (gene_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
+			length_mapped_seq = gene_end_pos - read_start_pos
+			# length_mapped_seq = (gene_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
 	return length_mapped_seq
 
 
@@ -427,6 +430,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		correct_pident = dict()
 		incorrect_evalue = dict()
 		incorrect_pident = dict()
+		correct_mapped_length = dict()
+		incorrect_mapped_length = dict()
 		for read_id, align_info in incorrect_alignments.items():
 			if align_info[1] < align_info[2]:
 				read_start_pos = align_info[1]
@@ -439,6 +444,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				incorrect_reads.append(read_id)
 				incorrect_evalue[read_id] = align_info[3]
 				incorrect_pident[read_id] = align_info[4]
+				incorrect_mapped_length[read_id] = length_mapped_seq
 
 		for read_id, align_info in correct_alignments.items():
 			if align_info[1] < align_info[2]:
@@ -452,15 +458,20 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				correct_reads.append(read_id)
 				correct_evalue[read_id] = align_info[3]
 				correct_pident[read_id] = align_info[4]
+				correct_mapped_length[read_id] = length_mapped_seq
 
 		if len(incorrect_reads) + len(correct_reads) > 0:
 			# compare number of correct and incorrect positions mapped to gene
-			incorrect_num_pos = sum([sequence_length[r] for r in incorrect_reads])
-			correct_num_pos = sum([sequence_length[r] for r in correct_reads])
-
+			incorrect_num_pos = sum([incorrect_mapped_length[r] for r in incorrect_reads])
+			correct_num_pos = sum([correct_mapped_length[r] for r in correct_reads])
+			# incorrect_num_pos = sum([sequence_length[r] for r in incorrect_reads])
+			# correct_num_pos = sum([sequence_length[r] for r in correct_reads])
 
 			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
 			ratio_correct = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
+			print(f'{gene_id}\n{incorrect_num_pos}\n{correct_num_pos}\n{ratio_incorrect}\n{ratio_correct}\n'
+				f'{len(correct_mapped_length)}\n{len(incorrect_mapped_length)}')
+			break
 			if ratio_incorrect > 0.5:
 				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
