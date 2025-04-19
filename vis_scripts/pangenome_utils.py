@@ -203,7 +203,6 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 				else:
 					pident_pos.append(0)
 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-			print(gene_start, gene_end, avg_pident)
 			f.write(f'{gene_id}\t{avg_pident}\tcorrect\n')
 
 		for gene_id, gene_info in incorrect_genes.items():
@@ -216,7 +215,6 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 				else:
 					pident_pos.append(0)
 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-			print(gene_start, gene_end, avg_pident)
 			f.write(f'{gene_id}\t{avg_pident}\tincorrect\n')
 
 
