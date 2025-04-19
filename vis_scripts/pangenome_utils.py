@@ -394,6 +394,8 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 	all_reads_id = {}
 	for i in range(len(incorrect_reads_id)):
 		if incorrect_reads_id[i] in incorrect_reads_kept:
+			print(incorrect_reads_id[i])
+			print(incorrect_reads_kept[incorrect_reads_id[i]])
 			all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
 			all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}'
 
