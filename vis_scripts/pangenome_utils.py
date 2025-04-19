@@ -351,7 +351,7 @@ def ParseAlignments(alignments):
 
 
 
-def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read):
+def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorrect_reads_kept, correct_reads_kept, test_readid_to_read):
 	
 	incorrect_reads_id, incorrect_start, incorrect_end, incorrect_strand = ParseAlignments(incorrect_alignments)
 	correct_reads_id, correct_start, correct_end, correct_strand = ParseAlignments(correct_alignments)
@@ -360,31 +360,35 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_r
 	all_reads = []
 	all_reads_id = {}
 	for i in range(len(incorrect_reads_id)):
-		all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
-		all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+		if incorrect_reads_id[i] in incorrect_reads_kept:
+			all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+			all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
 
 	for i in range(len(correct_reads_id)):
-		all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
-		all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}'
+		if correct_reads_id[i] in correct_reads_kept:
+			all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
+			all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}'
 
 	# get contiguous correct and incorrect reads
 	cont_reads = []
 	cont_reads_id = {}
 	for i in range(len(incorrect_reads_id)):
-		for j in range(len(correct_reads_id)):
-			if (correct_start[j] < incorrect_end[i] and correct_end[j] > incorrect_start[i]) or \
-				(incorrect_start[i] < correct_end[j] and incorrect_end[i] > correct_start[j]) or \
-				(correct_start[j] < incorrect_start[i] and correct_end[j] > incorrect_end[i]) or \
-				(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
-				if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
-					if abs(len(test_readid_to_read[incorrect_reads_id[i]])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
-						cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
-							incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
-						cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
-						cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+		if incorrect_reads_id[i] in incorrect_reads_kept:
+			for j in range(len(correct_reads_id)):
+				if correct_reads_id[j] in correct_reads_kept:
+					if (correct_start[j] < incorrect_end[i] and correct_end[j] > incorrect_start[i]) or \
+						(incorrect_start[i] < correct_end[j] and incorrect_end[i] > correct_start[j]) or \
+						(correct_start[j] < incorrect_start[i] and correct_end[j] > incorrect_end[i]) or \
+						(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
+						if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
+							if abs(len(test_readid_to_read[incorrect_reads_id[i]])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
+								cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
+									incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+								cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
+								cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
 
-	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
-	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id, test_readid_to_read)
+	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
+	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id, test_readid_to_read)
 
 def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 	# check if read_id maps to gene
@@ -422,6 +426,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	scores = {i:0 for i in range(genome_size)}
 
 	outf = open(os.path.join(args.output_dir, 'gene_selection_summary.tsv'), 'w')
+	outf.write(f'gene_id\tincorrect_positions\tcorrect_positions\tratio_incorrect\tratio_correct\t'
+				f'correct sequences\tincorrect_sequences\n')
 	for gene_id, data in annot_info.items():
 		gene_start_pos = data[1]
 		gene_end_pos = data[2]
@@ -470,8 +476,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 
 			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
 			ratio_correct = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
-			outf.write(f'gene id\t{gene_id}\n# incorrect positions\t{incorrect_num_pos}\n# correct positions\t{correct_num_pos}\nratio incorrect\t{ratio_incorrect}\nratio correct\t{ratio_correct}\n'
-				f'# correct sequences\t{len(correct_mapped_length)}\n# incorrect sequences\t{len(incorrect_mapped_length)}')
+			outf.write(f'{gene_id}\t{incorrect_num_pos}\t{correct_num_pos}\t{ratio_incorrect}\t{ratio_correct}\t'
+				f'\t{len(correct_mapped_length)}\t{len(incorrect_mapped_length)}\n')
 			if ratio_incorrect > 0.5:
 				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
@@ -557,7 +563,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	CreateTsvFile(set(incorrect_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
 	CreateTsvFile(set(correct_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
-	return scores_list, incorrect_genes, correct_genes
+	return scores_list, incorrect_genes, correct_genes, set(incorrect_reads_kept), set(correct_reads_kept)
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
