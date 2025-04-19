@@ -92,6 +92,7 @@ def GetGCContent(sequence):
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	align_coords = []
+	query_pident = []
 	with open(input_file, 'r') as f:
 		for count, line in enumerate(f, 1):
 			sstart = int(line.rstrip().split(',')[2])
@@ -101,11 +102,13 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 			pident = float(line.rstrip().split(',')[8])
 			qseq = line.rstrip().split(',')[9]
 			sseq = line.rstrip().split(',')[10]
+			for i in range(qstart, qend+1, 1):
+				query_pident.append(pident)
 
 			if pident >= identity_thr:
 				align_coords.append([qstart, qend, pident])
 
-	return align_coords
+	return align_coords, query_pident
 
 
 def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
@@ -151,7 +154,7 @@ def GetGenomesInfo(fasta):
 
 
 def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			incorrect_alignments, correct_alignments, outfigpath):
+			incorrect_alignments, correct_alignments, incorrect_genes, correct_genes, outfigpath):
 
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -186,7 +189,25 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	percent_identity = []
 	# run blast 		
 	RunBlast(args, os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-	align_coords = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	
+	# get average percentage identity per gene
+	with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
+		for gene_id, gene_info in correct_genes.items():
+			gene_start = gene_info[5]
+			gene_end = gene_info[6]
+			pident_pos = [query_pident[i] for i in range(gene_start, gene_end+1, 1)]
+			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+			f.write(f'{gene_id}\t{avg_pident}\tcorrect\n')
+
+		for gene_id, gene_info in incorrect_genes.items():
+			gene_start = gene_info[5]
+			gene_end = gene_info[6]
+			pident_pos = [query_pident[i] for i in range(gene_start, gene_end+1, 1)]
+			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+			f.write(f'{gene_id}\t{avg_pident}\tincorrect\n')
+
+
 	# count the number of identical positions across the aligned regions
 	identical_positions = 0
 	for sector in circos.sectors:
@@ -400,14 +421,11 @@ def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 		if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos):
 			length_mapped_seq = read_end_pos - read_start_pos
 		elif (read_start_pos <= gene_start_pos and read_end_pos >= gene_start_pos):
-			# length_mapped_seq = (read_end_pos - gene_start_pos)/(gene_end_pos - gene_start_pos)*100
 			length_mapped_seq = read_end_pos - gene_start_pos
 		elif (read_start_pos >= gene_start_pos and read_end_pos <= gene_end_pos):
-			# length_mapped_seq = (read_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
 			length_mapped_seq = read_end_pos - read_start_pos
 		elif (read_start_pos <= gene_end_pos and read_end_pos >= gene_end_pos):
 			length_mapped_seq = gene_end_pos - read_start_pos
-			# length_mapped_seq = (gene_end_pos - read_start_pos)/(gene_end_pos - gene_start_pos)*100
 	return length_mapped_seq
 
 
