@@ -449,8 +449,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	incorrect_genes = defaultdict(list)
 	correct_functions = defaultdict(int)
 	incorrect_functions = defaultdict(int)
-	correct_reads_kept = {}
-	incorrect_reads_kept = {}
+	correct_reads_kept = dict()
+	incorrect_reads_kept = dict()
 	# sel_correct_evalue = dict()
 	# sel_correct_pident = dict()
 	# sel_incorrect_evalue = dict()
@@ -601,7 +601,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
 	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
-	return scores_list, incorrect_genes, correct_genes, set(incorrect_reads_kept), set(correct_reads_kept)
+	return scores_list, incorrect_genes, correct_genes, incorrect_reads_kept, correct_reads_kept
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
