@@ -394,8 +394,6 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 	all_reads_id = {}
 	for i in range(len(incorrect_reads_id)):
 		if incorrect_reads_id[i] in incorrect_reads_kept:
-			print(incorrect_reads_id[i])
-			print(incorrect_reads_kept[incorrect_reads_id[i]])
 			all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
 			all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}'
 
@@ -417,9 +415,9 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 						(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
 						if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
 							if abs(len(test_readid_to_read[incorrect_reads_id[i]])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
-								cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[i]]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
+								cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[j]]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
 									incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
-								cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[i]]}'
+								cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[j]]}'
 								cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}'
 
 	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
