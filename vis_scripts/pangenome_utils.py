@@ -415,21 +415,22 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	incorrect_functions = defaultdict(int)
 	correct_reads_kept = [] 
 	incorrect_reads_kept = []
-	sel_correct_evalue = dict()
-	sel_correct_pident = dict()
-	sel_incorrect_evalue = dict()
-	sel_incorrect_pident = dict()
+	# sel_correct_evalue = dict()
+	# sel_correct_pident = dict()
+	# sel_incorrect_evalue = dict()
+	# sel_incorrect_pident = dict()
 	scores = {i:0 for i in range(genome_size)}
 
+	outf = open(os.path.join(args.output_dir, 'gene_selection_summary.tsv'), 'w')
 	for gene_id, data in annot_info.items():
 		gene_start_pos = data[1]
 		gene_end_pos = data[2]
 		correct_reads = []
 		incorrect_reads = []
-		correct_evalue = dict()
-		correct_pident = dict()
-		incorrect_evalue = dict()
-		incorrect_pident = dict()
+		# correct_evalue = dict()
+		# correct_pident = dict()
+		# incorrect_evalue = dict()
+		# incorrect_pident = dict()
 		correct_mapped_length = dict()
 		incorrect_mapped_length = dict()
 		for read_id, align_info in incorrect_alignments.items():
@@ -442,8 +443,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				incorrect_reads.append(read_id)
-				incorrect_evalue[read_id] = align_info[3]
-				incorrect_pident[read_id] = align_info[4]
+				# incorrect_evalue[read_id] = align_info[3]
+				# incorrect_pident[read_id] = align_info[4]
 				incorrect_mapped_length[read_id] = length_mapped_seq
 
 		for read_id, align_info in correct_alignments.items():
@@ -456,8 +457,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				correct_reads.append(read_id)
-				correct_evalue[read_id] = align_info[3]
-				correct_pident[read_id] = align_info[4]
+				# correct_evalue[read_id] = align_info[3]
+				# correct_pident[read_id] = align_info[4]
 				correct_mapped_length[read_id] = length_mapped_seq
 
 		if len(incorrect_reads) + len(correct_reads) > 0:
@@ -469,24 +470,23 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 
 			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
 			ratio_correct = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
-			print(f'{gene_id}\n{incorrect_num_pos}\n{correct_num_pos}\n{ratio_incorrect}\n{ratio_correct}\n'
-				f'{len(correct_mapped_length)}\n{len(incorrect_mapped_length)}')
-			break
+			outf.write(f'gene id\t{gene_id}\n# incorrect positions\t{incorrect_num_pos}\n# correct positions\t{correct_num_pos}\nratio incorrect\t{ratio_incorrect}\nratio correct\t{ratio_correct}\n'
+				f'# correct sequences\t{len(correct_mapped_length)}\n# incorrect sequences\t{len(incorrect_mapped_length)}')
 			if ratio_incorrect > 0.5:
 				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
 				for i in range(gene_start_pos, gene_end_pos+1, 1):
 					scores[i-1] = ratio_incorrect
 				incorrect_reads_kept += incorrect_reads
-				sel_incorrect_evalue.update(incorrect_evalue)
-				sel_incorrect_pident.update(incorrect_pident)
+				# sel_incorrect_evalue.update(incorrect_evalue)
+				# sel_incorrect_pident.update(incorrect_pident)
 				if data[0] == 'protein_coding':
 					incorrect_functions[data[5]] += 1
 
 			elif ratio_correct > 0.5:
 				correct_genes[gene_id] = [ratio_correct, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
 				correct_reads_kept += list(correct_reads)
-				sel_correct_evalue.update(correct_evalue)
-				sel_correct_pident.update(correct_pident)
+				# sel_correct_evalue.update(correct_evalue)
+				# sel_correct_pident.update(correct_pident)
 				if data[0] == 'protein_coding':
 					correct_functions[data[5]] += 1
 
@@ -500,19 +500,19 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		for k, v in correct_functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
-	sel_incorrect_cs = [str(incorrect_cs[r]) for r in incorrect_reads_kept]
+	sel_incorrect_cs = [str(incorrect_cs[r]) for r in list(set(incorrect_reads_kept))]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_incorrect_cs))
 	
-	sel_correct_cs = [str(correct_cs[r]) for r in correct_reads_kept]
+	sel_correct_cs = [str(correct_cs[r]) for r in list(set(correct_reads_kept))]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_correct_cs))
 
-	sel_incorrect_length = [str(sequence_length[r]) for r in incorrect_reads_kept]
+	sel_incorrect_length = [str(sequence_length[r]) for r in list(set(incorrect_reads_kept))]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_incorrect_length))
 
-	sel_correct_length = [str(sequence_length[r]) for r in correct_reads_kept]
+	sel_correct_length = [str(sequence_length[r]) for r in list(set(correct_reads_kept))]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_correct_length))
 
@@ -538,24 +538,24 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	scores_list = [scores[i] for i in range(genome_size)]
 	print(f'incorrect_alignments: {len(incorrect_alignments)}')
 	print(f'correct_alignments: {len(correct_alignments)}')
-	print(f'correct_reads_kept: {len(correct_reads_kept)}')
-	print(f'incorrect_reads_kept: {len(incorrect_reads_kept)}')
-	print(f'sel_correct_evalue: {len(sel_correct_evalue)}')
-	print(f'sel_incorrect_evalue: {len(sel_incorrect_evalue)}')
-	print(f'sel_correct_pident: {len(sel_correct_pident)}')
-	print(f'sel_incorrect_pident: {len(sel_incorrect_pident)}')
+	print(f'correct_reads_kept: {len(set(correct_reads_kept))}')
+	print(f'incorrect_reads_kept: {len(set(incorrect_reads_kept))}')
+	# print(f'sel_correct_evalue: {len(sel_correct_evalue)}')
+	# print(f'sel_incorrect_evalue: {len(sel_incorrect_evalue)}')
+	# print(f'sel_correct_pident: {len(sel_correct_pident)}')
+	# print(f'sel_incorrect_pident: {len(sel_incorrect_pident)}')
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
-		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
-		outf.write(f'# correct reads kept: {len(correct_reads_kept)}\n')
+		outf.write(f'# incorrect reads kept: {len(set(incorrect_reads_kept))}\n')
+		outf.write(f'# correct reads kept: {len(set(correct_reads_kept))}\n')
 		outf.write(f'incorrect rate all positions:\tmean: {statistics.mean(scores_list)}\tmedian: {statistics.median(scores_list)}\tmin: {min(scores_list)}\tmax: {max(scores_list)}\n')
-		outf.write(f'incorrect evalue:\tmean: {statistics.mean(sel_incorrect_evalue.values())}\tmedian: {statistics.median(sel_incorrect_evalue.values())}\tmin: {min(sel_incorrect_evalue.values())}\tmax: {max(sel_incorrect_evalue.values())}\n')
-		outf.write(f'correct evalue:\tmean: {statistics.mean(sel_correct_evalue.values())}\tmedian: {statistics.median(sel_correct_evalue.values())}\tmin: {min(sel_correct_evalue.values())}\tmax: {max(sel_correct_evalue.values())}\n')
-		outf.write(f'incorrect pident:\tmean: {statistics.mean(sel_incorrect_pident.values())}\tmedian: {statistics.median(sel_incorrect_pident.values())}\tmin: {min(sel_incorrect_pident.values())}\tmax: {max(sel_incorrect_pident.values())}\n')
-		outf.write(f'correct pident:\tmean: {statistics.mean(sel_correct_pident.values())}\tmedian: {statistics.median(sel_correct_pident.values())}\tmin: {min(sel_correct_pident.values())}\tmax: {max(sel_correct_pident.values())}\n')
+		# outf.write(f'incorrect evalue:\tmean: {statistics.mean(sel_incorrect_evalue.values())}\tmedian: {statistics.median(sel_incorrect_evalue.values())}\tmin: {min(sel_incorrect_evalue.values())}\tmax: {max(sel_incorrect_evalue.values())}\n')
+		# outf.write(f'correct evalue:\tmean: {statistics.mean(sel_correct_evalue.values())}\tmedian: {statistics.median(sel_correct_evalue.values())}\tmin: {min(sel_correct_evalue.values())}\tmax: {max(sel_correct_evalue.values())}\n')
+		# outf.write(f'incorrect pident:\tmean: {statistics.mean(sel_incorrect_pident.values())}\tmedian: {statistics.median(sel_incorrect_pident.values())}\tmin: {min(sel_incorrect_pident.values())}\tmax: {max(sel_incorrect_pident.values())}\n')
+		# outf.write(f'correct pident:\tmean: {statistics.mean(sel_correct_pident.values())}\tmedian: {statistics.median(sel_correct_pident.values())}\tmin: {min(sel_correct_pident.values())}\tmax: {max(sel_correct_pident.values())}\n')
 
 	# create tsv files with FN and TP reads
-	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
-	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
+	CreateTsvFile(set(incorrect_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
+	CreateTsvFile(set(correct_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
 	return scores_list, incorrect_genes, correct_genes
 
