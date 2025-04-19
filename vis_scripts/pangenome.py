@@ -87,9 +87,9 @@ if __name__ == "__main__":
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
 	# get genes and functions associated with incorrect and correct predictions
-	scores, incorrect_genes, correct_genes = GetGenes(args, test_annot_info, incorrect_alignments, correct_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), incorrect_cs, correct_cs)
+	scores, incorrect_genes, correct_genes, incorrect_reads_kept, correct_reads_kept = GetGenes(args, test_annot_info, incorrect_alignments, correct_alignments, test_sequence_length, test_readid_to_read, len(testing_records[0].seq), incorrect_cs, correct_cs)
 
-	GetReadsForAttentions(args, correct_alignments, incorrect_alignments, test_readid_to_read)
+	GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorrect_reads_kept, correct_reads_kept, test_readid_to_read)
 
 	avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, args.testing_fasta, args.training_fasta, incorrect_alignments, correct_alignments, \
 			 os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_circos.png'))
