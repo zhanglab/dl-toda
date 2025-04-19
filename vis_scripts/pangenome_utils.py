@@ -346,7 +346,9 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 
 def CreateTsvFile(reads_id, readid_to_read, filename):	
 	with open(filename, 'w') as f:
-		f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in list(reads_id)]))
+		for read_id, gene_id in reads_id.items():
+			f.write(f'{read_id}-{gene_id}\t{readid_to_read[read_id]}\n')
+			# f.write(''.join([f'>{r}\n{readid_to_read[r]}\n' for r in reads_id]))
 
 def WriteInputAttentions(tsv_filename, id_filename, reads, reads_id, test_readid_to_read):
 	tsv_file = open(tsv_filename, 'w')
@@ -392,13 +394,13 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 	all_reads_id = {}
 	for i in range(len(incorrect_reads_id)):
 		if incorrect_reads_id[i] in incorrect_reads_kept:
-			all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
-			all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+			all_reads.append([incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+			all_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}'
 
 	for i in range(len(correct_reads_id)):
 		if correct_reads_id[i] in correct_reads_kept:
-			all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
-			all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}'
+			all_reads.append([correct_reads_id[i].split('|')[2], f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}-{correct_reads_kept[correct_reads_id[i]]}', len(test_readid_to_read[correct_reads_id[i]]), correct_strand[i]])
+			all_reads_id[correct_reads_id[i]] = f'{correct_reads_id[i]}-correct-{correct_start[i]}-{correct_end[i]}-{correct_reads_kept[correct_reads_id[i]]}'
 
 	# get contiguous correct and incorrect reads
 	cont_reads = []
@@ -413,10 +415,10 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 						(incorrect_start[i] < correct_start[j] and incorrect_end[i] > correct_end[j]):
 						if correct_strand[j] == 'plus' and incorrect_strand[i] == 'plus':
 							if abs(len(test_readid_to_read[incorrect_reads_id[i]])-len(test_readid_to_read[correct_reads_id[j]])) < 200:
-								cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
-									incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
-								cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}'
-								cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}'
+								cont_reads.append([correct_reads_id[j].split('|')[2], f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[i]]}', len(test_readid_to_read[correct_reads_id[j]]), correct_strand[j], \
+									incorrect_reads_id[i].split('|')[2], f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}', len(test_readid_to_read[incorrect_reads_id[i]]), incorrect_strand[i]])
+								cont_reads_id[correct_reads_id[j]] = f'{correct_reads_id[j]}-correct-{correct_start[j]}-{correct_end[j]}-{correct_reads_kept[correct_reads_id[i]]}'
+								cont_reads_id[incorrect_reads_id[i]] = f'{incorrect_reads_id[i]}-incorrect-{incorrect_start[i]}-{incorrect_end[i]}-{incorrect_reads_kept[incorrect_reads_id[i]]}'
 
 	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
 	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id, test_readid_to_read)
@@ -445,8 +447,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	incorrect_genes = defaultdict(list)
 	correct_functions = defaultdict(int)
 	incorrect_functions = defaultdict(int)
-	correct_reads_kept = [] 
-	incorrect_reads_kept = []
+	correct_reads_kept = {}
+	incorrect_reads_kept = {}
 	# sel_correct_evalue = dict()
 	# sel_correct_pident = dict()
 	# sel_incorrect_evalue = dict()
@@ -511,7 +513,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				if args.analysis == 'FN':
 					for i in range(gene_start_pos, gene_end_pos+1, 1):
 						scores[i-1] = ratio_incorrect
-				incorrect_reads_kept += incorrect_reads
+				for r in incorrect_reads:
+					incorrect_reads_kept[r] = gene_id
 				# sel_incorrect_evalue.update(incorrect_evalue)
 				# sel_incorrect_pident.update(incorrect_pident)
 				if data[0] == 'protein_coding':
@@ -522,7 +525,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				if args.analysis == 'FP':
 					for i in range(gene_start_pos, gene_end_pos+1, 1):
 						scores[i-1] = ratio_correct
-				correct_reads_kept += list(correct_reads)
+				for r in correct_reads:
+					correct_reads_kept[r] = gene_id
 				# sel_correct_evalue.update(correct_evalue)
 				# sel_correct_pident.update(correct_pident)
 				if data[0] == 'protein_coding':
@@ -538,19 +542,19 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		for k, v in correct_functions_sorted.items():
 			f.write(f'{k}\t{v}\n')
 
-	sel_incorrect_cs = [str(incorrect_cs[r]) for r in list(set(incorrect_reads_kept))]
+	sel_incorrect_cs = [str(incorrect_cs[r]) for r in list(incorrect_reads_kept.keys())]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_incorrect_cs))
 	
-	sel_correct_cs = [str(correct_cs[r]) for r in list(set(correct_reads_kept))]
+	sel_correct_cs = [str(correct_cs[r]) for r in list(correct_reads_kept.keys())]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_cs_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_correct_cs))
 
-	sel_incorrect_length = [str(sequence_length[r]) for r in list(set(incorrect_reads_kept))]
+	sel_incorrect_length = [str(sequence_length[r]) for r in list(incorrect_reads_kept.keys())]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_incorrect_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_incorrect_length))
 
-	sel_correct_length = [str(sequence_length[r]) for r in list(set(correct_reads_kept))]
+	sel_correct_length = [str(sequence_length[r]) for r in list(correct_reads_kept.keys())]
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_selected_correct_length_{args.prob_threshold}.tsv'), 'w') as f:
 		f.write('\n'.join(sel_correct_length))
 
@@ -576,15 +580,15 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	scores_list = [scores[i] for i in range(genome_size)]
 	print(f'incorrect_alignments: {len(incorrect_alignments)}')
 	print(f'correct_alignments: {len(correct_alignments)}')
-	print(f'correct_reads_kept: {len(set(correct_reads_kept))}')
-	print(f'incorrect_reads_kept: {len(set(incorrect_reads_kept))}')
+	print(f'correct_reads_kept: {len(correct_reads_kept)}')
+	print(f'incorrect_reads_kept: {len(incorrect_reads_kept)}')
 	# print(f'sel_correct_evalue: {len(sel_correct_evalue)}')
 	# print(f'sel_incorrect_evalue: {len(sel_incorrect_evalue)}')
 	# print(f'sel_correct_pident: {len(sel_correct_pident)}')
 	# print(f'sel_incorrect_pident: {len(sel_incorrect_pident)}')
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_scores_info.tsv'), 'w') as outf:
-		outf.write(f'# incorrect reads kept: {len(set(incorrect_reads_kept))}\n')
-		outf.write(f'# correct reads kept: {len(set(correct_reads_kept))}\n')
+		outf.write(f'# incorrect reads kept: {len(incorrect_reads_kept)}\n')
+		outf.write(f'# correct reads kept: {len(correct_reads_kept)}\n')
 		outf.write(f'incorrect rate all positions:\tmean: {statistics.mean(scores_list)}\tmedian: {statistics.median(scores_list)}\tmin: {min(scores_list)}\tmax: {max(scores_list)}\n')
 		# outf.write(f'incorrect evalue:\tmean: {statistics.mean(sel_incorrect_evalue.values())}\tmedian: {statistics.median(sel_incorrect_evalue.values())}\tmin: {min(sel_incorrect_evalue.values())}\tmax: {max(sel_incorrect_evalue.values())}\n')
 		# outf.write(f'correct evalue:\tmean: {statistics.mean(sel_correct_evalue.values())}\tmedian: {statistics.median(sel_correct_evalue.values())}\tmin: {min(sel_correct_evalue.values())}\tmax: {max(sel_correct_evalue.values())}\n')
@@ -592,8 +596,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		# outf.write(f'correct pident:\tmean: {statistics.mean(sel_correct_pident.values())}\tmedian: {statistics.median(sel_correct_pident.values())}\tmin: {min(sel_correct_pident.values())}\tmax: {max(sel_correct_pident.values())}\n')
 
 	# create tsv files with FN and TP reads
-	CreateTsvFile(set(incorrect_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
-	CreateTsvFile(set(correct_reads_kept), readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
+	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
+	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
 	return scores_list, incorrect_genes, correct_genes, set(incorrect_reads_kept), set(correct_reads_kept)
 
