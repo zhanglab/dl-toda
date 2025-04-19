@@ -280,36 +280,36 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 			incorrect_track.line(genome_pos, pos_incorrect_count, color="darkviolet")
 			print(f'added incorrect track')
 
-		# Plot GC skew
-		min_r_pos -= 11
-		gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gcskews = GetGCSkew(test_record_seq)
-		positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-		negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-		abs_max_gcskew = np.max(np.abs(gcskews))
-		vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-		gcskew_track.fill_between(
-			pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
-		)
-		gcskew_track.fill_between(
-			pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-		)
+		# # Plot GC skew
+		# min_r_pos -= 11
+		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gcskews = GetGCSkew(test_record_seq)
+		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		# abs_max_gcskew = np.max(np.abs(gcskews))
+		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		# gcskew_track.fill_between(
+		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
+		# )
+		# gcskew_track.fill_between(
+		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		# )
 
-		# Plot GC content
-		min_r_pos -= 5
-		gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-		pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-		gc_content_updated = gc_content - test_genome_gc_content
-		positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-		negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-		abs_max_gc_content = np.max(np.abs(gc_content_updated))
-		vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-		gc_content_track.fill_between(
-			pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-		)
-		gc_content_track.fill_between(
-			pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-		)
+		# # Plot GC content
+		# min_r_pos -= 5
+		# gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		# gc_content_updated = gc_content - test_genome_gc_content
+		# positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		# negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+		# abs_max_gc_content = np.max(np.abs(gc_content_updated))
+		# vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+		# gc_content_track.fill_between(
+		# 	pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+		# )
+		# gc_content_track.fill_between(
+		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+		# )
 		
 		# report GC content of train and test genomes
 		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
@@ -332,12 +332,12 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	if len(incorrect_alignments) > 0:
 		handles.append(Patch(color='darkviolet', label='False Positives'))
 		
-	handles += [
-		Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
-		Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
-		Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
-		]
+	# handles += [
+	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
+	# 	]
 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
 	fig.savefig(outfigpath, dpi=300)
 
@@ -508,8 +508,9 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				f'\t{len(correct_mapped_length)}\t{len(incorrect_mapped_length)}\n')
 			if ratio_incorrect > 0.5:
 				incorrect_genes[gene_id] = [ratio_incorrect, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
-				for i in range(gene_start_pos, gene_end_pos+1, 1):
-					scores[i-1] = ratio_incorrect
+				if args.analysis == 'FN':
+					for i in range(gene_start_pos, gene_end_pos+1, 1):
+						scores[i-1] = ratio_incorrect
 				incorrect_reads_kept += incorrect_reads
 				# sel_incorrect_evalue.update(incorrect_evalue)
 				# sel_incorrect_pident.update(incorrect_pident)
@@ -518,6 +519,9 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 
 			elif ratio_correct > 0.5:
 				correct_genes[gene_id] = [ratio_correct, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
+				if args.analysis == 'FP':
+					for i in range(gene_start_pos, gene_end_pos+1, 1):
+						scores[i-1] = ratio_correct
 				correct_reads_kept += list(correct_reads)
 				# sel_correct_evalue.update(correct_evalue)
 				# sel_correct_pident.update(correct_pident)
