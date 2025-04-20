@@ -311,11 +311,11 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
 		# )
 		
-		# report GC content of train and test genomes
-		_, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
-			f.write(f'Testing genome:\t{test_genome_gc_content}\n')
-			f.write(f'Training genome:\t{train_genome_gc_content}')
+		# # report GC content of train and test genomes
+		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		# with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
+		# 	f.write(f'Testing genome:\t{test_genome_gc_content}\n')
+		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
 
 	# Save figure
 	# Enable annotation text adjustment (Default)
