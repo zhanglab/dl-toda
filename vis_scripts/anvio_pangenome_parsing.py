@@ -87,7 +87,7 @@ if __name__ == "__main__":
 			# write sequences to fasta file
 			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as fna:
 				for i in range(len(ids)):
-					fna.write(f'{ids[i]}\n{sequences[i]}\n')
+					fna.write(f'>{ids[i]}\n{sequences[i]}\n')
 
 			# align amino acid sequences to genome
 			RunBlast(args, genome, os.path.join(args.output_dir, anvio_output_type, 'blast', genome), os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), \
