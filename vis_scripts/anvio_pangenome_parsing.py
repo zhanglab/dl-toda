@@ -45,6 +45,7 @@ if __name__ == "__main__":
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	parser.add_argument('--anvio_output', type=str, help='parse output files from anvio')
 	parser.add_argument('--testing_fasta_files', type=str, help='path to file mapping genomes accession id to path to fasta file')
+	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
 	args = parser.parse_args()
 
 	input_dir = os.getcwd()
