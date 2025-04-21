@@ -29,13 +29,14 @@ if __name__ == "__main__":
 	parser.add_argument('--testing_fasta_files', type=str, help='path to file mapping genomes accession id to path to fasta file')
 	args = parser.parse_args()
 
-	if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
-	if not os.path.isdir(os.path.join(args.output_dir, 'blast')):
-		os.makedirs(os.path.join(args.output_dir, 'blast'))
-
 	anvio_output_type = args.anvio_output.split('/')[-1].split('.')[0]
 	print(anvio_output_type)
+
+	if not os.path.isdir(args.output_dir):
+		os.makedirs(args.output_dir)
+	if not os.path.isdir(os.path.join(args.output_dir, 'blast', anvio_output_type)):
+		os.makedirs(os.path.join(args.output_dir, 'blast', anvio_output_type))
+
 	# create dictionary mapping genome accession id to path of fasta file
 	with open(args.testing_fasta_files, 'r') as f:
 		content = f.readlines()
@@ -65,9 +66,9 @@ if __name__ == "__main__":
 				for i in range(len(ids)):
 					outf.write(f'>{ids[i]}\n{sequences[i]}\n')
 
-			# align sequences to 
-			RunBlast(os.path.join(args.output_dir, 'blast', f'{genome}'), os.path.join(args.output_dir, f'{genome}-anvio-{anvio_output_type}.fna'), args.num_processes, \
-				fasta, f'{args.output_dir}/blast/{genome}/{anvio_output_type}/blastn.out')
+			# align amino acid sequences to genome
+			RunBlast(os.path.join(args.output_dir, 'blast', anvio_output_type, genome), os.path.join(args.output_dir, f'{genome}-anvio-{anvio_output_type}.fna'), args.num_processes, \
+				fasta, f'{args.output_dir}/blast/{anvio_output_type}/{genome}/blastn.out')
 
 
 
