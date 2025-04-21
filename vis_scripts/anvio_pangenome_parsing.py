@@ -8,7 +8,7 @@ blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastp"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
-def RunBlast(args, genome_id, output_dir, query, num_processes, outfilename):
+def RunBlast(args, genome_id, output_dir, query, num_processes, outfilename, input_dir):
 	
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
@@ -44,6 +44,8 @@ if __name__ == "__main__":
 	parser.add_argument('--anvio_output', type=str, help='parse output files from anvio')
 	parser.add_argument('--testing_fasta_files', type=str, help='path to file mapping genomes accession id to path to fasta file')
 	args = parser.parse_args()
+
+	input_dir = os.getcwd()
 
 	anvio_output_type = args.anvio_output.split('/')[-1].split('.')[0]
 	print(anvio_output_type)
@@ -84,7 +86,7 @@ if __name__ == "__main__":
 
 			# align amino acid sequences to genome
 			RunBlast(args, genome, os.path.join(args.output_dir, anvio_output_type, 'blast', genome), os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), \
-				args.num_processes, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out')
+				args.num_processes, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out', input_dir)
 
 
 
