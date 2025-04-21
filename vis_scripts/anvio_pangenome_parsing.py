@@ -53,6 +53,11 @@ if __name__ == "__main__":
 	anvio_output_type = args.anvio_output.split('/')[-1].split('.')[0]
 	print(anvio_output_type)
 
+	if anvio_output_type == 'single-copy-core-genes':
+		gene_category == 'core'
+	elif anvio_output_type == 'singleton-gene-clusters':
+		gene_category == 'accessory'
+
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
 	if not os.path.isdir(os.path.join(args.output_dir, anvio_output_type, 'blast')):
@@ -114,9 +119,9 @@ if __name__ == "__main__":
 					for gene_id in annot_info.keys():
 						if annot_info[gene_id][-1] == protein_id:
 							seq_gene_id = gene_id
-					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\n')
+					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\t{gene_category}\n')
 				else:
-					outf.write(f'{seq_id}\tNA\tNA\n')
+					outf.write(f'{seq_id}\tNA\tNA\t{gene_category}\n')
 	outf.close()
 
 
