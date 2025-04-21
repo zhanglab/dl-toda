@@ -677,24 +677,24 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		return annot_info, locus_tags_info
 
 
-def GetReadsAlignments(sequences, input_file, sequence_length, outfilename=None):
+def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None):
 	alignments = defaultdict(list)
 	with open(input_file, 'r') as f:
 		for line in f:
-			readid = line.rstrip().split(',')[0]
-			if readid in sequences:
+			seqid = line.rstrip().split(',')[0]
+			if seqid in sequences:
 				sstart = int(line.rstrip().split(',')[2])
 				send = int(line.rstrip().split(',')[3])
-				seq_id = line.rstrip().split(',')[1]
+				ref_id = line.rstrip().split(',')[1]
 				evalue = float(line.rstrip().split(',')[7])
 				pident = float(line.rstrip().split(',')[8])
 				strand = line.rstrip().split(',')[11]
-				if readid in alignments:
+				if seqid in alignments:
 					# get best alignment
-					if evalue < alignments[readid][3] and pident > alignments[readid][4]:
-						alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
+					if evalue < alignments[seqid][3] and pident > alignments[seqid][4]:
+						alignments[seqid] = [ref_id, sstart, send, evalue, pident, strand]
 				else:
-					alignments[readid] = [seq_id, sstart, send, evalue, pident, strand]
+					alignments[seqid] = [ref_id, sstart, send, evalue, pident, strand]
 
 	if outfilename:
 		with open(outfilename, 'w') as f:
