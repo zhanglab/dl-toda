@@ -54,9 +54,9 @@ if __name__ == "__main__":
 	print(anvio_output_type)
 
 	if anvio_output_type == 'single-copy-core-genes':
-		gene_category == 'core'
+		gene_category = 'core'
 	elif anvio_output_type == 'singleton-gene-clusters':
-		gene_category == 'accessory'
+		gene_category = 'accessory'
 
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
