@@ -66,7 +66,8 @@ if __name__ == "__main__":
 	# parse output of anvio
 	with open(args.anvio_output, 'r') as f:
 		content = f.readlines()
-		id_sequences = [content[i].rstrip() for i in range(0, len(content), 2)]
+		id_sequences = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
+		print(id_sequences[:10])
 		aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
 		# sort sequences based on genome of origin
 		genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
