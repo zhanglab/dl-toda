@@ -80,8 +80,8 @@ if __name__ == "__main__":
 	# blast testing reads to testing genome
 	RunBlast(os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), args.num_processes, subject=[args.testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false and true positives to testing genome
-	incorrect_alignments = GetReadsAlignments(incorrect_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/incorrect_{args.prob_threshold}_mapping_info.tsv'))
-	correct_alignments = GetReadsAlignments(correct_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/correct_{args.prob_threshold}_mapping_info.tsv'))
+	incorrect_alignments = GetAlignments(incorrect_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/incorrect_{args.prob_threshold}_mapping_info.tsv'))
+	correct_alignments = GetAlignments(correct_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/correct_{args.prob_threshold}_mapping_info.tsv'))
 	
 	# get annotations info
 	test_annot_info, _ = GetAnnotInfo(args, args.testing_genome, input_dir)
