@@ -87,7 +87,15 @@ if __name__ == "__main__":
 			# write sequences to fasta file
 			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as fna:
 				for i in range(len(ids)):
-					fna.write(f'>{ids[i]}\n{sequences[i]}\n')
+					# remove any - from sequence
+					if '-' in sequences[i]:
+						updated_sequence = ''
+						for j in range(len(sequences[i])):
+							if sequences[i][j] != '-':
+								updated_sequence += sequences[i][j]
+					else:
+						updated_sequence = sequences[i]
+					fna.write(f'>{ids[i]}\n{updated_sequence}\n')
 
 			# align amino acid sequences to genome
 			RunBlast(args, genome, os.path.join(args.output_dir, anvio_output_type, 'blast', genome), os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), \
@@ -95,10 +103,8 @@ if __name__ == "__main__":
 
 			# parse alignment
 			alignments = GetAlignments(ids, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastp.out')
-			print(alignments)
 			# get annotations of genome
 			annot_info, _ = GetAnnotInfo(args, genome, input_dir)
-			print(annot_info)
 			# get genes id from proteins id
 			for seq_id in ids:
 				if seq_id in alignments:
