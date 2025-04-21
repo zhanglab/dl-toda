@@ -94,9 +94,11 @@ if __name__ == "__main__":
 
 			# parse alignment
 			alignments = GetAlignments(ids, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastp.out')
-
+			print(alignments)
+			break
 			# get annotations of genome
 			annot_info, _ = GetAnnotInfo(args, genome, input_dir)
+			print(annot_info)
 
 			# get genes id from proteins id
 			for seq_id in ids:
