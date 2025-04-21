@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
 	if not os.path.isdir(args.output_dir):
 		os.makedirs(args.output_dir)
-	if not os.path.isdir(os.path.join(args.output_dir, 'blast', anvio_output_type)):
-		os.makedirs(os.path.join(args.output_dir, 'blast', anvio_output_type))
+	if not os.path.isdir(os.path.join(args.output_dir, anvio_output_type, 'blast')):
+		os.makedirs(os.path.join(args.output_dir, anvio_output_type, 'blast'))
 
 	# create dictionary mapping genome accession id to path of fasta file
 	with open(args.testing_fasta_files, 'r') as f:
@@ -62,13 +62,13 @@ if __name__ == "__main__":
 			sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
 
 			# write sequences to fasta file
-			with open(os.path.join(args.output_dir, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as outf:
+			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as outf:
 				for i in range(len(ids)):
 					outf.write(f'>{ids[i]}\n{sequences[i]}\n')
 
 			# align amino acid sequences to genome
-			RunBlast(os.path.join(args.output_dir, 'blast', anvio_output_type, genome), os.path.join(args.output_dir, f'{genome}-anvio-{anvio_output_type}.fna'), args.num_processes, \
-				fasta, f'{args.output_dir}/blast/{anvio_output_type}/{genome}/blastn.out')
+			RunBlast(os.path.join(args.output_dir, anvio_output_type, 'blast', genome), os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), args.num_processes, \
+				fasta, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out')
 
 
 
