@@ -111,14 +111,14 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
 	return align_coords, query_pident
 
 
-def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, sam=False):
+def RunBlast(output_dir, query, num_processes, subject=None, db=False, outfilename=None, sam=False):
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
 	if db:
 		sys.executable = blastn_exec
 		process = subprocess.run([sys.executable, '-query', f'{query}', '-db', '/datasets/bio/ncbi-db/2025-01-26/nt', '-out', \
-			f'{args.output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
-			'-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+			f'{output_dir}/blast/test_fp_blastn.out', '-outfmt', "10 delim=, qseqid sseqid evalue pident sstart send qstart qend length ssciname stitle", \
+			'-max_target_seqs', '1', '-num_threads', f'{num_processes}'])
 	else:
 		if len(subject) > 1:
 			# put all training genomes into one fasta file
@@ -139,11 +139,11 @@ def RunBlast(args, output_dir, query, subject=None, db=False, outfilename=None, 
 		# align reads to database or fasta file
 		if sam:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
-			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{args.num_processes}'])
+			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{num_processes}'])
 		else:
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
-			 '-max_target_seqs', '5', '-num_threads', f'{args.num_processes}'])
+			 '-max_target_seqs', '5', '-num_threads', f'{num_processes}'])
 
 def GetGenomesInfo(fasta):
 	with open(fasta, 'r') as f:
