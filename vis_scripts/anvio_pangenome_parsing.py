@@ -47,7 +47,8 @@ if __name__ == "__main__":
 		id_sequences = [content[i].rstrip() for i in range(0, len(content), 2)]
 		aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
 		# sort sequences based on genome of origin
-		genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(content))]
+		genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
+		assert len(aas_sequences) == len(id_sequences)
 		# correct genomes accession id
 		for i in range(len(genomes_sequences)):
 			for key, value in genomes_to_fasta.items():
