@@ -11,10 +11,8 @@ def RunBlast(output_dir, query, num_processes, subject, outfilename):
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
 
-	input_fasta = subject[0]
-		
 	# create database
-	result = subprocess.run([makeblastdb_exec, '-in', f'{input_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+	result = subprocess.run([makeblastdb_exec, '-in', f'{subject}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
 	
 	# align amino acid sequences to database or fasta file
 	result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
