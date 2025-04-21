@@ -3,6 +3,8 @@ import sys
 import argparse
 import subprocess
 import zipfile
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from pangenome_utils import GetAlignments, GetAnnotInfo
 
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastp"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
@@ -74,19 +76,43 @@ if __name__ == "__main__":
 				if genomes_sequences[i] in genomes[j]:
 					genomes_sequences[i] = genomes[j]
 
+	outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
 	for genome in genomes:
 		if genome in genomes_sequences:
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
 			sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
 
 			# write sequences to fasta file
-			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as outf:
+			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as fna:
 				for i in range(len(ids)):
-					outf.write(f'>{ids[i]}\n{sequences[i]}\n')
+					fna.write(f'{ids[i]}\n{sequences[i]}\n')
 
 			# align amino acid sequences to genome
 			RunBlast(args, genome, os.path.join(args.output_dir, anvio_output_type, 'blast', genome), os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), \
-				args.num_processes, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out', input_dir)
+				args.num_processes, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastp.out', input_dir)
+
+			# parse alignment
+			alignments = GetAlignments(ids, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastp.out')
+
+			# get annotations of genome
+			annot_info, _ = GetAnnotInfo(args, genome, input_dir)
+
+			# get genes id from proteins id
+			for seq_id in ids:
+				if seq_id in alignments:
+					protein_id = aligment_info[0]
+					# get gene id
+					seq_gene_id = 'NA'
+					for gene_id in annot_info.keys():
+						if annot_info[gene_id][0] == protein_id:
+							seq_gene_id = gene_id
+					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\n')
+				else:
+					outf.write(f'{seq_id}\tNA\tNA\n')
+	outf.close()
+
+
+
 
 
 
