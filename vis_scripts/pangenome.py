@@ -6,20 +6,19 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 from pangenome_utils import *
 
 
-
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--training_fasta', type=str, help='path to training fasta file', required=True)
-	parser.add_argument('--testing_fasta', type=str, help='path to testing fasta file', required=True)
-	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome', required=True)
-	parser.add_argument('--training_genome', type=str, help='accession id of testing genome', required=True)
-	parser.add_argument('--output_dir', type=str, help='path to output directory', required=True)
-	parser.add_argument('--analysis', help="analyze false positives (FP) or false negatives (FN)", choices=['FP', 'FN'], required=True)
-	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files', required=True)
-	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads', required=True)
-	parser.add_argument('--prob_threshold', type=float, help='probability score threshold', required=True)
-	parser.add_argument('--testing_results', type=str, help='path to file containing testing results', required=True)
-	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel', required=True)
+	parser.add_argument('--training_fasta', type=str, help='path to training fasta file')
+	parser.add_argument('--testing_fasta', type=str, help='path to testing fasta file')
+	parser.add_argument('--testing_genome', type=str, help='accession id of testing genome')
+	parser.add_argument('--training_genome', type=str, help='accession id of testing genome')
+	parser.add_argument('--output_dir', type=str, help='path to output directory')
+	parser.add_argument('--analysis', help="analyze false positives (FP) or false negatives (FN)", choices=['FP', 'FN'])
+	parser.add_argument('--annotations_dir', type=str, help='path to directory containing gtf annotations files')
+	parser.add_argument('--testing_file', type=str, help='path to fasta/tsv file containing testing reads')
+	parser.add_argument('--prob_threshold', type=float, help='probability score threshold')
+	parser.add_argument('--testing_results', type=str, help='path to file containing testing results')
+	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
 
 	# define input directory
@@ -79,7 +78,7 @@ if __name__ == "__main__":
 	print(f'incorrect_seq: {len(incorrect_seq)}')
 	print(f'correct_seq: {len(correct_seq)}')
 	# blast testing reads to testing genome
-	RunBlast(args, os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), subject=[args.testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
+	RunBlast(os.path.join(args.output_dir, 'blast', 'test_reads_test_genome'), os.path.join(args.output_dir, f'{args.testing_genome}_test_reads.fna'), args.num_processes, subject=[args.testing_fasta], outfilename=f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out')
 	# get mapping of false and true positives to testing genome
 	incorrect_alignments = GetReadsAlignments(incorrect_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/incorrect_{args.prob_threshold}_mapping_info.tsv'))
 	correct_alignments = GetReadsAlignments(correct_seq, f'{args.output_dir}/blast/test_reads_test_genome/all_test_pos_test_blastn.out', test_sequence_length, os.path.join(args.output_dir, f'blast/test_reads_test_genome/correct_{args.prob_threshold}_mapping_info.tsv'))
@@ -137,7 +136,11 @@ if __name__ == "__main__":
 					f.write(f'{k}\t{args.dl_toda_tax[k]}\t{v}\n')
 
 
-
-
 	
+
+
+
+
+
+
 
