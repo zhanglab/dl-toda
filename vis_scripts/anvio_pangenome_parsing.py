@@ -99,7 +99,6 @@ if __name__ == "__main__":
 			# get annotations of genome
 			annot_info, _ = GetAnnotInfo(args, genome, input_dir)
 			print(annot_info)
-			break
 			# get genes id from proteins id
 			for seq_id in ids:
 				if seq_id in alignments:
@@ -107,7 +106,7 @@ if __name__ == "__main__":
 					# get gene id
 					seq_gene_id = 'NA'
 					for gene_id in annot_info.keys():
-						if annot_info[gene_id][0] == protein_id:
+						if annot_info[gene_id][-1] == protein_id:
 							seq_gene_id = gene_id
 					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\n')
 				else:
