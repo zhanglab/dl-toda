@@ -102,7 +102,7 @@ if __name__ == "__main__":
 			# get genes id from proteins id
 			for seq_id in ids:
 				if seq_id in alignments:
-					protein_id = aligment_info[0]
+					protein_id = alignments[seq_id][0]
 					# get gene id
 					seq_gene_id = 'NA'
 					for gene_id in annot_info.keys():
