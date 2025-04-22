@@ -18,8 +18,8 @@ cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
 
 
 def RunRPSBLAST(args, genome_id):
-	fasta_file = os.path.join(args.output_dir, 'proteins_fasta', f'ncbi_dataset/data/{genome_id}/protein.faa')
-	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv', \
+	protein_fasta = os.path.join(args.protein_db, genome_id, 'ncbi_dataset', 'data', genome_id, 'protein.faa')
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{protein_fasta}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv', \
 	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 		GetProteins(args, genome_id, input_dir)
 
 		# search proteins against the conserved domain database (CDD) with rpsblast
-		RunRPSBLAST(args)
+		RunRPSBLAST(args, genome_id)
 
 		# get COG function for each protein
 		proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
