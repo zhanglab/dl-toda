@@ -21,6 +21,7 @@ def RunRPSBLAST(args, genome_id):
 	if not os.path.isdir(os.path.join(args.rpsblast_db, genome_id)):
 		os.makedirs(os.path.join(args.rpsblast_db, genome_id))
 	protein_fasta = os.path.join(args.protein_db, genome_id, 'ncbi_dataset', 'data', genome_id, 'protein.faa')
+	print(protein_fasta)
 	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{protein_fasta}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv', \
 	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
