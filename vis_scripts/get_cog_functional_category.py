@@ -115,17 +115,21 @@ if __name__ == "__main__":
 		content = f.readlines()
 		list_genomes = list(set([content[i].rstrip().split('\t')[-1] for i in range(len(content))]))
 
-	for genome_id in list_genomes:
-		print(genome_id)
-		# get proteins associated with genome
-		GetProteins(args, genome_id, input_dir)
+	outfilename = args.input_file.split('.')[0]
+	print(outfilename)
+	# outf = open(os.path.join(args.output_dir, ''))
+	# for genome_id in list_genomes:
+	# 	print(genome_id)
+	# 	# get proteins associated with genome
+	# 	GetProteins(args, genome_id, input_dir)
 
-		# search proteins against the conserved domain database (CDD) with rpsblast
-		RunRPSBLAST(args, genome_id)
+	# 	# search proteins against the conserved domain database (CDD) with rpsblast
+	# 	RunRPSBLAST(args, genome_id)
 
-		# get COG function for each protein
-		proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-		print(proteins_fn)
+	# 	# get COG function for each protein
+	# 	proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+	# 	print(proteins_fn)
+
 		# for i in range(len(input_files)):
 		# 	print(input_files[i])
 		# 	if os.path.exists(f'{input_files[i][:-4]}-w-COG.tsv'):
