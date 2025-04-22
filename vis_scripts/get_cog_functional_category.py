@@ -17,10 +17,9 @@ coglettertofn = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.def.tab"
 cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
 
 
-
-def RunRPSBLAST(args):
-	fasta_file = os.path.join(args.output_dir, 'proteins_fasta', f'ncbi_dataset/data/{args.genome_id}/protein.faa')
-	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv', \
+def RunRPSBLAST(args, genome_id):
+	fasta_file = os.path.join(args.output_dir, 'proteins_fasta', f'ncbi_dataset/data/{genome_id}/protein.faa')
+	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv', \
 	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
 
@@ -28,8 +27,8 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 
 	# get best hit and its CDD ID for each protein query
 	proteins_cdd = defaultdict(list)
-	if os.path.exists(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv') != 0:
-		with open(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv', 'r') as f:
+	if os.path.exists(f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv') and os.path.getsize(f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv') != 0:
+		with open(f'{args.rpsblast_db}/{genome_id}/rpsblast_out.tsv', 'r') as f:
 			for line in f:
 				protein_id = line.rstrip().split('\t')[0]
 				cdd_id = line.rstrip().split('\t')[1].split('|')[2]
@@ -68,35 +67,30 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	return proteins_fn
 
 
-def GetProteins(args):
-	os.chdir(os.path.join(args.output_dir, 'proteins_fasta'))
-	# download feature table in gtf if not present
-	result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{args.genome_id}', '--include', 'protein'])
-	# unzip output folder
-	with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
-		zip_ref.extractall(os.getcwd())
-	os.chdir(args.input_dir)
-
+def GetProteins(args, genome_id, input_dir):
+	if f'{genome_id}' not in os.listdir(args.protein_db):
+		protein_output_dir = os.path.join(args.protein_db, f'{genome_id}')
+		os.makedirs(protein_output_dir)
+		os.chdir(protein_output_dir)
+		# download feature table in gtf if not present
+		result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'protein'])
+		# unzip output folder
+		with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
+			zip_ref.extractall(os.getcwd())
+		os.chdir(input_dir)
+	else:
+		print(f'{genome_id}\tdownload already done')
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--input_dir', type=str, help='directory containing results obtained from running pangenome.py')
-	parser.add_argument('--genome_id', type=str, help='genome accession id')
-	parser.add_argument('--output_dir', type=str, help='path to output directory')
+	parser.add_argument('--input_file', type=str, help='input file with genomes id')
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
+	parser.add_argument('--protein_db', type=str, help='path to directory containing protein fasta file associated with genomes')
+	parser.add_argument('--rpsblast_db', type=str, help='path to directory containing protein fasta file associated with genomes')
 	args = parser.parse_args()
 
-	# create output directories
-	if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
-	if not os.path.isdir(os.path.join(args.output_dir, 'proteins_fasta')):
-		os.makedirs(os.path.join(args.output_dir, 'proteins_fasta'))
-	if not os.path.isdir(os.path.join(args.output_dir, 'rpsblast_results')):
-		os.makedirs(os.path.join(args.output_dir, 'rpsblast_results'))
+	input_dir = os.getcwd()
 
-	# get all input files
-	input_files = glob.glob(os.path.join(args.input_dir, '*unique_genes_0.9.tsv')) + glob.glob(os.path.join(args.input_dir, '*shared_genes_0.9.tsv'))
-	print(input_files, len(input_files))
 	# load required files
 	cdd_to_cog_df = pd.read_csv(cddtocog, sep='\t', header=None)
 	
@@ -114,36 +108,42 @@ if __name__ == "__main__":
 				else:
 					cogfncat_dict[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[2]
 	
-	# get proteins associated with genome
-	GetProteins(args)
+	with open(args.input_file, 'r') as f:
+		content = f.readlines()
+		list_genomes = list(set([content[i].rstrip().split('\t')[-1] for i in range(len(content))]))
 
-	# search proteins against the conserved domain database (CDD) with rpsblast
-	RunRPSBLAST(args)
+	for genome_id in list_genomes:
+		print(genome_id)
+		# get proteins associated with genome
+		GetProteins(args, genome_id, input_dir)
 
-	# get COG function for each protein
-	proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+		# search proteins against the conserved domain database (CDD) with rpsblast
+		RunRPSBLAST(args)
 
-	for i in range(len(input_files)):
-		print(input_files[i])
-		if os.path.exists(f'{input_files[i][:-4]}-w-COG.tsv'):
-			os.remove(f'{input_files[i][:-4]}-w-COG.tsv')
-		with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w') as outf:
-			if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
-				index = 18
-			else:
-				index = 16
-			print('_'.join(input_files[i].split('/')[-1].split('_')[1:3]), index)
-			
-			with open(input_files[i], 'r') as inf:
-				for line in inf:
-					if line.rstrip().split('\t')[index] == 'protein_coding':
-						protein_id = line.rstrip().split('\t')[-1]
-						if protein_id in proteins_fn:
-							outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
-						else:
-							outf.write(f'{line.rstrip()}\tFunction unknown\n')
-					else:
-						molecule = line.rstrip().split('\t')[index]
-						outf.write(f'{line.rstrip()}\t{molecule}\n')
+		# get COG function for each protein
+		proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
+		print(proteins_fn)
+		# for i in range(len(input_files)):
+		# 	print(input_files[i])
+		# 	if os.path.exists(f'{input_files[i][:-4]}-w-COG.tsv'):
+		# 		os.remove(f'{input_files[i][:-4]}-w-COG.tsv')
+		# 	with open(f'{input_files[i][:-4]}-w-COG.tsv', 'w') as outf:
+		# 		if '_'.join(input_files[i].split('/')[-1].split('_')[1:3]) in ['fp_shared', 'tp_unique']:
+		# 			index = 18
+		# 		else:
+		# 			index = 16
+		# 		print('_'.join(input_files[i].split('/')[-1].split('_')[1:3]), index)
+				
+		# 		with open(input_files[i], 'r') as inf:
+		# 			for line in inf:
+		# 				if line.rstrip().split('\t')[index] == 'protein_coding':
+		# 					protein_id = line.rstrip().split('\t')[-1]
+		# 					if protein_id in proteins_fn:
+		# 						outf.write(f'{line.rstrip()}\t{proteins_fn[protein_id]}\n')
+		# 					else:
+	# 						outf.write(f'{line.rstrip()}\tFunction unknown\n')
+	# 				else:
+	# 					molecule = line.rstrip().split('\t')[index]
+	# 					outf.write(f'{line.rstrip()}\t{molecule}\n')
 
 			
