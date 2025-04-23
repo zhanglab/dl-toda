@@ -2,9 +2,10 @@ import os
 import sys
 import argparse
 import subprocess
+from collections import defaultdict
 import zipfile
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from pangenome_utils import GetAlignments, GetAnnotInfo
+from pangenome_utils import GetAlignments, GetAnnotInfo, CheckSeqInGene
 
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
@@ -91,10 +92,10 @@ if __name__ == "__main__":
 				if genomes_sequences[i] in genome:
 					genomes_sequences[i] = genome
 
-	total = 0
-	# outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
+	outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
 	for genome in genomes_to_fasta.keys():
 		print(genome)
+		# retrieve dna sequences and sequences id
 		if genome in genomes_sequences:
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
 			sequences = [dna_sequences[i] for i in range(len(dna_sequences)) if genomes_sequences[i] == genome]
@@ -118,12 +119,36 @@ if __name__ == "__main__":
 
 			# parse alignment
 			alignments = GetAlignments(ids, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out')
-			print(len(alignments))
-			total += len(alignments)
-	print('total', total)
-	# 		# get annotations of genome
-	# 		annot_info, _ = GetAnnotInfo(args, genome, input_dir)
-	# 		# get genes id from proteins id
+			print('# sequences', len(alignments))
+			# get annotations of genome
+			annot_info, _ = GetAnnotInfo(args, genome, input_dir)
+			print('# genes', len(annot_info))
+			# get genes id from annotations
+			seq_in_genes = defaultdict(list)
+			for seq_id, align_info in alignments.items():
+				if align_info[1] < align_info[2]:
+					seq_start_pos = align_info[1]
+					seq_end_pos = align_info[2]
+				else:
+					seq_start_pos = align_info[2]
+					seq_end_pos = align_info[1]
+
+				for gene_id, data in annot_info.items():
+					gene_start_pos = data[1]
+					gene_end_pos = data[2]
+				
+					length_mapped_seq = CheckSeqInGene(seq_start_pos, seq_end_pos, gene_start_pos, gene_end_pos)
+					if length_mapped_seq != 0:
+						seq_in_genes[seq_id].append(gene_id)
+			for key, value in seq_in_genes.items():
+				if len(value) > 1:
+					print(key, value)
+					break
+			break
+
+
+				# outf.write()
+
 	# 		for seq_id in ids:
 	# 			if seq_id in alignments:
 	# 				protein_id = alignments[seq_id][0]
