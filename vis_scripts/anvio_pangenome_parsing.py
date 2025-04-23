@@ -95,6 +95,7 @@ if __name__ == "__main__":
 	outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
 	for genome in genomes_to_fasta.keys():
 		print(genome)
+		print(genomes_to_fasta[genome])
 		# retrieve dna sequences and sequences id
 		if genome in genomes_sequences:
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
