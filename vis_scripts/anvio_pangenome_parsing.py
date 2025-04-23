@@ -43,9 +43,9 @@ def RunBlast(args, input_fasta, output_dir, query, num_processes, outfilename):
 		
 
 	# align dna sequence to genome
-	result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+	result = subprocess.run([blastn_exec, '-task', 'blastn', '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
-			 '-max_target_seqs', '15', '-num_threads', f'{num_processes}'])
+			 '-num_threads', f'{num_processes}'])
 
 
 if __name__ == "__main__":
