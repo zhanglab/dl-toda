@@ -28,8 +28,8 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 
 	# get best hit and its CDD ID for each protein query
 	proteins_cdd = defaultdict(list)
-	if os.path.exists(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv') and os.path.getsize(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv') != 0:
-		with open(f'{args.output_dir}/rpsblast_results/rpsblast_out.tsv', 'r') as f:
+	if os.path.exists(f'{args.input_dir}/rpsblast_results/rpsblast_out.tsv') and os.path.getsize(f'{args.input_dir}/rpsblast_results/rpsblast_out.tsv') != 0:
+		with open(f'{args.input_dir}/rpsblast_results/rpsblast_out.tsv', 'r') as f:
 			for line in f:
 				protein_id = line.rstrip().split('\t')[0]
 				cdd_id = line.rstrip().split('\t')[1].split('|')[2]
