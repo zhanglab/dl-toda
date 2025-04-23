@@ -19,7 +19,7 @@ cogfncat = "/work/pi_yingzhang_uri_edu/ccres/COG2024/cog-24.fun.tab"
 
 
 def RunRPSBLAST(args):
-	fasta_file = os.path.join(args.protein_db, args.genome_id, f'ncbi_dataset/data/{args.genome_id}/protein.faa')
+	fasta_file = os.path.join(args.proteins_db, args.genome_id, f'ncbi_dataset/data/{args.genome_id}/protein.faa')
 	result = subprocess.run([f'{rpsblast_exec}', '-query', f'{fasta_file}', '-db', '/work/pi_yingzhang_uri_edu/ccres/COG-db/Cog', '-out', f'{args.input_dir}/rpsblast_results/rpsblast_out.tsv', \
 	 '-outfmt', '6 delim=, qseqid sseqid evalue pident', '-num_threads', f'{args.num_processes}'])
 
@@ -68,8 +68,8 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 	return proteins_fn
 
 def GetProteins(args):
-	if f'{args.genome_id}' not in os.listdir(args.protein_db):
-		protein_output_dir = os.path.join(args.protein_db, f'{args.genome_id}')
+	if f'{args.genome_id}' not in os.listdir(args.proteins_db):
+		protein_output_dir = os.path.join(args.proteins_db, f'{args.genome_id}')
 		os.makedirs(protein_output_dir)
 		os.chdir(protein_output_dir)
 		# download feature table in gtf if not present
