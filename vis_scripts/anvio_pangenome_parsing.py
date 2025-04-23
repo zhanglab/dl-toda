@@ -87,12 +87,12 @@ if __name__ == "__main__":
 		assert len(dna_sequences) == len(id_sequences)
 		# correct genomes accession id
 		for i in range(len(genomes_sequences)):
-			for key in genomes_to_fasta.keys():
-				if genomes_sequences[i] in key:
-					genomes_sequences[i] = key
+			for genome in genomes_to_fasta.keys():
+				if genomes_sequences[i] in genome:
+					genomes_sequences[i] = genome
 
 	# outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
-	for genome in genomes:
+	for genome in genomes_to_fasta.keys():
 		print(genome)
 		if genome in genomes_sequences:
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
