@@ -423,7 +423,7 @@ def GetReadsForAttentions(args, correct_alignments, incorrect_alignments, incorr
 	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_contiguous_id.tsv'), cont_reads, cont_reads_id, test_readid_to_read)
 	WriteInputAttentions(os.path.join(args.output_dir, f'{args.testing_genome}_all_reads_kept.tsv'), os.path.join(args.output_dir, f'{args.testing_genome}_all_id.tsv'), all_reads, all_reads_id, test_readid_to_read)
 
-def CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
+def CheckSeqInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos):
 	# check if read_id maps to gene
 	length_mapped_seq = 0
 	if (read_start_pos <= gene_start_pos and read_end_pos >= gene_end_pos) or \
@@ -476,7 +476,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			else:
 				read_start_pos = align_info[2]
 				read_end_pos = align_info[1]
-			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			length_mapped_seq = CheckSeqInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				incorrect_reads.append(read_id)
 				# incorrect_evalue[read_id] = align_info[3]
@@ -490,7 +490,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			else:
 				read_start_pos = align_info[2]
 				read_end_pos = align_info[1]
-			length_mapped_seq = CheckReadInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
+			length_mapped_seq = CheckSeqInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				correct_reads.append(read_id)
 				# correct_evalue[read_id] = align_info[3]
