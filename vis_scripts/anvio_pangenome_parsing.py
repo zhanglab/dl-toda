@@ -91,6 +91,7 @@ if __name__ == "__main__":
 				if genomes_sequences[i] in genome:
 					genomes_sequences[i] = genome
 
+	total = 0
 	# outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
 	for genome in genomes_to_fasta.keys():
 		print(genome)
@@ -118,6 +119,8 @@ if __name__ == "__main__":
 			# parse alignment
 			alignments = GetAlignments(ids, f'{args.output_dir}/{anvio_output_type}/blast/{genome}/blastn.out')
 			print(len(alignments))
+			total += len(alignments)
+	print('total', total)
 	# 		# get annotations of genome
 	# 		annot_info, _ = GetAnnotInfo(args, genome, input_dir)
 	# 		# get genes id from proteins id
