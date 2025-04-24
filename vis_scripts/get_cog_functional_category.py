@@ -138,7 +138,7 @@ if __name__ == "__main__":
 							outf.write(f'{line.rstrip()}\tFunction unknown\n')
 					else:
 						molecule = line.rstrip().split('\t')[1]
-						new_line = '\t'.join(line.rstrip().split('\t')[0:6]) + '\tNA\t' + '\t'.join(line.rstrip().split('\t')[6:])
+						new_line = '\t'.join(line.rstrip().split('\t')[0:6]) + '\tNA\tNA\t' + '\t'.join(line.rstrip().split('\t')[6:])
 						outf.write(f'{new_line}\t{molecule}\n')
 
 			
