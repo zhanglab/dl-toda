@@ -186,9 +186,8 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	# Blast genome comparison & plot match blocks
 	# store percentage identity between matching regions
 	percent_identity = []
-	# run blast 	
-	print('output dir', os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'))	
-	RunBlast(args, os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	# run blast
+	RunBlast(os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, args.num_processes, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
 	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
