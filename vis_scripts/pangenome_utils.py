@@ -154,7 +154,7 @@ def GetGenomesInfo(fasta):
 
 
 def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
-			incorrect_alignments, correct_alignments, incorrect_genes, correct_genes, outfigpath):
+			incorrect_alignments, correct_alignments, incorrect_genes, correct_genes, gene_to_incorrect_reads_kept, gene_to_correct_reads_kept, test_readid_to_read, outfigpath):
 
 	# load data from training and testing genomes of label 1
 	query_fasta = Fasta(testing_fasta) # query --> testing genome
@@ -192,6 +192,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
+	outf = open(os.path.join(args.output_dir, 'testing_reads_pident_prediction_attentions.tsv'), 'w')
 	with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
 		for gene_id, gene_info in correct_genes.items():
 			gene_start = gene_info[5]
@@ -204,6 +205,14 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 					pident_pos.append(0)
 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
 			f.write(f'{gene_id}\t{avg_pident}\tcorrect\n')
+			if avg_pident >= 0.95:
+				similarity = 'similar'
+			else:
+				similarity = 'dissimilar'
+			list_reads = gene_to_correct_reads_kept[gene_id]
+			for i in range(len(list_reads)):
+				read_id = list_reads[i] + f'{gene_id}-correct-{similarity}'
+				outf.write(f'{read_id}\t{test_readid_to_read[list_reads[i]]}\n')
 
 		for gene_id, gene_info in incorrect_genes.items():
 			gene_start = gene_info[5]
@@ -216,7 +225,15 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 					pident_pos.append(0)
 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
 			f.write(f'{gene_id}\t{avg_pident}\tincorrect\n')
-
+			if avg_pident >= 0.95:
+				similarity = 'similar'
+			else:
+				similarity = 'dissimilar'
+			list_reads = gene_to_incorrect_reads_kept[gene_id]
+			for i in range(len(list_reads)):
+				read_id = list_reads[i] + f'{gene_id}-incorrect-{similarity}'
+				outf.write(f'{read_id}\t{test_readid_to_read[list_reads[i]]}\n')
+	outf.close()
 
 	# count the number of identical positions across the aligned regions
 	identical_positions = 0
@@ -449,10 +466,8 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	incorrect_functions = defaultdict(int)
 	correct_reads_kept = dict()
 	incorrect_reads_kept = dict()
-	# sel_correct_evalue = dict()
-	# sel_correct_pident = dict()
-	# sel_incorrect_evalue = dict()
-	# sel_incorrect_pident = dict()
+	gene_to_incorrect_reads_kept = dict()
+	gene_to_correct_reads_kept = dict()
 	scores = {i:0 for i in range(genome_size)}
 
 	outf = open(os.path.join(args.output_dir, 'gene_selection_summary.tsv'), 'w')
@@ -463,10 +478,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 		gene_end_pos = data[2]
 		correct_reads = []
 		incorrect_reads = []
-		# correct_evalue = dict()
-		# correct_pident = dict()
-		# incorrect_evalue = dict()
-		# incorrect_pident = dict()
+
 		correct_mapped_length = dict()
 		incorrect_mapped_length = dict()
 		for read_id, align_info in incorrect_alignments.items():
@@ -479,8 +491,6 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			length_mapped_seq = CheckSeqInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				incorrect_reads.append(read_id)
-				# incorrect_evalue[read_id] = align_info[3]
-				# incorrect_pident[read_id] = align_info[4]
 				incorrect_mapped_length[read_id] = length_mapped_seq
 
 		for read_id, align_info in correct_alignments.items():
@@ -493,16 +503,13 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 			length_mapped_seq = CheckSeqInGene(read_start_pos, read_end_pos, gene_start_pos, gene_end_pos)
 			if length_mapped_seq > 0:
 				correct_reads.append(read_id)
-				# correct_evalue[read_id] = align_info[3]
-				# correct_pident[read_id] = align_info[4]
+
 				correct_mapped_length[read_id] = length_mapped_seq
 
 		if len(incorrect_reads) + len(correct_reads) > 0:
 			# compare number of correct and incorrect positions mapped to gene
 			incorrect_num_pos = sum([incorrect_mapped_length[r] for r in incorrect_reads])
 			correct_num_pos = sum([correct_mapped_length[r] for r in correct_reads])
-			# incorrect_num_pos = sum([sequence_length[r] for r in incorrect_reads])
-			# correct_num_pos = sum([sequence_length[r] for r in correct_reads])
 
 			ratio_incorrect = round(incorrect_num_pos / (correct_num_pos + incorrect_num_pos), 2)
 			ratio_correct = round(correct_num_pos / (correct_num_pos + incorrect_num_pos), 2)
@@ -519,6 +526,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				# sel_incorrect_pident.update(incorrect_pident)
 				if data[0] == 'protein_coding':
 					incorrect_functions[data[5]] += 1
+				gene_to_incorrect_reads_kept[gene_id] = incorrect_reads
 
 			elif ratio_correct > 0.5:
 				correct_genes[gene_id] = [ratio_correct, incorrect_num_pos, correct_num_pos, len(incorrect_reads), len(correct_reads), gene_start_pos, gene_end_pos]
@@ -531,6 +539,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 				# sel_correct_pident.update(correct_pident)
 				if data[0] == 'protein_coding':
 					correct_functions[data[5]] += 1
+				gene_to_correct_reads_kept[gene_id] = correct_reads
 
 	incorrect_functions_sorted = dict(sorted(incorrect_functions.items(), key=lambda item: item[1], reverse=True))
 	with open(os.path.join(args.output_dir, f'{args.testing_genome}_incorrect_functions_{args.prob_threshold}.tsv'), 'w') as f:
@@ -599,7 +608,7 @@ def GetGenes(args, annot_info, incorrect_alignments, correct_alignments, sequenc
 	CreateTsvFile(incorrect_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_incorrect_reads_genes.tsv'))
 	CreateTsvFile(correct_reads_kept, readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_correct_reads_genes.tsv'))
 
-	return scores_list, incorrect_genes, correct_genes, incorrect_reads_kept, correct_reads_kept
+	return scores_list, incorrect_genes, correct_genes, incorrect_reads_kept, correct_reads_kept, gene_to_incorrect_reads_kept, gene_to_correct_reads_kept
 
 
 def GetAnnotInfo(args, genome_id, input_dir):
