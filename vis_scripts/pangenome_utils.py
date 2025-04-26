@@ -153,6 +153,10 @@ def GetGenomesInfo(fasta):
 	return strain
 
 
+avg_pct_identity, ani, test_strain, train_strain = CircosPlot(args, scores, testing_records[0].seq, training_records[0].seq, args.testing_fasta, args.training_fasta, incorrect_alignments, correct_alignments, \
+			 incorrect_genes, correct_genes, gene_to_incorrect_reads_kept, gene_to_correct_reads_kept, test_readid_to_read, os.path.join(args.output_dir, f'{args.testing_genome}_{args.prob_threshold}_circos.png'))
+
+
 def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, training_fasta, \
 			incorrect_alignments, correct_alignments, incorrect_genes, correct_genes, gene_to_incorrect_reads_kept, gene_to_correct_reads_kept, test_readid_to_read, outfigpath):
 
@@ -187,7 +191,8 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 	# Blast genome comparison & plot match blocks
 	# store percentage identity between matching regions
 	percent_identity = []
-	# run blast 		
+	# run blast 	
+	print('output dir', os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'))	
 	RunBlast(args, os.path.join(args.output_dir, 'blast', args.testing_genome, 'test_train_genomes'), testing_fasta, subject=[training_fasta], outfilename=f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
 	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
