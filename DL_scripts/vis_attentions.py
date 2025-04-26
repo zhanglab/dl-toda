@@ -7,7 +7,7 @@ import glob
 import numpy as np
 import math
 import argparse
-import seaborn as sn
+# import seaborn as sn
 import pandas as pd
 import statistics
 import matplotlib.pyplot as plt 
@@ -226,7 +226,7 @@ def main():
     test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 
     # set color palette
-    heatmap_palette = sn.color_palette("viridis", as_cmap=True)
+    # heatmap_palette = sn.color_palette("viridis", as_cmap=True)
 
     data_to_plot = defaultdict(list)
     attentions_df = defaultdict(list)
