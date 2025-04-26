@@ -230,7 +230,7 @@ def CircosPlot(args, scores, test_record_seq, train_record_seq, testing_fasta, t
 				similarity = 'dissimilar'
 			list_reads = gene_to_incorrect_reads_kept[gene_id]
 			for i in range(len(list_reads)):
-				read_id = list_reads[i] + f'{gene_id}-incorrect-{similarity}'
+				read_id = list_reads[i] + f'-{gene_id}-incorrect-{similarity}'
 				outf.write(f'{read_id}\t{test_readid_to_read[list_reads[i]]}\n')
 	outf.close()
 
