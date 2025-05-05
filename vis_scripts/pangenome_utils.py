@@ -678,7 +678,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				
 				assert gene_id != '', 'gene id should not be unknown'
 		
-		with open(os.path.join(args.output_dir, f'{args.testing_genome}_genes.tsv'), 'w') as f:
+		with open(os.path.join(args.output_dir, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
 			num_rrna = len([k for k, v in annot_info.items() if v[0] == 'rRNA'])
 			num_trna = len([k for k, v in annot_info.items() if v[0] == 'tRNA'])
