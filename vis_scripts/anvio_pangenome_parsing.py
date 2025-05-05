@@ -85,8 +85,8 @@ if __name__ == "__main__":
 
 	outf = open(os.path.join(args.output_dir, f'{anvio_output_type}-genes-id.tsv'), 'w')
 	for genome in genomes:
-		print(genome)
 		if genome in genomes_sequences:
+			print(genome)
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
 			sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
 
