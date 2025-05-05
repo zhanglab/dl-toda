@@ -678,9 +678,12 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				
 				assert gene_id != '', 'gene id should not be unknown'
 		
-		print(len([k for k, v in annot_info.items() if v[0] == 'protein_coding']))
-		print(len([k for k, v in annot_info.items() if v[0] == 'tRNA']))
-		print(len([k for k, v in annot_info.items() if v[0] == 'rRNA']))
+		with open(os.path.join(args.output_dir, f'{args.testing_genome}_genes.tsv'), 'w') as f:
+			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
+			num_rrna = len([k for k, v in annot_info.items() if v[0] == 'rRNA'])
+			num_trna = len([k for k, v in annot_info.items() if v[0] == 'tRNA'])
+			f.write(f'# genes\t{len(annot_info)}\n# protein coding genes\t{num_proteins}\n# rRNA coding genes\t{num_rrna}\n# tRNA coding genes\t{num_trna}\n')
+
 
 		return annot_info, locus_tags_info
 
