@@ -120,10 +120,14 @@ if __name__ == "__main__":
 					for gene_id in annot_info.keys():
 						if annot_info[gene_id][-1] == protein_id:
 							seq_gene_id = gene_id
+					if seq_id == "NA":
+						print(genome)
+						print(protein_id)
+						break
 					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\t{gene_category}\n')
 				else:
 					outf.write(f'{seq_id}\tNA\tNA\t{gene_category}\n')
-			break
+			
 	outf.close()
 
 
