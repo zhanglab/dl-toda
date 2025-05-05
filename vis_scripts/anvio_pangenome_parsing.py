@@ -89,7 +89,7 @@ if __name__ == "__main__":
 			print(genome)
 			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
 			sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
-
+			print(len(sequences), len(ids))
 			# write sequences to fasta file
 			with open(os.path.join(args.output_dir, anvio_output_type, f'{genome}-anvio-{anvio_output_type}.fna'), 'w') as fna:
 				for i in range(len(ids)):
@@ -123,6 +123,7 @@ if __name__ == "__main__":
 					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\t{gene_category}\n')
 				else:
 					outf.write(f'{seq_id}\tNA\tNA\t{gene_category}\n')
+			break
 	outf.close()
 
 
