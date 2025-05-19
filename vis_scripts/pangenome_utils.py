@@ -141,7 +141,9 @@ def RunBlast(output_dir, query, num_processes, subject=None, db=False, outfilena
 			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 	'-outfmt', "17", '-max_target_seqs', '1', '-num_threads', f'{num_processes}'])
 		else:
-			result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+			# task = 'megablast'
+			task = 'blasn'
+			result = subprocess.run([blastn_exec, '-query', f'{query}', '-task', f'{task}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
 			 '-max_target_seqs', '5', '-num_threads', f'{num_processes}'])
 
