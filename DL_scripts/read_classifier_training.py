@@ -186,7 +186,7 @@ class DALIPreprocessor(object):
         self.batch_size = batch_size
         self.device_id = device_id
 
-        if args.model_type == "BERT" and args.bert_step == 'finetuning':
+        if args.model_type == "BERT" and args.bert_step in ['finetuning', 'regular']:
 
             self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
@@ -301,7 +301,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 position_ids = data["position_ids"]
                 labels = data["labels"]
 
-            if bert_step == "finetuning":
+            if bert_step in ['finetuning', 'regular']:
                 outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # logits = model(**data).logits
                 logits = outputs.logits
@@ -398,7 +398,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
             position_ids = data["position_ids"]
             labels = data["labels"]
 
-    if bert_step == "finetuning":
+    if bert_step in ['finetuning', 'regular']:
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         # logits = model(**data).logits
@@ -445,7 +445,7 @@ def main():
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning', 'regular'], required=('BERT' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001', required=('--resume' in sys.argv))
@@ -602,7 +602,7 @@ def main():
     else:
         nvidia_dali=False
         if args.model_type == 'BERT':
-            if args.bert_step == 'finetuning':
+            if args.bert_step in ['finetuning', 'regular']:
                 args.datatype = 'finetuning'
             else:
                 args.datatype = 'pretraining'
