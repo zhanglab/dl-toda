@@ -353,14 +353,14 @@ def main():
     if hvd.rank() != hvd.size() - 1:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
+        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
 
         if args.nvidia_dali:
             gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
     else:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
         if args.nvidia_dali:
             gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
