@@ -11,7 +11,6 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
-from BERT import BertConfiguration, BertModelFinetuning, BertModelPretraining
 from transformers import TFBertForSequenceClassification, BertConfig
 import os
 import sys
@@ -209,7 +208,7 @@ def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_
             position_ids = data["position_ids"]
             labels = data["labels"]
 
-    if bert_step == "finetuning":
+    if bert_step in ['finetuning', 'regular']:
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
@@ -250,7 +249,7 @@ def main():
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning', 'regular'], required=('BERT' in sys.argv))
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--n_rows', type=int, default=50)
@@ -388,7 +387,7 @@ def main():
         else:
             nvidia_dali=False
             if args.model_type == 'BERT':
-                if args.bert_step == 'finetuning':
+                if args.bert_step in ['finetuning', 'regular']:
                     args.datatype = 'finetuning'
                 else:
                     args.datatype = 'pretraining'
