@@ -561,14 +561,14 @@ def main():
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
-            if args.pretrained:
-                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-                # freeze all the layers except the pooler layer and the classifier layer
-                # model.layers[0].trainable = False
-            else:
-                model = TFBertForSequenceClassification(config=bert_config)
+            # if args.pretrained:
+            model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+            # freeze all the layers except the pooler layer and the classifier layer
+            # model.layers[0].trainable = False
         elif args.bert_step == "pretraining":
             model = TFBertForMaskedLM(config=bert_config)
+        elif args.bert_step == "regular":
+            model = TFBertForSequenceClassification(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
