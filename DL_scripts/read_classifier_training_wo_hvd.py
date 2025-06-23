@@ -153,7 +153,7 @@ class DALIPreprocessor(object):
         self.batch_size = batch_size
         self.device_id = device_id
 
-        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'finetuning':
+        if args.model_type == "BERT" and args.bert_step == 'finetuning':
 
             self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
@@ -163,7 +163,7 @@ class DALIPreprocessor(object):
                 output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
                 batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
-        if args.model_type == "BERT_HUGGINGFACE" and args.bert_step == 'pretraining':
+        if args.model_type == "BERT" and args.bert_step == 'pretraining':
             self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 if deterministic else None)
@@ -299,7 +299,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     training = True
     with tf.GradientTape() as tape:
 
-        if model_type == 'BERT_HUGGINGFACE':
+        if model_type == 'BERT':
             if nvidia_dali:
                 # input_ids, attention_mask, token_type_ids, labels = data
                 input_ids, attention_mask, position_ids, labels = data
@@ -378,7 +378,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
     training = False
     
-    if model_type == 'BERT_HUGGINGFACE':
+    if model_type == 'BERT':
         if nvidia_dali:
             # input_ids, attention_mask, token_type_ids, labels = data
             input_ids, attention_mask, position_ids, labels = data
@@ -436,7 +436,7 @@ def main():
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
@@ -452,8 +452,8 @@ def main():
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--vocab', help="Path to the vocabulary file")
     parser.add_argument('--rnd', type=int, help='round of training', default=1)
-    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM','BERT_HUGGINGFACE'])
-    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT_HUGGINGFACE' in sys.argv))
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM','BERT'])
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
     parser.add_argument('--path_to_lr_schedule', type=str, help='path to file lr_schedule.py')
     parser.add_argument('--clr', action='store_true', default=False)
     parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
@@ -477,7 +477,7 @@ def main():
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
     # get vocabulary size
-    if args.model_type !='BERT_HUGGINGFACE':
+    if args.model_type !='BERT':
         with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
             content = f.readlines()
             vocab_size = len(content)
@@ -518,7 +518,7 @@ def main():
     epoch = args.epoch_to_resume + 1 if args.resume else 1
 
     # set up the optimizer
-    if args.model_type == 'BERT_HUGGINGFACE':
+    if args.model_type == 'BERT':
         opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
     else:
         if args.optimizer == 'Adam':
@@ -530,7 +530,7 @@ def main():
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
     # define model
-    if args.model_type == 'BERT_HUGGINGFACE':
+    if args.model_type == 'BERT':
         with open(args.bert_config_file, "r") as f:
             args.config_dict = json.load(f)
         # update input vector size
@@ -552,7 +552,7 @@ def main():
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
-    if args.resume and args.model_type != 'BERT_HUGGINGFACE':
+    if args.resume and args.model_type != 'BERT':
         # if args.model_type == 'BERT_HUGGINGFACE' and args.bert_step == "finetuning":
         #     checkpoint = tf.train.Checkpoint(encoder=model)
         #     checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
@@ -589,7 +589,7 @@ def main():
         val_input = val_preprocessor.get_device_dataset()
     else:
         nvidia_dali=False
-        if args.model_type == 'BERT_HUGGINGFACE':
+        if args.model_type == 'BERT':
             if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
             else:
@@ -780,7 +780,7 @@ def main():
 
     # print(d_labels)
     
-    if args.model_type != 'BERT_HUGGINGFACE':
+    if args.model_type != 'BERT':
         # save final embeddings
         emb_weights = model.get_layer('embedding').get_weights()[0]
         out_v = io.open(os.path.join(args.output_dir, f'embeddings_rnd_{args.rnd}.tsv'), 'w', encoding='utf-8')
