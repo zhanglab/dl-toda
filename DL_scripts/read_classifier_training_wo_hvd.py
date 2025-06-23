@@ -760,8 +760,9 @@ def main():
             val_loss.reset_states()
             train_accuracy.reset_states()
             val_accuracy.reset_states()
-            train_accuracy_mask.reset_states()
-            val_accuracy_mask.reset_states()
+            if args.bert_step == "pretraining":
+                train_accuracy_mask.reset_states()
+                val_accuracy_mask.reset_states()
 
             # define end of current epoch
             epoch += 1
