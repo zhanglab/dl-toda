@@ -344,6 +344,7 @@ def main():
         else:
             nvidia_dali=False
             test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
+            print('dataset prepared')
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
         # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
