@@ -335,7 +335,7 @@ def main():
 
         # compute number of steps required to iterate over entire test set
         test_steps = math.ceil(num_reads/(args.batch_size))
-
+        print(f'# test steps: {test_steps}')
         # load data
         if args.nvidia_dali:
             nvidia_dali = True
