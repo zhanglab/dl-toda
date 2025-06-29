@@ -365,7 +365,7 @@ def main():
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
                 all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
-            print(batch)
+            print('batch', batch)
 
         # get list of true species, predicted species and predicted probabilities
         # all_predictions = all_predictions.numpy()
