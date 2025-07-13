@@ -496,11 +496,21 @@ def main():
     ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
     if not os.path.isdir(ckpt_dir):
         os.makedirs(ckpt_dir)
+    
+    # create directory for storing models in keras format
+    models_dir = os.path.join(args.output_dir, f'models-keras-rnd-{args.rnd}')
+    if not os.path.isdir(models_dir):
+        os.makedirs(models_dir)
 
     # create directory for storing logs
     tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
     if not os.path.exists(tensorboard_dir):
         os.makedirs(tensorboard_dir)
+
+    if args.model_type == 'BERT':
+        pretrained_dir= os.path.join(args.output_dir, f'pretrained-models-{args.rnd}')
+        if not os.path.isdir(pretrained_dir):
+            os.makedirs(pretrained_dir)
 
     writer = tf.summary.create_file_writer(tensorboard_dir)
     td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
