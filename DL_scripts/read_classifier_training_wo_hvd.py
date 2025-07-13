@@ -305,7 +305,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 position_ids = data["position_ids"]
                 labels = data["labels"]
             
-            if bert_step == "finetuning":
+            if bert_step in ['finetuning', 'regular']:
                 # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 logits = outputs.logits
