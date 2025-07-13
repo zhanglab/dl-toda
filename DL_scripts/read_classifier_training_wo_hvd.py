@@ -248,7 +248,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-    return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
 
 
     def load_tfrecords_for_pretraining(proto_example):
