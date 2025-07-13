@@ -62,7 +62,7 @@ stop_training = False
 found_min = False
 min_epoch = 0
 
-def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+def on_epoch_end(epoch, test_loss, test_accuracy, optimizer, model, init_lr):
     global patience
     global best_loss
     global best_val_accuracy
@@ -75,8 +75,8 @@ def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, 
     val_accuracy = test_accuracy.result()
 
     if patience == 10:
-        if optimizer.learning_rate == 0.00002:
-            optimizer.learning_rate = 0.000002
+        if optimizer.learning_rate == init_lr:
+            optimizer.learning_rate = init_lr / 10
             patience = 0
         else:
             stop_training = True
@@ -548,7 +548,11 @@ def main():
     #                                               step_size=2 * nstep_per_epoch)
 
     # define the optimizer
-    opt = tf.keras.optimizers.Adam(args.init_lr)
+    if args.optimizer == 'Adam':
+        opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
+    elif args.optimizer == 'SGD':
+        opt = tf.keras.optimizers.SGD(learning_rate=args.init_lr)
+    
     # prevent numeric underflow when using float16
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
@@ -565,7 +569,10 @@ def main():
             # freeze all the layers except the pooler layer and the classifier layer
             # model.layers[0].trainable = False
         elif args.bert_step == "pretraining":
-            model = TFBertForMaskedLM(config=bert_config)
+            if args.pretrained:
+                model = TFBertForMaskedLM.from_pretrained(args.pretrained, config=bert_config)
+            else:
+                model = TFBertForMaskedLM(config=bert_config)
         elif args.bert_step == "regular":
             model = TFBertForSequenceClassification(config=bert_config)
     else:
@@ -728,7 +735,7 @@ def main():
 
                 if args.early_stopping:
                     # assess end of training
-                    on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
+                    on_epoch_end(epoch, val_loss, val_accuracy, opt, model, args.init_lr)
 
                     print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
                     print(f'patience: {patience}')
