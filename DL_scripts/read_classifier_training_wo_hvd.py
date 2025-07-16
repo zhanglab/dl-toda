@@ -291,7 +291,7 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, nvidia_dali=False, train_accuracy_mask=None):
+def training_step(model_type, data, num_labels, train_accuracy, loss, opt, model, first_batch, nvidia_dali=False, train_accuracy_mask=None, bert_step=None):
     training = True
     with tf.GradientTape() as tape:
 
@@ -370,7 +370,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
+def testing_step(model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None, bert_step=None):
     training = False
     
     if model_type == 'BERT':
@@ -632,11 +632,13 @@ def main():
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        if args.bert_step == "pretraining": 
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
-        else:
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
-
+        if args.model_type == "BERT":
+            if args.bert_step == "pretraining": 
+                loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask, bert_step=args.bert_step)
+            else:
+                loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+        elif args.model_type == "AlexNet":
+            loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
         # if batch == 1:
         #     all_labels = [labels]
         #     all_input_ids = [input_ids]
@@ -665,7 +667,7 @@ def main():
     #     for i in range(len(all_labels)):
     #         f.write(f'{all_labels[i]}\n')
         if batch % 100 == 0:
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
             else:
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -676,11 +678,11 @@ def main():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
                 tf.summary.scalar("train_loss", loss_value, step=batch)
                 tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-                if args.bert_step == "pretraining":
+                if args.model_type == "BERT" and args.bert_step == "pretraining":
                     tf.summary.scalar("train_accuracy_mask", train_accuracy_mask.result().numpy(), step=batch)
                 writer.flush()
 
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
             else:
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
@@ -690,10 +692,13 @@ def main():
         if batch % nstep_per_epoch == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(num_val_steps)):
-                if args.bert_step == "pretraining":
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
-                else:
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
+                if args.model_type == "BERT":
+                    if args.bert_step == "pretraining":
+                        testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask, bert_step=args.bert_step)
+                    else:
+                        testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+                elif args.model_type == "AlexNet":
+                    testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
             # adjust learning rate
             if args.lr_decay:
@@ -702,7 +707,7 @@ def main():
                     new_lr = current_lr / 2
                     opt.learning_rate = new_lr
 
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\t{val_accuracy_mask.result().numpy()*100}')
                 vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
             else:
@@ -712,7 +717,7 @@ def main():
             with writer.as_default():
                 tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
                 tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-                if args.bert_step == "pretraining":
+                if args.model_type == "BERT" and args.bert_step == "pretraining":
                     tf.summary.scalar("val_accuracy_mask", val_accuracy_mask.result().numpy(), step=epoch)
                 writer.flush()
 
@@ -756,7 +761,7 @@ def main():
             val_loss.reset_states()
             train_accuracy.reset_states()
             val_accuracy.reset_states()
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 train_accuracy_mask.reset_states()
                 val_accuracy_mask.reset_states()
 
