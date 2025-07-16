@@ -816,6 +816,8 @@ def main():
                     f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
                     f'Number of steps for validation dataset\t{num_val_steps}\n'
+                    f'Training set\t{args.train_tfrecords}\n'
+                    f'Validation set\t{args.val_tfrecords}\n'
                     f'Number of epochs done\t{epoch}\n'
                     f'Initial learning rate\t{args.init_lr}\n')
             if args.model_type in ["LSTM", "AlexNet"]:
