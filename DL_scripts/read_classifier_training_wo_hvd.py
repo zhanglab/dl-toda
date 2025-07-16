@@ -803,6 +803,8 @@ def main():
                 f'Batch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
                 f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
+                f'Training set\t{args.train_tfrecords}\n'
+                f'Validation set\t{args.val_tfrecords}\n'
                 f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
                 f'Number of steps for validation dataset\t{num_val_steps}\n'
                 f'Number of epochs done\t{epoch}\n'
