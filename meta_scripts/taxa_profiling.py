@@ -21,7 +21,7 @@ def LoadReads(args):
         with open(args.fastq, 'r') as handle:
             content = handle.readlines()
     reads = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-    args.reads = {content[i].split('\n')[0] : content[i] for i in range(len(reads))}
+    args.reads = {reads[i].split('\n')[0] : reads[i] for i in range(len(reads))}
     del reads
     del content
 
@@ -57,7 +57,9 @@ def ParseData(args, labels, process_id):
                 sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
                 for idx in reads_idx:
                     # get read id
-                    read_id = args.reads_id[idx]            
+                    read_id = args.reads_id[idx]    
+                    print(read_id)  
+                    print(args.reads[read_id])      
                     # get read based quality score
                     base_qual_scores = args.reads[read_id].split('\n')[3]
                     read_ave_qual_score = GetAveQualScore(base_qual_scores)
