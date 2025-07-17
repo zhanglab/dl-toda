@@ -49,13 +49,16 @@ def ParseData(args, labels, process_id):
             if float(line.rstrip().split('\t')[1]) >= args.cutoff:
                 if line.rstrip().split('\t')[0] in labels:
                     labels_count[line.rstrip().split('\t')[0]].append(count)
-
+    print('parsing based on confidence score done')
+    
     with open(out_filename, 'w') as out_f:
         for label, reads_idx in labels_count.items():
+            print(f'# number of reads classified to label {label}: {len(reads_idx)}')
             if args.binning:
                 fq_filename = os.path.join(args.output_dir, f'bin-{label}.fq')
                 sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
                 for idx in reads_idx:
+                    print(idx)
                     # get read id
                     read_id = args.reads_id[idx]        
                     # get read based quality score
@@ -69,8 +72,8 @@ def ParseData(args, labels, process_id):
 
                     with open(sum_filename, 'a') as out_fs:
                         out_fs.write(f'{read_id}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
-
-            out_f.write(f'{label}\t{len(reads_idx)}\t{count}\n')
+                    
+            out_f.write(f'{label}\t{len(reads_idx)}\t{count+1}\n')
 
 
 if __name__ == "__main__":
