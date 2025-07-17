@@ -57,6 +57,10 @@ def ParseData(args, labels, process_id):
             if args.binning:
                 fq_filename = os.path.join(args.output_dir, f'bin-{label}.fq')
                 sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
+                if os.path.exists(fq_filename):
+                    os.remove(fq_filename)
+                if os.path.exists(sum_filename):
+                    os.remove(sum_filename)
                 for idx in reads_idx:
                     print(idx)
                     # get read id
