@@ -27,7 +27,7 @@ def LoadReads(args):
 
     # get reads id from reads in tfrecords
     args.reads_id = []
-    with open(args.reads_id, 'r') as handle:
+    with open(args.reads_id_file, 'r') as handle:
         for line in handle:
             args.reads_id.append(line.rstrip().split('\t')[0])
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument('--input', type=str, help='output file with classification results obtained from running DL-TODA')
     parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'])
     parser.add_argument('--fastq', type=str, help='path to fastq file')
-    parser.add_argument('--reads_id', type=str, help='path to file containing ordered reads id')
+    parser.add_argument('--reads_id_file', type=str, help='path to file containing ordered reads id')
     parser.add_argument('--binning', help='bin reads', action='store_true', required=('--fastq' in sys.argv and '--reads_id' in sys.argv))
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
