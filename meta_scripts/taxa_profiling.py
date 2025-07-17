@@ -57,9 +57,7 @@ def ParseData(args, labels, process_id):
                 sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
                 for idx in reads_idx:
                     # get read id
-                    read_id = args.reads_id[idx]    
-                    print(read_id)  
-                    print(args.reads[read_id])      
+                    read_id = args.reads_id[idx]        
                     # get read based quality score
                     base_qual_scores = args.reads[read_id].split('\n')[3]
                     read_ave_qual_score = GetAveQualScore(base_qual_scores)
