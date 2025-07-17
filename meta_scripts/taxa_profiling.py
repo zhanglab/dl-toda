@@ -21,7 +21,7 @@ def LoadReads(args):
         with open(args.fastq, 'r') as handle:
             content = handle.readlines()
     reads = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
-    args.reads = {i.split('\n')[0] : i for i in range(len(reads))}
+    args.reads = {content[i].split('\n')[0] : i for i in range(len(reads))}
     del reads
     del content
 
