@@ -55,14 +55,13 @@ def ParseData(args, labels, process_id):
         for label, reads_idx in labels_count.items():
             print(f'# number of reads classified to label {label}: {len(reads_idx)}')
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'bin-{label}.fq')
-                sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
+                fq_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-bin-{label}.fq')
+                sum_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-summary-{label}.tsv')
                 if os.path.exists(fq_filename):
                     os.remove(fq_filename)
                 if os.path.exists(sum_filename):
                     os.remove(sum_filename)
                 for idx in reads_idx:
-                    print(idx)
                     # get read id
                     read_id = args.reads_id[idx]        
                     # get read based quality score
