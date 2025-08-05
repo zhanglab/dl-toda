@@ -71,7 +71,7 @@ def RunAnvio(args, genomes):
     # Generate a genomes storage
     out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "") + '.db')
     print(out_genome_storage)
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', 'genome_storage_input.txt', '--output-file', out_genome_storage])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
 
     # Run pangenome analysis using NCBI blastp for protein search
     blastp_out = os.path.join(args.output_dir, 'anvio', 'blastp')
