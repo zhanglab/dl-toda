@@ -37,13 +37,13 @@ def PrepareFasta(genomes):
                 
     return genomes_kept
 
-def GenerateContigsDb(args, genome):
+def GenerateContigsDb(args, genome_id):
     # Reformat fasta file
-    fasta = glob.glob(os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, 'updated_*.fna'))[0]
+    fasta = glob.glob(os.path.join(args.output_dir, 'genomes', genome_id, 'ncbi_dataset/data', genome_id, 'updated_*.fna'))[0]
     new_fasta = fasta.split('.')[0] + '-fixed.fna'
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-script-reformat-fasta'), fasta, '--output-file', new_fasta, '--simplify-names', '--seq-type', 'NT'])
     # Generate contigs databases
-    output_db = os.path.join(args.output_dir, 'anvio', f'{g}_out.db')
+    output_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
 
 
