@@ -21,8 +21,8 @@ def GetGenomes(args):
     return genomes_of_interest
 
 def GetGenomeAndAnnot(args, genome_id):
-	if f'{genome_id}' not in os.listdir(args.genomes_dir):
-		output_dir = os.path.join(args.genomes_dir, f'{genome_id}')
+	if f'{genome_id}' not in os.listdir(os.path.join(args.output_dir, 'genomes')):
+		output_dir = os.path.join(args.output_dir, 'genomes', f'{genome_id}')
 		os.makedirs(output_dir)
 		os.chdir(output_dir)
 		# download feature table in gtf and fasta file
@@ -39,17 +39,15 @@ def GetGenomeAndAnnot(args, genome_id):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
-    parser.add_argument('--genomes_dir', type=str, help='path to directory containing gtf annotations files')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
-    parser.add_argument('--gtdb_genomes', type=str, help='path to directory containing GTDB genomes')
     args = parser.parse_args()
 
     # create output directory
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
-    if not os.path.isdir(args.genomes_dir):
-        os.makedirs(args.genomes_dir)
+    if not os.path.isdir(os.path.join(args.output_dir, 'genomes')):
+        os.makedirs(os.path.join(args.output_dir, 'genomes'))
     
 
     # get genomes from GTDB
