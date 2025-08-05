@@ -44,7 +44,7 @@ def PrepareContigsDb(args, genome_id):
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-script-reformat-fasta'), fasta, '--output-file', new_fasta, '--simplify-names', '--seq-type', 'NT'])
     # Generate contigs databases
     output_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", "-"), '--output-db-path', output_db])
     # Annotate contigs databases
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num-threads', f'{args.num_threads}', '--search-with', 'blastp'])
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num-threads', f'{args.num_threads}'])
@@ -75,11 +75,11 @@ def RunAnvio(args, genomes):
 
     # # Run pangenome analysis using NCBI blastp for protein search
     blastp_out = os.path.join(args.output_dir, 'anvio', 'blastp')
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
 
     # # Run pangenome analysis using DIAMOND for protein search
     diamond_out = os.path.join(args.output_dir, 'anvio', 'diamond')
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', diamond_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', diamond_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
     # Retrieve singleton gene clusters
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'singleton-gene-clusters.fa')])
