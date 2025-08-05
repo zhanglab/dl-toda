@@ -18,8 +18,8 @@ def PrepareFasta(genomes):
         with open(fasta, 'r') as f:
             for line in f:
                 if line[0] == '>':
-                    print(line[0].lower())
-                    if 'plasmid' in line[0].lower():
+                    print(line.lower())
+                    if 'plasmid' in line.lower():
                         print('yes')
         break
     # 
