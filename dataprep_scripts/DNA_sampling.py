@@ -4,6 +4,7 @@ import zipfile
 import glob
 import argparse
 import subprocess
+import multiprocessing as mp
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from select_genomes import get_gtdb_info
@@ -36,21 +37,24 @@ def PrepareFasta(genomes):
                 
     return genomes_kept
 
+def GenerateContigsDb(args, genome):
+    # Reformat fasta file
+    fasta = glob.glob(os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, 'updated_*.fna'))[0]
+    new_fasta = fasta.split('.')[0] + '-fixed.fna'
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-script-reformat-fasta'), fasta, '--output-file', new_fasta, '--simplify-names', '--seq-type', 'NT'])
+    # Generate contigs databases
+    output_db = os.path.join(args.output_dir, 'anvio', f'{g}_out.db')
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
 
-# def RunAnvio(args):
-    
 
-#     # Reformat fasta files
-#     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-script-reformat-fasta'), 'download', 'genome', 'accession', f'{genome_id}', '--include', 'gtf,genome'])
-    
-#     cat fasta.tsv | parallel -j 8 --colsep '\t' anvi-script-reformat-fasta {2} --output-file {1}-fixed.fna --simplify-names --seq-type NT
-
-#     # Fix format of fasta files header
-#     find ~+ -name "*-fixed.fna" > new-fasta.tsv
-#     while read LINE; do genome=$(echo $LINE | rev | cut -f1 -d"/" | rev | cut -f1 -d"-"); echo -e "$genome\t$LINE" >> fixed-fasta.tsv; done < new-fasta.tsv
-
-#     # Generate contigs databases
-#     cat fixed-fasta.tsv | parallel --colsep '\t' -j 8 anvi-gen-contigs-database --contigs-fasta {2} --project-name label_239 --output-db-path {1}_out.db
+def RunAnvio(args, genomes):
+    # Generate contigs databases
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=GenerateContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 
 #     # Setup a COG data directory
 #     anvi-setup-ncbi-cogs
@@ -114,6 +118,8 @@ if __name__ == "__main__":
         os.makedirs(args.output_dir)
     if not os.path.isdir(os.path.join(args.output_dir, 'genomes')):
         os.makedirs(os.path.join(args.output_dir, 'genomes'))
+    if not os.path.isdir(os.path.join(args.output_dir, 'anvio')):
+        os.makedirs(os.path.join(args.output_dir, 'anvio'))
     
     # get genomes from GTDB
     genomes = GetGenomes(args)
