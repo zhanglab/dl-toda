@@ -19,8 +19,9 @@ def PrepareFasta(genomes):
             for line in f:
                 if line[0] == '>':
                     print(line.lower())
-                    if 'plasmid' in line.lower():
+                    if 'complete' in line.lower():
                         print('yes')
+                    
         break
     # 
 
