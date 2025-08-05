@@ -110,6 +110,8 @@ if __name__ == "__main__":
         print(genome_id)
         GetGenomeAndAnnot(args, genome_id)
     
+    PrepareFasta(genomes)
+    
     # run anvio
     # map gene id for all genomes to pangenome info and get stats on pangenome analysis
 
