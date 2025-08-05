@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import argparse
+import subprocess
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from select_genomes import get_gtdb_info
 
