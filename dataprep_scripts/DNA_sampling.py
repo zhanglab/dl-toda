@@ -63,7 +63,7 @@ def RunAnvio(args, genomes):
 
     # Create tsv file called genome_storage_input.txt
     with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
-        f.write("name\tcontigs_db_path")
+        f.write("name\tcontigs_db_path\n")
         for genome_id in genomes:
             genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
             f.write(f'{genome_id}\t{genome_anvio_db}\n')
