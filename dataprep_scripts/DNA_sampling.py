@@ -82,10 +82,10 @@ def RunAnvio(args, genomes):
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
     # Retrieve singleton gene clusters
-    blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', f'blastp_out/', '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+    # blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', f'blastp_out/', '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
-    anvi-get-sequences-for-gene-clusters --pan-db label_$(echo $LABEL)_blastp_genomes/label_$(echo $LABEL)-PAN.db --genomes-storage label-$(echo $LABEL)-GENOMES.db --max-num-genomes 1 --max-num-genes-from-each-genome 1 --output-file label_$(echo $LABEL)_blastp_genomes/singleton-gene-clusters.fa
+    # anvi-get-sequences-for-gene-clusters --pan-db label_$(echo $LABEL)_blastp_genomes/label_$(echo $LABEL)-PAN.db --genomes-storage label-$(echo $LABEL)-GENOMES.db --max-num-genomes 1 --max-num-genes-from-each-genome 1 --output-file label_$(echo $LABEL)_blastp_genomes/singleton-gene-clusters.fa
 
 def GetGenomes(args):
     genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
