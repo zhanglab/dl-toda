@@ -46,8 +46,8 @@ def PrepareContigsDb(args, genome_id):
     output_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
     # Annotate contigs databases
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num_threads', 4, '--search-with', 'blastp'])
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num_threads', 4])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num_threads', '4', '--search-with', 'blastp'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num_threads', '4'])
 
 def RunAnvio(args, genomes):
     # Generate and annotate contigs databases
