@@ -46,8 +46,8 @@ def PrepareContigsDb(args, genome_id):
     output_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
     # Annotate contigs databases
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num-threads', '4', '--search-with', 'blastp'])
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num-threads', '4'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num-threads', f'{args.num_threads}', '--search-with', 'blastp'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num-threads', f'{args.num_threads}'])
 
 def RunAnvio(args, genomes):
     # Setup a COG data directory
@@ -61,22 +61,31 @@ def RunAnvio(args, genomes):
         for p in processes:
             p.join()
 
-    # # Create tsv file called genome_storage_input.txt
-    # with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
-    #     f.write("name\tcontigs_db_path")
-    # while read LINE; do genome_id=$(echo $LINE | rev | cut -f1 -d"/" | rev | cut -f1-2 -d"_" | cut -f1 -d"."); echo -e "$genome_id\t$LINE" >> genome_storage_input.txt; done < anvio-db
+    # Create tsv file called genome_storage_input.txt
+    with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
+        f.write("name\tcontigs_db_path")
+        for genome_id in genomes:
+            genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
+            f.write(f'{genome_id}\t{genome_anvio_db}\n')
 
-#     # Generate a genomes storage
-#     anvi-gen-genomes-storage --external-genomes genome_storage_input.txt --output-file label-$LABEL-GENOMES.db
+    # Generate a genomes storage
+    out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "") + '.db')
+    print(out_genome_storage)
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', 'genome_storage_input.txt', '--output-file', out_genome_storage])
 
-#     # Run pangenome analysis using NCBI blastp for protein search
-#     anvi-pan-genome --genomes-storage label-$LABEL-GENOMES.db --project-name label_$(echo $LABEL) --output-dir label_$(echo $LABEL)_blastp_genomes --num-threads 64 --use-ncbi-blast --mcl-inflation 10
+    # Run pangenome analysis using NCBI blastp for protein search
+    blastp_out = os.path.join(args.output_dir, 'anvio', 'blastp')
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
 
-#     # Run pangenome analysis using DIAMOND for protein search
-#     anvi-pan-genome --genomes-storage label-$LABEL-GENOMES.db --project-name label_$(echo $LABEL) --output-dir label_$(echo $LABEL)_diamond_genomes --num-threads 64 --mcl-inflation 10 --additional-params-for-seq-search "--masking 0 --sensitive"
+    # Run pangenome analysis using DIAMOND for protein search
+    blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
-#     # Retrieve singleton gene clusters
-#     anvi-get-sequences-for-gene-clusters --pan-db label_$(echo $LABEL)_blastp_genomes/label_$(echo $LABEL)-PAN.db --genomes-storage label-$(echo $LABEL)-GENOMES.db --max-num-genomes 1 --max-num-genes-from-each-genome 1 --output-file label_$(echo $LABEL)_blastp_genomes/singleton-gene-clusters.fa
+    # Retrieve singleton gene clusters
+    blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', f'blastp_out/', '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+
+    # anvi-get-sequences-for-gene-clusters --pan-db label_$(echo $LABEL)_blastp_genomes/label_$(echo $LABEL)-PAN.db --genomes-storage label-$(echo $LABEL)-GENOMES.db --max-num-genomes 1 --max-num-genes-from-each-genome 1 --output-file label_$(echo $LABEL)_blastp_genomes/singleton-gene-clusters.fa
 
 def GetGenomes(args):
     genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
@@ -108,6 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
+    parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--training', action='store_true', default=False, help="train model")
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--train_datasets', action='store_true', default=False, help="create training datasets")
