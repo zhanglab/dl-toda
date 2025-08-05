@@ -50,6 +50,9 @@ def PrepareContigsDb(args, genome_id):
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num_threads', '4'])
 
 def RunAnvio(args, genomes):
+    # Setup a COG data directory
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
+
     # Generate and annotate contigs databases
     with mp.Manager() as manager:
         processes = [mp.Process(target=PrepareContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
@@ -58,9 +61,6 @@ def RunAnvio(args, genomes):
         for p in processes:
             p.join()
 
-    # Setup a COG data directory
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
-    
     # # Create tsv file called genome_storage_input.txt
     # with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
     #     f.write("name\tcontigs_db_path")
