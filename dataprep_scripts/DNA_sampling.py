@@ -61,31 +61,34 @@ def RunAnvio(args, genomes):
     #     for p in processes:
     #         p.join()
 
-    # Create tsv file called genome_storage_input.txt
-    with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
-        f.write("name\tcontigs_db_path\n")
-        for genome_id in genomes:
-            genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
-            f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
+    # # Create tsv file called genome_storage_input.txt
+    # with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
+    #     f.write("name\tcontigs_db_path\n")
+    #     for genome_id in genomes:
+    #         genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
+    #         f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
 
-    # Generate a genomes storage
+    # # Generate a genomes storage
     out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "-") + '-GENOMES.db')
-    print(out_genome_storage)
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
+    # print(out_genome_storage)
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
 
-    # Run pangenome analysis using NCBI blastp for protein search
+    # # Run pangenome analysis using NCBI blastp for protein search
     blastp_out = os.path.join(args.output_dir, 'anvio', 'blastp')
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
 
-    # Run pangenome analysis using DIAMOND for protein search
-    blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+    # # Run pangenome analysis using DIAMOND for protein search
+    diamond_out = os.path.join(args.output_dir, 'anvio', 'diamond')
+    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", ""), '--output-dir', diamond_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
     # Retrieve singleton gene clusters
-    # blastp_out = os.path.join(args.output_dir, 'anvio', 'diamond')
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', f'blastp_out/', '--project-name', args.species.replace(" ", ""), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'singleton-gene-clusters.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'singleton-gene-clusters.fa')])
 
-    # anvi-get-sequences-for-gene-clusters --pan-db label_$(echo $LABEL)_blastp_genomes/label_$(echo $LABEL)-PAN.db --genomes-storage label-$(echo $LABEL)-GENOMES.db --max-num-genomes 1 --max-num-genes-from-each-genome 1 --output-file label_$(echo $LABEL)_blastp_genomes/singleton-gene-clusters.fa
+    # Retrieve single-copy core genes
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'single-copy-core-genes.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'single-copy-core-genes.fa')])
+   
 
 def GetGenomes(args):
     genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
@@ -149,13 +152,17 @@ if __name__ == "__main__":
 
     # prepare training and validation datasets from one training genome
 
-    # call dnabert script (provide the whole genome as input)
+    # call dnabert script (provide the whole genome as input) and return start and end on genome
 
     # shuffle and split sequences between train and val (70/30)
+
+    # write sequences to tsv files + add info (location on chromosome, pangenome info, gene)
 
     # prepare testing dataset
 
     # call dnabert script (provide the whole genome as input)
+
+    # write sequences to tsv files + add info (location on chromosome, pangenome info, gene)
 
     # create tfrecords
 
