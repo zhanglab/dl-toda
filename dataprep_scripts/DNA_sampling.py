@@ -151,6 +151,7 @@ if __name__ == "__main__":
     RunAnvio(args, genomes_kept)
 
     # prepare training and validation datasets from one training genome
+    training_genome = 'GCF_000012465.1'
 
     # call dnabert script (provide the whole genome as input) and return start and end on genome
 
