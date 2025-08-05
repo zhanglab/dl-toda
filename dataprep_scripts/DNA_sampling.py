@@ -37,7 +37,7 @@ def PrepareFasta(genomes):
                 
     return genomes_kept
 
-def GenerateContigsDb(args, genome_id):
+def PrepareContigsDb(args, genome_id):
     # Reformat fasta file
     fasta = glob.glob(os.path.join(args.output_dir, 'genomes', genome_id, 'ncbi_dataset/data', genome_id, 'updated_*.fna'))[0]
     new_fasta = fasta.split('.')[0] + '-fixed.fna'
@@ -45,17 +45,14 @@ def GenerateContigsDb(args, genome_id):
     # Generate contigs databases
     output_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
-
-
-def AnnotateContigsDb(anvio_db):
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', anvio_db, '--num_threads', 4, '--search-with', 'blastp'])
-    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', anvio_db, '--num_threads', 4])
-
+    # Annotate contigs databases
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', output_db, '--num_threads', 4, '--search-with', 'blastp'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num_threads', 4])
 
 def RunAnvio(args, genomes):
-    # Generate contigs databases
+    # Generate and annotate contigs databases
     with mp.Manager() as manager:
-        processes = [mp.Process(target=GenerateContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
+        processes = [mp.Process(target=PrepareContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
         for p in processes:
             p.start()
         for p in processes:
@@ -63,19 +60,11 @@ def RunAnvio(args, genomes):
 
     # Setup a COG data directory
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
-
-    # Annotate contigs databases
-    anvio_db = glob.glob(os.path.join(args.output_dir, 'anvio', '*_out.db'))
-    with mp.Manager() as manager:
-        processes = [mp.Process(target=AnnotateContigsDb, args=(anvio_db[i])) for i in range(len(anvio_db))]
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
     
-#     # Create tsv file called genome_storage_input.txt
-#     echo -e "name\tcontigs_db_path" > genome_storage_input.txt
-#     while read LINE; do genome_id=$(echo $LINE | rev | cut -f1 -d"/" | rev | cut -f1-2 -d"_" | cut -f1 -d"."); echo -e "$genome_id\t$LINE" >> genome_storage_input.txt; done < anvio-db
+    # # Create tsv file called genome_storage_input.txt
+    # with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
+    #     f.write("name\tcontigs_db_path")
+    # while read LINE; do genome_id=$(echo $LINE | rev | cut -f1 -d"/" | rev | cut -f1-2 -d"_" | cut -f1 -d"."); echo -e "$genome_id\t$LINE" >> genome_storage_input.txt; done < anvio-db
 
 #     # Generate a genomes storage
 #     anvi-gen-genomes-storage --external-genomes genome_storage_input.txt --output-file label-$LABEL-GENOMES.db
@@ -128,6 +117,8 @@ if __name__ == "__main__":
     # create output directory
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
+    
+    # if args.anvio:
     if not os.path.isdir(os.path.join(args.output_dir, 'genomes')):
         os.makedirs(os.path.join(args.output_dir, 'genomes'))
     if not os.path.isdir(os.path.join(args.output_dir, 'anvio')):
