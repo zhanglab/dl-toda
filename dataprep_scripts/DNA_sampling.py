@@ -13,6 +13,7 @@ def GetGenomes(args):
         if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                 print(genomes[i])
+                # copy fasta files to output dierctory
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -24,16 +25,16 @@ if __name__ == "__main__":
 
     # create output directory
     if not os.path.isdir(args.output_dir):
-		os.makedirs(args.output_dir)
+        os.makedirs(args.output_dir)
     if not os.path.isdir(os.path.join(args.output_dir, 'fasta')):
-		os.makedirs(os.path.join(args.output_dir, 'fasta'))
+        os.makedirs(os.path.join(args.output_dir, 'fasta'))
 
     # get genomes from GTDB
     genomes = GetGenomes(args)
     
     # run anvio
 
-    # prepare training and validation datasets from training genome
+    # prepare training and validation datasets from one training genome, 
 
     # get annotations
 
