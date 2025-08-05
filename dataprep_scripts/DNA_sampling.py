@@ -13,7 +13,8 @@ anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
 
 
 def PrepareFasta(genomes):
-    # remove plasmids and any genomes with multiple chromosomes    
+    # remove plasmids and any genomes with multiple chromosomes  
+    genomes_kept = []  
     for g in genomes:
         fasta = glob.glob(os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, '*.fna'))[0]
         print(fasta)
@@ -31,9 +32,9 @@ def PrepareFasta(genomes):
             new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
             with open(new_fasta, 'w') as out_fasta:
                 out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
-                    
-        break
-    # 
+            genomes_kept.append(g)
+                
+    return genomes_kept
 
 
 # def RunAnvio(args):
@@ -121,7 +122,7 @@ if __name__ == "__main__":
         print(genome_id)
         GetGenomeAndAnnot(args, genome_id)
     
-    PrepareFasta(genomes)
+    genomes_kept = PrepareFasta(genomes)
     
     # run anvio
     # map gene id for all genomes to pangenome info and get stats on pangenome analysis
