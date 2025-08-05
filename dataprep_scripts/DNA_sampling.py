@@ -25,12 +25,12 @@ def PrepareFasta(genomes):
                 seq_to_keep.append(str(record.seq))
                 descriptions_to_keep.append(record.description)
         
-        if len("".join(updated_seq)) >= 500000:
-        new_fasta = os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
-        # if more than one chromosome, combine chromosomes into one sequence
-        new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
-        with open(new_fasta, 'w') as out_fasta:
-            out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
+        if len("".join(seq_to_keep)) >= 500000:
+            new_fasta = os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
+            # if more than one chromosome, combine chromosomes into one sequence
+            new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
+            with open(new_fasta, 'w') as out_fasta:
+                out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
                     
         break
     # 
