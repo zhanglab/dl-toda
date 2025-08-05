@@ -69,7 +69,7 @@ def RunAnvio(args, genomes):
             f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
 
     # Generate a genomes storage
-    out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "") + '.db')
+    out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "-") + '-GENOMES.db')
     print(out_genome_storage)
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
 
