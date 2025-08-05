@@ -47,6 +47,11 @@ def GenerateContigsDb(args, genome_id):
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-contigs-database'), '--contigs-fasta', new_fasta, '--project-name', args.species.replace(" ", ""), '--output-db-path', output_db])
 
 
+def AnnotateContigsDb(anvio_db):
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-ncbi-cogs'), '--contigs-db', anvio_db, '--num_threads', 4, '--search-with', 'blastp'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', anvio_db, '--num_threads', 4])
+
+
 def RunAnvio(args, genomes):
     # Generate contigs databases
     with mp.Manager() as manager:
@@ -56,14 +61,18 @@ def RunAnvio(args, genomes):
         for p in processes:
             p.join()
 
-#     # Setup a COG data directory
-#     anvi-setup-ncbi-cogs
+    # Setup a COG data directory
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
 
-#     # Annotate contigs databases
-#     find ~+ -name "*_out.db" > anvio-db
-#     cat anvio-db | parallel -j 2 anvi-run-ncbi-cogs --contigs-db {} --num-threads 32 --search-with blastp
-#     cat anvio-db | parallel -j 2 anvi-run-hmms --contigs-db {} --num-threads 32
-
+    # Annotate contigs databases
+    anvio_db = glob.glob(os.path.join(args.output_dir, 'anvio', '*_out.db'))
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=AnnotateContigsDb, args=(anvio_db[i])) for i in range(len(anvio_db))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+    
 #     # Create tsv file called genome_storage_input.txt
 #     echo -e "name\tcontigs_db_path" > genome_storage_input.txt
 #     while read LINE; do genome_id=$(echo $LINE | rev | cut -f1 -d"/" | rev | cut -f1-2 -d"_" | cut -f1 -d"."); echo -e "$genome_id\t$LINE" >> genome_storage_input.txt; done < anvio-db
@@ -111,6 +120,9 @@ if __name__ == "__main__":
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
     parser.add_argument('--training', action='store_true', default=False, help="train model")
+    parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
+    parser.add_argument('--train_datasets', action='store_true', default=False, help="create training datasets")
+    parser.add_argument('--test_datasets', action='store_true', default=False, help="create testing datasets")
     args = parser.parse_args()
 
     # create output directory
