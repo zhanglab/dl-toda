@@ -4,6 +4,7 @@ import zipfile
 import glob
 import argparse
 import subprocess
+from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from select_genomes import get_gtdb_info
 
@@ -14,13 +15,22 @@ anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
 def PrepareFasta(genomes):
     # remove plasmids and any genomes with multiple chromosomes    
     for g in genomes:
-        fasta = glob.glob(os.path.join(os.getcwd(), 'genomes', g, 'ncbi_dataset/data', g, '*.fna'))[0]
-        with open(fasta, 'r') as f:
-            for line in f:
-                if line[0] == '>':
-                    print(line.lower())
-                    if 'complete' in line.lower():
-                        print('yes')
+        fasta = glob.glob(os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, '*.fna'))[0]
+        print(fasta)
+        seq_to_keep = []
+        descriptions_to_keep = []
+        for record in SeqIO.parse(fasta, "fasta"):
+            # remove phages and plasmids
+            if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
+                seq_to_keep.append(str(record.seq))
+                descriptions_to_keep.append(record.description)
+        
+        if len("".join(updated_seq)) >= 500000:
+        new_fasta = os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
+        # if more than one chromosome, combine chromosomes into one sequence
+        new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
+        with open(new_fasta, 'w') as out_fasta:
+            out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
                     
         break
     # 
