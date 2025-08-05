@@ -66,7 +66,7 @@ def RunAnvio(args, genomes):
         f.write("name\tcontigs_db_path\n")
         for genome_id in genomes:
             genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
-            f.write(f'{genome_id}\t{genome_anvio_db}\n')
+            f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
 
     # Generate a genomes storage
     out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "") + '.db')
