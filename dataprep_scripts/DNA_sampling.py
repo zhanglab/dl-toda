@@ -132,6 +132,7 @@ if __name__ == "__main__":
     
     # run anvio
     # map gene id for all genomes to pangenome info and get stats on pangenome analysis
+    RunAnvio(args, genomes_kept)
 
     # prepare training and validation datasets from one training genome
 
