@@ -181,8 +181,8 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
     if not os.path.isdir(os.path.join(output_dir, gene_category, 'blast')):
         os.makedirs(os.path.join(output_dir, gene_category, 'blast'))
     
-    outf = open(os.path.join(args.output_dir, f'results_{software}.tsv'), 'w')
-    outf_miss = open(os.path.join(args.output_dir, f'problematic_proteins_{software}.tsv'), 'w')
+    outf = open(os.path.join(args.output_dir, f'results_{software}.tsv'), 'a')
+    outf_miss = open(os.path.join(args.output_dir, f'problematic_proteins_{software}.tsv'), 'a')
     for genome in genomes:
         if genome in genomes_sequences:
             print(genome)
