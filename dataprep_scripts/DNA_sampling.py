@@ -162,19 +162,19 @@ def PrepareContigsDb(args, genome_id):
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-run-hmms'), '--contigs-db', output_db, '--num-threads', f'{args.num_threads}'])
 
 def ParseAnvioOutput(anvio_output, genomes, gene_category, output_dir):
-	with open(anvio_output, 'r') as f:
+    with open(anvio_output, 'r') as f:
         content = f.readlines()
         id_sequences = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
-		print(id_sequences[:10])
-		aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
-		assert len(aas_sequences) == len(id_sequences)
+	    print(id_sequences[:10])
+	    aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
+	    assert len(aas_sequences) == len(id_sequences)
         # sort sequences based on genome of origin
-		genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
-		# correct genomes accession id
-		for i in range(len(genomes_sequences)):
-			for j in range(len(genomes)):
-				if genomes_sequences[i] in genomes[j]:
-					genomes_sequences[i] = genomes[j]
+	    genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
+	    # correct genomes accession id
+        for i in range(len(genomes_sequences)):
+            for j in range(len(genomes)):
+                if genomes_sequences[i] in genomes[j]:
+                    genomes_sequences[i] = genomes[j]
 
     # create directory to store results
     if not os.path.isdir(os.path.join(output_dir, gene_category, 'blast')):
