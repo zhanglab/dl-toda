@@ -181,6 +181,7 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
         os.makedirs(os.path.join(output_dir, gene_category, 'blast'))
     
     outf = open(os.path.join(output_dir, f'results_{software}.tsv'), 'w')
+    outf_miss = open(os.path.join(output_dir, f'problematic_proteins_{software}.tsv'), 'w')
     for genome in genomes:
         if genome in genomes_sequences:
             print(genome)
@@ -222,22 +223,12 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
                         sys.exit(1)
                     outf.write(f'{genome}\tprotein\t{seq_gene_id}\t{protein_id}\t{gene_category}\t{annot_info[gene_id][1]}\t{annot_info[gene_id][2]}\t{annot_info[gene_id][5]}\n')
                 else:
-                    print(f'protein not found: {seq_id}')
-                    sys.exit(1)
-                #     outf.write(f'{genome}\tprotein\tNA\tNA\t{gene_category}\tNA\tNA\tNA\n')
+                    outf_miss.write(f'{genome}\tprotein\t{seq_id}\t{gene_category}\n')
             # add info about non coding genes
             for gene_id, info in annot_info.items():
                 if info[0] in ['tRNA','rRNA']:
                     outf.write(f'{genome}\t{info[0]}\t{gene_id}\tNA\tNA\t{info[1]}\t{info[2]}\tNA\n')
     outf.close()
-
-
-				# 	annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
-				# elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
-				# 	annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
-				# elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
-				# 	annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
-
 
 def RunAnvio(args, genomes):
     # # Setup a COG data directory
