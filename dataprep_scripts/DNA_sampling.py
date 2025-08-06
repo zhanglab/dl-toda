@@ -44,8 +44,6 @@ def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None)
 	return alignments
 
 
-GetAnnotInfo(args, genome, args.output_dir)
-
 def GetAnnotInfo(args, genome_id, input_dir):
 
 	annot_file = glob.glob(os.path.join(args.output_dir, 'ncbi_database', f'{genome_id}/ncbi_dataset/data/{genome_id}/genomic.gtf'))
@@ -165,12 +163,12 @@ def ParseAnvioOutput(anvio_output, genomes, gene_category, output_dir):
     with open(anvio_output, 'r') as f:
         content = f.readlines()
         id_sequences = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
-	    print(id_sequences[:10])
-	    aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
-	    assert len(aas_sequences) == len(id_sequences)
+        print(id_sequences[:10])
+        aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
+        assert len(aas_sequences) == len(id_sequences)
         # sort sequences based on genome of origin
-	    genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
-	    # correct genomes accession id
+        genomes_sequences = [id_sequences[i].split('|')[2].split(':')[1] for i in range(len(id_sequences))]
+        # correct genomes accession id
         for i in range(len(genomes_sequences)):
             for j in range(len(genomes)):
                 if genomes_sequences[i] in genomes[j]:
@@ -178,53 +176,53 @@ def ParseAnvioOutput(anvio_output, genomes, gene_category, output_dir):
 
     # create directory to store results
     if not os.path.isdir(os.path.join(output_dir, gene_category, 'blast')):
-		os.makedirs(os.path.join(output_dir, gene_category, 'blast'))
+        os.makedirs(os.path.join(output_dir, gene_category, 'blast'))
     
     outf = open(os.path.join(output_dir, gene_category, f'{gene_category}-genes-id.tsv'), 'w')
-	for genome in genomes:
-		if genome in genomes_sequences:
-			print(genome)
-			ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
-			sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
-			print(len(sequences), len(ids))
-			# write sequences to fasta file
-			with open(os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), 'w') as fna:
-				for i in range(len(ids)):
-					# remove any - from sequence
-					if '-' in sequences[i]:
-						updated_sequence = ''
-						for j in range(len(sequences[i])):
-							if sequences[i][j] != '-':
-								updated_sequence += sequences[i][j]
-					else:
-						updated_sequence = sequences[i]
-					fna.write(f'>{ids[i]}\n{updated_sequence}\n')
+    for genome in genomes:
+        if genome in genomes_sequences:
+            print(genome)
+            ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
+            sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
+            print(len(sequences), len(ids))
+            # write sequences to fasta file
+            with open(os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), 'w') as fna:
+                for i in range(len(ids)):
+                    # remove any - from sequence
+                    if '-' in sequences[i]:
+                        updated_sequence = ''
+                        for j in range(len(sequences[i])):
+                            if sequences[i][j] != '-':
+                                updated_sequence += sequences[i][j]
+                    else:
+                        updated_sequence = sequences[i]
+                    fna.write(f'>{ids[i]}\n{updated_sequence}\n')
 
-			# align amino acid sequences to genome
-			RunBlast(args, genome, os.path.join(output_dir, gene_category, 'blast', genome), os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), \
-				args.num_threads, f'{output_dir}/{gene_category}/blast/{genome}/blastp.out', args.output_dir)
+            # align amino acid sequences to genome
+            RunBlast(args, genome, os.path.join(output_dir, gene_category, 'blast', genome), os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), \
+                args.num_threads, f'{output_dir}/{gene_category}/blast/{genome}/blastp.out', args.output_dir)
 
 			# parse alignment
-			alignments = GetAlignments(ids, f'{output_dir}/{gene_category}/blast/{genome}/blastp.out')
+            alignments = GetAlignments(ids, f'{output_dir}/{gene_category}/blast/{genome}/blastp.out')
 			# get annotations of genome
-			annot_info, _ = GetAnnotInfo(args, genome, args.output_dir)
+            annot_info, _ = GetAnnotInfo(args, genome, args.output_dir)
 			# get genes id from proteins id
-			for seq_id in ids:
-				if seq_id in alignments:
-					protein_id = alignments[seq_id][0]
+            for seq_id in ids:
+                if seq_id in alignments:
+                    protein_id = alignments[seq_id][0]
 					# get gene id
-					seq_gene_id = 'NA'
-					for gene_id in annot_info.keys():
-						if annot_info[gene_id][-1] == protein_id:
-							seq_gene_id = gene_id
-					if seq_id == "NA":
-						print(f'gene id not found: {genome}\t{protein_id}')
-						sys.exit(1)
-					outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\t{gene_category}\n')
-				else:
-					outf.write(f'{seq_id}\tNA\tNA\t{gene_category}\n')
+                    seq_gene_id = 'NA'
+                    for gene_id in annot_info.keys():
+                        if annot_info[gene_id][-1] == protein_id:
+                            seq_gene_id = gene_id
+                    if seq_id == "NA":
+                        print(f'gene id not found: {genome}\t{protein_id}')
+                        sys.exit(1)
+                    outf.write(f'{seq_id}\t{protein_id}\t{seq_gene_id}\t{gene_category}\n')
+                else:
+                    outf.write(f'{seq_id}\tNA\tNA\t{gene_category}\n')
 			
-	outf.close()
+    outf.close()
 
 
 def RunAnvio(args, genomes):
