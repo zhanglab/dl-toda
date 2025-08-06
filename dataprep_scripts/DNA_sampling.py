@@ -221,7 +221,9 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
                         print(f'gene id not found: {genome}\t{protein_id}')
                         sys.exit(1)
                     outf.write(f'{genome}\tprotein\t{seq_gene_id}\t{protein_id}\t{gene_category}\t{annot_info[gene_id][1]}\t{annot_info[gene_id][2]}\t{annot_info[gene_id][5]}\n')
-                # else:
+                else:
+                    print(f'protein not found: {seq_id}')
+                    sys.exit(1)
                 #     outf.write(f'{genome}\tprotein\tNA\tNA\t{gene_category}\tNA\tNA\tNA\n')
             # add info about non coding genes
             for gene_id, info in annot_info.items():
