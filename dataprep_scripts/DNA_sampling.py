@@ -228,7 +228,7 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
             # add info about non coding genes
             for gene_id, info in annot_info.items():
                 if info[0] in ['tRNA','rRNA']:
-                    outf.write(f'{genome}\t{info[0]}\t{gene_id}\tNA\tNA\t{info[1]}\t{info[2]}\tNA\n')
+                    outf.write(f'{genome}\t{info[0]}\t{gene_id}\tNA\tNA\t{info[1]}\t{info[2]}\t{info[4]}\n')
     outf.close()
 
 def RunAnvio(args, genomes):
@@ -272,10 +272,10 @@ def RunAnvio(args, genomes):
     # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'single-copy-core-genes.fa')])
    
     # Parse anvio output
-    print(genomes)
     ParseAnvioOutput(args, os.path.join(blastp_out, 'single-copy-core-genes.fa'), genomes, 'core', blastp_out, 'blastp')
     ParseAnvioOutput(args, os.path.join(blastp_out, 'singleton-gene-clusters.fa'), genomes, 'accessory', blastp_out, 'blastp')
-
+    ParseAnvioOutput(args, os.path.join(diamond_out, 'single-copy-core-genes.fa'), genomes, 'core', diamond_out, 'diamond')
+    ParseAnvioOutput(args, os.path.join(diamond_out, 'singleton-gene-clusters.fa'), genomes, 'accessory', diamond_out, 'diamond')
 
 def GetGenomes(args):
     genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # prepare training and validation datasets from one training genome
     training_genome = 'GCF_000012465.1'
 
-    # call dnabert script (provide the whole genome as input) and return start and end on genome
+    # call dnabert script (provide the whole genome as input) and return start and end on genome for each sequence
 
     # shuffle and split sequences between train and val (70/30)
 
