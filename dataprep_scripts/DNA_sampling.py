@@ -127,7 +127,7 @@ def PrepareFasta(genomes):
     # remove plasmids and any genomes with multiple chromosomes  
     genomes_kept = []  
     for g in genomes:
-        fasta = glob.glob(os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, '*.fna'))[0]
+        fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))[0]
         print(fasta)
         seq_to_keep = []
         descriptions_to_keep = []
@@ -138,7 +138,7 @@ def PrepareFasta(genomes):
                 descriptions_to_keep.append(record.description)
         
         if len("".join(seq_to_keep)) >= 500000:
-            new_fasta = os.path.join(args.output_dir, 'genomes', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
+            new_fasta = os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
             # if more than one chromosome, combine chromosomes into one sequence
             new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
             with open(new_fasta, 'w') as out_fasta:
@@ -149,7 +149,7 @@ def PrepareFasta(genomes):
 
 def PrepareContigsDb(args, genome_id):
     # Reformat fasta file
-    fasta = glob.glob(os.path.join(args.output_dir, 'genomes', genome_id, 'ncbi_dataset/data', genome_id, 'updated_*.fna'))[0]
+    fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated_*.fna'))[0]
     new_fasta = fasta.split('.')[0] + '-fixed.fna'
     result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-script-reformat-fasta'), fasta, '--output-file', new_fasta, '--simplify-names', '--seq-type', 'NT'])
     # Generate contigs databases
