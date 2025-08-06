@@ -4,6 +4,7 @@ import zipfile
 import glob
 import argparse
 import subprocess
+from collections import defaultdict
 import multiprocessing as mp
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
