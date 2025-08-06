@@ -5,6 +5,7 @@ import glob
 import argparse
 import subprocess
 from collections import defaultdict
+import pandas as pd
 import multiprocessing as mp
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
@@ -180,8 +181,8 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
     if not os.path.isdir(os.path.join(output_dir, gene_category, 'blast')):
         os.makedirs(os.path.join(output_dir, gene_category, 'blast'))
     
-    outf = open(os.path.join(output_dir, f'results_{software}.tsv'), 'w')
-    outf_miss = open(os.path.join(output_dir, f'problematic_proteins_{software}.tsv'), 'w')
+    outf = open(os.path.join(args.output_dir, f'results_{software}.tsv'), 'w')
+    outf_miss = open(os.path.join(args.output_dir, f'problematic_proteins_{software}.tsv'), 'w')
     for genome in genomes:
         if genome in genomes_sequences:
             print(genome)
@@ -221,7 +222,7 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
                     if seq_id == "NA":
                         print(f'gene id not found: {genome}\t{protein_id}')
                         sys.exit(1)
-                    outf.write(f'{genome}\tprotein\t{seq_gene_id}\t{protein_id}\t{gene_category}\t{annot_info[gene_id][1]}\t{annot_info[gene_id][2]}\t{annot_info[gene_id][5]}\n')
+                    outf.write(f'{genome}\tprotein\t{seq_gene_id}\t{protein_id}\t{gene_category}\t{annot_info[seq_gene_id][1]}\t{annot_info[seq_gene_id][2]}\t{annot_info[seq_gene_id][5]}\n')
                 else:
                     outf_miss.write(f'{genome}\tprotein\t{seq_id}\t{gene_category}\n')
             # add info about non coding genes
@@ -333,7 +334,6 @@ if __name__ == "__main__":
     genomes_kept = PrepareFasta(genomes)
     
     # run anvio
-    # map gene id for all genomes to pangenome info and get stats on pangenome analysis
     RunAnvio(args, genomes_kept)
 
     # prepare training and validation datasets from one training genome
