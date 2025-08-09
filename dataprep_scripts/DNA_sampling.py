@@ -348,7 +348,7 @@ def GetGenomes(args):
     return genomes_of_interest
 
 def GetGenomeAndAnnot(args, genome_id):
-	if f'{genome_id}' not in os.listdir(os.path.join(args.output_dir, 'ncbi_database')):
+    if f'{genome_id}' not in os.listdir(os.path.join(args.output_dir, 'ncbi_database')):
         print(genome_id)
 		output_dir = os.path.join(args.output_dir, 'ncbi_database', f'{genome_id}')
 		os.makedirs(output_dir)
