@@ -50,8 +50,9 @@ def GetMatchRegions(args, input_file):
 			for i in range(qstart, qend+1, 1):
 				query_pident[i] = pident
 
-			if pident >= args.min_identity:
-				align_coords.append([qstart, qend, pident])
+			# if pident >= args.min_identity:
+			align_coords.append([qstart, qend, pident])
+            print(qstart, qend, pident)
 
 	return align_coords, query_pident
 
@@ -405,6 +406,7 @@ def GetAni(args, data, input_file):
             # get taxonomy
             idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
+            break
             
 
 
