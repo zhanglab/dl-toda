@@ -9,12 +9,73 @@ import pandas as pd
 import multiprocessing as mp
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
+from process_pretrain_data import sampling, cut_no_overlap
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
-anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
+anvio _exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
 blastp_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastp"
+blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
+
+
+def RunBlastn(output_dir, query, subject, num_processes, outfilename):
+	if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
+    # create database
+    result = subprocess.run([makeblastdb_exec, '-in', f'{subject}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+    # align sequences
+    # task = 'megablast'
+	task = 'blastn'
+    result = subprocess.run([blastn_exec, '-query', f'{query}', '-task', f'{task}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
+            '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
+            '-max_target_seqs', '5', '-num_threads', f'{num_processes}'])
+
+
+def GetMatchRegions(args, input_file):
+	align_coords = []
+	query_pident = {}
+	with open(input_file, 'r') as f:
+		for count, line in enumerate(f, 1):
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			qstart = int(line.rstrip().split(',')[4])
+			qend = int(line.rstrip().split(',')[5])
+			pident = float(line.rstrip().split(',')[8])
+			qseq = line.rstrip().split(',')[9]
+			sseq = line.rstrip().split(',')[10]
+			for i in range(qstart, qend+1, 1):
+				query_pident[i] = pident
+
+			if pident >= args.min_identity:
+				align_coords.append([qstart, qend, pident])
+
+	return align_coords, query_pident
+
+
+CalculateANI(args, genome_id, ref_fasta, output_dir)
+
+def CalculateANI(args, query_genome, ref_fasta, output_dir):	
+    # Get fasta file of query genome
+    query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
+    
+	# Align query and reference genomes with blastn 
+    RunBlastn(output_dir, query_fasta, ref_fasta, args.num_processes, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+
+	# count the number of identical positions across the aligned regions
+    # store percentage identity between matching regions
+	percent_identity = []
+    for ac in align_coords:
+        percent_identity.append(ac[2])
+        identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+	# get stats on percentage identity
+	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	ani = round(statistics.mean(percent_identity), 2)
+
+    return ani
+
 
 def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None):
 	alignments = defaultdict(list)
@@ -111,7 +172,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 		return annot_info, locus_tags_info
 
 
-def RunBlast(args, genome_id, output_dir, query, num_processes, outfilename, input_dir):
+def RunBlastp(args, genome_id, output_dir, query, num_processes, outfilename, input_dir):
 	
 	if not os.path.isdir(output_dir):
 		os.makedirs(output_dir)
@@ -203,7 +264,7 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
                     fna.write(f'>{ids[i]}\n{updated_sequence}\n')
 
             # align amino acid sequences to genome
-            RunBlast(args, genome, os.path.join(output_dir, gene_category, 'blast', genome), os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), \
+            RunBlastp(args, genome, os.path.join(output_dir, gene_category, 'blast', genome), os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), \
                 args.num_threads, f'{output_dir}/{gene_category}/blast/{genome}/blastp.out', args.output_dir)
 
 			# parse alignment
@@ -280,12 +341,12 @@ def RunAnvio(args, genomes):
 def GetGenomes(args):
     genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
     genus = args.species.split(' ')[0]
-    genomes_of_interest = []
+    genomes_of_interest = {}
     for i in range(len(genomes)):
         if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
                 print(genomes[i])
-                genomes_of_interest.append(genomes[i])
+                genomes_of_interest[genomes[i]] = gtdb_taxonomy[i].split(';')[-1].split('__')[1]
     return genomes_of_interest
 
 def GetGenomeAndAnnot(args, genome_id):
@@ -302,44 +363,91 @@ def GetGenomeAndAnnot(args, genome_id):
 	else:
 		print(f'{genome_id}\tdownload already done')
 
+
+def GetAni(args, data, input_file):
+    with open(input_file, 'r') as f:
+        genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+    # get fasta files and annotations
+    for genome_id in genomes.values():
+        GetGenomeAndAnnot(args, genome_id)
+    genomes_kept = PrepareFasta(list(genomes.values()))
+
+    # get training genomes for positive and negative class
+    sp_genome = genomes[args.label]
+    neg_genomes = [g for l, g in genomes.items() if l != args.label]
+    print(f'# negative genomes: {len(neg_genomes)}')
+    
+    # get gtdb taxonomy info
+    genomes, _, _, _, _, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
+
+    # compute ani between genomes
+    ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
+    with open(os.path.join(args.output_dir, data, 'ani.tsv'), 'w') as f:
+        for genome_id in neg_genomes:
+            # get label
+            for k, v in genomes.items():
+                if v == genome_id:
+                    f.write(f'{k}\t')
+            output_dir = os.path.join(args.output_dir, 'train', 'blast', genome_id)
+            ani = CalculateANI(args, genome_id, ref_fasta, output_dir)
+            f.write(f'{genome_id}\t{ani}\t')
+            # get taxonomy
+            idx = genomes.index(genome_id)
+            f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
+    parser.add_argument('--label', type=str, help='label associated with species')
+    parser.add_argument('--min_identity', type=int, help='identity threshold for comparing aligned sequences', default=70)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
-    parser.add_argument('--training', action='store_true', default=False, help="train model")
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
-    parser.add_argument('--train_datasets', action='store_true', default=False, help="create training datasets")
-    parser.add_argument('--test_datasets', action='store_true', default=False, help="create testing datasets")
+    parser.add_argument('--datasets', action='store_true', default=False, help="create training datasets")
+    parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
+    parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
     args = parser.parse_args()
 
     # create output directory
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
-    
-    # if args.anvio:
-    if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
-        os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
-    if not os.path.isdir(os.path.join(args.output_dir, 'anvio')):
-        os.makedirs(os.path.join(args.output_dir, 'anvio'))
-    
-    # get genomes from GTDB
-    genomes = GetGenomes(args)
-    # get fasta files and annotations
-    for genome_id in genomes:
-        print(genome_id)
-        GetGenomeAndAnnot(args, genome_id)
-    
-    genomes_kept = PrepareFasta(genomes)
-    
-    # run anvio
-    RunAnvio(args, genomes_kept)
 
-    # prepare training and validation datasets from one training genome
-    training_genome = 'GCF_000012465.1'
+    if args.anvio:
+        if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
+            os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
+        if not os.path.isdir(os.path.join(args.output_dir, 'anvio')):
+            os.makedirs(os.path.join(args.output_dir, 'anvio'))
+        
+        # get genomes from GTDB
+        genomes = GetGenomes(args)
+        # get fasta files and annotations
+        for genome_id in genomes.keys():
+            print(genome_id)
+            GetGenomeAndAnnot(args, genome_id)
+        
+        genomes_kept = PrepareFasta(list(genomes.keys()))
+        
+        # run anvio
+        RunAnvio(args, genomes_kept)
 
-    # call dnabert script (provide the whole genome as input) and return start and end on genome for each sequence
+    if args.datasets:
+        if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
+            os.makedirs(os.path.join(args.output_dir, 'train', 'blast'))
+            os.makedirs(os.path.join(args.output_dir, 'test', 'blast'))
+        if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
+            os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
+
+        # compute ani between genomes
+        GetAni(args, 'train', args.train_genomes)
+        GetAni(args, 'test', args.test_genomes)
+        # prepare training and validation datasets from one training genome
+      
+
+    # call dnabert functions (provide the whole genome as input) and return start and end on genome for each sequence
+
+
 
     # shuffle and split sequences between train and val (70/30)
 
