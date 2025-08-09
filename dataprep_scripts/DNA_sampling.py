@@ -59,8 +59,8 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
     query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
     
 	# Align query and reference genomes with blastn 
-    RunBlastn(output_dir, query_fasta, ref_fasta, args.num_processes, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-    align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+    RunBlastn(output_dir, query_fasta, ref_fasta, args.num_processes, f'{output_dir}/blastn.out')
+    align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blastn.out')
 
 	# count the number of identical positions across the aligned regions
     # store percentage identity between matching regions
@@ -388,13 +388,13 @@ def GetAni(args, data, input_file):
 
     # compute ani between genomes
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
-    with open(os.path.join(args.output_dir, data, 'ani.tsv'), 'w') as f:
+    with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
         for genome_id in neg_genomes:
             # get label
             for k, v in genomes.items():
                 if v == genome_id:
                     f.write(f'{k}\t')
-            output_dir = os.path.join(args.output_dir, 'train', 'blast', genome_id)
+            output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
             ani = CalculateANI(args, genome_id, ref_fasta, output_dir)
             f.write(f'{genome_id}\t{ani}\t')
             # get taxonomy
@@ -440,8 +440,8 @@ if __name__ == "__main__":
 
     if args.datasets:
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
-            os.makedirs(os.path.join(args.output_dir, 'train', 'blast'))
-            os.makedirs(os.path.join(args.output_dir, 'test', 'blast'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'blast'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
         if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
             os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
 
