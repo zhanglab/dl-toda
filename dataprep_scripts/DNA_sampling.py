@@ -40,15 +40,15 @@ def GetMatchRegions(args, input_file):
 	query_pident = {}
 	with open(input_file, 'r') as f:
 		for count, line in enumerate(f, 1):
-			sstart = int(line.rstrip().split(',')[2])
-			send = int(line.rstrip().split(',')[3])
-			qstart = int(line.rstrip().split(',')[4])
-			qend = int(line.rstrip().split(',')[5])
-			pident = float(line.rstrip().split(',')[8])
-			qseq = line.rstrip().split(',')[9]
-			sseq = line.rstrip().split(',')[10]
-			for i in range(qstart, qend+1, 1):
-	            query_pident[i] = pident
+            sstart = int(line.rstrip().split(',')[2])
+            send = int(line.rstrip().split(',')[3])
+            qstart = int(line.rstrip().split(',')[4])
+            qend = int(line.rstrip().split(',')[5])
+            pident = float(line.rstrip().split(',')[8])
+            qseq = line.rstrip().split(',')[9]
+            sseq = line.rstrip().split(',')[10]
+            for i in range(qstart, qend+1, 1):
+                query_pident[i] = pident
 			# if pident >= args.min_identity:
             align_coords.append([qstart, qend, pident])
             print(qstart, qend, pident)
