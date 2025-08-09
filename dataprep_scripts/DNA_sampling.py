@@ -365,10 +365,18 @@ def GetGenomeAndAnnot(args, genome_id):
 def GetAni(args, data, input_file):
     with open(input_file, 'r') as f:
         genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+    
+    # check which fasta files are missing
+    genomes_in_db = os.listdir(os.path.join(args.output_dir, 'ncbi_database'))
+    genomes_to_download = list(set(genomes).difference(genomes_downloaded))
+    genomes_downloaded = list(set(genomes).intersection(genomes_downloaded))
+    
     # get fasta files and annotations
-    for genome_id in genomes.values():
-        GetGenomeAndAnnot(args, genome_id)
-    genomes_kept = PrepareFasta(list(genomes.values()))
+    if len(genomes_to_download) > 0:
+        for genome_id in genomes_to_download:
+            GetGenomeAndAnnot(args, genome_id)
+        genomes_kept = PrepareFasta(genomes_to_download)
+        genomes = {k:v for k, v in genomes.items() if v in genomes_downloaded+genomes_kept}
 
     # get training genomes for positive and negative class
     sp_genome = genomes[args.label]
