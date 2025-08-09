@@ -378,9 +378,7 @@ def GetAni(args, data, input_file):
             GetGenomeAndAnnot(args, genome_id)
         genomes_kept = PrepareFasta(genomes_to_download)
         genomes = {k:v for k, v in genomes.items() if v in genomes_downloaded+genomes_kept}
-    for k, v in genomes.items():
-        print(k, v, type(k))
-        break
+
     # get training genomes for positive and negative class
     sp_genome = genomes[args.label]
     neg_genomes = [g for l, g in genomes.items() if l != args.label]
@@ -410,7 +408,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
-    parser.add_argument('--label', type=int, help='label associated with species')
+    parser.add_argument('--label', type=str, help='label associated with species')
     parser.add_argument('--min_identity', type=int, help='identity threshold for comparing aligned sequences', default=70)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
