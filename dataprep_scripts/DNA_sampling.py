@@ -7,6 +7,7 @@ import subprocess
 from collections import defaultdict
 import pandas as pd
 import multiprocessing as mp
+from pygenomeviz.parser import Fasta
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
@@ -65,6 +66,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
 	# count the number of identical positions across the aligned regions
     # store percentage identity between matching regions
     percent_identity = []
+    identical_positions = 0
     for ac in align_coords:
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
@@ -72,7 +74,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
     avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
     ani = round(statistics.mean(percent_identity), 2)
 
-    return ani
+    return ani, avg_pct_identity
 
 
 def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None):
@@ -391,16 +393,18 @@ def GetAni(args, data, input_file):
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
     with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
         for genome_id in neg_genomes:
+            print(genome_id)
             # get label
             for k, v in genomes.items():
                 if v == genome_id:
                     f.write(f'{k}\t')
             output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
-            ani = CalculateANI(args, genome_id, ref_fasta, output_dir)
-            f.write(f'{genome_id}\t{ani}\t')
+            ani, avg_pct_identity = CalculateANI(args, genome_id, ref_fasta, output_dir)
+            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t')
             # get taxonomy
             idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
+            break
 
 
 if __name__ == "__main__":
