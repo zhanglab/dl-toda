@@ -385,7 +385,7 @@ def GetAni(args, data, input_file):
     print(f'# negative genomes: {len(neg_genomes)}')
     
     # get gtdb taxonomy info
-    genomes, _, _, _, _, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
+    list_genomes, _, _, _, _, gtdb_taxonomy, ncbi_taxonomy = get_gtdb_info(args.gtdb_info)
 
     # compute ani between genomes
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
@@ -399,7 +399,7 @@ def GetAni(args, data, input_file):
             ani = CalculateANI(args, genome_id, ref_fasta, output_dir)
             f.write(f'{genome_id}\t{ani}\t')
             # get taxonomy
-            idx = genomes.index(genome_id)
+            idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
 
 
