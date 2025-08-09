@@ -54,8 +54,6 @@ def GetMatchRegions(args, input_file):
 	return align_coords, query_pident
 
 
-CalculateANI(args, genome_id, ref_fasta, output_dir)
-
 def CalculateANI(args, query_genome, ref_fasta, output_dir):	
     # Get fasta file of query genome
     query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
