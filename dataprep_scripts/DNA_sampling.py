@@ -7,6 +7,7 @@ import subprocess
 from collections import defaultdict
 import pandas as pd
 import multiprocessing as mp
+import statistics
 from pygenomeviz.parser import Fasta
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
@@ -58,7 +59,7 @@ def GetMatchRegions(args, input_file):
 def CalculateANI(args, query_genome, ref_fasta, output_dir):	
     # Get fasta file of query genome
     query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
-	
+	query_size = Fasta(query_fasta).full_genome_length
     # Align query and reference genomes with blastn 
     RunBlastn(output_dir, query_fasta, ref_fasta, args.num_threads, f'{output_dir}/blastn.out')
     align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blastn.out')
@@ -71,10 +72,10 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
 	# get stats on percentage identity
-    avg_pct_identity = round(identical_positions/Fasta(query_fasta).full_genome_length*100,2)
+    avg_pct_identity = round(identical_positions/query_size*100,2)
     ani = round(statistics.mean(percent_identity), 2)
 
-    return ani, avg_pct_identity
+    return ani, avg_pct_identity, query_size
 
 
 def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None):
@@ -399,8 +400,8 @@ def GetAni(args, data, input_file):
                 if v == genome_id:
                     f.write(f'{k}\t')
             output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
-            ani, avg_pct_identity = CalculateANI(args, genome_id, ref_fasta, output_dir)
-            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t')
+            ani, avg_pct_identity, query_size = CalculateANI(args, genome_id, ref_fasta, output_dir)
+            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t')
             # get taxonomy
             idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
