@@ -55,8 +55,7 @@ def GetMatchRegions(args, input_file):
     return align_coords, query_pident
 
 
-def CalculateANI(args, query_genome, ref_fasta, output_dir):	
-    query_fasta = query_fasta[0]
+def CalculateANI(args, query_fasta, ref_fasta, output_dir):	
     query_size = Fasta(query_fasta).full_genome_length
     # Align query and reference genomes with blastn 
     RunBlastn(output_dir, query_fasta, ref_fasta, args.num_threads, f'{output_dir}/blastn.out')
@@ -406,7 +405,7 @@ def GetAni(args, data, input_file):
                     if v == genome_id:
                         f.write(f'{k}\t')
                 output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
-                ani, avg_pct_identity, query_size = CalculateANI(args, genome_id, ref_fasta, output_dir)
+                ani, avg_pct_identity, query_size = CalculateANI(args, query_fasta, ref_fasta, output_dir)
                 # get taxonomy
                 if genome_id in list_genomes:
                     idx = list_genomes.index(genome_id)
