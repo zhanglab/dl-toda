@@ -350,17 +350,17 @@ def GetGenomes(args):
 def GetGenomeAndAnnot(args, genome_id):
     if f'{genome_id}' not in os.listdir(os.path.join(args.output_dir, 'ncbi_database')):
         print(genome_id)
-		output_dir = os.path.join(args.output_dir, 'ncbi_database', f'{genome_id}')
-		os.makedirs(output_dir)
-		os.chdir(output_dir)
+        output_dir = os.path.join(args.output_dir, 'ncbi_database', f'{genome_id}')
+        os.makedirs(output_dir)
+        os.chdir(output_dir)
 		# download feature table in gtf and fasta file
-		result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'gtf,genome,protein'])
+        result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'gtf,genome,protein'])
 		# unzip output folder
-		with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
-			zip_ref.extractall(os.getcwd())
-		os.chdir(args.output_dir)
-	else:
-		print(f'{genome_id}\tdownload already done')
+        with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
+            zip_ref.extractall(os.getcwd())
+        os.chdir(args.output_dir)
+    else:
+        print(f'{genome_id}\tdownload already done')
 
 
 def GetAni(args, data, input_file):
