@@ -21,13 +21,13 @@ makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/mak
 
 
 def RunBlastn(output_dir, query, subject, num_processes, outfilename):
-	if not os.path.isdir(output_dir):
-		os.makedirs(output_dir)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     # create database
     result = subprocess.run([makeblastdb_exec, '-in', f'{subject}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
     # align sequences
     # task = 'megablast'
-	task = 'blastn'
+    task = 'blastn'
     result = subprocess.run([blastn_exec, '-query', f'{query}', '-task', f'{task}', '-db', f'{output_dir}/blastdb', '-out', f'{outfilename}', \
             '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
             '-max_target_seqs', '5', '-num_threads', f'{num_processes}'])
