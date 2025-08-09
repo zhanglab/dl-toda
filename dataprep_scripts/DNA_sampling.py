@@ -51,7 +51,6 @@ def GetMatchRegions(args, input_file):
                 query_pident[i] = pident
 			# if pident >= args.min_identity:
             align_coords.append([qstart, qend, pident])
-            print(qstart, qend, pident)
 
     return align_coords, query_pident
 
@@ -72,7 +71,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
 	# get stats on percentage identity
-    avg_pct_identity = round(identical_positions/query_size*100,2)
+    avg_pct_identity = round(identical_positions/query_size*100,2)*100
     ani = round(statistics.mean(percent_identity), 2)
 
     return ani, avg_pct_identity, query_size
@@ -405,7 +404,7 @@ def GetAni(args, data, input_file):
             # get taxonomy
             idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
-            break
+            
             
 
 
