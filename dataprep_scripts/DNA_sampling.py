@@ -59,7 +59,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
     query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
     
 	# Align query and reference genomes with blastn 
-    RunBlastn(output_dir, query_fasta, ref_fasta, args.num_processes, f'{output_dir}/blastn.out')
+    RunBlastn(output_dir, query_fasta, ref_fasta, args.num_threads, f'{output_dir}/blastn.out')
     align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blastn.out')
 
 	# count the number of identical positions across the aligned regions
