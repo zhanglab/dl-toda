@@ -368,8 +368,8 @@ def GetAni(args, data, input_file):
     
     # check which fasta files are missing
     genomes_in_db = os.listdir(os.path.join(args.output_dir, 'ncbi_database'))
-    genomes_to_download = list(set(genomes).difference(genomes_downloaded))
-    genomes_downloaded = list(set(genomes).intersection(genomes_downloaded))
+    genomes_to_download = list(set(genomes).difference(genomes_in_db))
+    genomes_downloaded = list(set(genomes).intersection(genomes_in_db))
     
     # get fasta files and annotations
     if len(genomes_to_download) > 0:
