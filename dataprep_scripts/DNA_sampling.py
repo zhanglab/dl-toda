@@ -58,8 +58,8 @@ def GetMatchRegions(args, input_file):
 def CalculateANI(args, query_genome, ref_fasta, output_dir):	
     # Get fasta file of query genome
     query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
-    
-	# Align query and reference genomes with blastn 
+	
+    # Align query and reference genomes with blastn 
     RunBlastn(output_dir, query_fasta, ref_fasta, args.num_threads, f'{output_dir}/blastn.out')
     align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blastn.out')
 
@@ -71,7 +71,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
 	# get stats on percentage identity
-    avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+    avg_pct_identity = round(identical_positions/Fasta(query_fasta).full_genome_length*100,2)
     ani = round(statistics.mean(percent_identity), 2)
 
     return ani, avg_pct_identity
@@ -393,7 +393,7 @@ def GetAni(args, data, input_file):
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
     with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
         for genome_id in neg_genomes:
-            print(genome_id)
+            print(genome_id, sp_genome)
             # get label
             for k, v in genomes.items():
                 if v == genome_id:
