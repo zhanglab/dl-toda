@@ -396,7 +396,7 @@ def GetAni(args, data, input_file):
         for genome_id in neg_genomes:
             print(genome_id, sp_genome)
             # Get fasta file of query genome
-            query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))
+            query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, '*.fna'))
             if len(query_fasta) == 1:
                 query_fasta = query_fasta[0]
                 # get label
