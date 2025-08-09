@@ -36,10 +36,10 @@ def RunBlastn(output_dir, query, subject, num_processes, outfilename):
 
 
 def GetMatchRegions(args, input_file):
-	align_coords = []
-	query_pident = {}
-	with open(input_file, 'r') as f:
-		for count, line in enumerate(f, 1):
+    align_coords = []
+    query_pident = {}
+    with open(input_file, 'r') as f:
+        for count, line in enumerate(f, 1):
             sstart = int(line.rstrip().split(',')[2])
             send = int(line.rstrip().split(',')[3])
             qstart = int(line.rstrip().split(',')[4])
