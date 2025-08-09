@@ -56,25 +56,25 @@ def GetMatchRegions(args, input_file):
 
 
 def CalculateANI(args, query_genome, ref_fasta, output_dir):	
-    # Get fasta file of query genome
-    query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))[0]
+    query_fasta = query_fasta[0]
     query_size = Fasta(query_fasta).full_genome_length
     # Align query and reference genomes with blastn 
     RunBlastn(output_dir, query_fasta, ref_fasta, args.num_threads, f'{output_dir}/blastn.out')
     align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blastn.out')
 
-	# count the number of identical positions across the aligned regions
+    # count the number of identical positions across the aligned regions
     # store percentage identity between matching regions
     percent_identity = []
     identical_positions = 0
     for ac in align_coords:
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-	# get stats on percentage identity
+    # get stats on percentage identity
     avg_pct_identity = round(identical_positions/query_size*100,2)*100
     ani = round(statistics.mean(percent_identity), 2)
-
+    
     return ani, avg_pct_identity, query_size
+
 
 
 def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None):
@@ -391,29 +391,40 @@ def GetAni(args, data, input_file):
 
     # compute ani between genomes
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, '*.fna'))[0]
+    prob_f = open(os.path.join(args.output_dir, 'datasets', data, 'missing_genomes.tsv'), 'w')
     with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
         for genome_id in neg_genomes:
             print(genome_id, sp_genome)
-            # get label
-            for k, v in genomes.items():
-                if v == genome_id:
-                    f.write(f'{k}\t')
-            output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
-            ani, avg_pct_identity, query_size = CalculateANI(args, genome_id, ref_fasta, output_dir)
-            # get taxonomy
-            if genome_id in list_genomes:
-                idx = list_genomes.index(genome_id)
-                gtdb_tax = gtdb_taxonomy[idx]
-                ncbi_tax = ncbi_taxonomy[idx]
-            else:
-                if 'GCA' in genome_id:
-                    if 'GCF_' + genome_id.split('_')[1] in list_genomes:
-                        genome_id = 'GCF_' + genome_id.split('_')[1]
+            # Get fasta file of query genome
+            query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', query_genome, 'ncbi_dataset/data', query_genome, '*.fna'))
+            if len(query_fasta) == 1:
+                query_fasta = query_fasta[0]
+                # get label
+                for k, v in genomes.items():
+                    if v == genome_id:
+                        f.write(f'{k}\t')
+                output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
+                ani, avg_pct_identity, query_size = CalculateANI(args, genome_id, ref_fasta, output_dir)
+                # get taxonomy
+                if genome_id in list_genomes:
+                    idx = list_genomes.index(genome_id)
+                    gtdb_tax = gtdb_taxonomy[idx]
+                    ncbi_tax = ncbi_taxonomy[idx]
+                    f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
                 else:
-                    gtdb_tax = 'na'
-                    ncbi_tax = 'na'
-                    print(genome_id, 'genome id not found in gtdb')
-            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')            
+                    if 'GCA' in genome_id:
+                        if 'GCF_' + genome_id.split('_')[1] in list_genomes:
+                            genome_id = 'GCF_' + genome_id.split('_')[1]
+                            idx = list_genomes.index(genome_id)
+                            gtdb_tax = gtdb_taxonomy[idx]
+                            ncbi_tax = ncbi_taxonomy[idx]
+                            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
+                        else:
+                            prob_f.write(f'{genome_id}\tgenome id not found in gtdb\n')
+                    else:
+                        prob_f.write(f'{genome_id}\tgenome id not found in gtdb\n')
+            else:
+                prob_f.write(f'{genome_id}\tncbi dataset not downloaded\n')
             
 
 
