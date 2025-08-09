@@ -379,7 +379,7 @@ def GetAni(args, data, input_file):
         genomes_kept = PrepareFasta(genomes_to_download)
         genomes = {k:v for k, v in genomes.items() if v in genomes_downloaded+genomes_kept}
     for k, v in genomes.items():
-        print(k, v)
+        print(k, v, type(k))
         break
     # get training genomes for positive and negative class
     sp_genome = genomes[args.label]
