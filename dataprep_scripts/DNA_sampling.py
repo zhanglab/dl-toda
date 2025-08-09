@@ -400,11 +400,20 @@ def GetAni(args, data, input_file):
                     f.write(f'{k}\t')
             output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
             ani, avg_pct_identity, query_size = CalculateANI(args, genome_id, ref_fasta, output_dir)
-            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t')
             # get taxonomy
-            idx = list_genomes.index(genome_id)
-            f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
-            
+            if genome_id in list_genomes:
+                idx = list_genomes.index(genome_id)
+                gtdb_tax = gtdb_taxonomy[idx]
+                ncbi_tax = ncbi_taxonomy[idx]
+            else:
+                if 'GCA' in genome_id:
+                    if 'GCF_' + genome_id.split('_')[1] in list_genomes:
+                        genome_id = 'GCF_' + genome_id.split('_')[1]
+                else:
+                    gtdb_tax = 'na'
+                    ncbi_tax = 'na'
+                    print(genome_id, 'genome id not found in gtdb')
+            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')            
             
 
 
