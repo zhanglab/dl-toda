@@ -64,13 +64,13 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
 
 	# count the number of identical positions across the aligned regions
     # store percentage identity between matching regions
-	percent_identity = []
+    percent_identity = []
     for ac in align_coords:
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
 	# get stats on percentage identity
-	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-	ani = round(statistics.mean(percent_identity), 2)
+    avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+    ani = round(statistics.mean(percent_identity), 2)
 
     return ani
 
