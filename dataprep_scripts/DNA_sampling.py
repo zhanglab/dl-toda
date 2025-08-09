@@ -405,7 +405,7 @@ def GetAni(args, data, input_file):
             # get taxonomy
             idx = list_genomes.index(genome_id)
             f.write(f'{gtdb_taxonomy[idx]}\t{ncbi_taxonomy[idx]}\n')
-            break
+            
 
 
 if __name__ == "__main__":
