@@ -48,13 +48,12 @@ def GetMatchRegions(args, input_file):
 			qseq = line.rstrip().split(',')[9]
 			sseq = line.rstrip().split(',')[10]
 			for i in range(qstart, qend+1, 1):
-				query_pident[i] = pident
-
+	            query_pident[i] = pident
 			# if pident >= args.min_identity:
-			align_coords.append([qstart, qend, pident])
+            align_coords.append([qstart, qend, pident])
             print(qstart, qend, pident)
 
-	return align_coords, query_pident
+    return align_coords, query_pident
 
 
 def CalculateANI(args, query_genome, ref_fasta, output_dir):	
