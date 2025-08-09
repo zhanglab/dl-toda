@@ -60,7 +60,7 @@ def CalculateANI(args, query_genome, ref_fasta, output_dir):
     
 	# Align query and reference genomes with blastn 
     RunBlastn(output_dir, query_fasta, ref_fasta, args.num_processes, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-	align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+    align_coords, query_pident = GetMatchRegions(args, f'{args.output_dir}/blast/{args.testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
 
 	# count the number of identical positions across the aligned regions
     # store percentage identity between matching regions
