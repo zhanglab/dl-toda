@@ -452,7 +452,23 @@ def SampleGenome(starts, ends, line):
     print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
     print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
     return sequences
-    
+
+def CutGenome(cuts, line):
+    start = 0
+    seq_length = []
+    vector_length = []
+    sequences = []
+    for cut in cuts:
+        new_line = line[start:start+cut]
+        sentence = get_kmer_sentence(new_line, kmer=args.kmer)
+        if len(sentence) != 0:
+            vector_length.append(len(sentence.split(" ")))
+            seq_length.append(len(new_line))
+            start += cut
+            sequences.append(sentence)
+    print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+    print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+    return sequences
 
 def get_kmer_sentence(original_string, kmer=1, stride=1):
     if kmer == -1:
@@ -518,8 +534,7 @@ if __name__ == "__main__":
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', 'train', 'ani.tsv'), 'r') as f:
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
-            for k, v in genomes.items():
-                print(k, v)
+
         sp_genome = genomes[args.label][0]
         neg_genomes = [g[0] for l, g in genomes.items() if l != args.label]
 
@@ -528,7 +543,9 @@ if __name__ == "__main__":
         starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
         sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
         print(f'# DNA sequences: {len(sequences)}')
-        # cuts = cut_no_overlap(length=genomes[args.label][2], kmer=1)
+        cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
+        sequences = CutGenome(cuts, sp_fasta.full_genome_seq)
+        print(f'# DNA sequences: {len(sequences)}')
 
         
 
