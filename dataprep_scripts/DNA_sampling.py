@@ -405,9 +405,10 @@ def GetAni(args, data, input_file):
             if len(query_fasta) == 1:
                 query_fasta = query_fasta[0]
                 # get label
+                label = ""
                 for k, v in genomes.items():
                     if v == genome_id:
-                        f.write(f'{k}\t')
+                        label = k
                 output_dir = os.path.join(args.output_dir, 'datasets', data, 'blast', genome_id)
                 ani, avg_pct_identity, query_size = CalculateANI(args, query_fasta, ref_fasta, output_dir)
                 # get taxonomy
@@ -415,7 +416,7 @@ def GetAni(args, data, input_file):
                     idx = list_genomes.index(genome_id)
                     gtdb_tax = gtdb_taxonomy[idx]
                     ncbi_tax = ncbi_taxonomy[idx]
-                    f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
+                    f.write(f'{label}\t{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
                 else:
                     if 'GCA' in genome_id:
                         if 'GCF_' + genome_id.split('_')[1] in list_genomes:
@@ -423,7 +424,7 @@ def GetAni(args, data, input_file):
                             idx = list_genomes.index(genome_id)
                             gtdb_tax = gtdb_taxonomy[idx]
                             ncbi_tax = ncbi_taxonomy[idx]
-                            f.write(f'{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
+                            f.write(f'{label}\t{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
                         else:
                             prob_f.write(f'{genome_id}\tgenome id not found in gtdb\n')
                     else:
@@ -431,7 +432,36 @@ def GetAni(args, data, input_file):
             else:
                 prob_f.write(f'{genome_id}\tncbi dataset not downloaded\n')
             
+def SampleGenome(starts, ends, line):
+    seq_length = []
+    vector_length = []
+    sequences = []
+    for i in range(len(starts)):
+        new_line = line[starts[i]:ends[i]]
+        sentence = get_kmer_sentence(new_line, kmer=1)
+        if len(sentence) != 0:
+            sequences.append(sentence)
+            vector_length.append(len(sentence.split(" ")))
+            seq_length.append(len(new_line))
+        else:
+            print(starts[i], 'empty string')
+    print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+    print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+    return sequences
+    
 
+def get_kmer_sentence(original_string, kmer=1, stride=1):
+    if kmer == -1:
+        return original_string
+
+    sentence = ""
+    original_string = original_string.replace("\n", "")
+    i = 0
+    while i < len(original_string)-kmer:
+        sentence += original_string[i:i+kmer] + " "
+        i += stride
+    
+    return sentence[:-1].strip("\"")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -442,7 +472,8 @@ if __name__ == "__main__":
     parser.add_argument('--min_identity', type=int, help='identity threshold for comparing aligned sequences', default=70)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
-    parser.add_argument('--datasets', action='store_true', default=False, help="create training datasets")
+    parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
+    parser.add_argument('--ani', action='store_true', default=False, help="compute ANI between genomes")
     parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
     parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
     args = parser.parse_args()
@@ -475,14 +506,27 @@ if __name__ == "__main__":
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
         if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
             os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
+        if args.ani:
+            # compute ani between genomes
+            GetAni(args, 'train', args.train_genomes)
+            GetAni(args, 'test', args.test_genomes)
 
-        # compute ani between genomes
-        GetAni(args, 'train', args.train_genomes)
-        GetAni(args, 'test', args.test_genomes)
-        # prepare training and validation datasets from one training genome
-      
+        # get genomes
+        with open(os.path.join(args.output_dir, 'datasets', 'train', 'ani.tsv'), 'r') as f:
+            genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
+        sp_genome = genomes[args.label][0]
+        neg_genomes = [g[0] for l, g in genomes.items() if l != args.label]
 
-    # call dnabert functions (provide the whole genome as input) and return start and end on genome for each sequence
+        # get sequences from dnabert functions
+        sp_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0])
+        starts, ends = sampling(length=genomes[args.label][2], kmer=1, sampling_rate=0.5)
+        sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
+        print(f'# DNA sequences: {len(sequences)}')
+        # cuts = cut_no_overlap(length=genomes[args.label][2], kmer=1)
+
+        
+
+
 
 
 
