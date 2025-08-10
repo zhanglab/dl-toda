@@ -192,7 +192,7 @@ def PrepareFasta(genomes):
     for g in genomes:
         print(g)
         fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))
-        if len(fasta) == 1:
+        if len(fasta) >= 1:
             print(fasta)
             fasta = fasta[0]
             seq_to_keep = []
