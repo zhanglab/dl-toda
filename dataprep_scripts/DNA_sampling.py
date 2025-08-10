@@ -397,6 +397,10 @@ def GetAni(args, data, input_file):
     print(ref_fasta)
     prob_f = open(os.path.join(args.output_dir, 'datasets', data, 'problematic_genomes.tsv'), 'w')
     with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
+        idx = list_genomes.index(sp_genome)
+        sp_gtdb_tax = gtdb_taxonomy[idx]
+        sp_ncbi_tax = ncbi_taxonomy[idx]
+        f.write(f'{args.label}\t{sp_genome}\t100\t{Fasta(ref_fasta).full_genome_length}\t{sp_gtdb_tax}\t{sp_ncbi_tax}\n')
         for genome_id in neg_genomes:
             print(genome_id, sp_genome)
             # Get fasta file of query genome
