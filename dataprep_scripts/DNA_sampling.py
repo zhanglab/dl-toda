@@ -525,7 +525,7 @@ if __name__ == "__main__":
 
         # get sequences from dnabert functions
         sp_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0])
-        starts, ends = sampling(length=genomes[args.label][2], kmer=1, sampling_rate=0.5)
+        starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
         sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
         print(f'# DNA sequences: {len(sequences)}')
         # cuts = cut_no_overlap(length=genomes[args.label][2], kmer=1)
