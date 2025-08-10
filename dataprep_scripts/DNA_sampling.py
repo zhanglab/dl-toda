@@ -69,7 +69,7 @@ def CalculateANI(args, query_fasta, ref_fasta, output_dir):
         percent_identity.append(ac[2])
         identical_positions += (ac[2]/100*(ac[1]-ac[0]))
     # get stats on percentage identity
-    avg_pct_identity = round(identical_positions/query_size*100,2)*100
+    avg_pct_identity = round(identical_positions/query_size*100,2)
     ani = round(statistics.mean(percent_identity), 2)
     
     return ani, avg_pct_identity, query_size
@@ -190,6 +190,7 @@ def PrepareFasta(genomes):
     # remove plasmids and any genomes with multiple chromosomes  
     genomes_kept = []  
     for g in genomes:
+        print(g)
         fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))[0]
         print(fasta)
         seq_to_keep = []
@@ -367,18 +368,19 @@ def GetAni(args, data, input_file):
     with open(input_file, 'r') as f:
         genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
     
-    # check which fasta files are missing
-    genomes_in_db = os.listdir(os.path.join(args.output_dir, 'ncbi_database'))
-    genomes_to_download = list(set(genomes.values()).difference(genomes_in_db))
-    genomes_downloaded = list(set(genomes.values()).intersection(genomes_in_db))
-    print(f'# genomes downloaded: {len(genomes_downloaded)}')
-    print(f'# genomes to download: {len(genomes_to_download)}')
-    # get fasta files and annotations
-    if len(genomes_to_download) > 0:
-        for genome_id in genomes_to_download:
-            GetGenomeAndAnnot(args, genome_id)
+    # # check which fasta files are missing
+    # genomes_in_db = os.listdir(os.path.join(args.output_dir, 'ncbi_database'))
+    # genomes_to_download = list(set(genomes.values()).difference(genomes_in_db))
+    # genomes_downloaded = list(set(genomes.values()).intersection(genomes_in_db))
+    # print(f'# genomes downloaded: {len(genomes_downloaded)}')
+    # print(f'# genomes to download: {len(genomes_to_download)}')
+    # # get fasta files and annotations
+    # if len(genomes_to_download) > 0:
+        # for genome_id in genomes_to_download:
+    for genome_id in genomes.values():
+        GetGenomeAndAnnot(args, genome_id)
         genomes_kept = PrepareFasta(genomes_to_download)
-        genomes = {k:v for k, v in genomes.items() if v in genomes_downloaded+genomes_kept}
+        genomes = {k:v for k, v in genomes.items() if v in genomes_kept}
 
     # get training genomes for positive and negative class
     sp_genome = genomes[args.label]
