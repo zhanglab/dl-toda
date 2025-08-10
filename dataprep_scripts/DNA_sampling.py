@@ -460,7 +460,7 @@ def CutGenome(cuts, line):
     sequences = []
     for cut in cuts:
         new_line = line[start:start+cut]
-        sentence = get_kmer_sentence(new_line, kmer=args.kmer)
+        sentence = get_kmer_sentence(new_line, kmer=1)
         if len(sentence) != 0:
             vector_length.append(len(sentence.split(" ")))
             seq_length.append(len(new_line))
