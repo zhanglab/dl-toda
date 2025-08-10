@@ -191,23 +191,25 @@ def PrepareFasta(genomes):
     genomes_kept = []  
     for g in genomes:
         print(g)
-        fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))[0]
-        print(fasta)
-        seq_to_keep = []
-        descriptions_to_keep = []
-        for record in SeqIO.parse(fasta, "fasta"):
-            # remove phages and plasmids
-            if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
-                seq_to_keep.append(str(record.seq))
-                descriptions_to_keep.append(record.description)
-        
-        if len("".join(seq_to_keep)) >= 500000:
-            new_fasta = os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
-            # if more than one chromosome, combine chromosomes into one sequence
-            new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
-            with open(new_fasta, 'w') as out_fasta:
-                out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
-            genomes_kept.append(g)
+        fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))
+        if len(fasta) == 1:
+            print(fasta)
+            fasta = fasta[0]
+            seq_to_keep = []
+            descriptions_to_keep = []
+            for record in SeqIO.parse(fasta, "fasta"):
+                # remove phages and plasmids
+                if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
+                    seq_to_keep.append(str(record.seq))
+                    descriptions_to_keep.append(record.description)
+            
+            if len("".join(seq_to_keep)) >= 500000:
+                new_fasta = os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, f'updated_{fasta.split("/")[-1]}')
+                # if more than one chromosome, combine chromosomes into one sequence
+                new_description = f'{descriptions_to_keep[0]}, combined' if len(descriptions_to_keep) > 1 else descriptions_to_keep[0]
+                with open(new_fasta, 'w') as out_fasta:
+                    out_fasta.write(f'>{new_description}\n{"".join(seq_to_keep)}\n')
+                genomes_kept.append(g)
                 
     return genomes_kept
 
@@ -366,7 +368,7 @@ def GetGenomeAndAnnot(args, genome_id):
 
 def GetAni(args, data, input_file):
     with open(input_file, 'r') as f:
-        genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+        all_genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
     
     # # check which fasta files are missing
     # genomes_in_db = os.listdir(os.path.join(args.output_dir, 'ncbi_database'))
@@ -377,11 +379,11 @@ def GetAni(args, data, input_file):
     # # get fasta files and annotations
     # if len(genomes_to_download) > 0:
         # for genome_id in genomes_to_download:
-    for genome_id in genomes.values():
+    for genome_id in all_genomes.values():
         GetGenomeAndAnnot(args, genome_id)
-    genomes_kept = PrepareFasta(list(genomes.values()))
-    genomes = {k:v for k, v in genomes.items() if v in genomes_kept}
-
+    genomes_kept = PrepareFasta(list(all_genomes.values()))
+    genomes = {k:v for k, v in all_genomes.items() if v in genomes_kept}
+    print(f'# genomes kept: {len(genomes_kept)}\t{len(genomes)}')
     # get training genomes for positive and negative class
     sp_genome = genomes[args.label]
     neg_genomes = [g for l, g in genomes.items() if l != args.label]
