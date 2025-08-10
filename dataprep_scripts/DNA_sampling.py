@@ -514,6 +514,8 @@ if __name__ == "__main__":
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', 'train', 'ani.tsv'), 'r') as f:
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
+            for k, v in genomes.items():
+                print(k, v)
         sp_genome = genomes[args.label][0]
         neg_genomes = [g[0] for l, g in genomes.items() if l != args.label]
 
