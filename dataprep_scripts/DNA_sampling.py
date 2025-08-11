@@ -190,10 +190,8 @@ def PrepareFasta(genomes):
     # remove plasmids and any genomes with multiple chromosomes  
     genomes_kept = []  
     for g in genomes:
-        print(g)
         fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', g, 'ncbi_dataset/data', g, '*.fna'))
         if len(fasta) >= 1:
-            print(fasta)
             fasta = fasta[0]
             seq_to_keep = []
             descriptions_to_keep = []
@@ -229,7 +227,6 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
     with open(anvio_output, 'r') as f:
         content = f.readlines()
         id_sequences = [content[i].rstrip()[1:] for i in range(0, len(content), 2)]
-        print(id_sequences[:10])
         aas_sequences = [content[i].rstrip() for i in range(1, len(content), 2)]
         assert len(aas_sequences) == len(id_sequences)
         # sort sequences based on genome of origin
@@ -248,10 +245,8 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
     outf_miss = open(os.path.join(args.output_dir, f'problematic_proteins_{software}.tsv'), 'a')
     for genome in genomes:
         if genome in genomes_sequences:
-            print(genome)
             ids = [id_sequences[i] for i in range(len(id_sequences)) if genomes_sequences[i] == genome]
             sequences = [aas_sequences[i] for i in range(len(aas_sequences)) if genomes_sequences[i] == genome]
-            print(len(sequences), len(ids))
             # write sequences to fasta file
             with open(os.path.join(output_dir, gene_category, f'{genome}-anvio-{gene_category}.fna'), 'w') as fna:
                 for i in range(len(ids)):
@@ -295,44 +290,43 @@ def ParseAnvioOutput(args, anvio_output, genomes, gene_category, output_dir, sof
     outf.close()
 
 def RunAnvio(args, genomes):
-    # # Setup a COG data directory
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
+    # Setup a COG data directory
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-setup-ncbi-cogs')])
 
-    # # Generate and annotate contigs databases
-    # with mp.Manager() as manager:
-    #     processes = [mp.Process(target=PrepareContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
-    #     for p in processes:
-    #         p.start()
-    #     for p in processes:
-    #         p.join()
+    # Generate and annotate contigs databases
+    with mp.Manager() as manager:
+        processes = [mp.Process(target=PrepareContigsDb, args=(args, genomes[i])) for i in range(len(genomes))]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
 
-    # # Create tsv file called genome_storage_input.txt
-    # with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
-    #     f.write("name\tcontigs_db_path\n")
-    #     for genome_id in genomes:
-    #         genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
-    #         f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
+    # Create tsv file called genome_storage_input.txt
+    with open(os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), 'w') as f:
+        f.write("name\tcontigs_db_path\n")
+        for genome_id in genomes:
+            genome_anvio_db = os.path.join(args.output_dir, 'anvio', f'{genome_id}_out.db')
+            f.write(f'{genome_id.split(".")[0]}\t{genome_anvio_db}\n')
 
     # # Generate a genomes storage
-    # out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "-") + '-GENOMES.db')
-    # print(out_genome_storage)
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
+    out_genome_storage = os.path.join(args.output_dir, 'anvio', args.species.replace(" ", "-") + '-GENOMES.db')
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-gen-genomes-storage'), '--external-genomes', os.path.join(args.output_dir, 'anvio', 'genome_storage_input.txt'), '--output-file', out_genome_storage])
 
     # # Run pangenome analysis using NCBI blastp for protein search
     blastp_out = os.path.join(args.output_dir, 'anvio', 'blastp')
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', blastp_out, '--num-threads', f'{args.num_threads}', '--use-ncbi-blast', '--mcl-inflation', '10'])
 
     # # Run pangenome analysis using DIAMOND for protein search
     diamond_out = os.path.join(args.output_dir, 'anvio', 'diamond')
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', diamond_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-pan-genome'), '--genomes-storage', out_genome_storage, '--project-name', args.species.replace(" ", "-"), '--output-dir', diamond_out, '--num-threads', f'{args.num_threads}', '--mcl-inflation', '10', '--additional-params-for-seq-search', "--masking 0 --sensitive"])
 
     # Retrieve singleton gene clusters
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'singleton-gene-clusters.fa')])
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'singleton-gene-clusters.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'singleton-gene-clusters.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--max-num-genomes', '1', '--max-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'singleton-gene-clusters.fa')])
 
     # Retrieve single-copy core genes
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'single-copy-core-genes.fa')])
-    # result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'single-copy-core-genes.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(blastp_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(blastp_out, 'single-copy-core-genes.fa')])
+    result = subprocess.run([os.path.join(anvio_exec_dir, 'anvi-get-sequences-for-gene-clusters'), '--pan-db', os.path.join(diamond_out, args.species.replace(" ", "-") + '-PAN.db'), '--genomes-storage', out_genome_storage, '--min-num-genomes', f'{len(genomes)}', '--min-num-genes-from-each-genome', '1', '--output-file', os.path.join(diamond_out, 'single-copy-core-genes.fa')])
    
     # Parse anvio output
     ParseAnvioOutput(args, os.path.join(blastp_out, 'single-copy-core-genes.fa'), genomes, 'core', blastp_out, 'blastp')
@@ -347,7 +341,6 @@ def GetGenomes(args):
     for i in range(len(genomes)):
         if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.species or gtdb_taxonomy[i].split(';')[-2].split('__')[1] == genus:
             if ncbi_assembly_level[i] == "Complete Genome" and ncbi_genome_category[i] != "derived from metagenome" and ncbi_genome_category[i] != "derived from environmental_sample":
-                print(genomes[i])
                 genomes_of_interest[genomes[i]] = gtdb_taxonomy[i].split(';')[-1].split('__')[1]
     return genomes_of_interest
 
@@ -394,7 +387,6 @@ def GetAni(args, data, input_file):
 
     # compute ani between genomes
     ref_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0]
-    print(ref_fasta)
     prob_f = open(os.path.join(args.output_dir, 'datasets', data, 'problematic_genomes.tsv'), 'w')
     with open(os.path.join(args.output_dir, 'datasets', data, 'ani.tsv'), 'w') as f:
         idx = list_genomes.index(sp_genome)
@@ -402,10 +394,8 @@ def GetAni(args, data, input_file):
         sp_ncbi_tax = ncbi_taxonomy[idx]
         f.write(f'{args.label}\t{sp_genome}\t100\t{Fasta(ref_fasta).full_genome_length}\t{sp_gtdb_tax}\t{sp_ncbi_tax}\n')
         for genome_id in neg_genomes:
-            print(genome_id, sp_genome)
             # Get fasta file of query genome
             query_fasta = glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))
-            print(query_fasta)
             if len(query_fasta) == 1:
                 query_fasta = query_fasta[0]
                 # get label
@@ -458,17 +448,22 @@ def CutGenome(cuts, line):
     seq_length = []
     vector_length = []
     sequences = []
+    seq_starts = []
+    seq_ends = []
     for cut in cuts:
         new_line = line[start:start+cut]
         sentence = get_kmer_sentence(new_line, kmer=1)
         if len(sentence) != 0:
             vector_length.append(len(sentence.split(" ")))
             seq_length.append(len(new_line))
+            seq_starts.append(start)
+            seq_ends.append(start+cut)
             start += cut
             sequences.append(sentence)
+            
     print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
     print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
-    return sequences
+    return sequences, seq_starts, seq_ends
 
 def get_kmer_sentence(original_string, kmer=1, stride=1):
     if kmer == -1:
@@ -543,9 +538,13 @@ if __name__ == "__main__":
         starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
         sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
         print(f'# DNA sequences: {len(sequences)}')
+        print(sequences[0])
         cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
-        sequences = CutGenome(cuts, sp_fasta.full_genome_seq)
+        sequences, seq_starts, seq_ends = CutGenome(cuts, sp_fasta.full_genome_seq)
         print(f'# DNA sequences: {len(sequences)}')
+        print(sequences[0])
+
+        #
 
         
 
