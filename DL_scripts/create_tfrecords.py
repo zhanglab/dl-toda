@@ -178,7 +178,7 @@ def prepare_data_for_bert(dna_list, kmer_vector_length, bert_step, masked_lm_pro
 
 
 def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-        masked_lm_prob, dnabert=False, update_labels=False, bert_step=None, no_label=False, dataset_type='sim', bert_step=None):
+        masked_lm_prob, dnabert=False, update_labels=False, no_label=False, dataset_type='sim', bert_step=None):
     # for fq_file in grouped_files:
     """ Converts dna sequences to tfrecord """
     # num_lines = 8 if args.pair else 4
