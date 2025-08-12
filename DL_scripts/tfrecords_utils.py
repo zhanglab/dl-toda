@@ -66,7 +66,7 @@ def vocab_dict(filename):
             kmer_to_id[kmer] = count
     return kmer_to_id
 
-def get_kmer_index(args, kmer, dict_kmers):
+def get_kmer_index(kmer, dict_kmers):
     """Convert kmers into their corresponding index"""
     if kmer in dict_kmers:
         idx = dict_kmers[kmer]
@@ -110,7 +110,7 @@ def get_kmer_arr(read, k_value, step, max_read_length, dict_kmers, dataset_type=
     list_kmers = []
     for i in range(0, len(read)-k_value+1, step):
         kmer = read[i:i + k_value]
-        idx = get_kmer_index(args, kmer, dict_kmers)
+        idx = get_kmer_index(kmer, dict_kmers)
         list_kmers.append(idx)
 
     return list_kmers
