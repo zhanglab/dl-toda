@@ -66,12 +66,12 @@ def vocab_dict(filename):
             kmer_to_id[kmer] = count
     return kmer_to_id
 
-def get_kmer_index(kmer, dict_kmers):
+def get_kmer_index(kmer, dict_kmers, canonical_kmers=False):
     """Convert kmers into their corresponding index"""
     if kmer in dict_kmers:
         idx = dict_kmers[kmer]
     else:
-        if args.canonical_kmers:
+        if canonical_kmers:
             if get_reverse_seq(kmer) in dict_kmers:
                 idx = dict_kmers[get_reverse_seq(kmer)]
         else:
