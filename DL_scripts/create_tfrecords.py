@@ -12,8 +12,9 @@ import glob
 import math
 import gzip
 import multiprocessing as mp
-from tfrecords_utils import vocab_dict, get_kmer_arr, prepare_input_data
-from tfrecords_bert_utils import *
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from DL_scripts.tfrecords_utils import vocab_dict, get_kmer_arr, prepare_input_data
+from DL_scripts.tfrecords_bert_utils import *
 
 
 def wrap_vector(value):
@@ -99,22 +100,22 @@ def prepare_meta_data(args):
         outfile.close()
 
 
-def prepare_data_for_bert(args, dna_list):
+def prepare_data_for_bert(dna_list, kmer_vector_length, bert_step, masked_lm_prob, dict_kmers, contiguous_kmers=False):
     """ process data obtained from DNABERT """
     max_position_embeddings = 512 # define the maximum sequence length the model can encounter in the dataset
 
     # adjust size for sequences longer than the max read length (dnabert data generates sequences of size > 510 when specifying a size of 510!! je ne sais pas pourquoi)
-    if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-        dna_list = dna_list[:args.kmer_vector_length]
+    if len(dna_list) > kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+        dna_list = dna_list[:kmer_vector_length]
     
-    if args.bert_step == 'pretraining':
+    if bert_step == 'pretraining':
         # compute the number of tokens to mask
-        n_mlm = int(args.masked_lm_prob * len(dna_list))
+        n_mlm = int(masked_lm_prob * len(dna_list))
         
         # get list of indices of tokens to mask
         mlm_positions = random.sample(list(range(len(dna_list))), n_mlm)
 
-        if args.contiguous_kmers:
+        if contiguous_kmers:
             # get indices of contiguous kmers (previous and following kmer)
             # indices_to_mask = [-1, 1, 2]
             indices_to_mask = [-1, 1]
@@ -147,9 +148,9 @@ def prepare_data_for_bert(args, dna_list):
         input_ids = dna_list
 
     # add CLS and SEP tokens
-    input_ids = [args.dict_kmers['[CLS]']] + input_ids + [args.dict_kmers['[SEP]']]
+    input_ids = [dict_kmers['[CLS]']] + input_ids + [dict_kmers['[SEP]']]
 
-    if args.bert_step == 'pretraining':
+    if bert_step == 'pretraining':
         # update vector of labels to reflect the addition of the special tokens
         labels = [-100] + labels + [-100]
 
@@ -159,8 +160,8 @@ def prepare_data_for_bert(args, dna_list):
     # pad input vectors if necessary
     if len(input_ids) < max_position_embeddings:
         num_padded_values = max_position_embeddings - len(input_ids)
-        input_ids = input_ids + [args.dict_kmers['[PAD]']] * num_padded_values
-        if args.bert_step == 'pretraining':
+        input_ids = input_ids + [dict_kmers['[PAD]']] * num_padded_values
+        if bert_step == 'pretraining':
             labels = labels + [-100] * num_padded_values
         # create attention_mask vector indicating padded values. Padding token indices are masked (0) to avoid
         # performing attention on them.
@@ -170,18 +171,19 @@ def prepare_data_for_bert(args, dna_list):
 
     position_ids = list(range(max_position_embeddings))
 
-    if args.bert_step == 'pretraining':
+    if bert_step == 'pretraining':
         return input_ids, attention_mask, position_ids, token_type_ids, labels, len(mlm_positions)/len(dna_list), len(dna_list), len(input_ids)
     else:
         return input_ids, attention_mask, position_ids, token_type_ids, len(input_ids)
 
 
-def create_tfrecords(args):
+def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+        masked_lm_prob, dnabert=False, update_labels=False, bert_step=None, no_label=False, dataset_type='sim', bert_step=None):
     # for fq_file in grouped_files:
     """ Converts dna sequences to tfrecord """
     # num_lines = 8 if args.pair else 4
-    output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-1])
-    output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
+    output_prefix = '.'.join(input_file.split('/')[-1].split('.')[0:-1])
+    output_tfrec = os.path.join(output_dir, output_prefix + '.tfrec')
     count = 0
     vector_size = set()
     dna_sequence_size = set()
@@ -191,33 +193,37 @@ def create_tfrecords(args):
         if args.bert_step == 'pretraining':
             # monitor the fraction of masked positions
             n_masked_pos = []
-
+        
         with tf.io.TFRecordWriter(output_tfrec) as writer:
-            with open(args.input, 'r') as f:
+            with open(input_file, 'r') as f:
                 for count, line in enumerate(f):
-                    if args.dnabert:
-                        assert len(line.rstrip().split('\t')) == 2, f'line {count+1}'
+                    if dnabert:
                         label = line.rstrip().split('\t')[0]
-                        dna_sequence = line.rstrip().split('\t')[1].split(" ")
+                        # dna_sequence = line.rstrip().split('\t')[1].split(" ")
+                        dna_sequence = line.rstrip().split('\t')[3]
+                        dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers, dataset_type=dataset_type) 
+                        print(dna_sequences)
+                        print(dna_list)
+                        break
                         # parse dna sequence into kmers
-                        dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequence]
+                        # dna_list = [dict_kmers[kmer] if kmer in dict_kmers else dict_kmers['[UNK]'] for kmer in dna_sequence]
                     else:
                         label = line.rstrip().split('\t')[0].split('|')[1]
                         dna_sequence = line.rstrip().split('\t')[1]
                         # parse dna sequence into kmers
-                        dna_list = prepare_input_data(args, dna_sequence)  
-                    if args.update_labels:
-                        label = int(args.labels_mapping[label])
+                        dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers, dataset_type=dataset_type)  
+                    if update_labels:
+                        label = int(labels_mapping[label])
                     else:
                         label = int(label)
 
                     if count == 0:
                         reconstructed_token_list = []
                         for token_id in dna_list:
-                            for key, value in args.dict_kmers.items():
+                            for key, value in dict_kmers.items():
                                 if value == token_id:
                                     reconstructed_token_list.append(key)
-                        with open(os.path.join(args.output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
+                        with open(os.path.join(output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
                             out_ex.write(f'count\t{count+1}\nline:\t{line}\nupdated label\t{label}'
                                 f'\ndna sequence\t{dna_sequence}\ndna list\t{dna_list}\nreconstructed list of tokens\t{reconstructed_token_list}')
 
@@ -231,8 +237,8 @@ def create_tfrecords(args):
                     next_sentence_label: 0 for "is not next" and 1 for "is next" - nsp_label
                     labels: labels for computing the MLM loss (indices of tokens for masked tokens and -100 for unmasked tokens)  - length: 512
                     """
-                    if args.bert_step == 'pretraining':
-                        input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos, sequence_size = prepare_data_for_bert(args, dna_list)
+                    if bert_step == 'pretraining':
+                        input_ids, attention_mask, position_ids, token_type_ids, labels, fraction_masked_pos, sequence_size = prepare_data_for_bert(dna_list, kmer_vector_length, bert_step, masked_lm_prob, dict_kmers)
                         n_masked_pos.append(fraction_masked_pos)
                         tfrecord_data = \
                             {
@@ -243,8 +249,8 @@ def create_tfrecords(args):
                                 'labels': wrap_vector(labels),
                                 # 'next_sentence_label': wrap_label(r[4])
                             }
-                    elif args.bert_step == 'finetuning':
-                        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(args, dna_list)
+                    elif bert_step in ['finetuning','regular']:
+                        input_ids, attention_mask, position_ids, token_type_ids, sequence_size = prepare_data_for_bert(dna_list, kmer_vector_length, bert_step, masked_lm_prob, dict_kmers)
                         tfrecord_data = \
                             {
                                 'input_ids': wrap_vector(input_ids),
@@ -261,8 +267,8 @@ def create_tfrecords(args):
                     vector_size.add(sequence_size)
                     dna_sequence_size.add(len(dna_sequence))
 
-        if args.bert_step == 'pretraining':
-            with open(args.info, 'w') as f:
+        if bert_step == 'pretraining':
+            with open(info, 'w') as f:
                 f.write(f'{min(n_masked_pos)}\t{max(n_masked_pos)}\t{statistics.mean(n_masked_pos)}\t{statistics.median(n_masked_pos)}')          
         
     else:
@@ -270,42 +276,44 @@ def create_tfrecords(args):
         with tf.io.TFRecordWriter(output_tfrec) as writer:
             with open(args.input, 'r') as f:
                 for line in f:
-                    if args.dnabert:
+                    if dnabert:
                         label = line.rstrip().split('\t')[0]
-                        dna_sequence = line.rstrip().split('\t')[1].split(" ")
+                        dna_sequence = line.rstrip().split('\t')[3]
+                        dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers) 
+                        # dna_sequence = line.rstrip().split('\t')[1].split(" ")
                         # parse dna sequence into kmers
-                        dna_list = [args.dict_kmers[kmer] if kmer in args.dict_kmers else args.dict_kmers['[UNK]'] for kmer in dna_sequence]
+                        # dna_list = [args.dict_kmers[kmer] if kmer in dict_kmers else dict_kmers['[UNK]'] for kmer in dna_sequence]
                         
-                        if len(dna_list) < args.kmer_vector_length:
-                            num_padded_values = args.kmer_vector_length-len(dna_list)
-                            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
-                        if len(dna_list) > args.kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
-                            dna_list = dna_list[:args.kmer_vector_length] # remove the last kmer == information about the last nucleotide
+                        if len(dna_list) < kmer_vector_length:
+                            num_padded_values = kmer_vector_length-len(dna_list)
+                            dna_list = dna_list + [dict_kmers['[PAD]']] * num_padded_values
+                        if len(dna_list) > kmer_vector_length: # --> max read length is 511 for dnabert data, just for k = 4 not k= 1
+                            dna_list = dna_list[:kmer_vector_length] # remove the last kmer == information about the last nucleotide
     
                     else:
                         label = line.rstrip().split('\t')[0].split('|')[1]
                         dna_sequence = line.rstrip().split('\t')[1]
                         # parse dna sequence into kmers
-                        dna_list = prepare_input_data(args, dna_sequence)
-                        if len(dna_list) < args.kmer_vector_length:
-                            num_padded_values = args.kmer_vector_length-len(dna_list)
-                            dna_list = dna_list + [args.dict_kmers['[PAD]']] * num_padded_values
+                        dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers)
+                        if len(dna_list) < kmer_vector_length:
+                            num_padded_values = kmer_vector_length-len(dna_list)
+                            dna_list = dna_list + [dict_kmers['[PAD]']] * num_padded_values
 
                     if args.update_labels:
-                        label = int(args.labels_mapping[label])
+                        label = int(labels_mapping[label])
 
                     if count == 0:
                         reconstructed_token_list = []
                         for token_id in dna_list:
-                            for key, value in args.dict_kmers.items():
+                            for key, value in dict_kmers.items():
                                 if value == token_id:
                                     reconstructed_token_list.append(key)
-                        with open(os.path.join(args.output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
+                        with open(os.path.join(output_dir, output_prefix + '-example-sequence-1'), 'w') as out_ex:
                             out_ex.write(f'count\t{count+1}\nline:\t{line}\nupdated label\t{label}'
                                 f'\ndna sequence\t{dna_sequence}\ndna list\t{dna_list}\nreconstructed list of tokens\t{reconstructed_token_list}')
 
                     # create TFrecords
-                    if args.no_label:
+                    if no_label:
                         tfrecord_data = \
                             {
                                 'read': wrap_vector(dna_list),
@@ -362,10 +370,10 @@ def create_tfrecords(args):
                         
         #                 line_count += 1
 
-    with open(os.path.join(args.output_dir, output_prefix + '-read_count'), 'w') as f:
+    with open(os.path.join(output_dir, output_prefix + '-read_count'), 'w') as f:
         f.write(f'{count}')
 
-    with open(os.path.join(args.output_dir, output_prefix + '-vector_size'), 'w') as f:
+    with open(os.path.join(output_dir, output_prefix + '-vector_size'), 'w') as f:
         f.write(f'min vector size: {min(list(vector_size))}\n')
         f.write(f'max vector size: {max(list(vector_size))}\n')
         f.write(f'mean vector size: {statistics.mean(list(vector_size))}\n')
@@ -373,7 +381,7 @@ def create_tfrecords(args):
         f.write(f'max read length: {args.max_read_length}\n')
 
 
-    with open(os.path.join(args.output_dir, output_prefix + '-dna_seq_size'), 'w') as f:
+    with open(os.path.join(output_dir, output_prefix + '-dna_seq_size'), 'w') as f:
         f.write(f'min dna sequence size: {min(list(dna_sequence_size))}\n')
         f.write(f'max dna sequence size: {max(list(dna_sequence_size))}\n')
         f.write(f'mean dna sequence size: {statistics.mean(list(dna_sequence_size))}\n')
@@ -410,10 +418,10 @@ def main():
         os.makedirs(args.output_dir)
 
     if args.update_labels:
-        args.labels_mapping = dict()
+        labels_mapping = dict()
         with open(args.mapping_file, 'r') as f:
             for line in f:
-                args.labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+                labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
     if not args.DNA_model:
         args.kmer_vector_length = args.max_read_length - args.k_value + 1 if args.step == 1 else args.max_read_length // args.k_value
@@ -424,10 +432,11 @@ def main():
             json.dump(args.dict_kmers, f)
 
     if args.dataset_type == "sim":
-        create_tfrecords(args)
+        create_tfrecords(input_file, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
+        args.masked_lm_prob, dnabert=args.dnabert, update_labels=args.update_labels, bert_step=args.bert_step, no_label=args.no_label, dataset_type='sim')
+
     elif args.dataset_type == "meta":
         prepare_meta_data(args)
-
 
 if __name__ == "__main__":
     main()
