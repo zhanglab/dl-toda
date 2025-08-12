@@ -618,7 +618,7 @@ if __name__ == "__main__":
                 new_seq = sequences[i].replace(' ', '')
                 f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
         
-        with open(os.path.join(args.output_dir, 'datasets', 'val', 'val_dataset.tsv'), 'w') as f:
+        with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
             sequences, starts, ends, labels = zip(*all_val_data)
             for i in range(len(all_val_data)):
                 new_seq = sequences[i].replace(' ', '')
