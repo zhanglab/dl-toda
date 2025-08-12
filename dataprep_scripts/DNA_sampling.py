@@ -565,7 +565,7 @@ if __name__ == "__main__":
         # create chunks of genomes
         all_labels = [l for l, g in genomes.items() if l != args.label]
         all_labels = all_labels[:10]
-        print(len(all_labels), len(neg_genomes))
+        print(len(all_labels))
         chunk_size = math.ceil(len(all_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
