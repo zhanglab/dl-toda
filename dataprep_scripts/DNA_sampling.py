@@ -562,12 +562,14 @@ if __name__ == "__main__":
         pos_sequences = pos_sam_sequences + pos_cut_sequences
         pos_starts = pos_sam_starts + pos_cut_starts
         pos_ends = pos_sam_ends + pos_cut_ends
-        to_shuffle = list(zip(pos_sequences, pos_starts, pos_ends))
+        pos_label = [args.label]*len(pos_sequences)
+        to_shuffle = list(zip(pos_sequences, pos_starts, pos_ends, pos_label))
         random.shuffle(to_shuffle)
         train_size = round(0.7*len(to_shuffle))
         val_size = len(to_shuffle) - train_size
         all_train_data += to_shuffle[:train_size]    
         all_val_data += to_shuffle[-val_size:]
+        print(to_shuffle[0])
 
 
         # obtain sequences from negative class
@@ -595,16 +597,22 @@ if __name__ == "__main__":
             
             # prepare datasets
             neg_sequences = []
+            neg_all_labels = []
             for k, v in sequences.items():
                 neg_sequences += v
-                print(k, len(v))
+                neg_labels += [k]*len(v)
             train_size = round(0.7*len(neg_sequences))
             val_size = len(neg_sequences) - train_size
-            random.shuffle(neg_sequences)
+            neg_all_sequences, neg_all_starts, neg_all_ends = zip(*v)
+            to_shuffle = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels))
+            random.shuffle(to_shuffle)
             all_train_data += to_shuffle[:train_size]    
             all_val_data += to_shuffle[-val_size:]
             print(f'all val: {len(all_val_data)}')
             print(f'all train: {len(all_train_data)}')
+        
+        # create tsv file with data
+        # with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'))
                 # all_sequences, all_starts, all_ends = zip(*v)
 
 
