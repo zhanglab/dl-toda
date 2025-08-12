@@ -654,11 +654,11 @@ if __name__ == "__main__":
             output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords')
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim')
+                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim')
+                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
                     
 
