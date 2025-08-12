@@ -271,7 +271,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
     else:
         # create tfrecords for cnn model
         with tf.io.TFRecordWriter(output_tfrec) as writer:
-            with open(args.input, 'r') as f:
+            with open(input_file, 'r') as f:
                 for line in f:
                     if dnabert:
                         label = line.rstrip().split('\t')[0]
