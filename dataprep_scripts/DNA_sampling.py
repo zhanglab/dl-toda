@@ -13,9 +13,6 @@ import random
 from pygenomeviz.parser import Fasta
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-print(sys.path)
-sys.exit(1)
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
@@ -649,8 +646,9 @@ if __name__ == "__main__":
                 json.dump(dict_kmers, f)
             
             # create tfrecords
+            masked_lm_prob = 0.15
             create_tfrecords(input_file, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
-        args.masked_lm_prob, dnabert=args.dnabert, update_labels=args.update_labels, bert_step=args.bert_step, no_label=args.no_label, dataset_type='sim')
+                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim')
 
 
 
