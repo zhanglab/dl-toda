@@ -480,7 +480,7 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
     
     return sentence[:-1].strip("\"")
 
-def get_sequences(args, labels, sequences, info, num):
+def get_sequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label][0]
         print(genome_id)
@@ -573,16 +573,19 @@ if __name__ == "__main__":
         grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
         print(grouped_labels)
          # count the number of sequences per negative genome
-        num_seq_per_genome = (len(sam_sequences)+len(cut_sequences))/len(all_labels)
-        print(num_seq_per_genome)
+        num_sequences = len(sam_sequences)+len(cut_sequences)
+        num_seq_per_sp = [num_sequences // len(all_labels) + (1 if x < num_sequences % len(all_labels) else 0)  for x in range(len(all_labels))]
+        print(f'{num_sequences}\t{len(all_labels)}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
+        print(num_seq_per_sp)
         with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             sequences = manager.dict()
             # create list of Process objects
-            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], sequences, genomes, num_seq_per_genome)) for i in range(len(grouped_labels))]
+            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], num_seq_per_sp[i], sequences, genomes)) for i in range(len(grouped_labels))]
             for p in processes:
                 p.start() # start the processes
             for p in processes:
                 p.join() # join the processes, program will hang and wait until all the processes are done
+            
             for k, v in sequences.items():
                 all_sequences, all_starts, all_ends = zip(*v)
                 print(k, len(v), all_sequences, all_starts, all_ends)
