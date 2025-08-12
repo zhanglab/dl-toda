@@ -586,9 +586,9 @@ if __name__ == "__main__":
             for p in processes:
                 p.join() # join the processes, program will hang and wait until all the processes are done
             
-            for k, v in sequences.items():
-                all_sequences, all_starts, all_ends = zip(*v)
-                print(k, len(v), all_sequences, all_starts, all_ends)
+            # for k, v in sequences.items():
+            #     all_sequences, all_starts, all_ends = zip(*v)
+            #     print(k, len(v), all_sequences, all_starts, all_ends)
 
 
                     
