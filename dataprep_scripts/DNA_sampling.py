@@ -18,7 +18,7 @@ break
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
-from 
+
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
