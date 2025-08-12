@@ -510,7 +510,7 @@ if __name__ == "__main__":
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
     parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
     parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
-    parser.add_argument('--data', type='str', default=False, help="type of dataset", choices=['train','test'])
+    parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
     args = parser.parse_args()
 
     # create output directory
