@@ -483,6 +483,7 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
 def get_sequences(args, labels, sequences, info, num):
     for label in labels:
         genome_id = info[label][0]
+        print(genome_id)
         fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(info[label][2]), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
@@ -569,6 +570,7 @@ if __name__ == "__main__":
         chunk_size = math.ceil(len(all_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
+        print(grouped_labels)
          # count the number of sequences per negative genome
         num_seq_per_genome = (len(sam_sequences)+len(cut_sequences))/len(all_labels)
         print(num_seq_per_genome)
