@@ -204,6 +204,8 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
                         dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers, dataset_type=dataset_type) 
                         print(dna_sequence)
                         print(dna_list)
+                        print(len(dna_sequence))
+                        print(len(dna_list))
                         break
                         # parse dna sequence into kmers
                         # dna_list = [dict_kmers[kmer] if kmer in dict_kmers else dict_kmers['[UNK]'] for kmer in dna_sequence]
