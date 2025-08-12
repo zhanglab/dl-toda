@@ -485,6 +485,7 @@ def get_sequences(args, labels, sequences, info, num):
         genome_id = info[label][0]
         print(genome_id)
         fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
+        print(fasta)
         starts, ends = sampling(length=int(info[label][2]), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(info[label][2]), kmer=1)
@@ -565,7 +566,7 @@ if __name__ == "__main__":
         # obtain sequences from other genomes
         # create chunks of genomes
         all_labels = [l for l, g in genomes.items() if l != args.label]
-        all_labels = all_labels[:10]
+        all_labels = all_labels[:5]
         print(len(all_labels))
         chunk_size = math.ceil(len(all_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
