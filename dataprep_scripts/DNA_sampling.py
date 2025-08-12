@@ -523,6 +523,7 @@ if __name__ == "__main__":
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads")
     parser.add_argument('--k_value', nargs='+', type=int, help="Size of k-mers")
+    parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--vocab', help="Path to directory containing vocabulary files")
     args = parser.parse_args()
@@ -668,20 +669,19 @@ if __name__ == "__main__":
             
             # create tfrecords for bert
             if args.data == 'train':
-                masked_lm_prob = 0.15
                 output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
                 input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                    args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
                 output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
                 input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                    args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
             else:
                 output_dir = os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords', f'{k_value}')
                 if not os.path.isdir(output_dir):
@@ -689,10 +689,10 @@ if __name__ == "__main__":
                 input_file = os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv')
                 # for bert
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                    args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
                 # for cnn
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                    masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
+                    args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
 
                     
