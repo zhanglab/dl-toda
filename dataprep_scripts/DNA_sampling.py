@@ -524,7 +524,7 @@ if __name__ == "__main__":
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--vocab', help="Path to directory containing vocabulary files")
     args = parser.parse_args()
-
+    print(args)
     # create output directory
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
