@@ -644,8 +644,8 @@ if __name__ == "__main__":
             print(f'max read length: {args.max_read_length}\tvector size: {kmer_vector_length}\t{k_value}')
             
             # get dictionary mapping kmers to indexes
-            dict_kmers = vocab_dict(f'{vocab}/{k_value}mers.txt')
-            with open(os.path.join(args.output_dir, f'{k_value}-dict.json'), 'w') as f:
+            dict_kmers = vocab_dict(f'{args.vocab}/{k_value}mers.txt')
+            with open(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', f'{k_value}-dict.json'), 'w') as f:
                 json.dump(dict_kmers, f)
             
             # create tfrecords
