@@ -556,7 +556,7 @@ if __name__ == "__main__":
         pos_genome = genomes[args.label][0]
         pos_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
         pos_sam_starts, pos_sam_ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
-        pos_sam_sequences = SampleGenome(starts, ends, pos_fasta.full_genome_seq)
+        pos_sam_sequences = SampleGenome(pos_sam_starts, pos_sam_ends, pos_fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
         pos_cut_sequences, pos_cut_starts, pos_cut_ends = CutGenome(cuts, pos_fasta.full_genome_seq)
         pos_sequences = pos_sam_sequences + pos_cut_sequences
