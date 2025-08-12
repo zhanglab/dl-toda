@@ -190,7 +190,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
 
     if bert:
         # create tfrecords for bert model
-        if args.bert_step == 'pretraining':
+        if bert_step == 'pretraining':
             # monitor the fraction of masked positions
             n_masked_pos = []
         
