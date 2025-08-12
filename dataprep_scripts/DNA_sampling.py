@@ -612,12 +612,13 @@ if __name__ == "__main__":
         print(f'all train: {len(all_train_data)}')
 
         # create tsv file with data
+        random.shuffle(all_train_data)
         with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'), 'w') as f:
             sequences, starts, ends, labels = zip(*all_train_data)
             for i in range(len(all_train_data)):
                 new_seq = sequences[i].replace(' ', '')
                 f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
-        
+        random.shuffle(all_val_data)
         with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
             sequences, starts, ends, labels = zip(*all_val_data)
             for i in range(len(all_val_data)):
