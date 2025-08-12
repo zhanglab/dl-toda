@@ -13,9 +13,12 @@ import random
 from pygenomeviz.parser import Fasta
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+break
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
+from 
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
@@ -516,6 +519,11 @@ if __name__ == "__main__":
     parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
     parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
     parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
+    parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
+    parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads")
+    parser.add_argument('--k_value', nargs='+', type=int, help="Size of k-mers")
+    parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
+    parser.add_argument('--vocab', help="Path to directory containing vocabulary files")
     args = parser.parse_args()
 
     # create output directory
@@ -573,8 +581,6 @@ if __name__ == "__main__":
         print(f'all val: {len(all_val_data)}')
         print(f'all train: {len(all_train_data)}')
         
-
-
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in genomes.items() if l != args.label]
@@ -624,6 +630,26 @@ if __name__ == "__main__":
             for i in range(len(all_val_data)):
                 new_seq = sequences[i].replace(' ', '')
                 f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+    
+        # get dictionary mapping labels to species
+        labels_mapping = dict()
+        with open(args.mapping_file, 'r') as f:
+            for line in f:
+                labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+        
+        for k_value in args.k_value:
+            kmer_vector_length = args.max_read_length - k_value + 1 if args.step == 1 else args.max_read_length // k_value
+            print(f'max read length: {args.max_read_length}\tvector size: {kmer_vector_length}\t{k_value}')
+            
+            # get dictionary mapping kmers to indexes
+            dict_kmers = vocab_dict(f'{vocab}/{k_value}mers.txt')
+            with open(os.path.join(args.output_dir, f'{k_value}-dict.json'), 'w') as f:
+                json.dump(dict_kmers, f)
+            
+            # create tfrecords
+            create_tfrecords(input_file, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
+        args.masked_lm_prob, dnabert=args.dnabert, update_labels=args.update_labels, bert_step=args.bert_step, no_label=args.no_label, dataset_type='sim')
+
 
 
                     
