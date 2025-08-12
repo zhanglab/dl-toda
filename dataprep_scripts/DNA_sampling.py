@@ -551,6 +551,8 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'blast'))
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
             
         # # compute ani between genomes
         # GetAni(args, 'train', args.train_genomes)
@@ -647,10 +649,14 @@ if __name__ == "__main__":
             
             # create tfrecords
             masked_lm_prob = 0.15
-            create_tfrecords(input_file, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
+            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords')
+            input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
+            create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim')
 
-
+            input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
+            create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim')
 
                     
 
