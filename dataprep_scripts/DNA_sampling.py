@@ -550,24 +550,21 @@ if __name__ == "__main__":
         RunAnvio(args, genomes_kept)
 
     if args.datasets:
-        if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'blast'))
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train'))
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val'))
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
+        if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
+            os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
+            if args.data == 'train':
+                os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'tfrecords', 'train'))
+                os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'tfrecords', 'val'))
+            else:
+                os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
             
         # # compute ani between genomes
-        # GetAni(args, 'train', args.train_genomes)
-        # GetAni(args, 'test', args.test_genomes)
+        # GetAni(args, args.data, args.train_genomes)
+        # GetAni(args, args.data, args.test_genomes)
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
-
-        # get sequences for training and validation datasets
-        all_train_data = []
-        all_val_data = []
 
         # get sequences for positive class
         pos_genome = genomes[args.label][0]
@@ -581,15 +578,22 @@ if __name__ == "__main__":
         pos_ends = pos_sam_ends + pos_cut_ends
         pos_label = [args.label]*len(pos_sequences)
         data = list(zip(pos_sequences, pos_starts, pos_ends, pos_label))
-        CreateTrainValSets(data, all_train_data, all_val_data)
-        print(f'all val: {len(all_val_data)}')
-        print(f'all train: {len(all_train_data)}')
         
+        if args.data == 'train':
+             # get sequences for training and validation datasets
+            all_train_data = []
+            all_val_data = []
+            CreateTrainValSets(data, all_train_data, all_val_data)
+            print(f'all val: {len(all_val_data)}')
+            print(f'all train: {len(all_train_data)}')
+        else:
+            all_data = data
+            print(f'# test sequences: {len(all_data)}')
+
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in genomes.items() if l != args.label]
         neg_labels = neg_labels[:5]
-        print(len(neg_labels))
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
@@ -616,24 +620,36 @@ if __name__ == "__main__":
                 neg_all_labels += [k]*len(v)
             neg_all_sequences, neg_all_starts, neg_all_ends = zip(*neg_sequences)
             data = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels))
-            CreateTrainValSets(data, all_train_data, all_val_data)
 
-        print(f'all val: {len(all_val_data)}')
-        print(f'all train: {len(all_train_data)}')
+            if args.data == 'train':
+                # get sequences for training and validation datasets
+                CreateTrainValSets(data, all_train_data, all_val_data)
+                print(f'all val: {len(all_val_data)}')
+                print(f'all train: {len(all_train_data)}')
 
-        # create tsv file with data
-        random.shuffle(all_train_data)
-        with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'), 'w') as f:
-            sequences, starts, ends, labels = zip(*all_train_data)
-            for i in range(len(all_train_data)):
-                new_seq = sequences[i].replace(' ', '')
-                f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
-        random.shuffle(all_val_data)
-        with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
-            sequences, starts, ends, labels = zip(*all_val_data)
-            for i in range(len(all_val_data)):
-                new_seq = sequences[i].replace(' ', '')
-                f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                # create tsv file with data
+                random.shuffle(all_train_data)
+                with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'), 'w') as f:
+                    sequences, starts, ends, labels = zip(*all_train_data)
+                    for i in range(len(all_train_data)):
+                        new_seq = sequences[i].replace(' ', '')
+                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                random.shuffle(all_val_data)
+                with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
+                    sequences, starts, ends, labels = zip(*all_val_data)
+                    for i in range(len(all_val_data)):
+                        new_seq = sequences[i].replace(' ', '')
+                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+            else:
+                all_data += data
+                print(f'# test sequences: {len(all_data)}')
+                # create tsv file with data
+                with open(os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv'), 'w') as f:
+                    sequences, starts, ends, labels = zip(*all_data)
+                    for i in range(len(all_data)):
+                        new_seq = sequences[i].replace(' ', '')
+                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+
     
         # get dictionary mapping labels to species
         labels_mapping = dict()
@@ -651,20 +667,32 @@ if __name__ == "__main__":
                 json.dump(dict_kmers, f)
             
             # create tfrecords for bert
-            masked_lm_prob = 0.15
-            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
-            if not os.path.isdir(output_dir):
-                os.makedirs(output_dir)
-            input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
-            create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            if args.data == 'train':
+                masked_lm_prob = 0.15
+                output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
+                if not os.path.isdir(output_dir):
+                    os.makedirs(output_dir)
+                input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
+                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
-            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val', f'{k_value}')
-            if not os.path.isdir(output_dir):
-                os.makedirs(output_dir)
-            input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
-            create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val', f'{k_value}')
+                if not os.path.isdir(output_dir):
+                    os.makedirs(output_dir)
+                input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
+                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            else:
+                output_dir = os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords', f'{k_value}')
+                if not os.path.isdir(output_dir):
+                    os.makedirs(output_dir)
+                input_file = os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv')
+                # for bert
+                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                    masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                # for cnn
+                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                    masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
 
                     
