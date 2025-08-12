@@ -551,8 +551,6 @@ if __name__ == "__main__":
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
 
         sp_genome = genomes[args.label][0]
-        neg_genomes = [g[0] for l, g in genomes.items() if l != args.label]
-
         # get sequences from dnabert functions
         sp_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
@@ -563,21 +561,21 @@ if __name__ == "__main__":
         cut_sequences, seq_starts, seq_ends = CutGenome(cuts, sp_fasta.full_genome_seq)
         print(f'# DNA sequences: {len(cut_sequences)}')
         print(cut_sequences[0])
-
-        # count the number of sequences per negative genome
-        num_seq_per_genome = (len(sam_sequences)+len(cut_sequences))/len(neg_genomes)
-        print(num_seq_per_genome)
         # obtain sequences from other genomes
         # create chunks of genomes
-        chunk_size = math.ceil(len(neg_genomes)/args.num_threads)
-        print(f'# labels per process: {chunk_size}')
         all_labels = [l for l, g in genomes.items() if l != args.label]
         all_labels = all_labels[:10]
+        print(len(all_labels), len(neg_genomes))
+        chunk_size = math.ceil(len(all_labels)/args.num_threads)
+        print(f'# labels per process: {chunk_size}')
         grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
+         # count the number of sequences per negative genome
+        num_seq_per_genome = (len(sam_sequences)+len(cut_sequences))/len(all_labels)
+        print(num_seq_per_genome)
         with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             sequences = manager.dict()
             # create list of Process objects
-            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], sequences, genomes)) for i in range(args.num_threads)]
+            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], sequences, genomes, num_seq_per_genome)) for i in range(len(grouped_labels))]
             for p in processes:
                 p.start() # start the processes
             for p in processes:
