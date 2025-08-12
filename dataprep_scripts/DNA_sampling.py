@@ -439,10 +439,10 @@ def SampleGenome(starts, ends, line):
             sequences.append(sentence)
             vector_length.append(len(sentence.split(" ")))
             seq_length.append(len(new_line))
-        else:
-            print(starts[i], 'empty string')
-    print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
-    print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+        # else:
+        #     print(starts[i], 'empty string')
+    # print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+    # print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
     return sequences
 
 def CutGenome(cuts, line):
@@ -463,8 +463,8 @@ def CutGenome(cuts, line):
             start += cut
             sequences.append(sentence)
             
-    print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
-    print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+    # print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+    # print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
     return sequences, seq_starts, seq_ends
 
 def get_kmer_sentence(original_string, kmer=1, stride=1):
@@ -483,9 +483,7 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
 def get_sequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label][0]
-        print(genome_id)
         fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
-        print(fasta)
         starts, ends = sampling(length=int(info[label][2]), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(info[label][2]), kmer=1)
@@ -510,9 +508,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
-    parser.add_argument('--ani', action='store_true', default=False, help="compute ANI between genomes")
     parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
     parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
+    parser.add_argument('--data', type='str', default=False, help="type of dataset", choices=['train','test'])
     args = parser.parse_args()
 
     # create output directory
@@ -541,41 +539,50 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'blast'))
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
-        if not os.path.isdir(os.path.join(args.output_dir, 'ncbi_database')):
-            os.makedirs(os.path.join(args.output_dir, 'ncbi_database'))
-        if args.ani:
-            # compute ani between genomes
-            GetAni(args, 'train', args.train_genomes)
-            GetAni(args, 'test', args.test_genomes)
+            
+        # # compute ani between genomes
+        # GetAni(args, 'train', args.train_genomes)
+        # GetAni(args, 'test', args.test_genomes)
 
         # get genomes
-        with open(os.path.join(args.output_dir, 'datasets', 'train', 'ani.tsv'), 'r') as f:
+        with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
 
-        sp_genome = genomes[args.label][0]
-        # get sequences from dnabert functions
-        sp_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0])
-        starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
-        sam_sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
-        print(f'# DNA sequences: {len(sam_sequences)}')
-        print(sam_sequences[0])
+        # get sequences for training and validation datasets
+        all_train_data = []
+        all_val_data = []
+
+        # get sequences for positive class
+        pos_genome = genomes[args.label][0]
+        pos_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
+        pos_sam_starts, pos_sam_ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
+        pos_sam_sequences = SampleGenome(starts, ends, pos_fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
-        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, sp_fasta.full_genome_seq)
-        print(f'# DNA sequences: {len(cut_sequences)}')
-        print(cut_sequences[0])
-        # obtain sequences from other genomes
+        pos_cut_sequences, pos_cut_starts, pos_cut_ends = CutGenome(cuts, pos_fasta.full_genome_seq)
+        pos_sequences = pos_sam_sequences + pos_cut_sequences
+        pos_starts = pos_sam_starts + pos_cut_starts
+        pos_ends = pos_sam_ends + pos_cut_ends
+        to_shuffle = list(zip(pos_sequences, pos_starts, pos_ends))
+        random.shuffle(to_shuffle)
+        train_size = round(0.7*len(to_shuffle))
+        val_size = len(to_shuffle) - train_size
+        all_train_data += to_shuffle[:train_size]    
+        all_val_data += to_shuffle[-val_size:]
+
+
+        # obtain sequences from negative class
         # create chunks of genomes
-        all_labels = [l for l, g in genomes.items() if l != args.label]
-        all_labels = all_labels[:5]
-        print(len(all_labels))
-        chunk_size = math.ceil(len(all_labels)/args.num_threads)
+        neg_labels = [l for l, g in genomes.items() if l != args.label]
+        neg_labels = neg_labels[:5]
+        print(len(neg_labels))
+        chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
-        grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
+        grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
         print(grouped_labels)
          # count the number of sequences per negative genome
-        num_sequences = len(sam_sequences)+len(cut_sequences)
-        num_seq_per_sp = [num_sequences // len(all_labels) + (1 if x < num_sequences % len(all_labels) else 0)  for x in range(len(all_labels))]
-        print(f'{num_sequences}\t{len(all_labels)}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
+        num_sequences = len(pos_sam_sequences)+len(pos_cut_sequences)
+        num_seq_per_sp = [num_sequences // len(neg_labels) + (1 if x < num_sequences % len(neg_labels) else 0)  for x in range(len(neg_labels))]
+        print(f'{num_sequences}\t{len(neg_labels)}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
         print(num_seq_per_sp)
         with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             sequences = manager.dict()
@@ -586,9 +593,19 @@ if __name__ == "__main__":
             for p in processes:
                 p.join() # join the processes, program will hang and wait until all the processes are done
             
-            # for k, v in sequences.items():
-            #     all_sequences, all_starts, all_ends = zip(*v)
-            #     print(k, len(v), all_sequences, all_starts, all_ends)
+            # prepare datasets
+            neg_sequences = []
+            for k, v in sequences.items():
+                neg_sequences += v
+                print(k, len(v))
+            train_size = round(0.7*len(neg_sequences))
+            val_size = len(neg_sequences) - train_size
+            random.shuffle(neg_sequences)
+            all_train_data += to_shuffle[:train_size]    
+            all_val_data += to_shuffle[-val_size:]
+            print(f'all val: {len(all_val_data)}')
+            print(f'all train: {len(all_train_data)}')
+                # all_sequences, all_starts, all_ends = zip(*v)
 
 
                     
