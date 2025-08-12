@@ -592,7 +592,7 @@ if __name__ == "__main__":
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
-        print(grouped_labels)
+        
          # count the number of sequences per negative genome
         num_sequences = len(pos_sam_sequences)+len(pos_cut_sequences)
         num_seq_per_sp = [num_sequences // len(neg_labels) + (1 if x < num_sequences % len(neg_labels) else 0)  for x in range(len(neg_labels))]
@@ -651,12 +651,16 @@ if __name__ == "__main__":
             
             # create tfrecords
             masked_lm_prob = 0.15
-            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train')
+            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
+            if not os.path.isdir(output_dir):
+                os.makedirs(output_dir)
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
-            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val')
+            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val', f'{k_value}')
+            if not os.path.isdir(output_dir):
+                os.makedirs(output_dir)
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
