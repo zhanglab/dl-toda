@@ -500,8 +500,8 @@ def CreateTrainValSets(data, all_train_data, all_val_data):
     val_size = len(data) - train_size
     print(train_size, val_size)
     random.shuffle(data)
-    all_train_data += to_shuffle[:train_size]    
-    all_val_data += to_shuffle[-val_size:]
+    all_train_data += data[:train_size]    
+    all_val_data += data[-val_size:]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
