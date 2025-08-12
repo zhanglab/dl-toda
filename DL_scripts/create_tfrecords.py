@@ -296,7 +296,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
                             num_padded_values = kmer_vector_length-len(dna_list)
                             dna_list = dna_list + [dict_kmers['[PAD]']] * num_padded_values
 
-                    if args.update_labels:
+                    if update_labels:
                         label = int(labels_mapping[label])
 
                     if count == 0:
