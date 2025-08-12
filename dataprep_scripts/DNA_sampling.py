@@ -8,6 +8,7 @@ from collections import defaultdict
 import pandas as pd
 import multiprocessing as mp
 import statistics
+import random
 from pygenomeviz.parser import Fasta
 from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
@@ -478,6 +479,24 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
     
     return sentence[:-1].strip("\"")
 
+def get_sequences(args, labels, sequences, info, num):
+    for label in labels:
+        genome_id = info[label][0]
+        fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
+        starts, ends = sampling(length=int(info[label][2]), kmer=1, sampling_rate=0.5)
+        sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
+        cuts = cut_no_overlap(length=int(info[label][2]), kmer=1)
+        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
+        all_sequences = sam_sequences + cut_sequences
+        all_starts = starts + seq_starts
+        all_ends = ends + seq_ends
+        to_shuffle = list(zip(all_sequences, all_starts, all_ends))
+        random.shuffle(to_shuffle)
+        sequences[label] = to_shuffle[:num]
+
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, help='path to output directory')
@@ -536,15 +555,41 @@ if __name__ == "__main__":
         # get sequences from dnabert functions
         sp_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', sp_genome, 'ncbi_dataset/data', sp_genome, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
-        sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
-        print(f'# DNA sequences: {len(sequences)}')
-        print(sequences[0])
+        sam_sequences = SampleGenome(starts, ends, sp_fasta.full_genome_seq)
+        print(f'# DNA sequences: {len(sam_sequences)}')
+        print(sam_sequences[0])
         cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
-        sequences, seq_starts, seq_ends = CutGenome(cuts, sp_fasta.full_genome_seq)
-        print(f'# DNA sequences: {len(sequences)}')
-        print(sequences[0])
+        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, sp_fasta.full_genome_seq)
+        print(f'# DNA sequences: {len(cut_sequences)}')
+        print(cut_sequences[0])
 
-        #
+        # count the number of sequences per negative genome
+        num_seq_per_genome = (len(sam_sequences)+len(cut_sequences))/len(neg_genomes)
+        print(num_seq_per_genome)
+        # obtain sequences from other genomes
+        # create chunks of genomes
+        chunk_size = math.ceil(len(neg_genomes)/args.num_threads)
+        print(f'# labels per process: {chunk_size}')
+        all_labels = [l for l, g in genomes.items() if l != args.label]
+        all_labels = all_labels[:10]
+        grouped_labels = [all_labels[i:i+chunk_size] for i in range(0, len(all_labels), chunk_size)]
+        with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
+            sequences = manager.dict()
+            # create list of Process objects
+            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], sequences, genomes)) for i in range(args.num_threads)]
+            for p in processes:
+                p.start() # start the processes
+            for p in processes:
+                p.join() # join the processes, program will hang and wait until all the processes are done
+            for k, v in sequences.items():
+                all_sequences, all_starts, all_ends = zip(*v)
+                print(k, len(v), all_sequences, all_starts, all_ends)
+
+
+                    
+
+
+
 
         
 
