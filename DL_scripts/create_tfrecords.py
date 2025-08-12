@@ -375,7 +375,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
         f.write(f'max vector size: {max(list(vector_size))}\n')
         f.write(f'mean vector size: {statistics.mean(list(vector_size))}\n')
         f.write(f'median vector size: {statistics.median(list(vector_size))}\n')
-        f.write(f'max read length: {args.max_read_length}\n')
+        f.write(f'max read length: {read_length}\n')
 
 
     with open(os.path.join(output_dir, output_prefix + '-dna_seq_size'), 'w') as f:
@@ -383,7 +383,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
         f.write(f'max dna sequence size: {max(list(dna_sequence_size))}\n')
         f.write(f'mean dna sequence size: {statistics.mean(list(dna_sequence_size))}\n')
         f.write(f'median dna sequence size: {statistics.median(list(dna_sequence_size))}\n')
-        f.write(f'max read length: {args.max_read_length}\n')
+        f.write(f'max read length: {read_length}\n')
 
 def main():
     parser = argparse.ArgumentParser()
