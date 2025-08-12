@@ -588,6 +588,7 @@ if __name__ == "__main__":
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in genomes.items() if l != args.label]
+        neg_labels = neg_labels[:5]
         print(len(neg_labels))
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
@@ -649,7 +650,7 @@ if __name__ == "__main__":
             with open(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', f'{k_value}-dict.json'), 'w') as f:
                 json.dump(dict_kmers, f)
             
-            # create tfrecords
+            # create tfrecords for bert
             masked_lm_prob = 0.15
             output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
             if not os.path.isdir(output_dir):
@@ -664,6 +665,7 @@ if __name__ == "__main__":
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+                
 
                     
 
