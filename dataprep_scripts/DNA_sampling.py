@@ -565,8 +565,6 @@ if __name__ == "__main__":
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
             genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
-            for k, v in genomes.items():
-                print(k, v)
 
         # get sequences for positive class
         pos_genome = genomes[args.label][0]
