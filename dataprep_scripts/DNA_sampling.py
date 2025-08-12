@@ -553,7 +553,8 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets')):
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'blast'))
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'blast'))
-            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train'))
+            os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val'))
             os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
             
         # # compute ani between genomes
@@ -587,7 +588,6 @@ if __name__ == "__main__":
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in genomes.items() if l != args.label]
-        neg_labels = neg_labels[:5]
         print(len(neg_labels))
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
@@ -651,11 +651,12 @@ if __name__ == "__main__":
             
             # create tfrecords
             masked_lm_prob = 0.15
-            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords')
+            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train')
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
+            output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val')
             input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
             create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
