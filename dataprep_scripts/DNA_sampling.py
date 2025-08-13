@@ -509,6 +509,7 @@ def CreateTrainValSets(data, all_train_data, all_val_data):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--input_dir', type=str, help='path to input directory containing ncbi_database')
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
@@ -517,6 +518,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
+    parser.add_argument('--genome', type=str, help="genome id used to create testing set")
     parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
     parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
     parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
@@ -697,30 +699,46 @@ if __name__ == "__main__":
                 create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
+    if args.genome not None:
+        fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome, 'ncbi_dataset/data', args.genome, 'updated*.fna'))[0])
+        starts, ends = sampling(length=int(Fasta(fasta).full_genome_length), kmer=1, sampling_rate=0.5)
+        sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
+        cuts = cut_no_overlap(length=int(Fasta(fasta).full_genome_length), kmer=1)
+        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
+        all_sequences = sam_sequences + cut_sequences
+        all_starts = starts + seq_starts
+        all_ends = ends + seq_ends
 
-                    
+        output_dir = os.path.join(args.output_dir, 'datasets', args.genome)
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
-
-
-
+        # create tsv file with data
+        with open(os.path.join(output_dir, 'dataset.tsv'), 'w') as f:
+            for i in range(len(all_sequences)):
+                new_seq = all_sequences[i].replace(' ', '')
+                f.write(f'{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
         
+        for k_value in args.k_value:
+            output_dir = os.path.join(args.output_dir, 'datasets', args.genome, 'tfrecords', f'{k_value}')
+            if not os.path.isdir(output_dir):
+                os.makedirs(output_dir)
+                os.makedirs(os.path.join(output_dir, 'bert'))
+                os.makedirs(os.path.join(output_dir, 'cnn'))
 
-
-
-
-
-    # shuffle and split sequences between train and val (70/30)
-
-    # write sequences to tsv files + add info (location on chromosome, pangenome info, gene)
-
-    # prepare testing dataset
-
-    # call dnabert script (provide the whole genome as input)
-
-    # write sequences to tsv files + add info (location on chromosome, pangenome info, gene)
-
-    # create tfrecords
-
-    # train model
-
-    # test model
+            kmer_vector_length = args.max_read_length - k_value + 1 if args.step == 1 else args.max_read_length // k_value
+            print(f'max read length: {args.max_read_length}\tvector size: {kmer_vector_length}\t{k_value}')
+            
+            # get dictionary mapping kmers to indexes
+            dict_kmers = vocab_dict(f'{args.vocab}/{k_value}mers.txt')
+            with open(os.path.join(output_dir, f'{k_value}-dict.json'), 'w') as f:
+                json.dump(dict_kmers, f)
+        
+            # for bert
+            create_tfrecords(os.path.join(output_dir, 'dataset.tsv'), os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            # for cnn
+            create_tfrecords(os.path.join(output_dir, 'dataset.tsv'), os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
+                    
+        
