@@ -719,6 +719,12 @@ if __name__ == "__main__":
                 new_seq = all_sequences[i].replace(' ', '')
                 f.write(f'{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
         
+        # get dictionary mapping labels to species
+        labels_mapping = dict()
+        with open(args.mapping_file, 'r') as f:
+            for line in f:
+                labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
+
         for k_value in args.k_value:
             output_dir = os.path.join(args.output_dir, 'datasets', args.genome, 'tfrecords', f'{k_value}')
             if not os.path.isdir(output_dir):
