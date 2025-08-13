@@ -701,10 +701,9 @@ if __name__ == "__main__":
                 
     if args.genome is not None:
         fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome, 'ncbi_dataset/data', args.genome, 'updated*.fna'))[0])
-        print(fasta)
-        starts, ends = sampling(length=int(Fasta(fasta).full_genome_length), kmer=1, sampling_rate=0.5)
+        starts, ends = sampling(length=int(fasta.full_genome_length), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
-        cuts = cut_no_overlap(length=int(Fasta(fasta).full_genome_length), kmer=1)
+        cuts = cut_no_overlap(length=int(fasta.full_genome_length), kmer=1)
         cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
         all_sequences = sam_sequences + cut_sequences
         all_starts = starts + seq_starts
