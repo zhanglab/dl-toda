@@ -200,7 +200,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
                     if dnabert:
                         label = line.rstrip().split('\t')[0]
                         # dna_sequence = line.rstrip().split('\t')[1].split(" ")
-                        dna_sequence = line.rstrip().split('\t')[3]
+                        dna_sequence = line.rstrip().split('\t')[4]
                         dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers, dataset_type=dataset_type) 
                         # parse dna sequence into kmers
                         # dna_list = [dict_kmers[kmer] if kmer in dict_kmers else dict_kmers['[UNK]'] for kmer in dna_sequence]
