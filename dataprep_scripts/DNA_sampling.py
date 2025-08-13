@@ -714,7 +714,8 @@ if __name__ == "__main__":
             os.makedirs(output_dir)
 
         # create tsv file with data
-        with open(os.path.join(output_dir, 'dataset.tsv'), 'w') as f:
+        input_file = os.path.join(output_dir, 'dataset.tsv')
+        with open(input_file, 'w') as f:
             for i in range(len(all_sequences)):
                 new_seq = all_sequences[i].replace(' ', '')
                 f.write(f'{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
@@ -741,10 +742,10 @@ if __name__ == "__main__":
                 json.dump(dict_kmers, f)
         
             # for bert
-            create_tfrecords(os.path.join(output_dir, 'dataset.tsv'), os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+            create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
             # for cnn
-            create_tfrecords(os.path.join(output_dir, 'dataset.tsv'), os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+            create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
         
