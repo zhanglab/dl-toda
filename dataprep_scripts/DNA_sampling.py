@@ -416,7 +416,7 @@ def GetAni(args, data, input_file):
                     idx = list_genomes.index(genome_id)
                     gtdb_tax = gtdb_taxonomy[idx]
                     ncbi_tax = ncbi_taxonomy[idx]
-                    f.write(f'{label}\t{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
+                    f.write(f'{label}\t{genome_id}\t{ani}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
                 else:
                     if 'GCA' in genome_id:
                         if 'GCF_' + genome_id.split('_')[1] in list_genomes:
@@ -424,7 +424,7 @@ def GetAni(args, data, input_file):
                             idx = list_genomes.index(genome_id)
                             gtdb_tax = gtdb_taxonomy[idx]
                             ncbi_tax = ncbi_taxonomy[idx]
-                            f.write(f'{label}\t{genome_id}\t{ani}\t{avg_pct_identity}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
+                            f.write(f'{label}\t{genome_id}\t{ani}\t{query_size}\t{gtdb_tax}\t{ncbi_tax}\n')  
                         else:
                             prob_f.write(f'{genome_id}\tgenome id not found in gtdb\n')
                     else:
@@ -561,7 +561,7 @@ if __name__ == "__main__":
             
         # # compute ani between genomes
         # GetAni(args, args.data, args.train_genomes)
-        GetAni(args, args.data, args.test_genomes)
+        # GetAni(args, args.data, args.test_genomes)
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
