@@ -561,7 +561,7 @@ if __name__ == "__main__":
             
         # # compute ani between genomes
         # GetAni(args, args.data, args.train_genomes)
-        # GetAni(args, args.data, args.test_genomes)
+        GetAni(args, args.data, args.test_genomes)
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
@@ -686,12 +686,14 @@ if __name__ == "__main__":
                 output_dir = os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
+                    os.makedirs(os.path.join(output_dir, 'bert'))
+                    os.makedirs(os.path.join(output_dir, 'cnn'))
                 input_file = os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv')
                 # for bert
-                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
                 # for cnn
-                create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
 
