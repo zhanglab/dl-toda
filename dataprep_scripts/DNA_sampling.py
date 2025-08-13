@@ -699,7 +699,7 @@ if __name__ == "__main__":
                 create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
-    if args.genome not None:
+    if args.genome is not None:
         fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome, 'ncbi_dataset/data', args.genome, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(Fasta(fasta).full_genome_length), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
