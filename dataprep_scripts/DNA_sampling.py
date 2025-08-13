@@ -17,8 +17,8 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
-from DL_scripts.create_tfrecords import create_tfrecords
-from DL_scripts.tfrecords_utils import *
+# from DL_scripts.create_tfrecords import create_tfrecords
+# from DL_scripts.tfrecords_utils import *
 
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
