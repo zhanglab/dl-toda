@@ -594,7 +594,6 @@ if __name__ == "__main__":
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in genomes.items() if l != args.label]
-        neg_labels = neg_labels[:5]
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
