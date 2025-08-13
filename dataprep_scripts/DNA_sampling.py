@@ -718,7 +718,7 @@ if __name__ == "__main__":
         with open(input_file, 'w') as f:
             for i in range(len(all_sequences)):
                 new_seq = all_sequences[i].replace(' ', '')
-                f.write(f'{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
+                f.write(f'{args.label}\t{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
         
         # get dictionary mapping labels to species
         labels_mapping = dict()
