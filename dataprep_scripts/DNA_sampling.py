@@ -565,20 +565,20 @@ if __name__ == "__main__":
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
-            genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
+            info = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
 
         # get sequences for positive class
-        pos_genome = genomes[args.label][0]
+        pos_genome = info[args.label][0]
         pos_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
-        pos_sam_starts, pos_sam_ends = sampling(length=int(genomes[args.label][2]), kmer=1, sampling_rate=0.5)
+        pos_sam_starts, pos_sam_ends = sampling(length=int(info[args.label][2]), kmer=1, sampling_rate=0.5)
         pos_sam_sequences = SampleGenome(pos_sam_starts, pos_sam_ends, pos_fasta.full_genome_seq)
-        cuts = cut_no_overlap(length=int(genomes[args.label][2]), kmer=1)
+        cuts = cut_no_overlap(length=int(info[args.label][2]), kmer=1)
         pos_cut_sequences, pos_cut_starts, pos_cut_ends = CutGenome(cuts, pos_fasta.full_genome_seq)
         pos_sequences = pos_sam_sequences + pos_cut_sequences
         pos_starts = pos_sam_starts + pos_cut_starts
         pos_ends = pos_sam_ends + pos_cut_ends
         pos_label = [args.label]*len(pos_sequences)
-        data = list(zip(pos_sequences, pos_starts, pos_ends, pos_label))
+        data = list(zip(pos_sequences, pos_starts, pos_ends, pos_label, [pos_genome]*len(pos_sequences)))
         
         if args.data == 'train':
              # get sequences for training and validation datasets
@@ -593,7 +593,7 @@ if __name__ == "__main__":
 
         # obtain sequences from negative class
         # create chunks of genomes
-        neg_labels = [l for l, g in genomes.items() if l != args.label]
+        neg_labels = [l for l, g in info.items() if l != args.label]
         chunk_size = math.ceil(len(neg_labels)/args.num_threads)
         print(f'# labels per process: {chunk_size}')
         grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
@@ -606,7 +606,7 @@ if __name__ == "__main__":
         with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             sequences = manager.dict()
             # create list of Process objects
-            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], num_seq_per_sp[i], sequences, genomes)) for i in range(len(grouped_labels))]
+            processes = [mp.Process(target=get_sequences, args=(args, grouped_labels[i], num_seq_per_sp[i], sequences, info)) for i in range(len(grouped_labels))]
             for p in processes:
                 p.start() # start the processes
             for p in processes:
@@ -615,11 +615,13 @@ if __name__ == "__main__":
             # prepare datasets
             neg_sequences = []
             neg_all_labels = []
+            neg_all_genomes = []
             for k, v in sequences.items():
                 neg_sequences += v
                 neg_all_labels += [k]*len(v)
+                neg_all_genomes += [info[k][0]]*len(v)
             neg_all_sequences, neg_all_starts, neg_all_ends = zip(*neg_sequences)
-            data = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels))
+            data = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels, neg_all_genomes))
 
             if args.data == 'train':
                 # get sequences for training and validation datasets
@@ -630,25 +632,25 @@ if __name__ == "__main__":
                 # create tsv file with data
                 random.shuffle(all_train_data)
                 with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'), 'w') as f:
-                    sequences, starts, ends, labels = zip(*all_train_data)
+                    sequences, starts, ends, labels, genomes  = zip(*all_train_data)
                     for i in range(len(all_train_data)):
                         new_seq = sequences[i].replace(' ', '')
-                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
                 random.shuffle(all_val_data)
                 with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
-                    sequences, starts, ends, labels = zip(*all_val_data)
+                    sequences, starts, ends, labels, genomes = zip(*all_val_data)
                     for i in range(len(all_val_data)):
                         new_seq = sequences[i].replace(' ', '')
-                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
             else:
                 all_data += data
                 print(f'# test sequences: {len(all_data)}')
                 # create tsv file with data
                 with open(os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv'), 'w') as f:
-                    sequences, starts, ends, labels = zip(*all_data)
+                    sequences, starts, ends, labels, genomes = zip(*all_data)
                     for i in range(len(all_data)):
                         new_seq = sequences[i].replace(' ', '')
-                        f.write(f'{labels[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
 
     
         # get dictionary mapping labels to species
