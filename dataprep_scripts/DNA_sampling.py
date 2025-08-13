@@ -643,7 +643,7 @@ if __name__ == "__main__":
                     sequences, starts, ends, labels, genomes = zip(*all_val_data)
                     for i in range(len(all_val_data)):
                         new_seq = sequences[i].replace(' ', '')
-                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]-1}\t{new_seq}\n')
             else:
                 all_data += data
                 print(f'# test sequences: {len(all_data)}')
@@ -652,7 +652,7 @@ if __name__ == "__main__":
                     sequences, starts, ends, labels, genomes = zip(*all_data)
                     for i in range(len(all_data)):
                         new_seq = sequences[i].replace(' ', '')
-                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]-1}\t{new_seq}\n')
 
     
         # get dictionary mapping labels to species
@@ -718,7 +718,7 @@ if __name__ == "__main__":
         with open(input_file, 'w') as f:
             for i in range(len(all_sequences)):
                 new_seq = all_sequences[i].replace(' ', '')
-                f.write(f'{args.label}\t{args.genome}\t{all_starts[i]}\t{all_ends[i]}\t{new_seq}\n')
+                f.write(f'{args.label}\t{args.genome}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
         
         # get dictionary mapping labels to species
         labels_mapping = dict()
