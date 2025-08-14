@@ -527,7 +527,7 @@ if __name__ == "__main__":
     parser.add_argument('--vocab', type=str, help="Path to directory containing vocabulary files")
     parser.add_argument('--testing_results', type=str, help="path to parent directory containing files with testing results obtained from running DLTODA")
     parser.add_argument('--ani_file', type=str, help="path to file containing ANI between testing genomes and training genome")
-    parser.add_argument('--confidence_score', type=float, help="confidence threshold for classifications")
+    parser.add_argument('--confidence_score', type=float, help="confidence threshold for classifications", default=0.0)
     args = parser.parse_args()
     print(args)
     # create output directory
