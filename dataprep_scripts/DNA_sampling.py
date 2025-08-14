@@ -11,14 +11,14 @@ import pandas as pd
 import multiprocessing as mp
 import statistics
 import random
-from pygenomeviz.parser import Fasta
-from Bio import SeqIO
+# from pygenomeviz.parser import Fasta
+# from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
-# from DL_scripts.create_tfrecords import create_tfrecords
-# from DL_scripts.tfrecords_utils import *
+from DL_scripts.create_tfrecords import create_tfrecords
+from DL_scripts.tfrecords_utils import *
 
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
@@ -718,10 +718,10 @@ if __name__ == "__main__":
 
         # create tsv file with data
         input_file = os.path.join(output_dir, 'dataset.tsv')
-        with open(input_file, 'w') as f:
-            for i in range(len(all_sequences)):
-                new_seq = all_sequences[i].replace(' ', '')
-                f.write(f'{args.label}\t{args.genome_id}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
+        # with open(input_file, 'w') as f:
+        #     for i in range(len(all_sequences)):
+        #         new_seq = all_sequences[i].replace(' ', '')
+        #         f.write(f'{args.label}\t{args.genome_id}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
         
         # get dictionary mapping labels to species
         labels_mapping = dict()
@@ -745,8 +745,8 @@ if __name__ == "__main__":
                 json.dump(dict_kmers, f)
         
             # for bert
-            create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            # create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                # args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
             # for cnn
             create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
