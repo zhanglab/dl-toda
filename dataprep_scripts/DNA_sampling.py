@@ -17,8 +17,8 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
-from DL_scripts.create_tfrecords import create_tfrecords
-from DL_scripts.tfrecords_utils import *
+# from DL_scripts.create_tfrecords import create_tfrecords
+# from DL_scripts.tfrecords_utils import *
 
 
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
@@ -365,7 +365,7 @@ def GetGenomeAndAnnot(args, genome_id):
         print(f'{genome_id}\tdownload already done')
 
 
-def GetAni(args, data, input_file):
+def GetAni(args, data, input_file, train_genome):
     with open(input_file, 'r') as f:
         all_genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
     
@@ -518,9 +518,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
-    parser.add_argument('--genome', type=str, help="genome id used to create testing set")
-    parser.add_argument('--train_genomes', type=str, help="file mapping labels to training genomes id")
-    parser.add_argument('--test_genomes', type=str, help="file mapping labels to testing genomes id")
+    parser.add_argument('--genome_id', type=str, help="genome id used to create testing set")
+    parser.add_argument('--train_genome_id', type=str, help="genome id of training genome")
+    parser.add_argument('--genomes', type=str, help="file mapping labels to genomes id")
     parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads")
@@ -552,6 +552,13 @@ if __name__ == "__main__":
         # run anvio
         RunAnvio(args, genomes_kept)
 
+    if args.ani:
+        if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
+            os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
+
+        # compute ani between genomes
+        GetAni(args, args.data, args.genomes, args.train_genome_id)
+
     if args.datasets:
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
             os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
@@ -560,10 +567,6 @@ if __name__ == "__main__":
                 os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'tfrecords', 'val'))
             else:
                 os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
-            
-        # # compute ani between genomes
-        # GetAni(args, args.data, args.train_genomes)
-        # GetAni(args, args.data, args.test_genomes)
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
@@ -699,8 +702,8 @@ if __name__ == "__main__":
                 create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                 
-    if args.genome is not None:
-        fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome, 'ncbi_dataset/data', args.genome, 'updated*.fna'))[0])
+    if args.genome_id is not None:
+        fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome_id, 'ncbi_dataset/data', args.genome_id, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(fasta.full_genome_length), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(fasta.full_genome_length), kmer=1)
@@ -709,7 +712,7 @@ if __name__ == "__main__":
         all_starts = starts + seq_starts
         all_ends = ends + seq_ends
 
-        output_dir = os.path.join(args.output_dir, 'datasets', args.genome)
+        output_dir = os.path.join(args.output_dir, 'datasets', args.genome_id)
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
 
@@ -718,7 +721,7 @@ if __name__ == "__main__":
         with open(input_file, 'w') as f:
             for i in range(len(all_sequences)):
                 new_seq = all_sequences[i].replace(' ', '')
-                f.write(f'{args.label}\t{args.genome}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
+                f.write(f'{args.label}\t{args.genome_id}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
         
         # get dictionary mapping labels to species
         labels_mapping = dict()
@@ -727,7 +730,7 @@ if __name__ == "__main__":
                 labels_mapping[line.rstrip().split('\t')[0]] = line.rstrip().split('\t')[1]
 
         for k_value in args.k_value:
-            output_dir = os.path.join(args.output_dir, 'datasets', args.genome, 'tfrecords', f'{k_value}')
+            output_dir = os.path.join(args.output_dir, 'datasets', args.genome_id, 'tfrecords', f'{k_value}')
             if not os.path.isdir(output_dir):
                 os.makedirs(output_dir)
                 os.makedirs(os.path.join(output_dir, 'bert'))
