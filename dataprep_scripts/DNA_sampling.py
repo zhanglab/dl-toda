@@ -365,7 +365,7 @@ def GetGenomeAndAnnot(args, genome_id):
         print(f'{genome_id}\tdownload already done')
 
 
-def GetAni(args, data, input_file, train_genome):
+def GetAni(args, data, input_file, sp_genome):
     with open(input_file, 'r') as f:
         all_genomes = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
     
@@ -383,8 +383,7 @@ def GetAni(args, data, input_file, train_genome):
     genomes_kept = PrepareFasta(list(all_genomes.values()))
     genomes = {k:v for k, v in all_genomes.items() if v in genomes_kept}
     print(f'# genomes kept: {len(genomes_kept)}\t{len(genomes)}')
-    # get training genomes for positive and negative class
-    sp_genome = genomes[args.label]
+    # get training genomes for negative class
     neg_genomes = [g for l, g in genomes.items() if l != args.label]
     print(f'# negative genomes: {len(neg_genomes)}')
     
