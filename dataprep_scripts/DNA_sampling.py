@@ -514,6 +514,7 @@ if __name__ == "__main__":
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
     parser.add_argument('--ani', action='store_true', default=False, help="compute ANI between training genome and list of genomes")
+    parser.add_argument('--testing_summary', action='store_true', default=False, help="summarize testing results")
     parser.add_argument('--genome_id', type=str, help="genome id used to create testing set")
     parser.add_argument('--train_genome_id', type=str, help="genome id of training genome")
     parser.add_argument('--genomes', type=str, help="file mapping labels to genomes id")
@@ -523,7 +524,10 @@ if __name__ == "__main__":
     parser.add_argument('--k_value', nargs='+', type=int, help="Size of k-mers")
     parser.add_argument('--masked_lm_prob', default=0.15, type=float, help="Fraction of masked tokens in mlm task")
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
-    parser.add_argument('--vocab', help="Path to directory containing vocabulary files")
+    parser.add_argument('--vocab', type=str, help="Path to directory containing vocabulary files")
+    parser.add_argument('--testing_results', type=str, help="path to parent directory containing files with testing results obtained from running DLTODA")
+    parser.add_argument('--ani_file', type=str, help="path to file containing ANI between testing genomes and training genome")
+    parser.add_argument('--confidence_score', type=float, help="confidence threshold for classifications")
     args = parser.parse_args()
     print(args)
     # create output directory
@@ -747,4 +751,31 @@ if __name__ == "__main__":
             create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
-        
+    if args.testing_summary:
+        with open(args.ani_file, 'r') as f:
+            info = {line.rstrip().split('\t')[1]: float(line.rstrip().split('\t')[2]) for line in f.readlines()} 
+
+        outf = open(os.path.join(args.output_dir, 'results_summary_ani.tsv'), 'w')
+        for genome_id, ani in info.items():
+            results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
+            incorrect = 0
+            correct = 0
+            probs = []
+            with open(results_file, 'r') as f:
+                for line in f:
+                    true = line.rstrip().split('\t')[0]
+                    pred = line.rstrip().split('\t')[1]
+                    prob = float(line.rstrip().split('\t')[2])
+                    if prob >= args.confidence_score:
+                        if true != pred:
+                            incorrect += 1
+                        else:
+                            correct += 1
+                        probs.append(prob)
+            accuracy = round(correct / (correct+incorrect), 2)
+            outf.write(f'{genome_id}\t{accuracy }\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+
+
+
+
+
