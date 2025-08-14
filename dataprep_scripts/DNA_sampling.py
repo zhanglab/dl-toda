@@ -384,7 +384,7 @@ def GetAni(args, data, input_file, sp_genome):
     genomes = {k:v for k, v in all_genomes.items() if v in genomes_kept}
     print(f'# genomes kept: {len(genomes_kept)}\t{len(genomes)}')
     # get training genomes for negative class
-    neg_genomes = [g for l, g in genomes.items() if l != args.label]
+    neg_genomes = list(genomes.values())
     print(f'# negative genomes: {len(neg_genomes)}')
     
     # get gtdb taxonomy info
