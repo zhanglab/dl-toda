@@ -773,7 +773,7 @@ if __name__ == "__main__":
                             correct += 1
                         probs.append(prob)
             accuracy = round(correct / (correct+incorrect), 2)
-            outf.write(f'{genome_id}\t{accuracy }\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            outf.write(f'{genome_id}\t{ani}\t{accuracy }\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
 
 
 
