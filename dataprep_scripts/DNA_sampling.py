@@ -517,6 +517,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
+    parser.add_argument('--ani', action='store_true', default=False, help="compute ANI between training genome and list of genomes")
     parser.add_argument('--genome_id', type=str, help="genome id used to create testing set")
     parser.add_argument('--train_genome_id', type=str, help="genome id of training genome")
     parser.add_argument('--genomes', type=str, help="file mapping labels to genomes id")
