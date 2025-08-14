@@ -755,7 +755,7 @@ if __name__ == "__main__":
         with open(args.ani_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: float(line.rstrip().split('\t')[2]) for line in f.readlines()} 
 
-        outf = open(os.path.join(args.output_dir, 'results_summary_ani.tsv'), 'w')
+        outf = open(os.path.join(args.output_dir, f'results_summary_ani_{args.confidence_score}.tsv'), 'w')
         for genome_id, ani in info.items():
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
             incorrect = 0
