@@ -275,7 +275,7 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
                 for line in f:
                     if dnabert:
                         label = line.rstrip().split('\t')[0]
-                        dna_sequence = line.rstrip().split('\t')[3]
+                        dna_sequence = line.rstrip().split('\t')[4]
                         dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers) 
                         # dna_sequence = line.rstrip().split('\t')[1].split(" ")
                         # parse dna sequence into kmers
