@@ -739,15 +739,18 @@ if __name__ == "__main__":
             kmer_vector_length = args.max_read_length - k_value + 1 if args.step == 1 else args.max_read_length // k_value
             print(f'max read length: {args.max_read_length}\tvector size: {kmer_vector_length}\t{k_value}')
             
+            # for bert
+            # get dictionary mapping kmers to indexes
+            # dict_kmers = vocab_dict(f'{args.vocab}/bert/{k_value}mers.txt')
+            # with open(os.path.join(output_dir, f'{k_value}-dict.json'), 'w') as f:
+            #     json.dump(dict_kmers, f)
+            # create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                # args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            # for cnn
             # get dictionary mapping kmers to indexes
             dict_kmers = vocab_dict(f'{args.vocab}/{k_value}mers.txt')
             with open(os.path.join(output_dir, f'{k_value}-dict.json'), 'w') as f:
                 json.dump(dict_kmers, f)
-        
-            # for bert
-            # create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                # args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
-            # for cnn
             create_tfrecords(input_file, os.path.join(output_dir, 'cnn'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
