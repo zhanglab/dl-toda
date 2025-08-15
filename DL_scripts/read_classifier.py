@@ -409,7 +409,10 @@ def main():
             # batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             batch_pred_sp, batch_prob_sp, labels, reads = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             print(labels)
+            print(batch_pred_sp)
             print(reads)
+            print(reads[0])
+            break
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
