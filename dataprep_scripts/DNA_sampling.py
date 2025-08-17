@@ -813,7 +813,6 @@ if __name__ == "__main__":
                         outf_genes.write(f'{prob}\t')
             accuracy = round(correct / (correct+incorrect), 2)
             outf.write(f'{genome_id}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-            break
         outf.close()
         outf_genes.close()
 
