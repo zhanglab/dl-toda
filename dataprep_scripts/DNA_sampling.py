@@ -786,10 +786,10 @@ if __name__ == "__main__":
                     start = int(data[index].split('\t')[2])
                     end = int(data[index].split('\t')[3])
                     if prob >= args.confidence_score:
-                        seq_gene_id = ''
-                        gene_type = ''
-                        protein_id = ''
-                        cog_fn = ''
+                        seq_gene_id = 'NA'
+                        gene_type = 'NA'
+                        protein_id = 'NA'
+                        cog_fn = 'NA'
                         for gene_id, gene_info in annot_info.items():
                             if (start >= gene_info[1] and end <= gene_info[2]) or \
                                 (start <= gene_info[2] and end >= gene_info[2]) or \
@@ -801,16 +801,7 @@ if __name__ == "__main__":
                                     protein_id = gene_info[-1]
                                     cog_fn = cog_df.loc[cog_df['protein_id'] == protein_id, 'function'].iloc[0]
                                     print(cog_fn)
-                        assert len(seq_gene_id) != 0, f'{genome_id}\tsequences: {index+1}\t{start}\t{end}'
-                        outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t')
-                        if len(protein_id) != 0:
-                            outf_genes.write(f'{protein_id}\t')
-                        else:
-                            outf_genes.write('NA\t')
-                        if len(cog_fn) != 0:
-                            outf_genes.write(f'{cog_fn}\t')
-                        else:
-                            outf_genes.write('NA\t')
+                        outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                         if true != pred:
                             incorrect += 1
                             outf_genes.write('incorrect\t')
