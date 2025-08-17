@@ -799,6 +799,7 @@ if __name__ == "__main__":
                                 gene_type = gene_info[0]
                                 if gene_type == 'protein_coding':
                                     protein_id = gene_info[-1]
+                                    print(cog_df.loc[cog_df['protein_id'] == protein_id, 'function'])
                                     cog_fn = cog_df.loc[cog_df['protein_id'] == protein_id, 'function'].iloc[0]
                                     print(cog_fn)
                         outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
