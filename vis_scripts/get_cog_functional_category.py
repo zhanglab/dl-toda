@@ -65,7 +65,10 @@ def GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict):
 			# cdd not found in database
 			proteins_fn[protein_id] = 'Function unknown'
 	print(len(proteins_cdd), len(proteins_fn))
-	return proteins_fn
+	with open(os.path.join(args.output_dir, 'cog_functions.tsv'), 'w') as f:
+		for k, v in proteins_fn.items():
+			f.write(f'{k}\t{v}\n')
+	# return proteins_fn
 
 # def GetProteins(args):
 # 	if f'{args.genome_id}' not in os.listdir(args.proteins_db):
@@ -122,9 +125,7 @@ if __name__ == "__main__":
 	RunRPSBLAST(args)
 
 	# get COG function for each protein
-	proteins_fn = GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
-	print(proteins_fn)
-	# with open()
+	GetCOGFnCat(args, cdd_to_cog_df, coglettertofn_dict, cogfncat_dict)
 
 	# for i in range(len(input_files)):
 	# 	print(input_files[i])
