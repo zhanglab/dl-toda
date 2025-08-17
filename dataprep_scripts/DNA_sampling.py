@@ -807,7 +807,7 @@ if __name__ == "__main__":
                             outf_genes.write(f'{protein_id}\t')
                         else:
                             outf_genes.write('NA\t')
-                        if len(cog_fnd) != 0:
+                        if len(cog_fn) != 0:
                             outf_genes.write(f'{cog_fn}\t')
                         else:
                             outf_genes.write('NA\t')
