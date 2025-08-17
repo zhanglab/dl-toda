@@ -764,16 +764,19 @@ if __name__ == "__main__":
             info = {line.rstrip().split('\t')[1]: float(line.rstrip().split('\t')[2]) for line in f.readlines()} 
 
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
+        outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
             datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
             with open(datafile, 'r') as f:
                 data = f.readlines()
+            # load cog functions
+            cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
+            cog_df = pd.read_csv(cogfile, sep='\t', header=None)
+            cog_df.columns = ['protein_id', 'function']
             annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
             incorrect = 0
             correct = 0
-            incorrect_genes = []
-            correct_genes = []
             probs = []
             with open(results_file, 'r') as f:
                 for index, line in enumerate(f, 0):
@@ -784,23 +787,42 @@ if __name__ == "__main__":
                     end = data[index].split('\t')[3]
                     if prob >= args.confidence_score:
                         seq_gene_id = ''
+                        gene_type = ''
+                        protein_id = ''
+                        cog_fn = ''
                         for gene_id, gene_info in annot_info.items():
                             if (start >= gene_info[1] and end <= gene_info[2]) or 
                                 (start <= gene_info[2] and end >= gene_info[2]) or 
                                 (start <= gene_info[1] and end >= gene_info[1]) or 
                                 (start <= gene_info[1] and end >= gene_info[2]):
                                 seq_gene_id = gene_id
+                                gene_type = gene_info[0]
+                                if gene_type == 'protein_coding':
+                                    protein_id = gene_info[-1]
+                                    cog_fn = cog_df.loc[df['protein_id'] == protein_id, 'function'].iloc[0]
+                                    print(cog_fn)
                         assert len(seq_gene_id) != 0, f'{genome_id}\tsequences: {index+1}\t{start}\t{end}'
-                        if true != pred:
-                            incorrect_genes.append(seq_gene_id)
-                            incorrect += 1
+                        outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t')
+                        if len(protein_id) != 0:
+                            outf_genes.write(f'{protein_id}\t')
                         else:
-                            correct_genes.append(seq_gene_id)
+                            outf_genes.write('NA\t')
+                        if len(cog_fnd) != 0:
+                            outf_genes.write(f'{cog_fn}\t')
+                        else:
+                            outf_genes.write('NA\t')
+                        if true != pred:
+                            incorrect += 1
+                            outf_genes.write('incorrect\t')
+                        else:
+                            outf_genes.write('correct\t')
                             correct += 1
                         probs.append(prob)
+                        outf_genes.write(f'{prob}\t')
             accuracy = round(correct / (correct+incorrect), 2)
             outf.write(f'{genome_id}\t{ani}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-
+        outf.close()
+        outf_genes.close()
 
 
 
