@@ -90,7 +90,7 @@ if __name__ == "__main__":
 	parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
 	args = parser.parse_args()
 	
-	args.output_dir = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id)
+	args.output_dir = os.path.join(args.input_dir, 'ncbi_database', args.genome_id, 'ncbi_dataset/data', args.genome_id)
 	# create output directories for rpsblast results
 	if not os.path.isdir(os.path.join(args.output_dir, 'rpsblast_results')):
 		os.makedirs(os.path.join(args.output_dir, 'rpsblast_results'))
