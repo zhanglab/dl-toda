@@ -791,9 +791,9 @@ if __name__ == "__main__":
                         protein_id = ''
                         cog_fn = ''
                         for gene_id, gene_info in annot_info.items():
-                            if (start >= gene_info[1] and end <= gene_info[2]) or 
-                                (start <= gene_info[2] and end >= gene_info[2]) or 
-                                (start <= gene_info[1] and end >= gene_info[1]) or 
+                            if (start >= gene_info[1] and end <= gene_info[2]) or \
+                                (start <= gene_info[2] and end >= gene_info[2]) or \
+                                (start <= gene_info[1] and end >= gene_info[1]) or \
                                 (start <= gene_info[1] and end >= gene_info[2]):
                                 seq_gene_id = gene_id
                                 gene_type = gene_info[0]
