@@ -115,9 +115,9 @@ def GetAlignments(sequences, input_file, sequence_length=None, outfilename=None)
 
 def GetAnnotInfo(args, genome_id, input_dir):
 
-	annot_file = glob.glob(os.path.join(args.output_dir, 'ncbi_database', f'{genome_id}/ncbi_dataset/data/{genome_id}/genomic.gtf'))
+	annot_file = glob.glob(os.path.join(input_dir, 'ncbi_database', f'{genome_id}/ncbi_dataset/data/{genome_id}/genomic.gtf'))
 	if len(annot_file) == 0:
-		f = open(os.path.join(args.output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
+		f = open(os.path.join(input_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
 		f.close()
 		return {}
 	else:
@@ -168,7 +168,7 @@ def GetAnnotInfo(args, genome_id, input_dir):
 				
 				assert gene_id != '', 'gene id should not be unknown'
 		
-		with open(os.path.join(args.output_dir, 'ncbi_database', genome_id, f'{genome_id}_genes.tsv'), 'w') as f:
+		with open(os.path.join(input_dir, 'ncbi_database', genome_id, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
 			num_rrna = len([k for k, v in annot_info.items() if v[0] == 'rRNA'])
 			num_trna = len([k for k, v in annot_info.items() if v[0] == 'tRNA'])
@@ -504,7 +504,7 @@ def CreateTrainValSets(data, all_train_data, all_val_data):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', type=str, help='path to input directory containing ncbi_database')
+    parser.add_argument('--input_dir', type=str, help='path to input directory')
     parser.add_argument('--output_dir', type=str, help='path to output directory')
     parser.add_argument('--species', type=str, help='species with GTDB taxonomy', choices=['Prochlorococcus_B marinus_B','Marinobacter psychrophilus','Alteromonas macleodii'])
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
@@ -763,25 +763,43 @@ if __name__ == "__main__":
         with open(args.ani_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: float(line.rstrip().split('\t')[2]) for line in f.readlines()} 
 
-        outf = open(os.path.join(args.output_dir, f'results_summary_ani_{args.confidence_score}.tsv'), 'w')
-        for genome_id, ani in info.items():
+        outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
+        for genome_id in info.keys():
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
+            datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
+            with open(datafile, 'r') as f:
+                data = f.readlines()
+            annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
             incorrect = 0
             correct = 0
+            incorrect_genes = []
+            correct_genes = []
             probs = []
             with open(results_file, 'r') as f:
-                for line in f:
+                for index, line in enumerate(f, 0):
                     true = line.rstrip().split('\t')[0]
                     pred = line.rstrip().split('\t')[1]
                     prob = float(line.rstrip().split('\t')[2])
+                    start = data[index].split('\t')[2]
+                    end = data[index].split('\t')[3]
                     if prob >= args.confidence_score:
+                        seq_gene_id = ''
+                        for gene_id, gene_info in annot_info.items():
+                            if (start >= gene_info[1] and end <= gene_info[2]) or 
+                                (start <= gene_info[2] and end >= gene_info[2]) or 
+                                (start <= gene_info[1] and end >= gene_info[1]) or 
+                                (start <= gene_info[1] and end >= gene_info[2]):
+                                seq_gene_id = gene_id
+                        assert len(seq_gene_id) != 0, f'{genome_id}\tsequences: {index+1}\t{start}\t{end}'
                         if true != pred:
+                            incorrect_genes.append(seq_gene_id)
                             incorrect += 1
                         else:
+                            correct_genes.append(seq_gene_id)
                             correct += 1
                         probs.append(prob)
             accuracy = round(correct / (correct+incorrect), 2)
-            outf.write(f'{genome_id}\t{ani}\t{accuracy }\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            outf.write(f'{genome_id}\t{ani}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
 
 
 
