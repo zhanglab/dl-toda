@@ -783,8 +783,8 @@ if __name__ == "__main__":
                     true = line.rstrip().split('\t')[0]
                     pred = line.rstrip().split('\t')[1]
                     prob = float(line.rstrip().split('\t')[2])
-                    start = data[index].split('\t')[2]
-                    end = data[index].split('\t')[3]
+                    start = int(data[index].split('\t')[2])
+                    end = int(data[index].split('\t')[3])
                     if prob >= args.confidence_score:
                         seq_gene_id = ''
                         gene_type = ''
