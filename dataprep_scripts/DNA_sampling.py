@@ -799,11 +799,9 @@ if __name__ == "__main__":
                                 gene_type = gene_info[0]
                                 if gene_type == 'protein_coding':
                                     protein_id = gene_info[-1]
-                                    print(len(cog_df.loc[cog_df['protein_id'] == protein_id, 'function']))
                                     cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
                                     if len(cog_fn_df) > 0:
                                         cog_fn = cog_fn_df.iloc[0]
-                                    print(cog_fn)
                         outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                         if true != pred:
                             incorrect += 1
@@ -815,6 +813,7 @@ if __name__ == "__main__":
                         outf_genes.write(f'{prob}\t')
             accuracy = round(correct / (correct+incorrect), 2)
             outf.write(f'{genome_id}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            break
         outf.close()
         outf_genes.close()
 
