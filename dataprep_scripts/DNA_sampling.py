@@ -761,11 +761,13 @@ if __name__ == "__main__":
                     
     if args.testing_summary:
         with open(args.ani_file, 'r') as f:
-            info = {line.rstrip().split('\t')[1]: float(line.rstrip().split('\t')[2]) for line in f.readlines()} 
+            info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
 
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
+            tax = info[genome_id].split('\t')[4]
+            label = info[genome_id].split('\t')[0]
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
             datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
             with open(datafile, 'r') as f:
@@ -802,7 +804,7 @@ if __name__ == "__main__":
                                     cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
                                     if len(cog_fn_df) > 0:
                                         cog_fn = cog_fn_df.iloc[0]
-                        outf_genes.write(f'{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
+                        outf_genes.write(f'{genome_id}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                         if true != pred:
                             incorrect += 1
                             outf_genes.write('incorrect\t')
@@ -812,7 +814,7 @@ if __name__ == "__main__":
                         probs.append(prob)
                         outf_genes.write(f'{prob}\n')
             accuracy = round(correct / (correct+incorrect), 2)
-            outf.write(f'{genome_id}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
         outf_genes.close()
 
