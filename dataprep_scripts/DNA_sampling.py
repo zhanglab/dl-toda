@@ -767,6 +767,7 @@ if __name__ == "__main__":
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
             tax = info[genome_id].split('\t')[4]
+            print(tax)
             label = info[genome_id].split('\t')[0]
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
             datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
@@ -812,7 +813,7 @@ if __name__ == "__main__":
                             outf_genes.write('correct\t')
                             correct += 1
                         probs.append(prob)
-                        outf_genes.write(f'{prob}\n')
+                        outf_genes.write(f'{prob}\t{start}\t{end}\n')
             accuracy = round(correct / (correct+incorrect), 2)
             outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
