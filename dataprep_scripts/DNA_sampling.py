@@ -767,7 +767,6 @@ if __name__ == "__main__":
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
             tax = info[genome_id].split('\t')[4]
-            print(tax)
             label = info[genome_id].split('\t')[0]
             results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
             datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
@@ -805,7 +804,7 @@ if __name__ == "__main__":
                                     cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
                                     if len(cog_fn_df) > 0:
                                         cog_fn = cog_fn_df.iloc[0]
-                        outf_genes.write(f'{genome_id}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
+                        outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                         if true != pred:
                             incorrect += 1
                             outf_genes.write('incorrect\t')
