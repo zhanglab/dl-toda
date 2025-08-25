@@ -518,6 +518,7 @@ if __name__ == "__main__":
     parser.add_argument('--genome_id', type=str, help="genome id used to create testing set")
     parser.add_argument('--train_genome_id', type=str, help="genome id of training genome")
     parser.add_argument('--genomes', type=str, help="file mapping labels to genomes id")
+    parser.add_argument('--anvio_results', type=str, help="path to file called results_blastp.tsv")
     parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
     parser.add_argument('--mapping_file', type=str, help='path to file mapping species labels to rank labels')
     parser.add_argument('--max_read_length', default=250, type=int, help="The length of simulated reads")
@@ -763,6 +764,12 @@ if __name__ == "__main__":
         with open(args.ani_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
 
+        # load info about pangenome analysis
+        anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
+        anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
+        pan_genomes = anvio_df['genome'].tolist()
+
+
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
@@ -792,6 +799,7 @@ if __name__ == "__main__":
                         gene_type = 'NA'
                         protein_id = 'NA'
                         cog_fn = 'NA'
+                        pangenome = 'NA'
                         for gene_id, gene_info in annot_info.items():
                             if (start >= gene_info[1] and end <= gene_info[2]) or \
                                 (start <= gene_info[2] and end >= gene_info[2]) or \
@@ -804,7 +812,11 @@ if __name__ == "__main__":
                                     cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
                                     if len(cog_fn_df) > 0:
                                         cog_fn = cog_fn_df.iloc[0]
-                        outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
+                        if genome_id in pan_genomes and gene_id != 'NA':
+                            # get pangenome info if available
+                            pangenome = anvio_df.loc[anvio_df['genome'] == genome_id and anvio_df['gene'] == gene_id, 'pangenome']
+                            
+                        outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
                         if true != pred:
                             incorrect += 1
                             outf_genes.write('incorrect\t')
