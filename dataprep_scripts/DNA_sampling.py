@@ -767,11 +767,13 @@ if __name__ == "__main__":
         # load info about pangenome analysis
         anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
         anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
-        pan_genomes = anvio_df['genome'].tolist()
-
+        pan_genomes = set(anvio_df['genome'].tolist())
+        print(anvio_df)
+        print(pan_genomes)
 
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
+        outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
             tax = info[genome_id].split('\t')[4]
             label = info[genome_id].split('\t')[0]
@@ -816,15 +818,19 @@ if __name__ == "__main__":
                             # get pangenome info if available
                             pangenome = anvio_df.loc[anvio_df['genome'] == genome_id and anvio_df['gene'] == gene_id, 'pangenome']
                             
-                        outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
+                        outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
+                        outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
                         if true != pred:
                             incorrect += 1
                             outf_genes.write('incorrect\t')
+                            outf_pan.write('incorrect\t')
                         else:
                             outf_genes.write('correct\t')
+                            outf_pan.write('correct\t')
                             correct += 1
                         probs.append(prob)
                         outf_genes.write(f'{prob}\t{start}\t{end}\n')
+                        outf_pan.write(f'{prob}\t{start}\t{end}\n')
             accuracy = round(correct / (correct+incorrect), 2)
             outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
