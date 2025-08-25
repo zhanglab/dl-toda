@@ -527,7 +527,7 @@ if __name__ == "__main__":
     parser.add_argument('--step', default=1, type=int, help="Length of step when sliding window over read")
     parser.add_argument('--vocab', type=str, help="Path to directory containing vocabulary files")
     parser.add_argument('--testing_results', type=str, help="path to parent directory containing files with testing results obtained from running DLTODA")
-    parser.add_argument('--ani_file', type=str, help="path to file containing ANI between testing genomes and training genome")
+    parser.add_argument('--info_file', type=str, help="path to file containing taxonomic information about genomes")
     parser.add_argument('--confidence_score', type=float, help="confidence threshold for classifications", default=0.0)
     args = parser.parse_args()
     print(args)
@@ -761,7 +761,7 @@ if __name__ == "__main__":
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
     if args.testing_summary:
-        with open(args.ani_file, 'r') as f:
+        with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
 
         # load info about pangenome analysis
