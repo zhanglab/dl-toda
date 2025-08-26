@@ -510,6 +510,7 @@ if __name__ == "__main__":
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
     parser.add_argument('--label', type=str, help='label associated with species')
     parser.add_argument('--min_identity', type=int, help='identity threshold for comparing aligned sequences', default=70)
+    parser.add_argument('--cov', type=int, help='coverage for generating sequences', default=5)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
@@ -709,13 +710,28 @@ if __name__ == "__main__":
                 
     if args.genome_id is not None:
         fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.genome_id, 'ncbi_dataset/data', args.genome_id, 'updated*.fna'))[0])
-        starts, ends = sampling(length=int(fasta.full_genome_length), kmer=1, sampling_rate=0.5)
-        sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
-        cuts = cut_no_overlap(length=int(fasta.full_genome_length), kmer=1)
-        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
+        sam_sequences = []
+        sam_starts = []
+        sam_ends = []
+        for i in range(args.cov):
+            run_starts, run_ends = sampling(length=int(fasta.full_genome_length), kmer=1, sampling_rate=0.5)
+            run_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
+            sam_sequences += run_sequences
+            sam_starts += run_starts
+            sam_ends += run_ends
+
+        cut_sequences = []
+        cut_starts = []
+        cut_ends = []
+        for i in range(args.cov):
+            cuts = cut_no_overlap(length=int(fasta.full_genome_length), kmer=1)
+            run_sequences, run_starts, run_ends = CutGenome(cuts, fasta.full_genome_seq)
+            cut_sequences += run_sequences
+            cut_starts += run_starts
+            cut_ends += run_ends
         all_sequences = sam_sequences + cut_sequences
-        all_starts = starts + seq_starts
-        all_ends = ends + seq_ends
+        all_starts = sam_starts + cut_starts
+        all_ends = sam_ends + cut_ends
 
         output_dir = os.path.join(args.output_dir, 'datasets', args.genome_id)
         if not os.path.isdir(output_dir):
@@ -723,10 +739,10 @@ if __name__ == "__main__":
 
         # create tsv file with data
         input_file = os.path.join(output_dir, 'dataset.tsv')
-        # with open(input_file, 'w') as f:
-        #     for i in range(len(all_sequences)):
-        #         new_seq = all_sequences[i].replace(' ', '')
-        #         f.write(f'{args.label}\t{args.genome_id}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
+        with open(input_file, 'w') as f:
+            for i in range(len(all_sequences)):
+                new_seq = all_sequences[i].replace(' ', '')
+                f.write(f'{args.label}\t{args.genome_id}\t{all_starts[i]}\t{all_ends[i]-1}\t{new_seq}\n')
         
         # get dictionary mapping labels to species
         labels_mapping = dict()
@@ -746,11 +762,11 @@ if __name__ == "__main__":
             
             # for bert
             # get dictionary mapping kmers to indexes
-            # dict_kmers = vocab_dict(f'{args.vocab}/bert/{k_value}mers.txt')
-            # with open(os.path.join(output_dir, f'{k_value}-dict.json'), 'w') as f:
-            #     json.dump(dict_kmers, f)
-            # create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
-                # args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
+            dict_kmers = vocab_dict(f'{args.vocab}/bert/{k_value}mers.txt')
+            with open(os.path.join(output_dir, f'{k_value}-dict.json'), 'w') as f:
+                json.dump(dict_kmers, f)
+            create_tfrecords(input_file, os.path.join(output_dir, 'bert'), k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
+                args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
             # for cnn
             # get dictionary mapping kmers to indexes
             dict_kmers = vocab_dict(f'{args.vocab}/dltoda/{k_value}mers.txt')
