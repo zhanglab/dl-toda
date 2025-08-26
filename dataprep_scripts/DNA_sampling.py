@@ -783,6 +783,8 @@ if __name__ == "__main__":
                 data = f.readlines()
             # load cog functions
             cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
+            print(genome_id)
+            print(cogfile)
             cog_df = pd.read_csv(cogfile, sep='\t', header=None)
             cog_df.columns = ['protein_id', 'function']
             annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
@@ -816,7 +818,7 @@ if __name__ == "__main__":
                                         cog_fn = cog_fn_df.iloc[0]
                         if genome_id in pan_genomes and gene_id != 'NA':
                             # get pangenome info if available
-                            pangenome = anvio_df.loc[anvio_df['genome'] == genome_id and anvio_df['gene'] == gene_id, 'pangenome']
+                            pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome']
                             
                         outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                         outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
