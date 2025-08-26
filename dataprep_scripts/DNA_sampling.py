@@ -828,7 +828,7 @@ if __name__ == "__main__":
                                 pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
                                 if pangenome == "accessory":
                                     print(pangenome)
-                                
+                            break 
                             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
                             if true != pred:
@@ -844,7 +844,7 @@ if __name__ == "__main__":
                             outf_pan.write(f'{prob}\t{start}\t{end}\n')
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-            break
+            
             outf.close()
             outf_genes.close()
 
