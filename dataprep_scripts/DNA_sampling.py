@@ -780,6 +780,7 @@ if __name__ == "__main__":
                 label = info[genome_id].split('\t')[0]
                 results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
                 datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
+                print(datafile)
                 with open(datafile, 'r') as f:
                     data = f.readlines()
                 # load cog functions
@@ -799,6 +800,8 @@ if __name__ == "__main__":
                         prob = float(line.rstrip().split('\t')[2])
                         start = int(data[index].split('\t')[2])
                         end = int(data[index].split('\t')[3])
+                        print(f'start: {start}')
+                        print(f'end: {end}')
                         if prob >= args.confidence_score:
                             seq_gene_id = 'NA'
                             gene_type = 'NA'
@@ -812,15 +815,19 @@ if __name__ == "__main__":
                                     (start <= gene_info[1] and end >= gene_info[2]):
                                     seq_gene_id = gene_id
                                     gene_type = gene_info[0]
+                                    print(f'gene type : {gene_type}')
+                                    print(f'gene id: {seq_gene_id}')
                                     if gene_type == 'protein_coding':
                                         protein_id = gene_info[-1]
                                         cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
                                         if len(cog_fn_df) > 0:
                                             cog_fn = cog_fn_df.iloc[0]
+                                    print(f'cog function: {cog_fn}')
                             if genome_id in pan_genomes and gene_id != 'NA':
                                 # get pangenome info if available
                                 pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
-                                print(pangenome)
+                                if pangenome == "accessory":
+                                    print(pangenome)
                                 
                             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
@@ -837,6 +844,7 @@ if __name__ == "__main__":
                             outf_pan.write(f'{prob}\t{start}\t{end}\n')
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            break
             outf.close()
             outf_genes.close()
 
