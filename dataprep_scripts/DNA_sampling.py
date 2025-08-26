@@ -715,7 +715,7 @@ if __name__ == "__main__":
         sam_ends = []
         for i in range(args.cov):
             run_starts, run_ends = sampling(length=int(fasta.full_genome_length), kmer=1, sampling_rate=0.5)
-            run_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
+            run_sequences = SampleGenome(run_starts, run_ends, fasta.full_genome_seq)
             sam_sequences += run_sequences
             sam_starts += run_starts
             sam_ends += run_ends
