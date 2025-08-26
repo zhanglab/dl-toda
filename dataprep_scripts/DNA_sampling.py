@@ -776,7 +776,9 @@ if __name__ == "__main__":
         outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
             if genome_id in pan_genomes:
+                print(genome_id)
                 tax = info[genome_id].split('\t')[3]
+                print(tax)
                 label = info[genome_id].split('\t')[0]
                 results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
                 datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
@@ -826,7 +828,6 @@ if __name__ == "__main__":
                                     print(f'gene id: {seq_gene_id}')
                                     print(f'start: {start}')
                                     print(f'end: {end}')
-                                    print(genome_id)
                                     print(cogfile)
                                     print(datafile)
                             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
@@ -844,9 +845,8 @@ if __name__ == "__main__":
                             outf_pan.write(f'{prob}\t{start}\t{end}\n')
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-            
-            outf.close()
-            outf_genes.close()
+        outf.close()
+        outf_genes.close()
 
 
 
