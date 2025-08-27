@@ -780,12 +780,23 @@ if __name__ == "__main__":
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
 
-        # load info about pangenome analysis
-        anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
-        anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
-        pan_genomes = set(anvio_df['genome'].tolist())
-        print(anvio_df)
-        print(pan_genomes)
+        # # load info about pangenome analysis
+        # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
+        # anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
+        # pan_genomes = set(anvio_df['genome'].tolist())
+        # print(anvio_df)
+        # print(pan_genomes)
+
+        d = defaultdict(list)
+        pan_genomes = set()
+        with open(args.anvio_results, 'r') as f:
+            for line in f:
+                start_gene = int(line.rstrip().split('\t')[5])
+                end_gene = int(line.rstrip().split('\t')[6])
+                gene_type = line.rstrip().split('\t')[4]
+                gene_id = line.rstrip().split('\t')[2]
+                d[gene_id] = [start_gene, end_gene, gene_type]
+                pan_genomes.add(line.rstrip().split('\t')[0])
 
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
@@ -797,8 +808,8 @@ if __name__ == "__main__":
                 print(tax)
                 label = info[genome_id].split('\t')[0]
                 results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
+                # load sequences
                 datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
-                
                 with open(datafile, 'r') as f:
                     data = f.readlines()
                 # load cog functions
@@ -816,6 +827,9 @@ if __name__ == "__main__":
                         prob = float(line.rstrip().split('\t')[2])
                         start = int(data[index].split('\t')[2])
                         end = int(data[index].split('\t')[3])
+                        print(index, line)
+                        print(start, end)
+                        break
                         if prob >= args.confidence_score:
                             seq_gene_id = 'NA'
                             gene_type = 'NA'
@@ -840,14 +854,16 @@ if __name__ == "__main__":
                                     # print(f'cog function: {cog_fn}')
                             if genome_id in pan_genomes and gene_id != 'NA':
                                 # get pangenome info if available
-                                pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
-                                if pangenome == "accessory":
-                                    print(f'gene type : {gene_type}')
-                                    print(f'gene id: {seq_gene_id}')
-                                    print(f'start: {start}')
-                                    print(f'end: {end}')
-                                    print(cogfile)
-                                    print(datafile)
+                                # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
+                                if gene_id in d:
+                                    pangenome = d[gene_id][2]
+                                    if pangenome == "accessory":
+                                        print(f'gene type : {gene_type}')
+                                        print(f'gene id: {seq_gene_id}')
+                                        print(f'start: {start}')
+                                        print(f'end: {end}')
+                                        print(cogfile)
+                                        print(datafile)
                             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
                             if true != pred:
