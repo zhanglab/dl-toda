@@ -797,7 +797,7 @@ if __name__ == "__main__":
                 gene_id = line.rstrip().split('\t')[2]
                 d[gene_id] = [start_gene, end_gene, gene_type]
                 pan_genomes.add(line.rstrip().split('\t')[0])
-        print(f'gene id: O5634_RS03850\t{d["O5634_RS03850"]}')
+
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
@@ -827,8 +827,8 @@ if __name__ == "__main__":
                         prob = float(line.rstrip().split('\t')[2])
                         start = int(data[index].split('\t')[2])
                         end = int(data[index].split('\t')[3])
-                        print(index, line)
-                        print(start, end)
+                        # print(index, line)
+                        # print(start, end)
                         if prob >= args.confidence_score:
                             seq_gene_id = 'NA'
                             gene_type = 'NA'
@@ -852,19 +852,19 @@ if __name__ == "__main__":
                                             cog_fn = cog_fn_df.iloc[0]
                                     # print(f'cog function: {cog_fn}')
                             if genome_id in pan_genomes and seq_gene_id != 'NA':
-                                print(f'gene id: {seq_gene_id}')
+                                # print(f'gene id: {seq_gene_id}')
                                 # get pangenome info if available
                                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
                                 if seq_gene_id in d:
                                     pangenome = d[seq_gene_id][2]
-                                    print(f'pangenome: {pangenome}')
-                                    if pangenome == "accessory":
-                                        print(f'gene type : {gene_type}')
-                                        print(f'gene id: {seq_gene_id}')
-                                        print(f'start: {start}')
-                                        print(f'end: {end}')
-                                        print(cogfile)
-                                        print(datafile)
+                                    # print(f'pangenome: {pangenome}')
+                                    # if pangenome == "accessory":
+                                    #     print(f'gene type : {gene_type}')
+                                    #     print(f'gene id: {seq_gene_id}')
+                                    #     print(f'start: {start}')
+                                    #     print(f'end: {end}')
+                                    #     print(cogfile)
+                                    #     print(datafile)
                             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
                             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
                             if true != pred:
@@ -878,7 +878,6 @@ if __name__ == "__main__":
                             probs.append(prob)
                             outf_genes.write(f'{prob}\t{start}\t{end}\n')
                             outf_pan.write(f'{prob}\t{start}\t{end}\n')
-                            break
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
