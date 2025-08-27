@@ -851,12 +851,12 @@ if __name__ == "__main__":
                                         if len(cog_fn_df) > 0:
                                             cog_fn = cog_fn_df.iloc[0]
                                     # print(f'cog function: {cog_fn}')
-                            if genome_id in pan_genomes and gene_id != 'NA':
-                                print(f'gene id: {gene_id}')
+                            if genome_id in pan_genomes and seq_gene_id != 'NA':
+                                print(f'gene id: {seq_gene_id}')
                                 # get pangenome info if available
                                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
-                                if gene_id in d:
-                                    pangenome = d[gene_id][2]
+                                if seq_gene_id in d:
+                                    pangenome = d[seq_gene_id][2]
                                     print(f'pangenome: {pangenome}')
                                     if pangenome == "accessory":
                                         print(f'gene type : {gene_type}')
