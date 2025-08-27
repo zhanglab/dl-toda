@@ -797,7 +797,7 @@ if __name__ == "__main__":
                 gene_id = line.rstrip().split('\t')[2]
                 d[gene_id] = [start_gene, end_gene, gene_type]
                 pan_genomes.add(line.rstrip().split('\t')[0])
-
+        print(f'gene id: O5634_RS03850\t{d["O5634_RS03850"]}')
         outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
         outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
@@ -829,7 +829,6 @@ if __name__ == "__main__":
                         end = int(data[index].split('\t')[3])
                         print(index, line)
                         print(start, end)
-                        break
                         if prob >= args.confidence_score:
                             seq_gene_id = 'NA'
                             gene_type = 'NA'
