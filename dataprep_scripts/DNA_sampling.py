@@ -876,6 +876,7 @@ if __name__ == "__main__":
                             probs.append(prob)
                             outf_genes.write(f'{prob}\t{start}\t{end}\n')
                             outf_pan.write(f'{prob}\t{start}\t{end}\n')
+                            break
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
