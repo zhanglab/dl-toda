@@ -823,10 +823,12 @@ if __name__ == "__main__":
                             cog_fn = 'NA'
                             pangenome = 'NA'
                             for gene_id, gene_info in annot_info.items():
-                                if (start >= gene_info[1] and end <= gene_info[2]) or \
-                                    (start <= gene_info[1] and end >= gene_info[2]) or \
-                                    (start <= gene_info[1] and end >= gene_info[1]) or \
-                                    (start <= gene_info[2] and end >= gene_info[2]):
+                                start_gene = gene_info[1]
+                                end_gene = gene_info[2]
+                                if (start >= start_gene and end <= end_gene) or \
+                                    (start <= start_gene and end >= end_gene) or \
+                                    (start <= start_gene and end >= start_gene) or \
+                                    (start <= end_gene and end >= end_gene):
                                     seq_gene_id = gene_id
                                     gene_type = gene_info[0]
                                     
