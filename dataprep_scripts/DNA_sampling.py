@@ -602,11 +602,14 @@ if __name__ == "__main__":
                 os.makedirs(os.path.join(args.output_dir, 'datasets', f'test-{args.datadirname}', 'tfrecords'))
 
         # get genomes
-        with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
-            info = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
+        # with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
+        with open(args.genomes, 'r') as f:
+            info = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1] for line in f.readlines()}
+            # info = {line.rstrip().split('\t')[0]: line.rstrip().split('\t')[1:] for line in f.readlines()}
 
         # get sequences for positive class
-        pos_genome = info[args.label][0]
+        # pos_genome = info[args.label][0]
+        pos_genome = info[args.label]
         pos_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
         data = GetGenomeSequence(args, pos_genome, pos_fasta)
         # pos_sam_starts, pos_sam_ends = sampling(length=int(info[args.label][2]), kmer=1, sampling_rate=0.5)
