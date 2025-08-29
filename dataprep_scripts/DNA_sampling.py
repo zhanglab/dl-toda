@@ -638,7 +638,6 @@ if __name__ == "__main__":
             fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', args.neg_genome, 'ncbi_dataset/data', args.neg_genome, 'updated*.fna'))[0])
             neg_genome_data = GetGenomeSequence(args, args.neg_genome, fasta)
 
-
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in info.items() if l != args.label and g != args.neg_genome]
@@ -647,7 +646,7 @@ if __name__ == "__main__":
         grouped_labels = [neg_labels[i:i+chunk_size] for i in range(0, len(neg_labels), chunk_size)]
         
          # count the number of sequences per negative genome
-        num_sequences = len(pos_sam_sequences) + len(pos_cut_sequences) + len(neg_genome_data) if args.neg_genome != None else len(pos_sam_sequences) + len(pos_cut_sequences)
+        num_sequences = len(all_train_data) + len(all_val_data) - len(neg_genome_data) if args.neg_genome != None else len(all_train_data) + len(all_val_data)
         num_seq_per_sp = [num_sequences // len(neg_labels) + (1 if x < num_sequences % len(neg_labels) else 0)  for x in range(len(neg_labels))]
         print(f'{num_sequences}\t{len(neg_labels)}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
         print(num_seq_per_sp)
