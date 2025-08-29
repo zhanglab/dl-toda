@@ -518,7 +518,7 @@ def GetGenomeSequence(args, genome, fasta):
     sequences = sam_sequences + cut_sequences
     starts = sam_starts + cut_starts
     ends = sam_ends + cut_ends
-    label = [args.label]*len(pos_sequences)
+    label = [args.label]*len(sequences)
     data = list(zip(sequences, starts, ends, label, [genome]*len(sequences)))
     return data
 
