@@ -593,6 +593,14 @@ if __name__ == "__main__":
         GetAni(args, args.data, args.genomes, args.train_genome_id)
 
     if args.datasets:
+        # # parse results from previous testing round
+        # if args.gene_results is not None:
+        #     core_protein_gene_count = defaultdict()
+        #     acc_protein_gene_count = defaultdict()
+        #     rrna_gene_count = defaultdict()
+        #     trna_gene_count = defaultdict()
+        #     results_df = pd.read_csv(args.gene_results, sep='\t', header=None)
+
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
             os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
             if args.data == 'train':
@@ -874,6 +882,7 @@ if __name__ == "__main__":
                             protein_id = 'NA'
                             cog_fn = 'NA'
                             pangenome = 'NA'
+                            gene = 'NA'
                             for gene_id, gene_info in annot_info.items():
                                 start_gene = gene_info[1]
                                 end_gene = gene_info[2]
@@ -883,6 +892,7 @@ if __name__ == "__main__":
                                     (start <= end_gene and end >= end_gene):
                                     seq_gene_id = gene_id
                                     gene_type = gene_info[0]
+                                    gene = gene_info[4]
                                     
                                     if gene_type == 'protein_coding':
                                         protein_id = gene_info[-1]
@@ -904,19 +914,18 @@ if __name__ == "__main__":
                                     #     print(f'end: {end}')
                                     #     print(cogfile)
                                     #     print(datafile)
-                            outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t')
-                            outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
+                            outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t')
+                            outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
+                            classification = 'NA'
                             if true != pred:
                                 incorrect += 1
-                                outf_genes.write('incorrect\t')
-                                outf_pan.write('incorrect\t')
+                                classification = 'incorrect'
                             else:
-                                outf_genes.write('correct\t')
-                                outf_pan.write('correct\t')
+                                classification = 'correct'
                                 correct += 1
                             probs.append(prob)
-                            outf_genes.write(f'{prob}\t{start}\t{end}\n')
-                            outf_pan.write(f'{prob}\t{start}\t{end}\n')
+                            outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
+                            outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
                 accuracy = round(correct / (correct+incorrect), 2)
                 outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
