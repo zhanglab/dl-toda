@@ -496,6 +496,7 @@ def GetSequences(args, labels, num, sequences, info):
 
 
 def GetGenomeSequence(args, genome, fasta):
+    print(f'{genome}\t{fasta.full_genome_length}')
     sam_sequences = []
     sam_starts = []
     sam_ends = []
@@ -538,7 +539,7 @@ if __name__ == "__main__":
     parser.add_argument('--gtdb_info', type=str, help='path to GTDB metadata file')
     parser.add_argument('--label', type=str, help='label associated with species')
     parser.add_argument('--min_identity', type=int, help='identity threshold for comparing aligned sequences', default=70)
-    parser.add_argument('--cov', type=int, help='coverage for generating sequences', default=5)
+    parser.add_argument('--cov', type=int, help='coverage for generating sequences', default=1)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
     parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets", required=('--datadirname' in sys.argv))
