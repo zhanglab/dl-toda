@@ -541,13 +541,14 @@ if __name__ == "__main__":
     parser.add_argument('--cov', type=int, help='coverage for generating sequences', default=5)
     parser.add_argument('--num_threads', type=int, help='number of threads to run anvio pipeline', default=8)
     parser.add_argument('--anvio', action='store_true', default=False, help="perform anvio pangenome analysis")
-    parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets")
+    parser.add_argument('--datasets', action='store_true', default=False, help="create training and testing datasets", required=('--datadirname' in sys.argv))
     parser.add_argument('--ani', action='store_true', default=False, help="compute ANI between training genome and list of genomes")
     parser.add_argument('--testing_summary', action='store_true', default=False, help="summarize testing results")
     parser.add_argument('--genome_id', type=str, help="genome id used to create testing set")
     parser.add_argument('--train_genome_id', type=str, help="genome id of training genome")
     parser.add_argument('--genomes', type=str, help="file mapping labels to genomes id")
     parser.add_argument('--neg_genome', type=str, help="negative genome to add to dataset")
+    parser.add_argument('--datadirname', type=str, help="name appended to output directory")
     parser.add_argument('--anvio_results', type=str, help="path to file called results_blastp.tsv")
     parser.add_argument('--gene_results', type=str, help="path to file results_genes_pan_*.tsv")
     parser.add_argument('--data', type=str, help="type of dataset", choices=['train','test'])
@@ -595,10 +596,10 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
             os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
             if args.data == 'train':
-                os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train'))
-                os.makedirs(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val'))
+                os.makedirs(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', 'train'))
+                os.makedirs(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', 'val'))
             else:
-                os.makedirs(os.path.join(args.output_dir, 'datasets', 'test', 'tfrecords'))
+                os.makedirs(os.path.join(args.output_dir, 'datasets', f'test-{args.datadirname}', 'tfrecords'))
 
         # get genomes
         with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
@@ -675,13 +676,13 @@ if __name__ == "__main__":
 
                 # create tsv file with data
                 random.shuffle(all_train_data)
-                with open(os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv'), 'w') as f:
+                with open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'train_dataset.tsv'), 'w') as f:
                     sequences, starts, ends, labels, genomes  = zip(*all_train_data)
                     for i in range(len(all_train_data)):
                         new_seq = sequences[i].replace(' ', '')
                         f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
                 random.shuffle(all_val_data)
-                with open(os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv'), 'w') as f:
+                with open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'val_dataset.tsv'), 'w') as f:
                     sequences, starts, ends, labels, genomes = zip(*all_val_data)
                     for i in range(len(all_val_data)):
                         new_seq = sequences[i].replace(' ', '')
@@ -690,7 +691,7 @@ if __name__ == "__main__":
                 all_data += data
                 print(f'# test sequences: {len(all_data)}')
                 # create tsv file with data
-                with open(os.path.join(args.output_dir, 'datasets', 'test', 'test_dataset.tsv'), 'w') as f:
+                with open(os.path.join(args.output_dir, 'datasets', f'test-{args.datadirname}', 'test_dataset.tsv'), 'w') as f:
                     sequences, starts, ends, labels, genomes = zip(*all_data)
                     for i in range(len(all_data)):
                         new_seq = sequences[i].replace(' ', '')
