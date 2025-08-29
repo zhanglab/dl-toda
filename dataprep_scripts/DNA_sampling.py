@@ -637,7 +637,7 @@ if __name__ == "__main__":
         if args.neg_genome:
             fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', args.neg_genome, 'ncbi_dataset/data', args.neg_genome, 'updated*.fna'))[0])
             neg_genome_data = GetGenomeSequence(args, args.neg_genome, fasta)
-
+        print(f'# sequences from negative genome: {len(neg_genome_data)}')
         # obtain sequences from negative class
         # create chunks of genomes
         neg_labels = [l for l, g in info.items() if l != args.label and g != args.neg_genome]
