@@ -851,85 +851,86 @@ if __name__ == "__main__":
         # outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
         # outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
         for genome_id in info.keys():
-            if genome_id in pan_genomes:
-                print(genome_id)
-                tax = info[genome_id].split('\t')[3]
-                print(tax)
-                label = info[genome_id].split('\t')[0]
-                results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
-                # load sequences
-                datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
-                with open(datafile, 'r') as f:
-                    data = f.readlines()
-                # # load cog functions
-                # cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
-                # cog_df = pd.read_csv(cogfile, sep='\t', header=None)
-                # cog_df.columns = ['protein_id', 'function']
-                # annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
-                incorrect = 0
-                correct = 0
-                probs = []
-                with open(results_file, 'r') as f:
-                    for index, line in enumerate(f, 0):
-                        true = line.rstrip().split('\t')[0]
-                        pred = line.rstrip().split('\t')[1]
-                        prob = float(line.rstrip().split('\t')[2])
-                #         start = int(data[index].split('\t')[2])
-                #         end = int(data[index].split('\t')[3])
-                #         # print(index, line)
-                #         # print(start, end)
-                        if prob >= args.confidence_score:
-                #             seq_gene_id = 'NA'
-                #             gene_type = 'NA'
-                #             protein_id = 'NA'
-                #             cog_fn = 'NA'
-                #             pangenome = 'NA'
-                #             gene = 'NA'
-                #             for gene_id, gene_info in annot_info.items():
-                #                 start_gene = gene_info[1]
-                #                 end_gene = gene_info[2]
-                #                 if (start >= start_gene and end <= end_gene) or \
-                #                     (start <= start_gene and end >= end_gene) or \
-                #                     (start <= start_gene and end >= start_gene) or \
-                #                     (start <= end_gene and end >= end_gene):
-                #                     seq_gene_id = gene_id
-                #                     gene_type = gene_info[0]
-                #                     gene = gene_info[4]
-                                    
-                #                     if gene_type == 'protein_coding':
-                #                         protein_id = gene_info[-1]
-                #                         cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
-                #                         if len(cog_fn_df) > 0:
-                #                             cog_fn = cog_fn_df.iloc[0]
-                #                     # print(f'cog function: {cog_fn}')
-                #             if genome_id in pan_genomes and seq_gene_id != 'NA':
-                #                 # print(f'gene id: {seq_gene_id}')
-                #                 # get pangenome info if available
-                #                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
-                #                 if seq_gene_id in d:
-                #                     pangenome = d[seq_gene_id][2]
-                #                     # print(f'pangenome: {pangenome}')
-                #                     # if pangenome == "accessory":
-                #                     #     print(f'gene type : {gene_type}')
-                #                     #     print(f'gene id: {seq_gene_id}')
-                #                     #     print(f'start: {start}')
-                #                     #     print(f'end: {end}')
-                #                     #     print(cogfile)
-                #                     #     print(datafile)
-                #             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t')
-                #             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
-                #             classification = 'NA'
-                            if true != pred:
-                                incorrect += 1
-                                classification = 'incorrect'
-                            else:
-                                classification = 'correct'
-                                correct += 1
-                            probs.append(prob)
-                            # outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
-                            # outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
-                accuracy = round(correct / (correct+incorrect), 2)
-                outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            # if genome_id in pan_genomes:
+            print(genome_id)
+            tax = info[genome_id].split('\t')[3]
+            print(tax)
+            label = info[genome_id].split('\t')[0]
+            results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
+            # load sequences
+            datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
+            with open(datafile, 'r') as f:
+                data = f.readlines()
+            # # load cog functions
+            # cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
+            # cog_df = pd.read_csv(cogfile, sep='\t', header=None)
+            # cog_df.columns = ['protein_id', 'function']
+            # annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
+            incorrect = 0
+            correct = 0
+            probs = []
+            with open(results_file, 'r') as f:
+                for index, line in enumerate(f, 0):
+                    true = line.rstrip().split('\t')[0]
+                    pred = line.rstrip().split('\t')[1]
+                    prob = float(line.rstrip().split('\t')[2])
+            #         start = int(data[index].split('\t')[2])
+            #         end = int(data[index].split('\t')[3])
+            #         # print(index, line)
+            #         # print(start, end)
+                    if prob >= args.confidence_score:
+            #             seq_gene_id = 'NA'
+            #             gene_type = 'NA'
+            #             protein_id = 'NA'
+            #             cog_fn = 'NA'
+            #             pangenome = 'NA'
+            #             gene = 'NA'
+            #             for gene_id, gene_info in annot_info.items():
+            #                 start_gene = gene_info[1]
+            #                 end_gene = gene_info[2]
+            #                 if (start >= start_gene and end <= end_gene) or \
+            #                     (start <= start_gene and end >= end_gene) or \
+            #                     (start <= start_gene and end >= start_gene) or \
+            #                     (start <= end_gene and end >= end_gene):
+            #                     seq_gene_id = gene_id
+            #                     gene_type = gene_info[0]
+            #                     gene = gene_info[4]
+                                
+            #                     if gene_type == 'protein_coding':
+            #                         protein_id = gene_info[-1]
+            #                         cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
+            #                         if len(cog_fn_df) > 0:
+            #                             cog_fn = cog_fn_df.iloc[0]
+            #                     # print(f'cog function: {cog_fn}')
+            #             if genome_id in pan_genomes and seq_gene_id != 'NA':
+            #                 # print(f'gene id: {seq_gene_id}')
+            #                 # get pangenome info if available
+            #                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
+            #                 if seq_gene_id in d:
+            #                     pangenome = d[seq_gene_id][2]
+            #                     # print(f'pangenome: {pangenome}')
+            #                     # if pangenome == "accessory":
+            #                     #     print(f'gene type : {gene_type}')
+            #                     #     print(f'gene id: {seq_gene_id}')
+            #                     #     print(f'start: {start}')
+            #                     #     print(f'end: {end}')
+            #                     #     print(cogfile)
+            #                     #     print(datafile)
+            #             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t')
+            #             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
+            #             classification = 'NA'
+                        if true != pred:
+                            incorrect += 1
+                            classification = 'incorrect'
+                        else:
+                            classification = 'correct'
+                            correct += 1
+                        probs.append(prob)
+                        # outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
+                        # outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
+            accuracy = round(correct / (correct+incorrect), 2)
+            outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t')
+            outf.write(f'{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
         outf.close()
         # outf_genes.close()
         # outf_pan.close()
