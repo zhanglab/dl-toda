@@ -6,6 +6,7 @@ import math
 import json
 import argparse
 import subprocess
+from ete3 import Tree
 from collections import defaultdict
 import pandas as pd
 import multiprocessing as mp
@@ -531,6 +532,218 @@ def CreateTrainValSets(data, all_train_data, all_val_data):
     all_train_data += data[:train_size]    
     all_val_data += data[-val_size:]
 
+
+def PruneTree(args, tree, genomes_to_keep, taxa_2_labels):
+    # keep track of the leaves to keep
+    leaves_to_keep = set()
+    genomes_done = set()
+    taxa_ordered = []  # keep track of the taxon associated with the leaves
+    for leaf in tree:
+        genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
+        if genome_id in genomes_to_keep:
+            # get taxon of genome
+            taxon = genomes_to_keep[genome_id]
+            print(taxon)
+            if taxon not in leaves_to_keep:
+                # update leaf to taxon instead of genome (to only one genome)
+                leaf.name = taxon
+                leaves_to_keep.add(taxon)
+            if genome_id not in genomes_done:
+                taxa_ordered.append(taxon)
+                genomes_done.add(genome_id)
+
+    print(f'# leaves to keep: {len(leaves_to_keep)}')
+
+    # remove all leaves to not keep
+    leaves_to_keep = list(leaves_to_keep)
+    # tree.prune(leaves_to_keep, preserve_branch_length=True)
+    tree.prune(leaves_to_keep)
+    outfile = open(os.path.join(args.output_dir, f'{args.tax_db}_genomes_ordered_{args.rank}_after_pruning'), 'w')
+    for leaf in tree:
+        outfile.write(f'{leaf.name}\n')
+
+    return taxa_ordered
+
+def CountLeaves(tree):
+    num_leaves = 0
+    # for leaf in tree:
+    for node in tree.traverse():
+        if node.is_leaf():
+            num_leaves += 1
+    print(f'# leaves in tree: {num_leaves}')
+
+
+def get_node_by_rank(tree, rank, name, gtdb):
+    for node in tree.traverse():
+        # Get the node's lineage and check if the desired rank is present
+        lineage = gtdb.get_lineage(node.taxid)
+        names = gtdb.get_taxid_translator(lineage)
+        
+        # Check if the node is at the specified rank with the correct name
+        if node.taxid and names.get(node.taxid) == name and gtdb.get_rank(node.taxid) == rank:
+            return node
+    return None
+
+
+def GetTreeDist(args, target_taxa, taxonofinterest, rank):
+    rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
+    # load tree
+    tree_species = Tree(args.gtdbtk_tree, quoted_node_names=True, format=1)
+    # get nodes associated to target taxa
+    taxon_to_node = {}
+    for node in tree.traverse("preorder"):
+        if node.name and rank_to_prefix[rank] in node.name:
+            items = node.name.split(';')
+            for item in items:
+                if rank_to_prefix[rank] in item:
+                    # check if node is at the desired rank
+                    if item.split(';').index(node.name) != 0:
+                        break
+                    taxon = item.split(':')[1].split(';')[0]
+                    if taxon in target_taxa:
+                        taxon_to_node[taxon] = node
+                    
+    # measure distances between taxon of interest and the other taxa
+    distances = defaultdict(list)
+    assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
+    node_toi = taxon_to_node[taxonofinterest]
+    for taxon in target_taxa:
+        if taxon in taxon_to_node:
+            print(taxon, taxon_to_node[taxon].name)
+            phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
+            topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
+            distances[taxon] = [phylo_distance, topo_distance]
+        else:
+            distances[taxon] = ['NA', 'NA']
+    return distances
+
+    # leaves_to_keep = set()
+    # genomes_done = set()
+    # for node in tree.traverse("postorder"):
+    #     lineage = taxonomy[genome_id]
+    #     genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
+    #     if genome_id in genomes_to_keep:
+    #         # get taxon of genome
+    #         taxon = genomes_to_keep[genome_id]
+    #         print(taxon)
+    #         if taxon not in leaves_to_keep:
+    #             # update leaf to taxon instead of genome (to only one genome)
+    #             leaf.name = taxon
+    #             leaves_to_keep.add(taxon)
+    #         if genome_id not in genomes_done:
+    #             outfile.write(f'{taxa_2_labels[taxon]}\t{genome_id}\t{taxon}\n')
+    #             # print(f'{taxa_2_labels[taxon]}\t{genome_id}\t{taxon}')
+    #             genomes_done.add(genome_id)
+
+    # for node in tree.traverse("postorder"):
+    #     # get the lineage of the node and the phylum
+    #     lineage = gtdb.get_lineage(node.gtdb_taxid)
+    #     phylum = None
+    #     for taxid in lineage:
+    #         rank = gtdb.get_rank(taxid)
+    #         if rank == 'phylum':
+    #             phylum = gtdb.get_name(taxid)
+    #             if phylum in target_taxa:
+    #                 break
+    #     # verify that every leaf under node has the same phylum
+    #     if phylum and not node.is_leaf():
+    #         all_descendants_have_same_phylum = True
+    #         for leaf in node.iter_leaves():
+    #             leaf_lineage = gtdb.get_lineage(leaf.gtdb_taxid)
+    #             leaf_phylum = None
+    #             for leaf_taxid in leaf_lineage:
+    #                 if gtdb.get_rank(leaf_taxid) == 'phylum':
+    #                     leaf_phylum = gtdb.get_name(leaf_taxid)
+    #                     break
+    #             # stop searching if phylum different
+    #             if leaf_phylum != phylum:
+    #                 all_descendants_have_same_phylum = False
+    #                 break
+    #     # collapse node and change it's name
+    #     if all_descendants_have_same_phylum:
+    #         node.delete()
+    #         node.name = phylum
+
+def ParseTestingResults(args, rank_name, rank_index, genomes, info, accuracy):
+    for genome_id in genomes:
+        if rank_name == 'strain':
+            taxon = genome_id
+        else:
+            taxon = info[genome_id].split('\t')[3].split(';')[rank_index]
+        results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
+        # load sequences
+        datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
+        with open(datafile, 'r') as f:
+            data = f.readlines()
+            # # load cog functions
+            # cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
+            # cog_df = pd.read_csv(cogfile, sep='\t', header=None)
+            # cog_df.columns = ['protein_id', 'function']
+            # annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
+        incorrect = 0
+        correct = 0
+        probs = []
+        with open(results_file, 'r') as f:
+            for index, line in enumerate(f, 0):
+                true = line.rstrip().split('\t')[0]
+                pred = line.rstrip().split('\t')[1]
+                prob = float(line.rstrip().split('\t')[2])
+        #         start = int(data[index].split('\t')[2])
+        #         end = int(data[index].split('\t')[3])
+        #         # print(index, line)
+        #         # print(start, end)
+                if prob >= args.confidence_score:
+        #             seq_gene_id = 'NA'
+        #             gene_type = 'NA'
+        #             protein_id = 'NA'
+        #             cog_fn = 'NA'
+        #             pangenome = 'NA'
+        #             gene = 'NA'
+        #             for gene_id, gene_info in annot_info.items():
+        #                 start_gene = gene_info[1]
+        #                 end_gene = gene_info[2]
+        #                 if (start >= start_gene and end <= end_gene) or \
+        #                     (start <= start_gene and end >= end_gene) or \
+        #                     (start <= start_gene and end >= start_gene) or \
+        #                     (start <= end_gene and end >= end_gene):
+        #                     seq_gene_id = gene_id
+        #                     gene_type = gene_info[0]
+        #                     gene = gene_info[4]
+                            
+        #                     if gene_type == 'protein_coding':
+        #                         protein_id = gene_info[-1]
+        #                         cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
+        #                         if len(cog_fn_df) > 0:
+        #                             cog_fn = cog_fn_df.iloc[0]
+        #                     # print(f'cog function: {cog_fn}')
+        #             if genome_id in pan_genomes and seq_gene_id != 'NA':
+        #                 # print(f'gene id: {seq_gene_id}')
+        #                 # get pangenome info if available
+        #                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
+        #                 if seq_gene_id in d:
+        #                     pangenome = d[seq_gene_id][2]
+        #                     # print(f'pangenome: {pangenome}')
+        #                     # if pangenome == "accessory":
+        #                     #     print(f'gene type : {gene_type}')
+        #                     #     print(f'gene id: {seq_gene_id}')
+        #                     #     print(f'start: {start}')
+        #                     #     print(f'end: {end}')
+        #                     #     print(cogfile)
+        #                     #     print(datafile)
+        #             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t')
+        #             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
+        #             classification = 'NA'
+                    if true != pred:
+                        incorrect += 1
+                        classification = 'incorrect'
+                    else:
+                        classification = 'correct'
+                        correct += 1
+                    probs.append(prob)
+                    # outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
+                    # outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
+        accuracy[taxon] = round(correct / (correct+incorrect), 2)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, help='path to input directory')
@@ -563,6 +776,8 @@ if __name__ == "__main__":
     parser.add_argument('--testing_results', type=str, help="path to parent directory containing files with testing results obtained from running DLTODA")
     parser.add_argument('--info_file', type=str, help="path to file containing taxonomic information about genomes")
     parser.add_argument('--confidence_score', type=float, help="confidence threshold for classifications", default=0.0)
+    parser.add_argument('--gtdbtk_tree', type=str, help='path to gtdbtk.bac120.classify.tree')
+
     args = parser.parse_args()
     print(args)
     # create output directory
@@ -826,8 +1041,23 @@ if __name__ == "__main__":
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
     if args.testing_summary:
+        # load information about genomes 
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
+
+        ranks = {'strain': None, 'species': 6, 'genus': 5, 'family': 4, 'order': 3, 'class': 2, 'phylum': 1}
+        for rank_name, rank_index in ranks.items():
+            print(rank_name)
+            # get all taxa within taxonomic group
+            taxa = defaultdict(list)
+            # get distances between taxon of interest and all other tax in the testing set
+            taxonofinterest = ''
+            for k, v in info.items():
+                if v.split('\t')[0] == args.label:
+                    taxonofinterest = v.split('\t')[3].split(';')[rank_index]
+            assert len(taxonofinterest) != 0, f'info associated with label {args.label} cannot be found'
+            target_taxa = set([v.split('\t')[3].split(';')[rank_index] for v in info.values()])
+            distances = GetTreeDist(args, list(target_taxa), taxonofinterest, rank_name)
 
         # # load info about pangenome analysis
         # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
@@ -836,104 +1066,48 @@ if __name__ == "__main__":
         # print(anvio_df)
         # print(pan_genomes)
 
-        d = defaultdict(list)
-        pan_genomes = set()
-        with open(args.anvio_results, 'r') as f:
-            for line in f:
-                start_gene = int(line.rstrip().split('\t')[5])
-                end_gene = int(line.rstrip().split('\t')[6])
-                gene_type = line.rstrip().split('\t')[4]
-                gene_id = line.rstrip().split('\t')[2]
-                d[gene_id] = [start_gene, end_gene, gene_type]
-                pan_genomes.add(line.rstrip().split('\t')[0])
+        # d = defaultdict(list)
+        # pan_genomes = set()
+        # with open(args.anvio_results, 'r') as f:
+        #     for line in f:
+        #         start_gene = int(line.rstrip().split('\t')[5])
+        #         end_gene = int(line.rstrip().split('\t')[6])
+        #         gene_type = line.rstrip().split('\t')[4]
+        #         gene_id = line.rstrip().split('\t')[2]
+        #         d[gene_id] = [start_gene, end_gene, gene_type]
+        #         pan_genomes.add(line.rstrip().split('\t')[0])
 
-        outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
-        # outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
-        # outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
-        for genome_id in info.keys():
-            # if genome_id in pan_genomes:
-            print(genome_id)
-            tax = info[genome_id].split('\t')[3]
-            print(tax)
-            label = info[genome_id].split('\t')[0]
-            results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
-            # load sequences
-            datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
-            with open(datafile, 'r') as f:
-                data = f.readlines()
-            # # load cog functions
-            # cogfile = os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'cog_functions.tsv')
-            # cog_df = pd.read_csv(cogfile, sep='\t', header=None)
-            # cog_df.columns = ['protein_id', 'function']
-            # annot_info, _ = GetAnnotInfo(args, genome_id, args.input_dir)
-            incorrect = 0
-            correct = 0
-            probs = []
-            with open(results_file, 'r') as f:
-                for index, line in enumerate(f, 0):
-                    true = line.rstrip().split('\t')[0]
-                    pred = line.rstrip().split('\t')[1]
-                    prob = float(line.rstrip().split('\t')[2])
-            #         start = int(data[index].split('\t')[2])
-            #         end = int(data[index].split('\t')[3])
-            #         # print(index, line)
-            #         # print(start, end)
-                    if prob >= args.confidence_score:
-            #             seq_gene_id = 'NA'
-            #             gene_type = 'NA'
-            #             protein_id = 'NA'
-            #             cog_fn = 'NA'
-            #             pangenome = 'NA'
-            #             gene = 'NA'
-            #             for gene_id, gene_info in annot_info.items():
-            #                 start_gene = gene_info[1]
-            #                 end_gene = gene_info[2]
-            #                 if (start >= start_gene and end <= end_gene) or \
-            #                     (start <= start_gene and end >= end_gene) or \
-            #                     (start <= start_gene and end >= start_gene) or \
-            #                     (start <= end_gene and end >= end_gene):
-            #                     seq_gene_id = gene_id
-            #                     gene_type = gene_info[0]
-            #                     gene = gene_info[4]
-                                
-            #                     if gene_type == 'protein_coding':
-            #                         protein_id = gene_info[-1]
-            #                         cog_fn_df = cog_df.loc[cog_df['protein_id'] == protein_id, 'function']
-            #                         if len(cog_fn_df) > 0:
-            #                             cog_fn = cog_fn_df.iloc[0]
-            #                     # print(f'cog function: {cog_fn}')
-            #             if genome_id in pan_genomes and seq_gene_id != 'NA':
-            #                 # print(f'gene id: {seq_gene_id}')
-            #                 # get pangenome info if available
-            #                 # pangenome = anvio_df.loc[(anvio_df['genome'] == genome_id) & (anvio_df['gene'] == gene_id), 'pangenome'].tolist()[0]
-            #                 if seq_gene_id in d:
-            #                     pangenome = d[seq_gene_id][2]
-            #                     # print(f'pangenome: {pangenome}')
-            #                     # if pangenome == "accessory":
-            #                     #     print(f'gene type : {gene_type}')
-            #                     #     print(f'gene id: {seq_gene_id}')
-            #                     #     print(f'start: {start}')
-            #                     #     print(f'end: {end}')
-            #                     #     print(cogfile)
-            #                     #     print(datafile)
-            #             outf_genes.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t')
-            #             outf_pan.write(f'{label}\t{genome_id}\t{tax}\t{index}\t{seq_gene_id}\t{gene_type}\t{gene}\t{protein_id}\t{cog_fn}\t{pangenome}\t')
-            #             classification = 'NA'
-                        if true != pred:
-                            incorrect += 1
-                            classification = 'incorrect'
-                        else:
-                            classification = 'correct'
-                            correct += 1
-                        probs.append(prob)
-                        # outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
-                        # outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
-            accuracy = round(correct / (correct+incorrect), 2)
-            outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t')
-            outf.write(f'{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-        outf.close()
-        # outf_genes.close()
-        # outf_pan.close()
+            # outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
+            # outf_taxa = open(os.path.join(args.output_dir, f'results_taxa_{rank_name}_{args.confidence_score}.tsv'), 'w')
+            # outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
+            # outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
+            genomes = [v.split('\t')[1] for v in info.values()]
+            chunk_size = math.ceil(len(genomes)/args.num_threads)
+            grouped_genomes = [genomes[i:i+chunk_size] for i in range(0, len(genomes), chunk_size)]
+            with mp.Manager() as manager:
+                accuracy = manager.dict()
+                processes = [mp.Process(target=ParseTestingResults, args=(args, rank_name, rank_index, grouped_genomes[i], info, accuracy)) for i in range(len(grouped_genomes))]
+                for p in processes:
+                    p.start() # start the processes
+                for p in processes:
+                    p.join() # join the processes, program will hang and wait until all the processes are done
+                        
+            #     outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t')
+            #     outf.write(f'{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+            # outf.close()
+            # outf_genes.close()
+            # outf_pan.close()
+            
+            outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
+            if rank_name == 'strain':
+                for taxon, taxon_acc in taxa.items():
+                    outf.write(f'{taxon}\t{taxon_acc}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+            else:
+                for taxon, taxon_acc in taxa.items():
+                    outf.write(f'{taxon}\t{statistics.mean(taxon_acc)}\t{statistics.median(taxon_acc)}\t{min(taxon_acc)}\t{max(taxon_acc)}\t{statistics.stdev(taxon_acc)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+            outf.close()
+
+
 
 
 
