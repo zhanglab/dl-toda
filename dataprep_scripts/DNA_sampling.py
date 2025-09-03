@@ -588,7 +588,7 @@ def get_node_by_rank(tree, rank, name, gtdb):
 def GetTreeDist(args, target_taxa, taxonofinterest, rank):
     rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
     # load tree
-    tree_species = Tree(args.gtdbtk_tree, quoted_node_names=True, format=1)
+    tree = Tree(args.gtdbtk_tree, quoted_node_names=True, format=1)
     # get nodes associated to target taxa
     taxon_to_node = {}
     for node in tree.traverse("preorder"):
