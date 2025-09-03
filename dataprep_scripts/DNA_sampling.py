@@ -608,7 +608,7 @@ def GetTreeDist(args, target_taxa, taxonofinterest, rank):
     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
     node_toi = taxon_to_node[taxonofinterest]
     for taxon in target_taxa:
-        if taxon in taxon_to_node:
+        if taxon != taxonofinterest and taxon in taxon_to_node:
             print(taxon, taxon_to_node[taxon].name)
             phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
             topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
@@ -664,12 +664,8 @@ def GetTreeDist(args, target_taxa, taxonofinterest, rank):
     #         node.delete()
     #         node.name = phylum
 
-def ParseTestingResults(args, rank_name, rank_index, genomes, info, accuracy):
+def ParseTestingResults(args, genomes, accuracy):
     for genome_id in genomes:
-        if rank_name == 'strain':
-            taxon = genome_id
-        else:
-            taxon = info[genome_id].split('\t')[3].split(';')[rank_index]
         results_file = os.path.join(args.testing_results, genome_id, 'testing-results.tsv')
         # load sequences
         datafile = os.path.join(args.input_dir, 'datasets', genome_id, 'dataset.tsv')
@@ -742,7 +738,7 @@ def ParseTestingResults(args, rank_name, rank_index, genomes, info, accuracy):
                     probs.append(prob)
                     # outf_genes.write(f'{classification}\t{prob}\t{start}\t{end}\n')
                     # outf_pan.write(f'{classification}\t{prob}\t{start}\t{end}\n')
-        accuracy[taxon] = round(correct / (correct+incorrect), 2)
+        accuracy[genome_id] = round(correct / (correct+incorrect), 2)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -1044,68 +1040,66 @@ if __name__ == "__main__":
         # load information about genomes 
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
+        # get testing results
+        genomes = [v.split('\t')[1] for v in info.values()]
+        chunk_size = math.ceil(len(genomes)/args.num_threads)
+        grouped_genomes = [genomes[i:i+chunk_size] for i in range(0, len(genomes), chunk_size)]
+        with mp.Manager() as manager:
+            accuracy = manager.dict()
+            processes = [mp.Process(target=ParseTestingResults, args=(args, grouped_genomes[i], accuracy)) for i in range(len(grouped_genomes))]
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
 
-        ranks = {'strain': None, 'species': 6, 'genus': 5, 'family': 4, 'order': 3, 'class': 2, 'phylum': 1}
-        for rank_name, rank_index in ranks.items():
-            print(rank_name)
-            # get all taxa within taxonomic group
-            taxa = defaultdict(list)
-            # get distances between taxon of interest and all other tax in the testing set
-            taxonofinterest = ''
-            for k, v in info.items():
-                if v.split('\t')[0] == args.label:
-                    taxonofinterest = v.split('\t')[3].split(';')[rank_index]
-            assert len(taxonofinterest) != 0, f'info associated with label {args.label} cannot be found'
-            target_taxa = set([v.split('\t')[3].split(';')[rank_index] for v in info.values()])
-            distances = GetTreeDist(args, list(target_taxa), taxonofinterest, rank_name)
+            ranks = {'species': 6, 'genus': 5, 'family': 4, 'order': 3, 'class': 2, 'phylum': 1}
+            for rank_name, rank_index in ranks.items():
+                print(rank_name)
+                taxonofinterest = ''
+                for k, v in info.items():
+                    if v.split('\t')[0] == args.label:
+                        taxonofinterest = v.split('\t')[3].split(';')[rank_index]
+                assert len(taxonofinterest) != 0, f'info associated with label {args.label} cannot be found'
+                # get distances between taxon of interest and all other tax in the testing set
+                target_taxa = {v.split('\t')[3].split(';')[rank_index]: k for k, v in info.items()}
+                distances = GetTreeDist(args, list(target_taxa.keys()), taxonofinterest, rank_name)
+            # # load info about pangenome analysis
+            # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
+            # anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
+            # pan_genomes = set(anvio_df['genome'].tolist())
+            # print(anvio_df)
+            # print(pan_genomes)
 
-        # # load info about pangenome analysis
-        # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
-        # anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
-        # pan_genomes = set(anvio_df['genome'].tolist())
-        # print(anvio_df)
-        # print(pan_genomes)
+            # d = defaultdict(list)
+            # pan_genomes = set()
+            # with open(args.anvio_results, 'r') as f:
+            #     for line in f:
+            #         start_gene = int(line.rstrip().split('\t')[5])
+            #         end_gene = int(line.rstrip().split('\t')[6])
+            #         gene_type = line.rstrip().split('\t')[4]
+            #         gene_id = line.rstrip().split('\t')[2]
+            #         d[gene_id] = [start_gene, end_gene, gene_type]
+            #         pan_genomes.add(line.rstrip().split('\t')[0])
 
-        # d = defaultdict(list)
-        # pan_genomes = set()
-        # with open(args.anvio_results, 'r') as f:
-        #     for line in f:
-        #         start_gene = int(line.rstrip().split('\t')[5])
-        #         end_gene = int(line.rstrip().split('\t')[6])
-        #         gene_type = line.rstrip().split('\t')[4]
-        #         gene_id = line.rstrip().split('\t')[2]
-        #         d[gene_id] = [start_gene, end_gene, gene_type]
-        #         pan_genomes.add(line.rstrip().split('\t')[0])
-
-            # outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
-            # outf_taxa = open(os.path.join(args.output_dir, f'results_taxa_{rank_name}_{args.confidence_score}.tsv'), 'w')
-            # outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
-            # outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
-            genomes = [v.split('\t')[1] for v in info.values()]
-            chunk_size = math.ceil(len(genomes)/args.num_threads)
-            grouped_genomes = [genomes[i:i+chunk_size] for i in range(0, len(genomes), chunk_size)]
-            with mp.Manager() as manager:
-                accuracy = manager.dict()
-                processes = [mp.Process(target=ParseTestingResults, args=(args, rank_name, rank_index, grouped_genomes[i], info, accuracy)) for i in range(len(grouped_genomes))]
-                for p in processes:
-                    p.start() # start the processes
-                for p in processes:
-                    p.join() # join the processes, program will hang and wait until all the processes are done
-                        
-            #     outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t')
-            #     outf.write(f'{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
-            # outf.close()
-            # outf_genes.close()
-            # outf_pan.close()
-            
-            outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
-            if rank_name == 'strain':
-                for taxon, taxon_acc in taxa.items():
-                    outf.write(f'{taxon}\t{taxon_acc}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
-            else:
-                for taxon, taxon_acc in taxa.items():
-                    outf.write(f'{taxon}\t{statistics.mean(taxon_acc)}\t{statistics.median(taxon_acc)}\t{min(taxon_acc)}\t{max(taxon_acc)}\t{statistics.stdev(taxon_acc)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
-            outf.close()
+                # outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
+                # outf_taxa = open(os.path.join(args.output_dir, f'results_taxa_{rank_name}_{args.confidence_score}.tsv'), 'w')
+                # outf_genes = open(os.path.join(args.output_dir, f'results_genes_{args.confidence_score}.tsv'), 'w')
+                # outf_pan = open(os.path.join(args.output_dir, f'results_genes_pan_{args.confidence_score}.tsv'), 'w')
+                
+                            
+                #     outf.write(f'{label}\t{genome_id}\t{tax}\t{accuracy}\t{correct}\t{incorrect}\t')
+                #     outf.write(f'{statistics.median(probs)}\t{statistics.mean(probs)}\t{min(probs)}\t{max(probs)}\n')
+                # outf.close()
+                # outf_genes.close()
+                # outf_pan.close()
+                outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
+                for taxon in target_taxa:
+                    # get all genomes associated with taxon
+                    taxon_genomes = [k for k, v in info.items() if v.split('\t')[3].split(';')[rank_index] == taxon]
+                    # get accuracy associated with genomes
+                    genomes_accuracy = [accuracy[g] for g in taxon_genomes]
+                    outf.write(f'{taxon}\t{statistics.mean(genomes_accuracy)}\t{statistics.median(genomes_accuracy)}\t{min(genomes_accuracy)}\t{max(genomes_accuracy)}\t{statistics.stdev(genomes_accuracy)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+                outf.close()
 
 
 
