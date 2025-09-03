@@ -588,18 +588,16 @@ def get_node_by_rank(tree, rank, name, gtdb):
 def GetTreeDist(args, target_taxa, taxonofinterest, rank):
     rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
     # load tree
-    tree = Tree(args.gtdbtk_tree, quoted_node_names=True, format=1)
+    tree = Tree('/datasets/bio/gtdb/release220/bac120_r220.tree', quoted_node_names=True, format=1)
     # get nodes associated to target taxa
     taxon_to_node = {}
     for node in tree.traverse("preorder"):
         if node.name and rank_to_prefix[rank] in node.name:
             items = node.name.split(';')
             print(items)
-            for item in items:
-                if rank_to_prefix[rank] in item:
-                    # check if node is at the desired rank
-                    if item.split(';').index(node.name) != 0:
-                        break
+            for index, item in enumerate(items, 0):
+                # check if node is at the desired rank
+                if rank_to_prefix[rank] in item and index == 0:
                     taxon = item.split(':')[1].split(';')[0]
                     if taxon in target_taxa:
                         taxon_to_node[taxon] = node
