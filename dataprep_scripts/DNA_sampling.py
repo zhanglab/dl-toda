@@ -1132,7 +1132,10 @@ if __name__ == "__main__":
                     taxon_genomes = [k for k, v in info.items() if v.split('\t')[3].split(';')[rank_index] == taxon]
                     # get accuracy associated with genomes
                     genomes_accuracy = [accuracy[g] for g in taxon_genomes]
-                    outf.write(f'{taxon}\t{statistics.mean(genomes_accuracy)}\t{statistics.median(genomes_accuracy)}\t{min(genomes_accuracy)}\t{max(genomes_accuracy)}\t{statistics.stdev(genomes_accuracy)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+                    if len(genomes_accuracy) > 2:
+                        outf.write(f'{taxon}\t{statistics.mean(genomes_accuracy)}\t{statistics.median(genomes_accuracy)}\t{min(genomes_accuracy)}\t{max(genomes_accuracy)}\t{statistics.stdev(genomes_accuracy)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+                    else:
+                        outf.write(f'{taxon}\t{genomes_accuracy[0]}\n') 
                 outf.close()
 
             # # load info about pangenome analysis
