@@ -602,7 +602,7 @@ def GetTreeDist(args, target_taxa, taxonofinterest, rank):
                     taxon = item.split(':')[1].split(';')[0]
                     if taxon in target_taxa:
                         taxon_to_node[taxon] = node
-                    
+    print(taxon_to_node)
     # measure distances between taxon of interest and the other taxa
     distances = defaultdict(list)
     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
