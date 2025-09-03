@@ -1042,7 +1042,7 @@ if __name__ == "__main__":
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
         # get representative genomes
         gtdb_genomes, _, _, _, gtdb_rep_genomes, _, _ = get_gtdb_info(args.gtdb_info)
-        genome2rep = {gtdb_genomes[i][3:]: gtdb_rep_genomes[i][3:] for i in range(len(gtdb_genomes))}
+        genome2rep = {gtdb_genomes[i]: gtdb_rep_genomes[i] for i in range(len(gtdb_genomes))}
         print(genome2rep)
         # get testing results
         genomes = list(info.keys())
