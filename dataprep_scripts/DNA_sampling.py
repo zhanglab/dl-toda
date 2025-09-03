@@ -1103,7 +1103,6 @@ if __name__ == "__main__":
                     genome_toi = ''
                     for genome_id, genome_info in info.items():
                         if genome_info.split('\t')[0] == args.label:
-                            print('label is good')
                             if genome_id in genome2rep:
                                 genome_toi = genome2rep[genome_id]
                     if len(genome_toi) == 0:
@@ -1112,7 +1111,7 @@ if __name__ == "__main__":
                     genome_to_leaf = {}
                     for leaf in tree:
                         genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
-                        genome_to_leaf[genome_id] = leaf.name
+                        genome_to_leaf[genome_id] = leaf
 
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
