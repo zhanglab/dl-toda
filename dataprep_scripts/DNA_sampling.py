@@ -1119,7 +1119,6 @@ if __name__ == "__main__":
                             if genome_id in genome2rep:
                                 genome_id = genome2rep[genome_id]
                             if genome_id in genome_to_leaf:
-                                print(species)
                                 phylo_distance = node_toi.get_distance(genome_to_leaf[genome_id], topology_only=False)
                                 topo_distance = node_toi.get_distance(genome_to_leaf[genome_id], topology_only=True)
                                 distances[species] = [phylo_distance, topo_distance]
@@ -1128,8 +1127,10 @@ if __name__ == "__main__":
                 
                 outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
                 for taxon in target_taxa:
+                    print(taxon)
                     # get all genomes associated with taxon
                     taxon_genomes = [k for k, v in info.items() if v.split('\t')[3].split(';')[rank_index] == taxon]
+                    print(len(taxon_genomes))
                     # get accuracy associated with genomes
                     genomes_accuracy = [accuracy[g] for g in taxon_genomes]
                     print(distances[taxon])
