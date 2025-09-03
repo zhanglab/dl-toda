@@ -1102,7 +1102,7 @@ if __name__ == "__main__":
                     # get representative genome of species of interest
                     genome_toi = ''
                     for genome_id, genome_info in info.items():
-                        if v.split('\t')[0] == args.label:
+                        if genome_info.split('\t')[0] == args.label:
                             print('label is good')
                             if genome_id in genome2rep:
                                 genome_toi = genome2rep[genome_id]
