@@ -1041,7 +1041,7 @@ if __name__ == "__main__":
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
         # get testing results
-        genomes = [v.split('\t')[1] for v in info.values()]
+        genomes = list(info.keys())
         chunk_size = math.ceil(len(genomes)/args.num_threads)
         grouped_genomes = [genomes[i:i+chunk_size] for i in range(0, len(genomes), chunk_size)]
         with mp.Manager() as manager:
@@ -1060,38 +1060,71 @@ if __name__ == "__main__":
                     if v.split('\t')[0] == args.label:
                         taxonofinterest = v.split('\t')[3].split(';')[rank_index]
                 assert len(taxonofinterest) != 0, f'info associated with label {args.label} cannot be found'
-                # get distances between taxon of interest and all other tax in the testing set
+                # get distances between taxon of interest and all other taxa in the testing set
                 target_taxa = {v.split('\t')[3].split(';')[rank_index]: k for k, v in info.items()}
                 # distances = GetTreeDist(args, list(target_taxa.keys()), taxonofinterest, rank_name)
-                rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
+                rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__'}
                 # load tree
                 tree = Tree('/datasets/bio/gtdb/release220/bac120_r220.tree', quoted_node_names=True, format=1)
                 # get nodes associated to target taxa
                 taxon_to_node = {}
-                for node in tree.traverse("preorder"):
-                    print(node.name, rank_to_prefix[rank_name])
-                    if node.name and rank_to_prefix[rank_name] in node.name:
-                        items = node.name.split(';')
-                        print(items)
-                        for index, item in enumerate(items, 0):
-                            # check if node is at the desired rank
-                            if rank_to_prefix[rank_name] in item and index == 0:
-                                taxon = item.split(':')[1].split(';')[0]
-                                if taxon in target_taxa:
-                                    taxon_to_node[taxon] = node
-                print(taxon_to_node)
                 # measure distances between taxon of interest and the other taxa
                 distances = defaultdict(list)
-                assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
-                node_toi = taxon_to_node[taxonofinterest]
+                # species are omitted from gtdb tree
+                if rank_name != 'species':
+                    for node in tree.traverse("preorder"):
+                        print(node.name, rank_to_prefix[rank_name])
+                            if node.name and rank_to_prefix[rank_name] in node.name:
+                                items = node.name.split(';')
+                                print(items)
+                                for index, item in enumerate(items, 0):
+                                    # check if node is at the desired rank
+                                    if rank_to_prefix[rank_name] in item and index == 0:
+                                        taxon = item.split(':')[1].split(';')[0]
+                                        if taxon in target_taxa:
+                                            taxon_to_node[taxon] = node
+
+                    print(taxon_to_node)
+                    assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
+                    node_toi = taxon_to_node[taxonofinterest]
+                    for taxon in target_taxa:
+                        if taxon != taxonofinterest and taxon in taxon_to_node:
+                            print(taxon, taxon_to_node[taxon].name)
+                            phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
+                            topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
+                            distances[taxon] = [phylo_distance, topo_distance]
+                        else:
+                            distances[taxon] = ['NA', 'NA']
+                else:
+                    # get genome id of species of interest
+                    genome_toi = ''
+                    for k, v in info.items():
+                        if v.split('\t')[0] == args.label:
+                            genome_toi = k
+                    genome_to_leaf = {}
+                    for leaf in tree:
+                        genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
+                        genome_to_leaf[genome_id] leaf.name
+                    node_toi = genome_to_leaf[genome_toi]
+                    for species, genome_id in target_taxa.items():
+                        if species != taxonofinterest:
+                            if genome_id in genome_to_leaf:
+                                print(species)
+                                phylo_distance = node_toi.get_distance(genome_to_leaf[genome_id], topology_only=False)
+                                topo_distance = node_toi.get_distance(genome_to_leaf[genome_id], topology_only=True)
+                                distances[species] = [phylo_distance, topo_distance]
+                            else:
+                                distances[species] = ['NA', 'NA']
+                
+                outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
                 for taxon in target_taxa:
-                    if taxon != taxonofinterest and taxon in taxon_to_node:
-                        print(taxon, taxon_to_node[taxon].name)
-                        phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
-                        topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
-                        distances[taxon] = [phylo_distance, topo_distance]
-                    else:
-                        distances[taxon] = ['NA', 'NA']
+                    # get all genomes associated with taxon
+                    taxon_genomes = [k for k, v in info.items() if v.split('\t')[3].split(';')[rank_index] == taxon]
+                    # get accuracy associated with genomes
+                    genomes_accuracy = [accuracy[g] for g in taxon_genomes]
+                    outf.write(f'{taxon}\t{statistics.mean(genomes_accuracy)}\t{statistics.median(genomes_accuracy)}\t{min(genomes_accuracy)}\t{max(genomes_accuracy)}\t{statistics.stdev(genomes_accuracy)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
+                outf.close()
+
             # # load info about pangenome analysis
             # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
             # anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
@@ -1121,14 +1154,7 @@ if __name__ == "__main__":
                 # outf.close()
                 # outf_genes.close()
                 # outf_pan.close()
-                outf = open(os.path.join(args.output_dir, f'results_summary_{rank_name}_{args.confidence_score}.tsv'), 'w')
-                for taxon in target_taxa:
-                    # get all genomes associated with taxon
-                    taxon_genomes = [k for k, v in info.items() if v.split('\t')[3].split(';')[rank_index] == taxon]
-                    # get accuracy associated with genomes
-                    genomes_accuracy = [accuracy[g] for g in taxon_genomes]
-                    outf.write(f'{taxon}\t{statistics.mean(genomes_accuracy)}\t{statistics.median(genomes_accuracy)}\t{min(genomes_accuracy)}\t{max(genomes_accuracy)}\t{statistics.stdev(genomes_accuracy)}\t{distances[taxon][0]}\t{distances[taxon][1]}\n')
-                outf.close()
+
 
 
 
