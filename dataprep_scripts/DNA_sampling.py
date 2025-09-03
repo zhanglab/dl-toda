@@ -585,36 +585,37 @@ def get_node_by_rank(tree, rank, name, gtdb):
     return None
 
 
-def GetTreeDist(args, target_taxa, taxonofinterest, rank):
-    rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
-    # load tree
-    tree = Tree('/datasets/bio/gtdb/release220/bac120_r220.tree', quoted_node_names=True, format=1)
-    # get nodes associated to target taxa
-    taxon_to_node = {}
-    for node in tree.traverse("preorder"):
-        if node.name and rank_to_prefix[rank] in node.name:
-            items = node.name.split(';')
-            print(items)
-            for index, item in enumerate(items, 0):
-                # check if node is at the desired rank
-                if rank_to_prefix[rank] in item and index == 0:
-                    taxon = item.split(':')[1].split(';')[0]
-                    if taxon in target_taxa:
-                        taxon_to_node[taxon] = node
-    print(taxon_to_node)
-    # measure distances between taxon of interest and the other taxa
-    distances = defaultdict(list)
-    assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
-    node_toi = taxon_to_node[taxonofinterest]
-    for taxon in target_taxa:
-        if taxon != taxonofinterest and taxon in taxon_to_node:
-            print(taxon, taxon_to_node[taxon].name)
-            phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
-            topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
-            distances[taxon] = [phylo_distance, topo_distance]
-        else:
-            distances[taxon] = ['NA', 'NA']
-    return distances
+# def GetTreeDist(args, target_taxa, taxonofinterest, rank):
+#     rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
+#     # load tree
+#     tree = Tree('/datasets/bio/gtdb/release220/bac120_r220.tree', quoted_node_names=True, format=1)
+#     # get nodes associated to target taxa
+#     taxon_to_node = {}
+#     for node in tree.traverse("preorder"):
+#         print(node.name)
+#         if node.name and rank_to_prefix[rank] in node.name:
+#             items = node.name.split(';')
+#             print(items)
+#             for index, item in enumerate(items, 0):
+#                 # check if node is at the desired rank
+#                 if rank_to_prefix[rank] in item and index == 0:
+#                     taxon = item.split(':')[1].split(';')[0]
+#                     if taxon in target_taxa:
+#                         taxon_to_node[taxon] = node
+#     print(taxon_to_node)
+#     # measure distances between taxon of interest and the other taxa
+#     distances = defaultdict(list)
+#     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
+#     node_toi = taxon_to_node[taxonofinterest]
+#     for taxon in target_taxa:
+#         if taxon != taxonofinterest and taxon in taxon_to_node:
+#             print(taxon, taxon_to_node[taxon].name)
+#             phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
+#             topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
+#             distances[taxon] = [phylo_distance, topo_distance]
+#         else:
+#             distances[taxon] = ['NA', 'NA']
+#     return distances
 
     # leaves_to_keep = set()
     # genomes_done = set()
@@ -1061,7 +1062,36 @@ if __name__ == "__main__":
                 assert len(taxonofinterest) != 0, f'info associated with label {args.label} cannot be found'
                 # get distances between taxon of interest and all other tax in the testing set
                 target_taxa = {v.split('\t')[3].split(';')[rank_index]: k for k, v in info.items()}
-                distances = GetTreeDist(args, list(target_taxa.keys()), taxonofinterest, rank_name)
+                # distances = GetTreeDist(args, list(target_taxa.keys()), taxonofinterest, rank_name)
+                rank_to_prefix = {'phylum': 'p__', 'class': 'c__', 'order': 'o__', 'family': 'f__', 'genus': 'g__', 'species': 's__'}
+                # load tree
+                tree = Tree('/datasets/bio/gtdb/release220/bac120_r220.tree', quoted_node_names=True, format=1)
+                # get nodes associated to target taxa
+                taxon_to_node = {}
+                for node in tree.traverse("preorder"):
+                    print(node.name)
+                    if node.name and rank_to_prefix[rank] in node.name:
+                        items = node.name.split(';')
+                        print(items)
+                        for index, item in enumerate(items, 0):
+                            # check if node is at the desired rank
+                            if rank_to_prefix[rank] in item and index == 0:
+                                taxon = item.split(':')[1].split(';')[0]
+                                if taxon in target_taxa:
+                                    taxon_to_node[taxon] = node
+                print(taxon_to_node)
+                # measure distances between taxon of interest and the other taxa
+                distances = defaultdict(list)
+                assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
+                node_toi = taxon_to_node[taxonofinterest]
+                for taxon in target_taxa:
+                    if taxon != taxonofinterest and taxon in taxon_to_node:
+                        print(taxon, taxon_to_node[taxon].name)
+                        phylo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=False)
+                        topo_distance = node_toi.get_distance(taxon_to_node[taxon], topology_only=True)
+                        distances[taxon] = [phylo_distance, topo_distance]
+                    else:
+                        distances[taxon] = ['NA', 'NA']
             # # load info about pangenome analysis
             # anvio_df = pd.read_csv(args.anvio_results, sep='\t', header=None)
             # anvio_df.columns = ['genome','type','gene','protein','pangenome','start','end','function']
