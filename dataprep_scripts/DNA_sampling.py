@@ -1101,10 +1101,15 @@ if __name__ == "__main__":
                     for k, v in info.items():
                         if v.split('\t')[0] == args.label:
                             genome_toi = k
+                    
                     genome_to_leaf = {}
                     for leaf in tree:
                         genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
                         genome_to_leaf[genome_id] = leaf.name
+                        if genome_id == genome_toi:
+                            print(genome_to_leaf[genome_id])
+                    print(genome_to_leaf)
+                    print(f'genome id of label {args.label}: {genome_toi}')
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
