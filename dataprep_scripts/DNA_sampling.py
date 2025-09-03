@@ -1069,7 +1069,7 @@ if __name__ == "__main__":
                 # get nodes associated to target taxa
                 taxon_to_node = {}
                 for node in tree.traverse("preorder"):
-                    print(node.name)
+                    print(node.name, rank_to_prefix[rank_name])
                     if node.name and rank_to_prefix[rank_name] in node.name:
                         items = node.name.split(';')
                         print(items)
