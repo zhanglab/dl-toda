@@ -1104,7 +1104,7 @@ if __name__ == "__main__":
                     genome_to_leaf = {}
                     for leaf in tree:
                         genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
-                        genome_to_leaf[genome_id] leaf.name
+                        genome_to_leaf[genome_id] = leaf.name
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
