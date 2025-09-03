@@ -16,7 +16,7 @@ import random
 # from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
-# from select_genomes import get_gtdb_info
+from select_genomes import get_gtdb_info
 # from process_pretrain_data import sampling, cut_no_overlap
 # from DL_scripts.create_tfrecords import create_tfrecords
 # from DL_scripts.tfrecords_utils import *
@@ -1040,6 +1040,9 @@ if __name__ == "__main__":
         # load information about genomes 
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
+        # get representative genomes
+        gtdb_genomes, _, _, _, gtdb_rep_genome, _, _ = get_gtdb_info(args.gtdb_info)
+        genome2rep = {gtdb_genomes[i][3:]: gtdb_rep_genomes[i][3:] for i in range(len(gtdb_genomes))}
         # get testing results
         genomes = list(info.keys())
         chunk_size = math.ceil(len(genomes)/args.num_threads)
@@ -1096,23 +1099,22 @@ if __name__ == "__main__":
                         else:
                             distances[taxon] = ['NA', 'NA']
                 else:
-                    # get genome id of species of interest
+                    # get representative genome of species of interest
                     genome_toi = ''
-                    for k, v in info.items():
-                        if v.split('\t')[0] == args.label:
-                            genome_toi = k
+                    for genome_id, genome_info in info.items():
+                        if v.split('\t')[0] == args.label and genome_id in genome2rep:
+                            genome_toi = genome2rep[genome_id]
                     
                     genome_to_leaf = {}
                     for leaf in tree:
                         genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
                         genome_to_leaf[genome_id] = leaf.name
-                        if genome_id == genome_toi:
-                            print(genome_to_leaf[genome_id])
-                    print(genome_to_leaf)
-                    print(f'genome id of label {args.label}: {genome_toi}')
+
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
+                            if genome_id in genome2rep:
+                                genome_id = genome2rep[genome_id]
                             if genome_id in genome_to_leaf:
                                 print(species)
                                 phylo_distance = node_toi.get_distance(genome_to_leaf[genome_id], topology_only=False)
