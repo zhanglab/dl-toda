@@ -592,6 +592,7 @@ def GetTreeDist(args, target_taxa, taxonofinterest, rank):
     # get nodes associated to target taxa
     taxon_to_node = {}
     for node in tree.traverse("preorder"):
+        print(node)
         if node.name and rank_to_prefix[rank] in node.name:
             items = node.name.split(';')
             print(items)
