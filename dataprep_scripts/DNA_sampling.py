@@ -1074,15 +1074,15 @@ if __name__ == "__main__":
                 if rank_name != 'species':
                     for node in tree.traverse("preorder"):
                         print(node.name, rank_to_prefix[rank_name])
-                            if node.name and rank_to_prefix[rank_name] in node.name:
-                                items = node.name.split(';')
-                                print(items)
-                                for index, item in enumerate(items, 0):
-                                    # check if node is at the desired rank
-                                    if rank_to_prefix[rank_name] in item and index == 0:
-                                        taxon = item.split(':')[1].split(';')[0]
-                                        if taxon in target_taxa:
-                                            taxon_to_node[taxon] = node
+                        if node.name and rank_to_prefix[rank_name] in node.name:
+                            items = node.name.split(';')
+                            print(items)
+                            for index, item in enumerate(items, 0):
+                                # check if node is at the desired rank
+                                if rank_to_prefix[rank_name] in item and index == 0:
+                                    taxon = item.split(':')[1].split(';')[0]
+                                    if taxon in target_taxa:
+                                        taxon_to_node[taxon] = node
 
                     print(taxon_to_node)
                     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
