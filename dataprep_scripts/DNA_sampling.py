@@ -1043,7 +1043,6 @@ if __name__ == "__main__":
         # get representative genomes
         gtdb_genomes, _, _, _, gtdb_rep_genomes, _, _ = get_gtdb_info(args.gtdb_info)
         genome2rep = {gtdb_genomes[i]: gtdb_rep_genomes[i] for i in range(len(gtdb_genomes))}
-        print(genome2rep)
         # get testing results
         genomes = list(info.keys())
         chunk_size = math.ceil(len(genomes)/args.num_threads)
@@ -1103,8 +1102,12 @@ if __name__ == "__main__":
                     # get representative genome of species of interest
                     genome_toi = ''
                     for genome_id, genome_info in info.items():
-                        if v.split('\t')[0] == args.label and genome_id in genome2rep:
-                            genome_toi = genome2rep[genome_id]
+                        if v.split('\t')[0] == args.label:
+                            print('label is good')
+                            if genome_id in genome2rep:
+                                genome_toi = genome2rep[genome_id]
+                    if len(genome_toi) == 0:
+                        print(f'genome of label {args.label} not in gtdb metadata')
                     
                     genome_to_leaf = {}
                     for leaf in tree:
