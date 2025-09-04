@@ -1115,6 +1115,16 @@ if __name__ == "__main__":
                     print(f'ancestors: {ancestors}')
                     for ancestor in ancestors:
                         print(f"  - {ancestor.name}")
+                    
+                    print(f'genome toi: GCF_001277915.1')
+                    ancestors = genome_to_leaf['GCF_001277915.1'].get_ancestors()
+                    print(f'ancestors: {ancestors}')
+                    for ancestor in ancestors:
+                        print(f"  - {ancestor.name}")
+
+                    
+
+                    
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
