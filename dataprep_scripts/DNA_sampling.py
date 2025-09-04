@@ -1113,6 +1113,8 @@ if __name__ == "__main__":
                     print(f'genome toi: {genome_toi}')
                     ancestors = genome_to_leaf[genome_toi].get_ancestors()
                     print(f'ancestors: {ancestors}')
+                    for ancestor in ancestors:
+                        print(f"  - {ancestor.name}")
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
