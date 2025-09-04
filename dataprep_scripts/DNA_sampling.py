@@ -1055,7 +1055,8 @@ if __name__ == "__main__":
             for p in processes:
                 p.join()
 
-            ranks = {'species': 6, 'genus': 5, 'family': 4, 'order': 3, 'class': 2, 'phylum': 1}
+            # ranks = {'species': 6, 'genus': 5, 'family': 4, 'order': 3, 'class': 2, 'phylum': 1}
+            ranks = {'species': 6}
             for rank_name, rank_index in ranks.items():
                 print(rank_name)
                 taxonofinterest = ''
@@ -1084,9 +1085,7 @@ if __name__ == "__main__":
                                     taxon = item.split(':')[1].split(';')[0]
                                     if taxon in target_taxa:
                                         taxon_to_node[taxon] = node
-                    for k, v in taxon_to_node.items():
-                        print(k, v)
-                        break
+
                     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
                     node_toi = taxon_to_node[taxonofinterest]
                     for taxon in target_taxa:
@@ -1111,7 +1110,9 @@ if __name__ == "__main__":
                     for leaf in tree:
                         genome_id = leaf.name[3:] if len(leaf.name.split('_')) > 2 else leaf.name
                         genome_to_leaf[genome_id] = leaf
-
+                    print(f'genome toi: {genome_toi}')
+                    ancestors = genome_to_leaf[genome_toi].get_ancestors()
+                    print(f'ancestors: {ancestors}')
                     node_toi = genome_to_leaf[genome_toi]
                     for species, genome_id in target_taxa.items():
                         if species != taxonofinterest:
