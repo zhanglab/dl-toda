@@ -1084,7 +1084,9 @@ if __name__ == "__main__":
                                     taxon = item.split(':')[1].split(';')[0]
                                     if taxon in target_taxa:
                                         taxon_to_node[taxon] = node
-
+                    for k, v in taxon_to_node.items():
+                        print(k, v)
+                        break
                     assert taxonofinterest in taxon_to_node, f'{taxonofinterest} not in gtdb tree!'
                     node_toi = taxon_to_node[taxonofinterest]
                     for taxon in target_taxa:
