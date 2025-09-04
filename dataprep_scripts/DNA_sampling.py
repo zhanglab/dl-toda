@@ -1116,8 +1116,12 @@ if __name__ == "__main__":
                     for ancestor in ancestors:
                         print(f"  - {ancestor.name}")
                     
-                    print(f'genome toi: GCF_001277915.1')
-                    ancestors = genome_to_leaf['GCF_001277915.1'].get_ancestors()
+                    genome_ = 'GCF_001277915.1'
+                    print(f'genome: {genome_}')
+                    if genome_ not in genome_to_leaf:
+                        genome_ = genome2rep[genome_id]
+                    print(f'genome: {genome_}')
+                    ancestors = genome_to_leaf[genome_].get_ancestors()
                     print(f'ancestors: {ancestors}')
                     for ancestor in ancestors:
                         print(f"  - {ancestor.name}")
