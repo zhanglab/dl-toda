@@ -484,6 +484,7 @@ def GetSequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label]
         fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
+        print(fasta.full_genome_seq, type(fasta.full_genome_seq))
         starts, ends = sampling(length=fasta.full_genome_seq, kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
         cuts = cut_no_overlap(length=fasta.full_genome_seq, kmer=1)
