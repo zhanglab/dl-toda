@@ -18,10 +18,10 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
 from select_genomes import get_gtdb_info
 from process_pretrain_data import sampling, cut_no_overlap
-# from DL_scripts.create_tfrecords import create_tfrecords
-# from DL_scripts.tfrecords_utils import *
+from DL_scripts.create_tfrecords import create_tfrecords
+from DL_scripts.tfrecords_utils import *
 
-
+dltoda_dir = "/work/pi_yingzhang_uri_edu/ccres/git/dl-toda"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 anvio_exec_dir = "/work/pi_yingzhang_uri_edu/ccres/conda-envs/anvio-8/bin"
 blastp_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastp"
@@ -824,6 +824,7 @@ if __name__ == "__main__":
 
     # create training, validation, and testing datasets
     if args.datasets:
+        ranks = {'species': 0, 'genus': 1, 'family': 2, 'order': 3, 'class': 4, 'phylum': 5}
         # # parse results from previous testing round
         # if args.gene_results is not None:
         #     core_protein_gene_count = defaultdict()
@@ -831,6 +832,15 @@ if __name__ == "__main__":
         #     rrna_gene_count = defaultdict()
         #     trna_gene_count = defaultdict()
         #     results_df = pd.read_csv(args.gene_results, sep='\t', header=None)
+        
+        # get gtdb taxonomy
+        # genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
+        # genome2tax = {}
+        # for i in range(len(genomes)):
+        #     genome2tax[genomes[i]] = gtdb_taxonomy[i]
+        with open(os.path.join(dltoda_dir, "data/dl_toda_taxonomy.tsv"), 'r') as f:
+            content = f.readlines()
+            label2tax = {content[i].split('\t')[0]: content[i].split('\t')[1] for i in range(len(content))}
 
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets', args.data)):
             os.makedirs(os.path.join(args.output_dir, 'datasets', args.data, 'blast'))
@@ -906,7 +916,6 @@ if __name__ == "__main__":
                 neg_sequences += v
                 neg_all_labels += [k]*len(v)
                 neg_all_genomes += [info[k][0]]*len(v)
-            print(neg_sequences[:10])
             neg_all_sequences, neg_all_starts, neg_all_ends = zip(*neg_sequences)
             neg_data = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels, neg_all_genomes))
 
@@ -918,11 +927,22 @@ if __name__ == "__main__":
 
                 # create tsv file with data
                 random.shuffle(all_train_data)
+                taxa_dict = {'species': defaultdict(int), 'genus': defaultdict(int), 'family': defaultdict(int), 'order': defaultdict(int), 'class': defaultdict(int), 'phylum': defaultdict(int)}
                 with open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'train_dataset.tsv'), 'w') as f:
                     sequences, starts, ends, labels, genomes  = zip(*all_train_data)
                     for i in range(len(all_train_data)):
                         new_seq = sequences[i].replace(' ', '')
                         f.write(f'{labels[i]}\t{genomes[i]}\t{starts[i]}\t{ends[i]}\t{new_seq}\n')
+                        for r_name, r_index in ranks.items():
+                            taxon = label2tax[labels[i]].split(';')[r_index]
+                            taxa_dict[r_name][taxon] += 1
+                print(taxa_dict)
+                # create files mapping taxa to count
+                for r_name, r_index in ranks.items():
+                    out_taxa = open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', f'train_dataset_taxa_{r_name}.tsv'), 'w')
+                    for taxon, count in taxa_dict[r_name].items():
+                        out_taxa.write(f'{taxon}\t{count}\n')
+
                 random.shuffle(all_val_data)
                 with open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'val_dataset.tsv'), 'w') as f:
                     sequences, starts, ends, labels, genomes = zip(*all_val_data)
