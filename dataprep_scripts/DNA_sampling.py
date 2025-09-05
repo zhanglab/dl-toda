@@ -975,18 +975,18 @@ if __name__ == "__main__":
                 dict_kmers = vocab_dict(f'{args.vocab}/bert/{k_value}mers.txt')
                 with open(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'bert', f'{k_value}-dict.json'), 'w') as f:
                     json.dump(dict_kmers, f)
-                    
-                output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
+
+                output_dir = os.path.join(args.output_dir, f'datasets-{args.datadirname}', 'train', 'tfrecords', 'train', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
-                input_file = os.path.join(args.output_dir, 'datasets', 'train', 'train_dataset.tsv')
+                input_file = os.path.join(args.output_dir, f'datasets-{args.datadirname}', 'train', 'train_dataset.tsv')
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
-                output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'val', f'{k_value}')
+                output_dir = os.path.join(args.output_dir, f'datasets-{args.datadirname}', 'train', 'tfrecords', 'val', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
-                input_file = os.path.join(args.output_dir, 'datasets', 'train', 'val_dataset.tsv')
+                input_file = os.path.join(args.output_dir, f'datasets-{args.datadirname}', 'train', 'val_dataset.tsv')
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
             else:
