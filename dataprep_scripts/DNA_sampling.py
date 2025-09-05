@@ -12,7 +12,7 @@ import pandas as pd
 import multiprocessing as mp
 import statistics
 import random
-# from pygenomeviz.parser import Fasta
+from pygenomeviz.parser import Fasta
 # from Bio import SeqIO
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template')
