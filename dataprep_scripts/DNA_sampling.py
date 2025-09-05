@@ -666,7 +666,8 @@ def get_node_by_rank(tree, rank, name, gtdb):
 
 
 def GetMash(args):
-    mash_files = os.listdir(args.mash)
+    mash_files = glob.glob(args.mash)
+    print(mash_files[:10])
     mash_dist = {}
     for i in range(len(mash_files)):
         with open(mash_files[i], 'r') as f:
