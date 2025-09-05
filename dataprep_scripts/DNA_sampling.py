@@ -906,6 +906,7 @@ if __name__ == "__main__":
                 neg_sequences += v
                 neg_all_labels += [k]*len(v)
                 neg_all_genomes += [info[k][0]]*len(v)
+            print(neg_sequences[:10])
             neg_all_sequences, neg_all_starts, neg_all_ends = zip(*neg_sequences)
             neg_data = list(zip(neg_all_sequences, neg_all_starts, neg_all_ends, neg_all_labels, neg_all_genomes))
 
