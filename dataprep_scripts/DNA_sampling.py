@@ -483,7 +483,7 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
 def GetSequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label][0]
-        fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
+        fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
         starts, ends = sampling(length=int(info[label][2]), kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
         cuts = cut_no_overlap(length=int(info[label][2]), kmer=1)
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         # get sequences for positive class
         # pos_genome = info[args.label][0]
         pos_genome = info[args.label]
-        pos_fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
+        pos_fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', pos_genome, 'ncbi_dataset/data', pos_genome, 'updated*.fna'))[0])
         data = GetGenomeSequence(args, pos_genome, pos_fasta)
         # pos_sam_starts, pos_sam_ends = sampling(length=int(info[args.label][2]), kmer=1, sampling_rate=0.5)
         # pos_sam_sequences = SampleGenome(pos_sam_starts, pos_sam_ends, pos_fasta.full_genome_seq)
@@ -870,7 +870,7 @@ if __name__ == "__main__":
 
         # add data from primary negative genome
         if args.neg_genome:
-            fasta = Fasta(glob.glob(os.path.join(args.output_dir, 'ncbi_database', args.neg_genome, 'ncbi_dataset/data', args.neg_genome, 'updated*.fna'))[0])
+            fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', args.neg_genome, 'ncbi_dataset/data', args.neg_genome, 'updated*.fna'))[0])
             neg_genome_data = GetGenomeSequence(args, args.neg_genome, fasta)
         print(f'# sequences from negative genome: {len(neg_genome_data)}')
         # obtain sequences from negative class
