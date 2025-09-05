@@ -483,6 +483,8 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
 def GetSequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label]
+        print(genome_id)
+        print(genome_id in os.listdir(os.path.join(args.input_dir, 'ncbi_database')))
         fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
         starts, ends = sampling(length=fasta.full_genome_length, kmer=1, sampling_rate=0.5)
         sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
