@@ -486,6 +486,7 @@ def GetSequences(args, labels, num, sequences, info):
         if genome_id not in os.listdir(os.path.join(args.input_dir, 'ncbi_database')):
             GetGenomeAndAnnot(args, genome_id)
             genomes_kept = PrepareFasta([genome_id])
+        print(os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')))
         if os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')):
             fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
             starts, ends = sampling(length=fasta.full_genome_length, kmer=1, sampling_rate=0.5)
