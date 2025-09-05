@@ -936,7 +936,6 @@ if __name__ == "__main__":
                         for r_name, r_index in ranks.items():
                             taxon = label2tax[labels[i]].split(';')[r_index]
                             taxa_dict[r_name][taxon] += 1
-                print(taxa_dict)
                 # create files mapping taxa to count
                 for r_name, r_index in ranks.items():
                     out_taxa = open(os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', f'train_dataset_taxa_{r_name}.tsv'), 'w')
@@ -972,6 +971,11 @@ if __name__ == "__main__":
             
             # create tfrecords for bert
             if args.data == 'train':
+                # get dictionary mapping kmers to indexes
+                dict_kmers = vocab_dict(f'{args.vocab}/bert/{k_value}mers.txt')
+                with open(os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'bert', f'{k_value}-dict.json'), 'w') as f:
+                    json.dump(dict_kmers, f)
+                    
                 output_dir = os.path.join(args.output_dir, 'datasets', 'train', 'tfrecords', 'train', f'{k_value}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
