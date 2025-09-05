@@ -483,8 +483,6 @@ def get_kmer_sentence(original_string, kmer=1, stride=1):
 def GetSequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label]
-        print(os.listdir(os.path.join(args.input_dir, 'ncbi_database'))[:10])
-        print(genome_id, genome_id in os.listdir(os.path.join(args.input_dir, 'ncbi_database')))
         if genome_id not in os.listdir(os.path.join(args.input_dir, 'ncbi_database')):
             print(f'genome {genome_id} not in database')
             GetGenomeAndAnnot(args, genome_id)
