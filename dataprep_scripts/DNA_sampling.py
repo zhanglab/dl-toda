@@ -1077,7 +1077,7 @@ if __name__ == "__main__":
                 outf.write(f'{genome_id}\t{genome_accuracy}')
                 genome_tax = info[genome_id].split('\t')[3].split(';')
                 for i in range(len(genome_tax)):
-                    outf.write(f'\t{genome_tax[i]}')
+                    outf.write(f'\t{genome_tax[i].split("__")[1]}')
                 if args.mash:
                     outf.write(f'\t{genome_tax[i]}\t{mash_results[genome_id]}')
                 outf.write('\n')
