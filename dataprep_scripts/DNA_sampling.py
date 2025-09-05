@@ -6,7 +6,7 @@ import math
 import json
 import argparse
 import subprocess
-from ete3 import Tree
+# from ete3 import Tree
 from collections import defaultdict
 import pandas as pd
 import multiprocessing as mp
