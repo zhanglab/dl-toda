@@ -845,10 +845,12 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}')):
             os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'blast'))
             if args.data == 'train':
-                os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}', 'train'))
-                os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}', 'val'))
+                for k_value in args.k_value:
+                    os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}', 'train'))
+                    os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}', 'val'))
             else:
-                os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}'))
+                for k_value in args.k_value:
+                    os.makedirs(os.path.join(args.output_dir, 'datasets', f'{args.data}-{args.datadirname}', 'tfrecords', f'{k_value}'))
 
         # get genomes
         # with open(os.path.join(args.output_dir, 'datasets', args.data, 'ani.tsv'), 'r') as f:
