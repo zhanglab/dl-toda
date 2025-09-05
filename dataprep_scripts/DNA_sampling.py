@@ -496,6 +496,7 @@ def GetSequences(args, labels, num, sequences, info):
             all_starts = starts + seq_starts
             all_ends = ends + seq_ends
             to_shuffle = list(zip(all_sequences, all_starts, all_ends))
+            print(f'genome {genome_id}\t{len(to_shuffle)}')
             random.shuffle(to_shuffle)
             sequences[label] = to_shuffle[:num]
 
