@@ -971,7 +971,7 @@ if __name__ == "__main__":
             
             # create tfrecords for bert
             if args.data == 'train':
-                output_dir = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', 'train', f'{k_value}')
+                output_dir = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', f'{k_value}', 'train')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
                 input_file = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'train_dataset.tsv')
@@ -982,7 +982,7 @@ if __name__ == "__main__":
                 create_tfrecords(input_file, output_dir, k_value, args.step, args.max_read_length, kmer_vector_length, dict_kmers, labels_mapping, \
                     args.masked_lm_prob, dnabert=True, update_labels=True, bert_step='regular', no_label=False, dataset_type='sim', bert=True)
 
-                output_dir = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', 'val', f'{k_value}')
+                output_dir = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'tfrecords', f'{k_value}', 'val')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
                 input_file = os.path.join(args.output_dir, 'datasets', f'train-{args.datadirname}', 'val_dataset.tsv')
