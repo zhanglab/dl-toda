@@ -912,7 +912,7 @@ if __name__ == "__main__":
 
             if args.data == 'train':
                 # get sequences for training and validation datasets
-                CreateTrainValSets(neg_data+neg_genome_data, all_train_data, all_val_data)
+                CreateTrainValSets(neg_data, all_train_data, all_val_data)
                 print(f'all val: {len(all_val_data)}')
                 print(f'all train: {len(all_train_data)}')
 
