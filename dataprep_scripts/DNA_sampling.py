@@ -484,23 +484,20 @@ def GetSequences(args, labels, num, sequences, info):
     for label in labels:
         genome_id = info[label]
         if genome_id not in os.listdir(os.path.join(args.input_dir, 'ncbi_database')):
-            print(f'genome {genome_id} not in database')
             GetGenomeAndAnnot(args, genome_id)
             genomes_kept = PrepareFasta([genome_id])
-            assert len(genomes_kept) == 1
-        if not os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')):
-            print(genome_id)
-        fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
-        starts, ends = sampling(length=fasta.full_genome_length, kmer=1, sampling_rate=0.5)
-        sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
-        cuts = cut_no_overlap(length=fasta.full_genome_length, kmer=1)
-        cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
-        all_sequences = sam_sequences + cut_sequences
-        all_starts = starts + seq_starts
-        all_ends = ends + seq_ends
-        to_shuffle = list(zip(all_sequences, all_starts, all_ends))
-        random.shuffle(to_shuffle)
-        sequences[label] = to_shuffle[:num]
+        if os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')):
+            fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
+            starts, ends = sampling(length=fasta.full_genome_length, kmer=1, sampling_rate=0.5)
+            sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
+            cuts = cut_no_overlap(length=fasta.full_genome_length, kmer=1)
+            cut_sequences, seq_starts, seq_ends = CutGenome(cuts, fasta.full_genome_seq)
+            all_sequences = sam_sequences + cut_sequences
+            all_starts = starts + seq_starts
+            all_ends = ends + seq_ends
+            to_shuffle = list(zip(all_sequences, all_starts, all_ends))
+            random.shuffle(to_shuffle)
+            sequences[label] = to_shuffle[:num]
 
 
 def GetGenomeSequence(args, genome, fasta):
