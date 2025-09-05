@@ -666,11 +666,10 @@ def get_node_by_rank(tree, rank, name, gtdb):
 
 
 def GetMash(args):
-    mash_files = glob.glob(args.mash)
-    print(mash_files[:10])
+    mash_files = os.listdir(args.mash)
     mash_dist = {}
     for i in range(len(mash_files)):
-        with open(mash_files[i], 'r') as f:
+        with open(os.path.join(args.mash, mash_files[i]), 'r') as f:
             for line in f:
                 test_genome = line.rstrip().split('\t')[0].split('/')[-2]
                 dist = line.rstrip().split('\t')[2]
