@@ -486,8 +486,7 @@ def GetSequences(args, labels, num, sequences, info):
         if genome_id not in os.listdir(os.path.join(args.input_dir, 'ncbi_database')):
             GetGenomeAndAnnot(args, genome_id)
             genomes_kept = PrepareFasta([genome_id])
-        print(genome_id, os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'), os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')))
-        if os.path.exists(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna')):
+        if len(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))) == 1:
             fasta = Fasta(glob.glob(os.path.join(args.input_dir, 'ncbi_database', genome_id, 'ncbi_dataset/data', genome_id, 'updated*.fna'))[0])
             starts, ends = sampling(length=fasta.full_genome_length, kmer=1, sampling_rate=0.5)
             sam_sequences = SampleGenome(starts, ends, fasta.full_genome_seq)
@@ -497,7 +496,6 @@ def GetSequences(args, labels, num, sequences, info):
             all_starts = starts + seq_starts
             all_ends = ends + seq_ends
             to_shuffle = list(zip(all_sequences, all_starts, all_ends))
-            print(f'genome {genome_id}\t{len(to_shuffle)}')
             random.shuffle(to_shuffle)
             sequences[label] = to_shuffle[:num]
 
