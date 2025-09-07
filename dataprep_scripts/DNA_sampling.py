@@ -1085,7 +1085,9 @@ if __name__ == "__main__":
         # get gtdb info
         genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
         genome2tax = {genomes[i]: gtdb_taxonomy[i] for i in range(len(genomes))}
-
+        for k, v in genome2tax.items():
+            print(k, v)
+            break
         # load information about genomes 
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
@@ -1109,6 +1111,7 @@ if __name__ == "__main__":
             outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
             for genome_id, genome_accuracy in accuracy.items():
                 outf.write(f'{genome_id}\t{genome_accuracy}')
+                print(genome2tax[genome_id])
                 genome_tax = genome2tax[genome_id].split('\t')[3].split(';')
                 # genome_tax = info[genome_id].split('\t')[3].split(';')
                 for i in range(len(genome_tax)):
