@@ -1082,6 +1082,10 @@ if __name__ == "__main__":
                 args.masked_lm_prob, dnabert=True, update_labels=True, bert_step=None, no_label=False, dataset_type='sim', bert=False)
                     
     if args.testing_summary:
+        # get gtdb info
+        genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
+        genome2tax = {genomes[i: gtdb_taxonomy[i]] for i in range(len(genomes))}
+
         # load information about genomes 
         with open(args.info_file, 'r') as f:
             info = {line.rstrip().split('\t')[1]: line.rstrip() for line in f.readlines()} 
@@ -1105,11 +1109,12 @@ if __name__ == "__main__":
             outf = open(os.path.join(args.output_dir, f'results_summary_{args.confidence_score}.tsv'), 'w')
             for genome_id, genome_accuracy in accuracy.items():
                 outf.write(f'{genome_id}\t{genome_accuracy}')
-                genome_tax = info[genome_id].split('\t')[3].split(';')
+                genome_tax = genome2tax[genome_id].split('\t')[3].split(';')
+                # genome_tax = info[genome_id].split('\t')[3].split(';')
                 for i in range(len(genome_tax)):
                     outf.write(f'\t{genome_tax[i].split("__")[1]}')
                 if args.mash:
-                    outf.write(f'\t{genome_tax[i]}\t{mash_results[genome_id]}')
+                    outf.write(f'\t{mash_results[genome_id]}')
                 outf.write('\n')
 
 
