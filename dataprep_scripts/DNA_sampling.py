@@ -1112,8 +1112,7 @@ if __name__ == "__main__":
             for genome_id, genome_accuracy in accuracy.items():
                 outf.write(f'{genome_id}\t{genome_accuracy}')
                 print(genome2tax[genome_id])
-                genome_tax = genome2tax[genome_id].split('\t')[3].split(';')
-                # genome_tax = info[genome_id].split('\t')[3].split(';')
+                genome_tax = genome2tax[genome_id].split(';')
                 for i in range(len(genome_tax)):
                     outf.write(f'\t{genome_tax[i].split("__")[1]}')
                 if args.mash:
