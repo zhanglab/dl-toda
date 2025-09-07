@@ -1084,7 +1084,7 @@ if __name__ == "__main__":
     if args.testing_summary:
         # get gtdb info
         genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
-        genome2tax = {genomes[i: gtdb_taxonomy[i]] for i in range(len(genomes))}
+        genome2tax = {genomes[i]: gtdb_taxonomy[i] for i in range(len(genomes))}
 
         # load information about genomes 
         with open(args.info_file, 'r') as f:
