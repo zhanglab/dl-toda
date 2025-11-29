@@ -70,7 +70,7 @@ def prepare_meta_data(args):
                 handle = open(args.input, 'r')
             # with gzip.open(args.input_fastq, 'rt') as handle:
             content = handle.readlines()
-            print('content', conten[:10])
+            print('content', content[:10])
             reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
             print('reads',reads[:10])
             for count, rec in enumerate(reads, 1):
