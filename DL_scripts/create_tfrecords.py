@@ -58,7 +58,6 @@ def create_meta_tfrecords(args, kmer_vector, writer, outfile):
     serialized = example.SerializeToString()
     writer.write(serialized)
 
-
 def prepare_meta_data(args):
         output_prefix = '.'.join(args.input.split('/')[-1].split('.')[0:-2]) if args.input[-2:] == 'gz' else '.'.join(args.input.split('/')[-1].split('.')[0:-1])
         output_tfrec = os.path.join(args.output_dir, output_prefix + '.tfrec')
@@ -70,13 +69,12 @@ def prepare_meta_data(args):
                 handle = open(args.input, 'r')
             # with gzip.open(args.input_fastq, 'rt') as handle:
             content = handle.readlines()
-            print('content', content[:10])
             reads = [''.join(content[j:j+4]) for j in range(0, len(content), 4)]
             print('reads',reads[:10])
             for count, rec in enumerate(reads, 1):
                 read = rec.split('\n')[1].rstrip()
                 read_id = rec.split('\n')[0].rstrip()
-                dna_list = prepare_input_data(args, read, args.k_value, args.step, args.max_read_length, args.dict_kmers)
+                dna_list = prepare_input_data(read, args.k_value, args.step, args.max_read_length, args.dict_kmers)
 
                 if len(dna_list) > args.kmer_vector_length:
                     num_parts = math.ceil(len(dna_list) / args.kmer_vector_length)
