@@ -75,7 +75,7 @@ def prepare_meta_data(args):
             for count, rec in enumerate(reads, 1):
                 read = rec.split('\n')[1].rstrip()
                 read_id = rec.split('\n')[0].rstrip()
-                dna_list = prepare_input_data(args, read)
+                dna_list = prepare_input_data(args, read, args.k_value, args.step, args.max_read_length, args.dict_kmers)
 
                 if len(dna_list) > args.kmer_vector_length:
                     num_parts = math.ceil(len(dna_list) / args.kmer_vector_length)
@@ -277,6 +277,9 @@ def create_tfrecords(input_file, output_dir, k_value, step, read_length, kmer_ve
                         label = line.rstrip().split('\t')[0]
                         dna_sequence = line.rstrip().split('\t')[4]
                         dna_list = prepare_input_data(dna_sequence, k_value, step, read_length, dict_kmers) 
+                        print(label)
+                        print(dna_sequence)
+                        print(dna_list)
                         # dna_sequence = line.rstrip().split('\t')[1].split(" ")
                         # parse dna sequence into kmers
                         # dna_list = [args.dict_kmers[kmer] if kmer in dict_kmers else dict_kmers['[UNK]'] for kmer in dna_sequence]
@@ -411,8 +414,8 @@ def main():
 
     print(args)
 
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
+    # if not os.path.exists(args.output_dir):
+    #     os.makedirs(args.output_dir)
 
     if args.update_labels:
         labels_mapping = dict()
