@@ -32,7 +32,8 @@ def wrap_weights(value):
 def create_meta_tfrecords(args, kmer_vector, writer, outfile):
 
     if args.bert:
-        input_ids, attention_mask, position_ids, token_type_ids, input_ids_size = prepare_data_for_bert(args, kmer_vector)
+        # input_ids, attention_mask, position_ids, token_type_ids, input_ids_size = prepare_data_for_bert(args, kmer_vector)
+        input_ids, attention_mask, position_ids, token_type_ids, input_ids_size = prepare_data_for_bert(kmer_vector, args.kmer_vector_length, args.bert_step, args.masked_lm_prob, args.dict_kmers)
         # print(input_ids, attention_mask, position_ids, token_type_ids, kmer_vector_size, input_ids_size)
         outfile.write(f'{len(kmer_vector)}\t{input_ids_size}\n')
         tfrecord_data = \
