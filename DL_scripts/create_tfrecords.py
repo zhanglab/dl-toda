@@ -416,8 +416,8 @@ def main():
 
     print(args)
 
-    # if not os.path.exists(args.output_dir):
-    #     os.makedirs(args.output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     if args.update_labels:
         labels_mapping = dict()
