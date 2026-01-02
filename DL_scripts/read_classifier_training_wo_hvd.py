@@ -422,6 +422,14 @@ def testing_step(model_type, data, num_labels, val_accuracy, val_loss, loss, mod
 @tf.function
 def get_embeddings(model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None, bert_step=None):
     training = False
+    if nvidia_dali:
+        input_ids, attention_mask, position_ids, token_type_ids, labels = data
+    else:
+        input_ids = data["input_ids"]
+        attention_mask = data["attention_mask"]
+        token_type_ids = data["token_type_ids"]
+        position_ids = data["position_ids"]
+        labels = data["labels"]
     if bert_step in ['finetuning', 'regular']:
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
 
