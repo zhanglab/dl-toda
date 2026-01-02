@@ -431,7 +431,7 @@ def get_embeddings(model_type, data, num_labels, val_accuracy, val_loss, loss, m
         position_ids = data["position_ids"]
         labels = data["labels"]
     if bert_step in ['finetuning', 'regular']:
-        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels, output_hidden_states=True)
 
     return outputs
 
@@ -720,9 +720,11 @@ def main():
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
                         # get token embeddings
                         outputs = get_embeddings(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+                        print(outputs)
                         token_embeddings = outputs.last_hidden_state
                         print(token_embeddings)
                         print(token_embeddings.shape)
+                        # shape : (batch_size, sequence_length, hidden_size)
                 elif args.model_type == "AlexNet":
                     testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
