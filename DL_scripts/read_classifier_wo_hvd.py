@@ -194,7 +194,6 @@ def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder)
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-# def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
 def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
     training = False
 
@@ -209,7 +208,7 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
             labels = data["labels"]
 
     if bert_step in ['finetuning', 'regular']:
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, output_hidden_states=True)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
@@ -240,7 +239,10 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
     # if target_label:
     #     label_prob = tf.gather(probs, target_label, axis=1)
 
-    return pred_labels, pred_probs, labels
+    if model_type == 'BERT':
+        return pred_labels, pred_probs, labels, outputs
+    else:
+        return pred_labels, pred_probs, labels
 
 
 def main():
@@ -270,8 +272,12 @@ def main():
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
+    parser.add_argument('--sequences_file', type=str, help='path to tsv or fna file', required=True)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
     args = parser.parse_args()
+
+    # process one sequence at a time to get embeddings
+    args.batch_size = 1
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
@@ -282,11 +288,20 @@ def main():
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
-    # get vocabulary size
+    # get vocabulary
+    kmers = []
+    vocab = {}
     if args.model_type != 'BERT':
         with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
-            content = f.readlines()
-            vocab_size = len(content)
+            for idx, line in enumerate(f,0):
+                vocab[idx] = line.rstrip()
+                if line.rstrip() not in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']:
+                    kmers.append(line.rstrip())
+            vocab_size = len(vocab)
+
+    print(kmers)
+    print(vocab)
+    print(len(kmers))
 
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
@@ -336,6 +351,12 @@ def main():
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
 
+    # get id and sequence of reads
+    reads_seq = {}
+    with open(args.sequences_file, 'r') as f:
+        content = f.readlines()
+        reads_seq = {i: content[i].rstrip().split('\t')[1] for i in range(1, len(content)+1, 1)}
+
     if args.nvidia_dali:
         # get nvidia dali indexes
         test_idx_files = sorted(glob.glob(os.path.join(args.tfrecords, 'idx_files', '*.idx')))
@@ -382,8 +403,25 @@ def main():
             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
             # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
             # batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-            batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
+            if args.model_type == 'BERT':
+                batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
+                token_embeddings = outputs.hidden_states
+                print(token_embeddings)
+                print(token_embeddings.shape)   # shape : (batch_size, sequence_length, hidden_size)
+                seq_ids = data["input_ids"].numpy()[0]
+                print(seq_ids)
+                tokens = [vocab[i] for i in seq_ids]
+                assert '[UKN]' not in tokens
+                # reconstruct original sequence
+                dna_seq = tokens[1]
+                for j in range(2, len(tokens), 1):
+                    if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
+                        dna_seq += tokens[j][-1]
+                print(dna_seq)
+                assert dna_seq == reads_seq[batch], f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
 
+            else:
+                batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
