@@ -196,7 +196,7 @@ def create_tfrecords(args):
             with open(args.input, 'r') as f:
                 for count, line in enumerate(f):
                     if args.dnabert:
-                        assert len(line.rstrip().split('\t')) == 2, f'line {count+1}'
+                        assert len(line.rstrip().split('\t')) == 5, f'line {count+1}'
                         label = line.rstrip().split('\t')[0]
                         dna_sequence = line.rstrip().split('\t')[1].split(" ")
                         # parse dna sequence into kmers
