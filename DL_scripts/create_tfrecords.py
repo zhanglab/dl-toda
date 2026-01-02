@@ -434,7 +434,7 @@ def main():
             json.dump(args.dict_kmers, f)
 
     if args.dataset_type == "sim":
-        create_tfrecords(input_file, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
+        create_tfrecords(args.input, args.output_dir, args.k_value, args.step, args.max_read_length, args.kmer_vector_length, args.dict_kmers, args.labels_mapping, \
         args.masked_lm_prob, dnabert=args.dnabert, update_labels=args.update_labels, bert_step=args.bert_step, no_label=args.no_label, dataset_type='sim')
 
     elif args.dataset_type == "meta":
