@@ -720,8 +720,7 @@ def main():
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
                         # get token embeddings
                         outputs = get_embeddings(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
-                        print(outputs)
-                        token_embeddings = outputs.last_hidden_state
+                        token_embeddings = outputs.hidden_states
                         print(token_embeddings)
                         print(token_embeddings.shape)
                         # shape : (batch_size, sequence_length, hidden_size)
