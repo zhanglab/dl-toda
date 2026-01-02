@@ -690,7 +690,7 @@ def main():
             if args.model_type == "BERT" and args.bert_step == "pretraining":
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
             else:
-                print(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
+                print(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
 
