@@ -419,6 +419,14 @@ def testing_step(model_type, data, num_labels, val_accuracy, val_loss, loss, mod
     val_loss.update_state(loss_value)
 
 
+@tf.function
+def get_embeddings(model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None, bert_step=None):
+    training = False
+    if bert_step in ['finetuning', 'regular']:
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+
+    return outputs
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tfrecords', type=str, help='path to training tfrecords', required=True)
@@ -690,7 +698,6 @@ def main():
             if args.model_type == "BERT" and args.bert_step == "pretraining":
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
             else:
-                print(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
 
 
@@ -703,6 +710,11 @@ def main():
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask, bert_step=args.bert_step)
                     else:
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+                        # get token embeddings
+                        outputs = get_embeddings(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+                        token_embeddings = outputs.last_hidden_state
+                        print(token_embeddings)
+                        print(token_embeddings.shape)
                 elif args.model_type == "AlexNet":
                     testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
@@ -750,6 +762,9 @@ def main():
                             best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
+                        # # get token embeddings
+                        # outputs = get_embeddings(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+
                     break
 
             #     # save weights every 5 epochs just for safety precautions
