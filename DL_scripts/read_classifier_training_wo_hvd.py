@@ -56,6 +56,45 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
+# implement early stopping
+best_val_accuracy = np.Inf
+patience = 0
+best_weights = None
+best_loss = np.Inf
+stop_training = False
+found_min = False
+min_epoch = 0
+
+def on_epoch_end(epoch, test_loss, test_accuracy, optimizer, model, init_lr):
+    global patience
+    global best_loss
+    global best_val_accuracy
+    global min_epoch
+    global found_min
+    global stop_training
+    global best_weights
+
+    val_loss = test_loss.result()
+    val_accuracy = test_accuracy.result()
+
+    if patience == 10:
+        if optimizer.learning_rate == init_lr:
+            optimizer.learning_rate = init_lr / 10
+            patience = 0
+        else:
+            stop_training = True
+    else:
+        if val_loss < best_loss:
+            best_loss = val_loss
+            best_val_accuracy = val_accuracy
+            best_weights = model.get_weights()
+            patience = 0 # Reset wait counter
+            min_epoch = epoch
+            found_min = True
+        else:
+            patience += 1
+
+
 # define the DALI pipeline fo CNN and LSTM
 @pipeline_def
 def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, num_gpus, training=True):
@@ -95,21 +134,19 @@ def pretraining_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_i
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     # "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "labels": tfrec.VarLenFeature([], tfrec.int64, 0)})
                                      # "next_sentence_label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
-    # token_type_ids = inputs["token_type_ids"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
     position_ids = inputs["position_ids"].gpu()
     labels = inputs['labels'].gpu()
     # next_sentence_label = inputs["next_sentence_label"].gpu()
 
-    # return (input_ids, attention_mask, token_type_ids, labels, next_sentence_label)
-    # return (input_ids, attention_mask, token_type_ids, labels)
-    return (input_ids, attention_mask, position_ids, labels)
+    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
 
 
 # define the BERT DALI pipeline for finetuning
@@ -127,19 +164,17 @@ def finetuning_bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     # "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
-    # token_type_ids = inputs["token_type_ids"].gpu()
+    token_type_ids = inputs["token_type_ids"].gpu()
     position_ids = inputs["position_ids"].gpu()
     labels = inputs["labels"].gpu()
 
-    # return (input_ids, attention_mask, token_type_ids, labels)
-    return (input_ids, attention_mask, position_ids, labels)
-
+    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
 
 
 class DALIPreprocessor(object):
@@ -160,8 +195,8 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         if args.model_type == "BERT" and args.bert_step == 'pretraining':
             self.pipe = pretraining_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
@@ -169,8 +204,8 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         
         else:
             self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
@@ -183,44 +218,6 @@ class DALIPreprocessor(object):
 
     def get_device_dataset(self):
         return self.dalidataset
-
-
-best_val_accuracy = np.Inf
-patience = 0
-best_weights = None
-best_loss = np.Inf
-stop_training = False
-found_min = False
-min_epoch = 0
-
-def on_epoch_end(epoch, test_loss, test_accuracy, optimizer, model, init_lr):
-    global best_val_accuracy
-    global patience
-    global best_weights
-    global best_loss
-    global stop_training
-    global found_min
-    global min_epoch
-
-    val_loss = test_loss.result()
-    val_accuracy = test_accuracy.result()
-
-    if patience == 10:
-        if optimizer.learning_rate == init_lr:
-            optimizer.learning_rate = init_lr / 10
-            patience = 0
-        else:
-            stop_training = True
-    else:
-        if val_loss < best_loss:
-            best_loss = val_loss
-            best_val_accuracy = val_accuracy
-            best_weights = model.get_weights()
-            patience = 0 # Reset wait counter
-            min_epoch = epoch
-            found_min = True
-        else:
-            patience += 1
 
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
@@ -246,29 +243,28 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([1], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        # return {"input_ids": parsed_example['input_ids'], "attention_mask": parsed_example['attention_mask'], "label": parsed_example['label']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+
 
     def load_tfrecords_for_pretraining(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          # "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "labels": tf.io.FixedLenFeature([args.vector_size], tf.int64)
           # "next_sentence_label": tf.io.FixedLenFeature([], tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
         # not returning data for NSP task
-        # return {"input_ids": parsed_example['input_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+
 
     """ Return data in TFRecords """
     fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning, 'pretraining': load_tfrecords_for_pretraining}
@@ -295,24 +291,23 @@ def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
 
 @tf.function
-def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss, opt, model, first_batch, nvidia_dali=False, train_accuracy_mask=None):
+def training_step(model_type, data, num_labels, train_accuracy, loss, opt, model, first_batch, nvidia_dali=False, train_accuracy_mask=None, bert_step=None):
     training = True
     with tf.GradientTape() as tape:
 
         if model_type == 'BERT':
             if nvidia_dali:
-                # input_ids, attention_mask, token_type_ids, labels = data
-                input_ids, attention_mask, position_ids, labels = data
+                input_ids, attention_mask, position_ids, token_type_ids, labels = data
             else:
                 input_ids = data["input_ids"]
                 attention_mask = data["attention_mask"]
-                # token_type_ids = data["token_type_ids"]
+                token_type_ids = data["token_type_ids"]
                 position_ids = data["position_ids"]
                 labels = data["labels"]
             
-            if bert_step == "finetuning":
+            if bert_step in ['finetuning', 'regular']:
                 # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-                outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+                outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 logits = outputs.logits
                 # logits = model(**data).logits
                 # per_example_loss = model(**data).loss
@@ -322,7 +317,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
 
             elif bert_step == "pretraining":
                 # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-                outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+                outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # shape of logits: (batch_size, max_embedding_size==512, vocab_size)
                 logits = outputs.logits
                 loss_value = outputs.loss[0]
@@ -375,33 +370,30 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
     return loss_value
 
 @tf.function
-def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None):
+def testing_step(model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None, bert_step=None):
     training = False
     
     if model_type == 'BERT':
         if nvidia_dali:
-            # input_ids, attention_mask, token_type_ids, labels = data
-            input_ids, attention_mask, position_ids, labels = data
+            input_ids, attention_mask, position_ids, token_type_ids, labels = data
         else:
             input_ids = data["input_ids"]
             attention_mask = data["attention_mask"]
-            # token_type_ids = data["token_type_ids"]
+            token_type_ids = data["token_type_ids"]
             position_ids = data["position_ids"]
             labels = data["labels"]
 
-        if bert_step == "finetuning":
-            # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
-            outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        if bert_step in ['finetuning', 'regular']:
+            outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
             logits = outputs.logits
             # logits = model(**data).logits
             # loss_value = model(**data).loss
-            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            # predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
             probs = tf.nn.softmax(logits, axis=-1)
             loss_value = loss(labels, probs)
         
         elif bert_step == "pretraining":
-            outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
-            # outputs = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+            outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
             logits = outputs.logits
             loss_value = outputs.loss[0]
             mask_token_index_1 = tf.where((input_ids == 4))
@@ -434,10 +426,10 @@ def main():
     parser.add_argument('--val_tfrecords', type=str, help='path to validation tfrecords', required=True)
     parser.add_argument('--val_idx_files', type=str, help='path to validation dali index files')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels')
+    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
-    parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning', 'regular'], required=('BERT' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001')
@@ -504,11 +496,21 @@ def main():
     ckpt_dir = os.path.join(args.output_dir, f'ckpts-rnd-{args.rnd}')
     if not os.path.isdir(ckpt_dir):
         os.makedirs(ckpt_dir)
+    
+    # create directory for storing models in keras format
+    models_dir = os.path.join(args.output_dir, f'models-keras-rnd-{args.rnd}')
+    if not os.path.isdir(models_dir):
+        os.makedirs(models_dir)
 
     # create directory for storing logs
     tensorboard_dir = os.path.join(args.output_dir, f'logs-rnd-{args.rnd}')
     if not os.path.exists(tensorboard_dir):
         os.makedirs(tensorboard_dir)
+
+    if args.model_type == 'BERT':
+        pretrained_dir= os.path.join(args.output_dir, f'pretrained-models-{args.rnd}')
+        if not os.path.isdir(pretrained_dir):
+            os.makedirs(pretrained_dir)
 
     writer = tf.summary.create_file_writer(tensorboard_dir)
     td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
@@ -518,13 +520,10 @@ def main():
     epoch = args.epoch_to_resume + 1 if args.resume else 1
 
     # set up the optimizer
-    if args.model_type == 'BERT':
+    if args.optimizer == 'Adam':
         opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
-    else:
-        if args.optimizer == 'Adam':
-            opt = tf.keras.optimizers.Adam(args.init_lr)
-        elif args.optimizer == 'SGD':
-            opt = tf.keras.optimizers.SGD(args.init_lr)
+    elif args.optimizer == 'SGD':
+        opt = tf.keras.optimizers.SGD(learning_rate=args.init_lr)
 
     # prevent numeric underflow when using float16
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
@@ -538,21 +537,21 @@ def main():
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
-            if args.pretrained:
-                model = TFBertForSequenceClassification(config=bert_config)
-                # freeze all the layers except the classifier layer (the pooler layer is not accessible)
-                model.layers[0].trainable = False
-            else:
-                model = TFBertForSequenceClassification(config=bert_config)
+            # if args.pretrained:
+            model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+            # freeze all the layers except the classifier layer (the pooler layer is not accessible)
+            # model.layers[0].trainable = False
         elif args.bert_step == "pretraining":
             if args.pretrained:
                 model = TFBertForMaskedLM.from_pretrained(args.pretrained, config=bert_config)
             else:
                 model = TFBertForMaskedLM(config=bert_config)
+        elif args.bert_step == "regular":
+            model = TFBertForSequenceClassification(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
-    if args.resume and args.model_type != 'BERT':
+    if args.resume:
         # if args.model_type == 'BERT_HUGGINGFACE' and args.bert_step == "finetuning":
         #     checkpoint = tf.train.Checkpoint(encoder=model)
         #     checkpoint.read(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).assert_consumed()
@@ -569,11 +568,7 @@ def main():
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
     train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
     val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
-    print(args.train_tfrecords)
-    print(args.val_tfrecords)
-    print('train_files', train_files)
-    print('val_files', val_files)
-    print('train_num_reads', train_num_reads)
+
     if args.nvidia_dali:
         nvidia_dali=True
         # get nvidia dali indexes
@@ -590,7 +585,7 @@ def main():
     else:
         nvidia_dali=False
         if args.model_type == 'BERT':
-            if args.bert_step == 'finetuning':
+            if args.bert_step in ['finetuning', 'regular']:
                 args.datatype = 'finetuning'
             else:
                 args.datatype = 'pretraining'
@@ -637,11 +632,13 @@ def main():
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
-        if args.bert_step == "pretraining": 
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask)
-        else:
-            loss_value = training_step(args.model_type, args.bert_step, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
-
+        if args.model_type == "BERT":
+            if args.bert_step == "pretraining": 
+                loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask, bert_step=args.bert_step)
+            else:
+                loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+        elif args.model_type == "AlexNet":
+            loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali)
         # if batch == 1:
         #     all_labels = [labels]
         #     all_input_ids = [input_ids]
@@ -670,7 +667,7 @@ def main():
     #     for i in range(len(all_labels)):
     #         f.write(f'{all_labels[i]}\n')
         if batch % 100 == 0:
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}\t{train_accuracy_mask.result().numpy()*100}')
             else:
                 print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Training loss: {loss_value} - Training accuracy: {train_accuracy.result().numpy()*100}')
@@ -681,11 +678,11 @@ def main():
                 tf.summary.scalar("learning_rate", opt.learning_rate, step=batch)
                 tf.summary.scalar("train_loss", loss_value, step=batch)
                 tf.summary.scalar("train_accuracy", train_accuracy.result().numpy(), step=batch)
-                if args.bert_step == "pretraining":
+                if args.model_type == "BERT" and args.bert_step == "pretraining":
                     tf.summary.scalar("train_accuracy_mask", train_accuracy_mask.result().numpy(), step=batch)
                 writer.flush()
 
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\t{train_accuracy_mask.result().numpy()}\n')
             else:
                 td_writer.write(f'{epoch}\t{batch}\t{opt.learning_rate.numpy()}\t{loss_value}\t{train_accuracy.result().numpy()}\n')
@@ -695,10 +692,13 @@ def main():
         if batch % nstep_per_epoch == 0:
             # evaluate model
             for _, data in enumerate(val_input.take(num_val_steps)):
-                if args.bert_step == "pretraining":
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask)
-                else:
-                    testing_step(args.model_type, args.bert_step, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
+                if args.model_type == "BERT":
+                    if args.bert_step == "pretraining":
+                        testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask, bert_step=args.bert_step)
+                    else:
+                        testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
+                elif args.model_type == "AlexNet":
+                    testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
             # adjust learning rate
             if args.lr_decay:
@@ -707,19 +707,19 @@ def main():
                     new_lr = current_lr / 2
                     opt.learning_rate = new_lr
 
-            print(f'Epoch: {epoch} - Step: {batch} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\n')
-    
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
+                print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}\t{val_accuracy_mask.result().numpy()*100}')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
+            else:
+                print(f'Epoch: {epoch} - Step: {batch} - learning rate: {opt.learning_rate.numpy()} - Validation loss: {val_loss.result().numpy()} - Validation accuracy: {val_accuracy.result().numpy()*100}')
+                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
+
             with writer.as_default():
                 tf.summary.scalar("val_loss", val_loss.result().numpy(), step=epoch)
                 tf.summary.scalar("val_accuracy", val_accuracy.result().numpy(), step=epoch)
-                if args.bert_step == "pretraining":
+                if args.model_type == "BERT" and args.bert_step == "pretraining":
                     tf.summary.scalar("val_accuracy_mask", val_accuracy_mask.result().numpy(), step=epoch)
                 writer.flush()
-
-            if args.bert_step == "pretraining":
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\t{val_accuracy_mask.result().numpy()}\n')
-            else:
-                vd_writer.write(f'{epoch}\t{batch}\t{val_loss.result().numpy()}\t{val_accuracy.result().numpy()}\n')
 
 
             if args.early_stopping:
@@ -736,31 +736,32 @@ def main():
                 if stop_training or epoch == args.epochs:
                     if found_min:
                         model.set_weights(best_weights)
-                        model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}-best'))
-                        model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}-best'))
-                        best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                        best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
+                        model.save(os.path.join(models_dir, f'model-rnd-{args.rnd}-{epoch}-best'))
+                        if args.model_type == 'BERT':
+                            model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}-best'))
+                        else:
+                            best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}-best'))
                         with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                             f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
                     break
 
-                # save weights every 5 epochs just for safety precautions
-                if epoch % 1 == 0:
-                    checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
-                    model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'))
-                    model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
+            #     # save weights every 5 epochs just for safety precautions
+            #     if epoch % 1 == 0:
+            #         checkpoint.save(os.path.join(ckpt_dir, f'ckpt-{epoch}'))
+            #         model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}-{epoch}'))
+            #         model.save_pretrained(os.path.join(args.output_dir, f'pretrained-model-{args.rnd}-{epoch}'))
 
-
-            else:
-                # save weights
-                checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
-                model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
+            # else:
+            #     # save weights
+            #     checkpoint.save(os.path.join(ckpt_dir, 'ckpt'))
+            #     model.save(os.path.join(args.output_dir, f'model-rnd-{args.rnd}'))
 
             # reset metrics variables at the end of epoch
             val_loss.reset_states()
             train_accuracy.reset_states()
             val_accuracy.reset_states()
-            if args.bert_step == "pretraining":
+            if args.model_type == "BERT" and args.bert_step == "pretraining":
                 train_accuracy_mask.reset_states()
                 val_accuracy_mask.reset_states()
 
@@ -802,6 +803,8 @@ def main():
                 f'Batch size per gpu\t{args.batch_size}\n'
                 f'Global batch size\t{args.batch_size}\nNumber of gpus\t{len(gpus)}\n'
                 f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
+                f'Training set\t{args.train_tfrecords}\n'
+                f'Validation set\t{args.val_tfrecords}\n'
                 f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
                 f'Number of steps for validation dataset\t{num_val_steps}\n'
                 f'Number of epochs done\t{epoch}\n'

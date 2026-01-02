@@ -13,13 +13,23 @@ from vis_scripts.parse_tool_output import *
 from dataprep_scripts.ncbi_tax_utils import parse_nodes_file, parse_names_file
 
 def LoadReads(args):
+    # get reads from fastq file
     if args.fastq[-2:] == 'gz':
         with gzip.open(args.fastq, 'rt') as handle:
             content = handle.readlines()
     else:
         with open(args.fastq, 'r') as handle:
             content = handle.readlines()
-    args.reads = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
+    reads = [''.join(content[i:i+4]) for i in range(0, len(content), 4)]
+    args.reads = {reads[i].split('\n')[0] : reads[i] for i in range(len(reads))}
+    del reads
+    del content
+
+    # get reads id from reads in tfrecords
+    args.reads_id = []
+    with open(args.reads_id_file, 'r') as handle:
+        for line in handle:
+            args.reads_id.append(line.rstrip().split('\t')[0])
 
 
 def GetAveQualScore(base_qual_scores):
@@ -39,35 +49,43 @@ def ParseData(args, labels, process_id):
             if float(line.rstrip().split('\t')[1]) >= args.cutoff:
                 if line.rstrip().split('\t')[0] in labels:
                     labels_count[line.rstrip().split('\t')[0]].append(count)
-
+    print('parsing based on confidence score done')
+    
     with open(out_filename, 'w') as out_f:
         for label, reads_idx in labels_count.items():
+            print(f'# number of reads classified to label {label}: {len(reads_idx)}')
             if args.binning:
-                fq_filename = os.path.join(args.output_dir, f'bin-{label}.fq')
-                sum_filename = os.path.join(args.output_dir, f'summary-{label}.tsv')
-                for idx in reads_idx:                    
+                fq_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-bin-{label}.fq')
+                sum_filename = os.path.join(args.output_dir, '-'.join(args.input.split('/')[-1].split('-')[:-1]) + f'-summary-{label}.tsv')
+                if os.path.exists(fq_filename):
+                    os.remove(fq_filename)
+                if os.path.exists(sum_filename):
+                    os.remove(sum_filename)
+                for idx in reads_idx:
+                    # get read id
+                    read_id = args.reads_id[idx]        
                     # get read based quality score
-                    base_qual_scores = args.reads[idx].split('\n')[3]
+                    base_qual_scores = args.reads[read_id].split('\n')[3]
                     read_ave_qual_score = GetAveQualScore(base_qual_scores)
-                    
                     # get read length
-                    read_length = len(args.reads[idx].split('\n')[1])
+                    read_length = len(args.reads[read_id].split('\n')[1])
                     
                     with open(fq_filename, 'a') as out_fq:
-                        out_fq.write(''.join(args.reads[idx]))
+                        out_fq.write(''.join(args.reads[read_id]))
 
                     with open(sum_filename, 'a') as out_fs:
-                        out_fs.write(f'{args.reads[idx].split("\n")[0]}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
-
-            out_f.write(f'{label}\t{len(reads_idx)}\t{count}\n')
+                        out_fs.write(f'{read_id}\t{read_ave_qual_score}\t{math.ceil(read_ave_qual_score)}\t{read_length}\n')
+                    
+            out_f.write(f'{label}\t{len(reads_idx)}\t{count+1}\n')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='output file with classification results obtained from running DL-TODA')
     parser.add_argument('--tool', help='type of taxonomic classification tool', choices=['dl-toda', 'kraken2', 'centrifuge'])
-    parser.add_argument('--fastq', type=str, help='path to directory with fastq file', required=('--binning' in sys.argv))
-    parser.add_argument('--binning', help='bin reads', action='store_true')
+    parser.add_argument('--fastq', type=str, help='path to fastq file')
+    parser.add_argument('--reads_id_file', type=str, help='path to file containing ordered reads id')
+    parser.add_argument('--binning', help='bin reads', action='store_true', required=('--fastq' in sys.argv and '--reads_id' in sys.argv))
     parser.add_argument('--processes', type=int, help='number of processes', default=mp.cpu_count())
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--rank', type=str, help='taxonomic rank at which the analysis should be done', default='species')
