@@ -418,23 +418,6 @@ def testing_step(model_type, data, num_labels, val_accuracy, val_loss, loss, mod
     
     val_loss.update_state(loss_value)
 
-
-@tf.function
-def get_embeddings(model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=False, val_accuracy_mask=None, bert_step=None):
-    training = False
-    if nvidia_dali:
-        input_ids, attention_mask, position_ids, token_type_ids, labels = data
-    else:
-        input_ids = data["input_ids"]
-        attention_mask = data["attention_mask"]
-        token_type_ids = data["token_type_ids"]
-        position_ids = data["position_ids"]
-        labels = data["labels"]
-    if bert_step in ['finetuning', 'regular']:
-        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels, output_hidden_states=True)
-
-    return outputs
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tfrecords', type=str, help='path to training tfrecords', required=True)
@@ -718,12 +701,6 @@ def main():
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, val_accuracy_mask=val_accuracy_mask, bert_step=args.bert_step)
                     else:
                         testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
-                        # get token embeddings
-                        outputs = get_embeddings(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali, bert_step=args.bert_step)
-                        token_embeddings = outputs.hidden_states
-                        print(token_embeddings)
-                        print(token_embeddings.shape)
-                        # shape : (batch_size, sequence_length, hidden_size)
                 elif args.model_type == "AlexNet":
                     testing_step(args.model_type, data, num_labels, val_accuracy, val_loss, loss, model, nvidia_dali=nvidia_dali)
 
