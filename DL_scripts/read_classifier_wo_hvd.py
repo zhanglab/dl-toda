@@ -356,7 +356,7 @@ def main():
     with open(args.sequences_file, 'r') as f:
         content = f.readlines()
         print(len(content))
-        reads_seq = {i: content[i].rstrip().split('\t')[1] for i in range(1, len(content)+1, 1)}
+        reads_seq = {i+1: content[i].rstrip().split('\t')[1] for i in range(len(content))}
 
     if args.nvidia_dali:
         # get nvidia dali indexes
