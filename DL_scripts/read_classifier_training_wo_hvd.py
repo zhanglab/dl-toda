@@ -562,12 +562,16 @@ def main():
         checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
         checkpoint.restore(args.ckpt).expect_partial()
         # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
-
+    print('model has been defined')
     # Get training and validation tfrecords
     train_files = sorted(glob.glob(os.path.join(args.train_tfrecords, '*.tfrec')))
     val_files = sorted(glob.glob(os.path.join(args.val_tfrecords, '*.tfrec')))
+    print(f'#train_files: {len(train_files)}\n')
+    print(f'#val_files: {len(val_files)}\n')
     train_num_reads = sorted(glob.glob(os.path.join(args.train_tfrecords, '*-read_count')))
     val_num_reads = sorted(glob.glob(os.path.join(args.val_tfrecords, '*-read_count')))
+    print(f'train_num_reads: {len(train_num_reads)}\n')
+    print(f'val_num_reads: {len(val_num_reads)}\n')
 
     if args.nvidia_dali:
         nvidia_dali=True
@@ -609,7 +613,7 @@ def main():
     num_train_steps = int((train_reads_per_epoch/args.batch_size)*args.epochs)
     # compute number of steps/batches to iterate over entire validation set
     num_val_steps = int(val_reads_per_epoch/args.batch_size)
-
+    print(f'nstep_per_epoch: {nstep_per_epoch}\nnum_train_steps: {num_train_steps}\nnum_val_steps: {num_val_steps}')
     # create checkpoint object to save model
     checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
         
@@ -632,6 +636,7 @@ def main():
     # f1 = open(os.path.join(args.output_dir, f'input_ids_gpu_{hvd.rank()}'), 'ab')
     # f2 = open(os.path.join(args.output_dir, f'labels_gpu_{hvd.rank()}'), 'ab')
     for batch, data in enumerate(train_input.take(num_train_steps), 1):
+        print(f'bacth: {batch}')
         if args.model_type == "BERT":
             if args.bert_step == "pretraining": 
                 loss_value = training_step(args.model_type, data, num_labels, train_accuracy, loss, opt, model, batch == 1, nvidia_dali=nvidia_dali, train_accuracy_mask=train_accuracy_mask, bert_step=args.bert_step)
