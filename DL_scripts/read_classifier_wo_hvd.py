@@ -429,7 +429,7 @@ def main():
                 for j in range(len(tokens)):
                     if len(embeddings[tokens[j]]) != 0:
                         for k in range(len(embeddings[tokens[j]])):
-                            if embeddings[tokens[j]][k] != token_embeddings[0][j]:
+                            if np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]):
                                 print('BIG PROB')
                                 sys.exit(1)
                     else:
