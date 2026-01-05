@@ -429,6 +429,8 @@ def main():
                     print(tokens[j])
                     if len(embeddings[tokens[j]]) != 0:
                         for k in range(len(embeddings[tokens[j]])):
+                            print('first', embeddings[tokens[j]][k])
+                            print('second',token_embeddings[0][j])
                             assert np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]), f'found different embeddings for the token {tokens[j]}'
                     else:
                         embeddings[tokens[j]].append(token_embeddings[0][j])
