@@ -434,7 +434,7 @@ def main():
                     else:
                         embeddings[tokens[j]].append(token_embeddings[0][j])
                 for k, v in embeddings.items():
-                    print(k, len(set(v)))
+                    print(k, len(v))
                 sys.exit(1)
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
