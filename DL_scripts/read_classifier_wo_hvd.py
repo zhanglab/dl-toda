@@ -400,6 +400,7 @@ def main():
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+        embeddings = defaultdict(list) # key = token, value = embeddings
         for batch, data in enumerate(test_input.take(test_steps), 1):
             print(f'batch: {batch}')
             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
@@ -423,6 +424,10 @@ def main():
                 for j in range(1, len(reads_seq[batch]), 1):
                     original_dna_seq += reads_seq[batch][j][-1]
                 assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
+                # get embeddings for each token
+                for j in range(len(tokens)):
+                    embeddings[tokens[j]].append(token_embeddings[0][j])
+                print(embeddings)
                 sys.exit(1)
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
