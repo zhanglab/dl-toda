@@ -413,6 +413,8 @@ def main():
                 print(len(hidden_states))
                 print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
                 token_embeddings = hidden_states[0]
+                print(token_embeddings.shape)
+                print(token_embeddings)
                 seq_ids = data["input_ids"].numpy()[0]
                 tokens = [vocab[j] for j in seq_ids]
                 assert '[UKN]' not in tokens
