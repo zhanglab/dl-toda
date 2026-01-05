@@ -428,14 +428,10 @@ def main():
                 for j in range(len(tokens)):
                     if len(embeddings[tokens[j]]) != 0:
                         for k in range(len(embeddings[tokens[j]])):
-                            if np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]):
-                                print('BIG PROB')
-                                sys.exit(1)
+                            assert np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]), f'found different embeddings for the token {tokens[j]}'
                     else:
                         embeddings[tokens[j]].append(token_embeddings[0][j])
-                for k, v in embeddings.items():
-                    print(k, len(v))
-                sys.exit(1)
+                break
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             if batch == 1:
@@ -470,6 +466,13 @@ def main():
             print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
             print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
+
+        # save token embeddings to text file
+        data = []
+        for i in range(len(vocab)):
+            print(i, vocab[i])
+            data.append(embeddings[i])
+        np.savetxt(os.path.join(args.output_dir, 'token_embeddings.csv'), np.array(data), delimiter=',')
 
         # write results to file
         out_filename = os.path.join(args.output_dir, 'testing-results.tsv')
