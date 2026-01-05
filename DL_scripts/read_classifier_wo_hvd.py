@@ -417,13 +417,14 @@ def main():
                 # reconstruct original sequence
                 dna_seq = tokens[1]
                 for j in range(2, len(tokens), 1):
+                    print(j)
                     if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                         dna_seq += tokens[j][-1]
                 print(dna_seq)
                 print(reads_seq[batch])
                 original_dna_seq = reads_seq[batch][0]
-                for i in range(1, len(reads_seq[batch]), 1):
-                    original_dna_seq += reads_seq[batch][i][-1]
+                for j in range(1, len(reads_seq[batch])+ 1, 1):
+                    original_dna_seq += reads_seq[batch][j][-1]
                 print(original_dna_seq)
                 assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
 
