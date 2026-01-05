@@ -408,12 +408,10 @@ def main():
             if args.model_type == 'BERT':
                 batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
                 hidden_states = outputs.hidden_states
-                print(type(hidden_states))
-                print(len(hidden_states))
-                # print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
+                print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
                 token_embeddings = hidden_states[0]
+                print(token_embeddings)
                 seq_ids = data["input_ids"].numpy()[0]
-                print(seq_ids)
                 tokens = [vocab[i] for i in seq_ids]
                 assert '[UKN]' not in tokens
                 # reconstruct original sequence
@@ -421,14 +419,11 @@ def main():
                 for j in range(2, len(tokens), 1):
                     if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
                         dna_seq += tokens[j][-1]
-                print(dna_seq, len(tokens))
-                print(reads_seq[batch], len(reads_seq[batch]))
                 original_dna_seq = reads_seq[batch][0]
                 for j in range(1, len(reads_seq[batch]), 1):
                     original_dna_seq += reads_seq[batch][j][-1]
-                print(original_dna_seq)
                 assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
-
+                sys.exit(1)
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             if batch == 1:
