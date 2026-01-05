@@ -356,7 +356,7 @@ def main():
     with open(args.sequences_file, 'r') as f:
         content = f.readlines()
         print(len(content))
-        reads_seq = {i+1: content[i].rstrip().split('\t')[1] for i in range(len(content))}
+        reads_seq = {i+1: content[i].rstrip().split('\t')[1].split(' ') for i in range(len(content))}
 
     if args.nvidia_dali:
         # get nvidia dali indexes
@@ -421,7 +421,7 @@ def main():
                         dna_seq += tokens[j][-1]
                 print(dna_seq)
                 print(reads_seq[batch])
-                original_dna_seq = reads_seq[batch]
+                original_dna_seq = reads_seq[batch][0]
                 for i in range(1, len(reads_seq[batch]), 1):
                     original_dna_seq += reads_seq[batch][i][-1]
                 print(original_dna_seq)
