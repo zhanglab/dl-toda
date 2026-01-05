@@ -421,7 +421,11 @@ def main():
                         dna_seq += tokens[j][-1]
                 print(dna_seq)
                 print(reads_seq[batch])
-                assert dna_seq == reads_seq[batch], f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
+                original_dna_seq = reads_seq[batch]
+                for i in range(1, len(reads_seq[batch]), 1):
+                    original_dna_seq += reads_seq[batch][i][-1]
+                print(original_dna_seq)
+                assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
 
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
