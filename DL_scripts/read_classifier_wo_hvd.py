@@ -291,13 +291,13 @@ def main():
     # get vocabulary
     kmers = []
     vocab = {}
-    if args.model_type != 'BERT':
-        with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
-            for idx, line in enumerate(f,0):
-                vocab[idx] = line.rstrip()
-                if line.rstrip() not in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']:
-                    kmers.append(line.rstrip())
-            vocab_size = len(vocab)
+    # if args.model_type != 'BERT':
+    with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
+        for idx, line in enumerate(f,0):
+            vocab[idx] = line.rstrip()
+            if line.rstrip() not in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']:
+                kmers.append(line.rstrip())
+        vocab_size = len(vocab)
 
     print(kmers)
     print(vocab)
