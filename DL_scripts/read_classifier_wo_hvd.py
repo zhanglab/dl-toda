@@ -342,8 +342,9 @@ def main():
             opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
             checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
             checkpoint.restore(args.ckpt).expect_partial()
-    print('try to get embeddings')
-    print(model.embeddings.word_embeddings.weight)
+    # print('try to get embeddings') --> does not work with TF
+    # print(model.embeddings.word_embeddings.weight)
+    print(model.bert.embeddings.word_embeddings.weights[0])
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
     test_loss = tf.keras.metrics.Mean(name='test_loss')
