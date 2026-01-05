@@ -427,9 +427,15 @@ def main():
                 assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
                 # get embeddings for each token
                 for j in range(len(tokens)):
-                    embeddings[tokens[j]].append(token_embeddings[0][j])
-                for k, v in embeddings.items():
-                    print(k, len(v))
+                    if len(embeddings[tokens[j]]) != 0:
+                        for k in range(len(embeddings[tokens[j]])):
+                            if embeddings[tokens[j]][k] != token_embeddings[0][j]
+                                print('BIG PROB')
+                                sys.exit(1)
+                    else:
+                        embeddings[tokens[j]].append(token_embeddings[0][j])
+                # for k, v in embeddings.items():
+                #     print(k, len(set(v)))
                 sys.exit(1)
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
