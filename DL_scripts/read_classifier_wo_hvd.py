@@ -410,6 +410,7 @@ def main():
             if args.model_type == 'BERT':
                 batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
                 hidden_states = outputs.hidden_states
+                print(len(hidden_states))
                 print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
                 token_embeddings = hidden_states[0]
                 seq_ids = data["input_ids"].numpy()[0]
@@ -426,11 +427,8 @@ def main():
                 assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
                 # get embeddings for each token
                 for j in range(len(tokens)):
-                    print(tokens[j])
                     if len(embeddings[tokens[j]]) != 0:
                         for k in range(len(embeddings[tokens[j]])):
-                            print('first', embeddings[tokens[j]][k])
-                            print('second',token_embeddings[0][j])
                             assert np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]), f'found different embeddings for the token {tokens[j]}'
                     else:
                         embeddings[tokens[j]].append(token_embeddings[0][j])
