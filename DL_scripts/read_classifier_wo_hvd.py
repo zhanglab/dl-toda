@@ -20,7 +20,7 @@ import numpy as np
 import math
 import argparse
 import random
-import defaultdict
+from collections import defaultdict
 
 
 # set seed
