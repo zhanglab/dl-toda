@@ -408,7 +408,7 @@ def main():
                 batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
                 token_embeddings = outputs.hidden_states
                 print(token_embeddings)
-                print(token_embeddings.shape)   # shape : (batch_size, sequence_length, hidden_size)
+                print(token_embeddings[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
                 seq_ids = data["input_ids"].numpy()[0]
                 print(seq_ids)
                 tokens = [vocab[i] for i in seq_ids]
