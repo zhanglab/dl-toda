@@ -412,7 +412,6 @@ def main():
                 hidden_states = outputs.hidden_states
                 print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
                 token_embeddings = hidden_states[0]
-                print(token_embeddings)
                 seq_ids = data["input_ids"].numpy()[0]
                 tokens = [vocab[i] for i in seq_ids]
                 assert '[UKN]' not in tokens
@@ -434,8 +433,8 @@ def main():
                                 sys.exit(1)
                     else:
                         embeddings[tokens[j]].append(token_embeddings[0][j])
-                # for k, v in embeddings.items():
-                #     print(k, len(set(v)))
+                for k, v in embeddings.items():
+                    print(k, len(set(v)))
                 sys.exit(1)
             else:
                 batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
