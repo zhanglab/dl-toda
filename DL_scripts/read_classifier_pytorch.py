@@ -86,7 +86,7 @@ class TaxClassDataset(Dataset):
             if tokens[i] in self.tokens_dict:
                 input_ids.append(self.tokens_dict[tokens[i]])
             else:
-                input_ids.append('[UNK]')
+                input_ids.append(self.tokens_dict['[UNK]'])
         input_ids.append(self.tokens_dict['[SEP]'])
 
         # pad vector if necessary
