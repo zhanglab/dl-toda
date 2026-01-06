@@ -1,0 +1,502 @@
+import os
+import sys
+import argparse
+import json
+import glob
+import math
+import datetime
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from transformers import BertForSequenceClassification, BertConfig
+
+
+
+def train_step(inputs, model, optimizer, device):
+    input_ids, attention_mask, position_ids, token_type_ids, label = inputs
+    input_ids = input_ids.to(device)
+    attention_mask = attention_mask.to(device)
+    position_ids = position_ids.to(device)
+    token_type_ids = token_type_ids.to(device)
+    label = label.to(device)
+    # set the gradients of tensord to 0
+    optimizer.zero_grad()
+    # forward + backward + optimize
+    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
+    train_loss = outputs.loss
+    train_loss.backward()
+    optimizer.step()
+
+    _, predictions = torch.max(outputs.logits, dim=1)
+    correct = (predictions == torch.flatten(label)).sum().item()
+    train_accuracy = correct/args.batch_size
+
+    return train_loss.item(), train_accuracy
+
+def test_step(inputs, model, device):
+    input_ids, attention_mask, position_ids, token_type_ids, label = inputs
+    input_ids = input_ids.to(device)
+    attention_mask = attention_mask.to(device)
+    position_ids = position_ids.to(device)
+    token_type_ids = token_type_ids.to(device)
+    label = label.to(device)
+    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
+    test_loss = outputs.loss
+    _, predictions = torch.max(outputs.logits, dim=1)
+    label = torch.flatten(label)
+    correct = (predictions == label).sum().item()
+    test_accuracy = correct/args.batch_size
+
+    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist()
+
+# class to prepare the input data for training and testing   
+class TaxClassDataset(Dataset):
+    def __init__(self, tsv_file, tokens_file, label):
+        self.data = pd.read_csv(tsv_file, sep='\t', header=None)
+        self.tokens_dict = self.get_tokens_id(tokens_file)
+        self.label = label
+        self.max_position_embedding = 512
+
+    def get_tokens_id(self, tokens_file):
+        with open(tokens_file, 'r') as f:
+            tokens_dict = {line.rstrip(): idx for idx, line in enumerate(f.readlines())}
+        return tokens_dict
+    
+    def update_label(self, label):
+        if label == self.label:
+            label = [1]
+        else:
+            label = [0]
+        return label
+    
+    def prepare_input(self, tokens):
+        # adjust the list of tokens according to the max size allowed (max position embedding minus special tokens CLS and SEP)
+        if len(tokens) > self.max_position_embedding - 2:
+            tokens = tokens[:self.max_position_embedding - 2]
+        # replace tokens by their id
+        input_ids = [self.tokens_dict['[CLS]']] + [self.tokens_dict[k] for k in tokens] + [self.tokens_dict['[SEP]']]
+        # pad vector if necessary
+        if len(input_ids) < self.max_position_embedding:
+            num_padded_values = self.max_position_embedding - len(input_ids)
+            input_ids = input_ids + [self.tokens_dict['[PAD]']] * num_padded_values
+            attention_mask = [1]*(self.max_position_embedding - num_padded_values) + [0] * num_padded_values
+        else:
+            attention_mask = [1] * self.max_position_embedding
+
+        position_ids = torch.tensor(list(range(self.max_position_embedding)))
+        token_type_ids = torch.tensor([0] * self.max_position_embedding)
+        return torch.tensor(input_ids), torch.tensor(attention_mask), position_ids, token_type_ids
+
+    def __len__(self):
+        return list(self.data.shape)[0]
+
+    def __getitem__(self, idx):
+        tokens = self.data.iloc[idx,1].split(' ')
+        input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
+        label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
+        return input_ids, attention_mask, position_ids, token_type_ids, label
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_tsv_file', type=str, help='input file containing labels and reads from training dataset')
+    parser.add_argument('--val_tsv_file', type=str, help='input file containing labels and reads from validation dataset')
+    parser.add_argument('--test_tsv_file', type=str, help='input file containing labels and reads from testing dataset')
+    parser.add_argument('--label', type=int, help='label of interest')
+    parser.add_argument('--testing_sum_dir', help='input directory for summarizing testing results', default=os.getcwd())
+    parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
+    parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing'])
+    parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
+    parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
+    parser.add_argument('--batch_size', type=int, help='batch size', default=32)
+    parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
+    parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
+    parser.add_argument('--taxonomy', type=str, help='path to file mapping labels to taxonomy')
+    parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
+    parser.add_argument('--lc_dir', type=str, help='input directory for creating learning curves')
+    args = parser.parse_args()
+
+    start = datetime.datetime.now()
+
+    # allow usage of GPU
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(device)
+
+    # create output directory
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    if args.mode == "training":
+
+        if not os.path.isdir(os.path.join(args.output_dir, 'logs')):
+            os.makedirs(os.path.join(args.output_dir, 'logs'))
+
+        if not os.path.isdir(os.path.join(args.output_dir, 'model')):
+            os.makedirs(os.path.join(args.output_dir, 'model'))
+
+        # prepare input data
+        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label)
+        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label)
+        train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+        val_dataloader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
+        
+        # load parameters for BERT
+        with open(args.bert_config_file, "r") as f:
+            config_dict = json.load(f)
+        print(config_dict)
+        # create BERT config object and model
+        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+        model = BertForSequenceClassification(config=bert_config)
+        model.to(device)
+
+        print(model.embeddings.word_embeddings.weight)
+
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+
+        train_logs_file = open(os.path.join(args.output_dir, 'logs', 'training.tsv'), 'w')
+        val_logs_file = open(os.path.join(args.output_dir, 'logs', 'validation.tsv'), 'w')
+
+        with open(args.train_tsv_file, 'r') as f:
+            num_train_reads = len(f.readlines())
+
+        with open(args.val_tsv_file, 'r') as f:
+            num_val_reads = len(f.readlines())
+
+        print(f'num_train_reads\t{num_train_reads}\nnum_val_reads\t{num_val_reads}\n'
+            f'train_steps\t{math.ceil(num_train_reads/args.batch_size)}\nval_steps\t{math.ceil(num_val_reads/args.batch_size)}\n')
+
+        # define variables for early stopping
+        best_val_accuracy = np.Inf
+        patience = 0
+        best_model = None
+        best_loss = np.Inf
+        stop_training = False
+        found_min = False
+        min_epoch = 0
+
+        for epoch in range(args.num_epochs):
+            epoch_train_loss = 0.0
+            epoch_train_acc = 0.0
+            for train_batch, inputs in enumerate(train_dataloader, 0):
+                train_loss, train_accuracy = train_step(inputs, model, optimizer, device)
+                epoch_train_loss += train_loss
+                epoch_train_acc += train_accuracy
+                if (train_batch+1) % 100 == 0:
+                    print(f'epoch: {epoch+1}\tbatch: {train_batch+1}\ttraining loss: {round(epoch_train_loss/(train_batch+1),3)}\ttraining accuracy: {round(epoch_train_acc/(train_batch+1),3)*100}')
+                train_logs_file.write(f'{epoch+1}\t{train_batch+1}\t{round(epoch_train_loss/(train_batch+1),3)}\t{round(epoch_train_acc/(train_batch+1),3)*100}\n')
+
+            epoch_val_loss = 0.0
+            epoch_val_acc = 0.0
+            for val_batch, inputs in enumerate(val_dataloader, 0):
+                val_loss, val_accuracy, _, _ = test_step(inputs, model, device)
+                epoch_val_loss += val_loss
+                epoch_val_acc += val_accuracy
+            epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
+            epoch_val_acc = round(epoch_val_acc/(val_batch+1),3)
+            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\n')
+
+            # check validation loss at the end of epoch
+            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}')
+            if patience == 10:
+                lr = optimizer.param_groups[0]['lr']
+                if lr == args.learning_rate:
+                    optimizer.param_groups[0]['lr'] = 0.000002
+                    patience = 0
+                else:
+                    stop_training = True
+            else:
+                if epoch_val_loss < best_loss:
+                    best_loss = epoch_val_loss
+                    best_val_accuracy = epoch_val_acc
+                    best_model = model.state_dict()
+                    patience = 0 # Reset wait counter
+                    min_epoch = epoch
+                    found_min = True
+                else:
+                    patience += 1
+
+            # save model
+            if stop_training or (epoch+1) == args.num_epochs:
+                if found_min:
+                    torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}-best.pth'))
+                    model.load_state_dict(best_model)
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}-best'))
+                    
+                else:
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}'))
+                    torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}.pth'))
+                break
+
+        train_logs_file.close()
+        val_logs_file.close()
+
+        end = datetime.datetime.now()
+        total_time = end - start
+        hours, seconds = divmod(total_time.seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+
+        with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
+            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+
+    if args.mode == "testing":
+
+        if not os.path.isdir(os.path.join(args.output_dir, 'testing')):
+            os.makedirs(os.path.join(args.output_dir, 'testing'))
+
+        # prepare input data
+        test_data = TaxClassDataset(args.test_tsv_file, args.tokens_file, args.label)
+        test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
+        
+        # load parameters for BERT
+        with open(args.bert_config_file, "r") as f:
+            config_dict = json.load(f)
+        print(config_dict)
+        
+        # create BERT config object and model
+        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+        model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+        model.to(device)
+
+        print(model.embeddings.word_embeddings.weight)
+
+        start = datetime.datetime.now()
+
+        test_metrics = open(os.path.join(args.output_dir, 'testing', 'metrics.tsv'), 'w')
+        test_sum = open(os.path.join(args.output_dir, 'testing', 'summary.tsv'), 'w')
+
+        with open(args.test_tsv_file, 'r') as f:
+            num_test_reads = len(f.readlines())
+
+        print(f'num_test_reads\t{num_test_reads}\ntest_steps\t{math.ceil(num_test_reads/args.batch_size)}\n')
+
+        epoch_test_loss = 0.0
+        epoch_test_acc = 0.0
+        ground_truth = []
+        predictions = []
+        for batch, inputs in enumerate(test_dataloader, 0):
+            test_loss, test_accuracy, batch_predictions, batch_ground_truth = test_step(inputs, model, device)
+            epoch_test_loss += test_loss
+            epoch_test_acc += test_accuracy
+            ground_truth += batch_ground_truth
+            predictions += batch_predictions
+        epoch_test_loss = round(epoch_test_loss/(batch+1),3)
+        # get number of FP, FN, TP, TN
+        FP = 0
+        FN = 0
+        TN = 0
+        TP = 0
+        assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
+
+        for i in range(len(predictions)):
+            if ground_truth[i] == 1 and predictions[i] == 1:
+                TP += 1
+            elif ground_truth[i] == 1 and predictions[i] == 0:
+                FN += 1
+            elif ground_truth[i] == 0 and predictions[i] == 0:
+                TN += 1
+            elif ground_truth[i] == 0 and predictions[i] == 1:
+                FP += 1
+        accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
+        print(accuracy, epoch_test_acc)
+        test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
+        test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
+        test_metrics.write(f'1\tprecision\t{round(TP/(TP+FP),3)}\n')
+        test_metrics.write(f'0\tprecision\t{round(TN/(TN+FN),3)}\n')
+        test_metrics.write(f'1\trecall\t{round(TP/(TP+FN),3)}\n')
+        test_metrics.write(f'0\trecall\t{round(TN/(TN+FP),3)}\n')
+        test_metrics.close()
+        test_sum.close()
+
+        end = datetime.datetime.now()
+        total_time = end - start
+        hours, seconds = divmod(total_time.seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+
+        with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
+            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+
+    if args.lc_dir is not None:
+        # create learning curves
+        # get input data
+        training_files = sorted(glob.glob(os.path.join(args.lc_dir, '*/*/logs/metrics.tsv')))
+        validation_files = sorted(glob.glob(os.path.join(args.lc_dir, '*/*/logs/validation.tsv')))
+        assert len(training_files) == len(validation_files)
+        batch_size = []
+        values = []
+        metric = []
+        dataset = []
+        epochs = []
+        for i in range(len(training_files)):
+            train_bs = training_files[i].split('/')[-3].split('-')[-1]
+            val_bs = training_files[i].split('/')[-3].split('-')[-1]
+            assert train_bs == val_bs
+            train_df = pd.read_csv(training_files[i], sep='\t', header=None)
+            val_df = pd.read_csv(validation_files[i], sep='\t', header=None)
+            num_epochs, _ = val_df.shape
+            num_steps_per_epoch = train_df.iloc[:, 1].tolist()[-1]
+            train_accuracy = [train_df.iloc[:, 3].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+            train_loss = [train_df.iloc[:, 2].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+            values += train_accuracy
+            values += train_loss
+            dataset += ['training']*(len(train_accuracy)*2)
+            metric += ['accuracy']*len(train_accuracy) + ['loss']*len(train_loss)
+            val_accuracy = val_df.iloc[:, 3].tolist()
+            val_loss = val_df.iloc[:, 2].tolist()
+            values += val_accuracy
+            values += val_loss
+            batch_size += [int(train_bs)]*(len(train_accuracy)*2+len(val_accuracy)*2)
+            dataset += ['validation']*(len(val_accuracy)*2)
+            metric += ['accuracy']*len(val_accuracy) + ['loss']*len(val_loss)
+            epochs += list(range(1, num_epochs+1, 1))*4
+        # create dataframe
+        data = {'batch_size': batch_size, 'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epochs}
+        df = pd.DataFrame(data)
+        max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        print(df)
+        print(df.shape)
+        line_styles = ['-', '--']
+        palette = {'training': 'black', 'validation': 'red'}
+        plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
+        plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
+        axes = plot.axes.flatten()
+        axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
+        axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
+        axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
+        for idx, ax in enumerate(axes):
+            ax.set_title(axes_title[idx])
+            ax.set_ylabel(axes_y_labels[idx])
+            ax.set_xlabel(axes_x_labels[idx])
+            ax.lines[0].set_color('black')
+            ax.lines[0].set_linestyle('-')
+            ax.lines[1].set_color('red')
+            ax.lines[1].set_linestyle('-')
+            if idx in [4,5,6,7]:
+                ax.set_ylim(min_loss,max_loss)
+            if idx in [0,1,2,3]:
+                ax.set_ylim(0,100)
+            print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+        plot.add_legend()
+        plt.savefig(os.path.join(args.lc_dir, 'learning_curves.png'), dpi=300)
+
+
+    if args.testing_sum_dir:
+        # create learning curves
+        # get input data
+        metrics_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/metrics.tsv')))
+        summary_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/summary.tsv')))
+        print(metrics_files)
+        print(summary_files)
+        assert len(metrics_files) == len(summary_files)
+        batch_size = []
+        values = []
+        for i in range(len(summary_files)):
+            bs = summary_files[i].split('/')[-3].split('-')[-1]
+            acc_df = pd.read_csv(summary_files[i], sep='\t', header=None)
+            print(bs)
+            print(acc_df.iloc[0, 1])
+            values.append(acc_df.iloc[0, 1])
+            batch_size.append(int(bs))
+
+        data = {'accuracy': values, 'batch_size': batch_size}
+        df = pd.DataFrame(data)
+        plt.figure(figsize=(5, 5))
+        sns.set_color_codes('pastel')
+        plot = sns.barplot(df, x='batch_size', y='accuracy', legend=False, color='b', width=0.7)
+        plot.set_ylabel('Accuracy')
+        plot.set_xlabel('Batch size')
+        plot.set_ylim(0,1)
+        plt.savefig(os.path.join(args.testing_sum_dir, 'accuracy.png'), dpi=300)
+
+        batch_size = []
+        labels = []
+        values = []
+        metrics = []
+        for i in range(len(metrics_files)):
+            bs = summary_files[i].split('/')[-3].split('-')[-1]
+            metrics_df = pd.read_csv(metrics_files[i], sep='\t', header=None)
+            print(metrics_df.iloc[0, 2])
+            label_1_prec = metrics_df.iloc[0, 2]
+            label_0_prec = metrics_df.iloc[1, 2]
+            label_1_rec = metrics_df.iloc[2, 2]
+            label_0_rec = metrics_df.iloc[3, 2]
+            values += [label_1_prec, label_0_prec, label_1_rec, label_0_rec]
+            metrics += ['precision', 'precision', 'recall', 'recall']
+            batch_size += [int(bs)]*4
+            labels += [1, 0, 1, 0]
+
+        data = {'values': values, 'batch_size': batch_size, 'metrics': metrics, 'labels': labels}
+        df = pd.DataFrame(data)
+        print(df)
+        plot = sns.FacetGrid(df, row='metrics', col='labels', sharey=False)
+        plot.map_dataframe(sns.barplot, x='batch_size', y='values', color='b')
+        axes = plot.axes.flatten()
+        axes_title = ['Positive class','Negative class', '', '']
+        axes_y_labels = ['Precision', '', 'Recall', '']
+        axes_x_labels = ['', '', 'Batch size', 'Batch size']
+        for idx, ax in enumerate(axes):
+            ax.set_title(axes_title[idx])
+            ax.set_ylabel(axes_y_labels[idx])
+            ax.set_xlabel(axes_x_labels[idx])
+            ax.set_ylim(0,1)
+            print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+        plt.savefig(os.path.join(args.testing_sum_dir, 'metrics.png'), dpi=300)
+
+
+        #     train_df = pd.read_csv(training_files[i], sep='\t', header=None)
+        #     val_df = pd.read_csv(validation_files[i], sep='\t', header=None)
+        #     num_epochs, _ = val_df.shape
+        #     num_steps_per_epoch = train_df.iloc[:, 1].tolist()[-1]
+        #     train_accuracy = [train_df.iloc[:, 3].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+        #     train_loss = [train_df.iloc[:, 2].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+        #     values += train_accuracy
+        #     values += train_loss
+        #     dataset += ['training']*(len(train_accuracy)*2)
+        #     metric += ['accuracy']*len(train_accuracy) + ['loss']*len(train_loss)
+        #     val_accuracy = val_df.iloc[:, 3].tolist()
+        #     val_loss = val_df.iloc[:, 2].tolist()
+        #     values += val_accuracy
+        #     values += val_loss
+        #     batch_size += [int(train_bs)]*(len(train_accuracy)*2+len(val_accuracy)*2)
+        #     dataset += ['validation']*(len(val_accuracy)*2)
+        #     metric += ['accuracy']*len(val_accuracy) + ['loss']*len(val_loss)
+        #     epochs += list(range(1, num_epochs+1, 1))*4
+        # # create dataframe
+        # data = {'batch_size': batch_size, 'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epochs}
+        # df = pd.DataFrame(data)
+        # max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        # min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        # print(df)
+        # print(df.shape)
+        # line_styles = ['-', '--']
+        # palette = {'training': 'black', 'validation': 'red'}
+        # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
+        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
+        # axes = plot.axes.flatten()
+        # axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
+        # axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
+        # axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
+        # for idx, ax in enumerate(axes):
+        #     ax.set_title(axes_title[idx])
+        #     ax.set_ylabel(axes_y_labels[idx])
+        #     ax.set_xlabel(axes_x_labels[idx])
+        #     ax.lines[0].set_color('black')
+        #     ax.lines[0].set_linestyle('-')
+        #     ax.lines[1].set_color('red')
+        #     ax.lines[1].set_linestyle('-')
+        #     if idx in [4,5,6,7]:
+        #         ax.set_ylim(min_loss,max_loss)
+        #     if idx in [0,1,2,3]:
+        #         ax.set_ylim(0,100)
+        #     print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+        # plot.add_legend()
+        # # legend = plot.legend
+        # # legend.set_loc('lower center')
+        # # plt.tight_layout()
+        # plt.savefig(os.path.join(args.lc_dir, 'learning_curves.png'), dpi=300)
+
