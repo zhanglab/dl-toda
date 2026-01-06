@@ -4,6 +4,7 @@ import argparse
 import json
 import glob
 import math
+import csv
 import datetime
 import pandas as pd
 import seaborn as sns
@@ -154,8 +155,14 @@ if __name__ == "__main__":
         model = BertForSequenceClassification(config=bert_config)
         model.to(device)
 
-        # print(model.embeddings.word_embeddings.weight)
-        print(model.bert.embeddings.word_embeddings.weight)
+        token_embeddings = model.bert.embeddings.word_embeddings.weight
+        print(token_embeddings.shape)
+        data = []
+        with open(tokens_file, 'r') as f:
+            for idx, line in enumerate(f.readlines):
+                print(idx, line)
+                # data.append(token_embeddings[idx])
+        # np.savetxt(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), token_embeddings, delimiter=',')
 
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -184,6 +191,7 @@ if __name__ == "__main__":
             epoch_train_loss = 0.0
             epoch_train_acc = 0.0
             for train_batch, inputs in enumerate(train_dataloader, 0):
+                print(inputs)
                 train_loss, train_accuracy = train_step(inputs, model, optimizer, device)
                 epoch_train_loss += train_loss
                 epoch_train_acc += train_accuracy
@@ -263,7 +271,6 @@ if __name__ == "__main__":
         model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
         model.to(device)
 
-        # print(model.embeddings.word_embeddings.weight)
         print(model.bert.embeddings.word_embeddings.weight)
 
         start = datetime.datetime.now()
