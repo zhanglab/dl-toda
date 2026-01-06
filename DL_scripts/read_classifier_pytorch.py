@@ -158,7 +158,7 @@ if __name__ == "__main__":
         token_embeddings = model.bert.embeddings.word_embeddings.weight
         print(token_embeddings.shape)
         data = []
-        with open(tokens_file, 'r') as f:
+        with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines):
                 print(idx, line)
                 # data.append(token_embeddings[idx])
