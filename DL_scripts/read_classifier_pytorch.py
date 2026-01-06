@@ -194,7 +194,6 @@ if __name__ == "__main__":
             epoch_train_loss = 0.0
             epoch_train_acc = 0.0
             for train_batch, inputs in enumerate(train_dataloader, 0):
-                print('batch', train_batch)
                 train_loss, train_accuracy = train_step(inputs, model, optimizer, device)
                 epoch_train_loss += train_loss
                 epoch_train_acc += train_accuracy
