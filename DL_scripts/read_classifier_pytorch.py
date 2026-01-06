@@ -416,67 +416,67 @@ if __name__ == "__main__":
         plt.savefig(os.path.join(args.lc_dir, 'learning_curves.png'), dpi=300)
 
 
-    if args.testing_sum_dir:
-        # create learning curves
-        # get input data
-        metrics_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/metrics.tsv')))
-        summary_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/summary.tsv')))
-        print(metrics_files)
-        print(summary_files)
-        assert len(metrics_files) == len(summary_files)
-        batch_size = []
-        values = []
-        for i in range(len(summary_files)):
-            bs = summary_files[i].split('/')[-3].split('-')[-1]
-            acc_df = pd.read_csv(summary_files[i], sep='\t', header=None)
-            print(bs)
-            print(acc_df.iloc[0, 1])
-            values.append(acc_df.iloc[0, 1])
-            batch_size.append(int(bs))
+    # if args.testing_sum_dir:
+    #     # create learning curves
+    #     # get input data
+    #     metrics_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/metrics.tsv')))
+    #     summary_files = sorted(glob.glob(os.path.join(args.testing_sum_dir, '*/*/testing/summary.tsv')))
+    #     print(metrics_files)
+    #     print(summary_files)
+    #     assert len(metrics_files) == len(summary_files)
+    #     batch_size = []
+    #     values = []
+    #     for i in range(len(summary_files)):
+    #         bs = summary_files[i].split('/')[-3].split('-')[-1]
+    #         acc_df = pd.read_csv(summary_files[i], sep='\t', header=None)
+    #         print(bs)
+    #         print(acc_df.iloc[0, 1])
+    #         values.append(acc_df.iloc[0, 1])
+    #         batch_size.append(int(bs))
 
-        data = {'accuracy': values, 'batch_size': batch_size}
-        df = pd.DataFrame(data)
-        plt.figure(figsize=(5, 5))
-        sns.set_color_codes('pastel')
-        plot = sns.barplot(df, x='batch_size', y='accuracy', legend=False, color='b', width=0.7)
-        plot.set_ylabel('Accuracy')
-        plot.set_xlabel('Batch size')
-        plot.set_ylim(0,1)
-        plt.savefig(os.path.join(args.testing_sum_dir, 'accuracy.png'), dpi=300)
+    #     data = {'accuracy': values, 'batch_size': batch_size}
+    #     df = pd.DataFrame(data)
+    #     plt.figure(figsize=(5, 5))
+    #     sns.set_color_codes('pastel')
+    #     plot = sns.barplot(df, x='batch_size', y='accuracy', legend=False, color='b', width=0.7)
+    #     plot.set_ylabel('Accuracy')
+    #     plot.set_xlabel('Batch size')
+    #     plot.set_ylim(0,1)
+    #     plt.savefig(os.path.join(args.testing_sum_dir, 'accuracy.png'), dpi=300)
 
-        batch_size = []
-        labels = []
-        values = []
-        metrics = []
-        for i in range(len(metrics_files)):
-            bs = summary_files[i].split('/')[-3].split('-')[-1]
-            metrics_df = pd.read_csv(metrics_files[i], sep='\t', header=None)
-            print(metrics_df.iloc[0, 2])
-            label_1_prec = metrics_df.iloc[0, 2]
-            label_0_prec = metrics_df.iloc[1, 2]
-            label_1_rec = metrics_df.iloc[2, 2]
-            label_0_rec = metrics_df.iloc[3, 2]
-            values += [label_1_prec, label_0_prec, label_1_rec, label_0_rec]
-            metrics += ['precision', 'precision', 'recall', 'recall']
-            batch_size += [int(bs)]*4
-            labels += [1, 0, 1, 0]
+    #     batch_size = []
+    #     labels = []
+    #     values = []
+    #     metrics = []
+    #     for i in range(len(metrics_files)):
+    #         bs = summary_files[i].split('/')[-3].split('-')[-1]
+    #         metrics_df = pd.read_csv(metrics_files[i], sep='\t', header=None)
+    #         print(metrics_df.iloc[0, 2])
+    #         label_1_prec = metrics_df.iloc[0, 2]
+    #         label_0_prec = metrics_df.iloc[1, 2]
+    #         label_1_rec = metrics_df.iloc[2, 2]
+    #         label_0_rec = metrics_df.iloc[3, 2]
+    #         values += [label_1_prec, label_0_prec, label_1_rec, label_0_rec]
+    #         metrics += ['precision', 'precision', 'recall', 'recall']
+    #         batch_size += [int(bs)]*4
+    #         labels += [1, 0, 1, 0]
 
-        data = {'values': values, 'batch_size': batch_size, 'metrics': metrics, 'labels': labels}
-        df = pd.DataFrame(data)
-        print(df)
-        plot = sns.FacetGrid(df, row='metrics', col='labels', sharey=False)
-        plot.map_dataframe(sns.barplot, x='batch_size', y='values', color='b')
-        axes = plot.axes.flatten()
-        axes_title = ['Positive class','Negative class', '', '']
-        axes_y_labels = ['Precision', '', 'Recall', '']
-        axes_x_labels = ['', '', 'Batch size', 'Batch size']
-        for idx, ax in enumerate(axes):
-            ax.set_title(axes_title[idx])
-            ax.set_ylabel(axes_y_labels[idx])
-            ax.set_xlabel(axes_x_labels[idx])
-            ax.set_ylim(0,1)
-            print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
-        plt.savefig(os.path.join(args.testing_sum_dir, 'metrics.png'), dpi=300)
+    #     data = {'values': values, 'batch_size': batch_size, 'metrics': metrics, 'labels': labels}
+    #     df = pd.DataFrame(data)
+    #     print(df)
+    #     plot = sns.FacetGrid(df, row='metrics', col='labels', sharey=False)
+    #     plot.map_dataframe(sns.barplot, x='batch_size', y='values', color='b')
+    #     axes = plot.axes.flatten()
+    #     axes_title = ['Positive class','Negative class', '', '']
+    #     axes_y_labels = ['Precision', '', 'Recall', '']
+    #     axes_x_labels = ['', '', 'Batch size', 'Batch size']
+    #     for idx, ax in enumerate(axes):
+    #         ax.set_title(axes_title[idx])
+    #         ax.set_ylabel(axes_y_labels[idx])
+    #         ax.set_xlabel(axes_x_labels[idx])
+    #         ax.set_ylim(0,1)
+    #         print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+    #     plt.savefig(os.path.join(args.testing_sum_dir, 'metrics.png'), dpi=300)
 
 
         #     train_df = pd.read_csv(training_files[i], sep='\t', header=None)
