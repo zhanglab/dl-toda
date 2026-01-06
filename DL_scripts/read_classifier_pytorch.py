@@ -79,8 +79,16 @@ class TaxClassDataset(Dataset):
         # adjust the list of tokens according to the max size allowed (max position embedding minus special tokens CLS and SEP)
         if len(tokens) > self.max_position_embedding - 2:
             tokens = tokens[:self.max_position_embedding - 2]
+        
         # replace tokens by their id
-        input_ids = [self.tokens_dict['[CLS]']] + [self.tokens_dict[k] for k in tokens] + [self.tokens_dict['[SEP]']]
+        input_ids = [self.tokens_dict['[CLS]']]
+        for i in range(len(tokens)):
+            if k in self.tokens_dict:
+                input_ids.append(self.tokens_dict[k])
+            else:
+                input_ids.append('[UNK]')
+        input_ids.append(self.tokens_dict['[SEP]'])
+
         # pad vector if necessary
         if len(input_ids) < self.max_position_embedding:
             num_padded_values = self.max_position_embedding - len(input_ids)
