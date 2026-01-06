@@ -161,7 +161,7 @@ if __name__ == "__main__":
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines()):
                 print(idx, line.rstrip())
-                data.append(token_embeddings[idx].insert(0,line.rstrip()))
+                data.append(token_embeddings[idx].tolist().insert(0,line.rstrip()))
         print(data[0])
 
         with open(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), mode='w', newline='') as csvfile:
