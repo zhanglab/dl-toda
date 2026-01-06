@@ -293,8 +293,6 @@ if __name__ == "__main__":
         model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
         model.to(device)
 
-        print(model.bert.embeddings.word_embeddings.weight)
-
         start = datetime.datetime.now()
 
         test_metrics = open(os.path.join(args.output_dir, 'testing', 'metrics.tsv'), 'w')
