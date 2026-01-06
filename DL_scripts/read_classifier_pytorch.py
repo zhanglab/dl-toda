@@ -156,16 +156,12 @@ if __name__ == "__main__":
         model.to(device)
 
         embeddings = model.bert.embeddings.word_embeddings.weight
-        print(embeddings.shape)
         data = []
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines()):
-                print(idx, line.rstrip())
                 token_embeddings = embeddings[idx].tolist()
                 token_embeddings.insert(0,line.rstrip())
-                print(token_embeddings)
                 data.append(token_embeddings)
-        print(data[0])
 
         with open(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), mode='w', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -255,6 +251,18 @@ if __name__ == "__main__":
         total_time = end - start
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
+
+        embeddings = model.bert.embeddings.word_embeddings.weight
+        data = []
+        with open(args.tokens_file, 'r') as f:
+            for idx, line in enumerate(f.readlines()):
+                token_embeddings = embeddings[idx].tolist()
+                token_embeddings.insert(0,line.rstrip())
+                data.append(token_embeddings)
+
+        with open(os.path.join(args.output_dir, 'token_embeddings_final.csv'), mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(data)
 
         with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
