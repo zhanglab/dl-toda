@@ -159,7 +159,7 @@ if __name__ == "__main__":
         print(token_embeddings.shape)
         data = []
         with open(args.tokens_file, 'r') as f:
-            for idx, line in enumerate(f.readlines):
+            for idx, line in enumerate(f.readlines()):
                 print(idx, line)
                 # data.append(token_embeddings[idx])
         # np.savetxt(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), token_embeddings, delimiter=',')
