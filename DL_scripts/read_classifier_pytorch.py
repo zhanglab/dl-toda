@@ -83,8 +83,8 @@ class TaxClassDataset(Dataset):
         # replace tokens by their id
         input_ids = [self.tokens_dict['[CLS]']]
         for i in range(len(tokens)):
-            if k in self.tokens_dict:
-                input_ids.append(self.tokens_dict[k])
+            if tokens[i] in self.tokens_dict:
+                input_ids.append(self.tokens_dict[tokens[i]])
             else:
                 input_ids.append('[UNK]')
         input_ids.append(self.tokens_dict['[SEP]'])
