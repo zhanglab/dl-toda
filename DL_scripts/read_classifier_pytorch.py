@@ -155,13 +155,16 @@ if __name__ == "__main__":
         model = BertForSequenceClassification(config=bert_config)
         model.to(device)
 
-        token_embeddings = model.bert.embeddings.word_embeddings.weight
-        print(token_embeddings.shape)
+        embeddings = model.bert.embeddings.word_embeddings.weight
+        print(embeddings.shape)
         data = []
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines()):
                 print(idx, line.rstrip())
-                data.append(token_embeddings[idx].tolist().insert(0,line.rstrip()))
+                token_embeddings = embeddings[idx].tolist()
+                token_embeddings.insert(0,line.rstrip())
+                print(token_embeddings)
+                data.append(token_embeddings)
         print(data[0])
 
         with open(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), mode='w', newline='') as csvfile:
