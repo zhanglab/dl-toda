@@ -160,9 +160,13 @@ if __name__ == "__main__":
         data = []
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines()):
-                print(idx, line)
-                # data.append(token_embeddings[idx])
-        # np.savetxt(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), token_embeddings, delimiter=',')
+                print(idx, line.rstrip())
+                data.append(token_embeddings[idx].insert(0,line.rstrip()))
+        print(data[0])
+
+        with open(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(data)
 
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -191,7 +195,7 @@ if __name__ == "__main__":
             epoch_train_loss = 0.0
             epoch_train_acc = 0.0
             for train_batch, inputs in enumerate(train_dataloader, 0):
-                print(inputs)
+                print('batch', train_batch)
                 train_loss, train_accuracy = train_step(inputs, model, optimizer, device)
                 epoch_train_loss += train_loss
                 epoch_train_acc += train_accuracy
