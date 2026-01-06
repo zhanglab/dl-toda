@@ -154,7 +154,8 @@ if __name__ == "__main__":
         model = BertForSequenceClassification(config=bert_config)
         model.to(device)
 
-        print(model.embeddings.word_embeddings.weight)
+        # print(model.embeddings.word_embeddings.weight)
+        print(model.bert.embeddings.word_embeddings.weight)
 
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -262,7 +263,8 @@ if __name__ == "__main__":
         model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
         model.to(device)
 
-        print(model.embeddings.word_embeddings.weight)
+        # print(model.embeddings.word_embeddings.weight)
+        print(model.bert.embeddings.word_embeddings.weight)
 
         start = datetime.datetime.now()
 
