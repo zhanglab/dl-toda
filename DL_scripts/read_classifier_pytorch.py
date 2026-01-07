@@ -335,10 +335,31 @@ if __name__ == "__main__":
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
         test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
-        test_metrics.write(f'1\tprecision\t{round(TP/(TP+FP),3)}\n')
-        test_metrics.write(f'0\tprecision\t{round(TN/(TN+FN),3)}\n')
-        test_metrics.write(f'1\trecall\t{round(TP/(TP+FN),3)}\n')
-        test_metrics.write(f'0\trecall\t{round(TN/(TN+FP),3)}\n')
+        
+        try:
+            pos_precision = round(TP/(TP+FP),3)
+        except ZeroDivisionError:
+            pos_precision = 0
+        test_metrics.write(f'1\tprecision\t{pos_precision}\n')
+
+        try:
+            neg_precision = round(TN/(TN+FN),3)
+        except ZeroDivisionError:
+            neg_precision = 0
+        test_metrics.write(f'1\tprecision\t{neg_precision}\n')
+
+        try:
+            pos_recall = round(TP/(TP+FN),3)
+        except ZeroDivisionError:
+            pos_recall = 0
+        test_metrics.write(f'1\tprecision\t{pos_recall}\n')
+
+        try:
+            neg_recall = round(TN/(TN+FP),3)
+        except ZeroDivisionError:
+            neg_recall = 0
+        test_metrics.write(f'1\tprecision\t{neg_recall}\n')
+        
         test_metrics.close()
         test_sum.close()
 
