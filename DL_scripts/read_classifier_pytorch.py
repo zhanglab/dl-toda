@@ -380,10 +380,12 @@ if __name__ == "__main__":
         
         if args.genome:
             # create output file
-            outfile = os.path.join(args.output_dir, '')
+            outfile = os.path.join(args.output_dir, 'summary_genes.tsv', 'w')
             # get annotations of testing genome
             input_dir = os.getcwd()
             annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
+            if not os.path.exists(annotations_dir):
+                os.makedirs(annotations_dir)
             annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, annotations_dir, args.output_dir)
             correct_genes = defaultdict(list)
             incorrect_genes = defaultdict(list)
