@@ -393,8 +393,8 @@ if __name__ == "__main__":
             incorrect_seq = {}
             with open(args.test_tsv_file, 'r') as f:
                 for idx, line in enumerate(f):
-                    seq_start = line.rstrip().split('\t')[2]
-                    seq_end = line.rstrip().split('\t')[3]
+                    seq_start = int(line.rstrip().split('\t')[2])
+                    seq_end = int(line.rstrip().split('\t')[3])
                     gene_info = GetGenes(annot_info, seq_start, seq_end)
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
