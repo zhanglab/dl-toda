@@ -292,15 +292,13 @@ def GetGenomesInfo(fasta):
 # 	return avg_pct_identity, ani, test_strain, train_strain
 
 def GetGenes(annot_info, seq_start, seq_end):
-	for gene_id, data in annot_info.items():
-		gene_start_pos = data[1]
-		gene_end_pos = data[2]
-        if (
-            (seq_start <= gene_start_pos and seq_end >= gene_start_pos) 
-            or (seq_start <= gene_end_pos and seq_end >= gene_end_pos)   
-            or (seq_start >= gene_start_pos and seq_end <= gene_end_pos)  
-            or (seq_start <= gene_start_pos and seq_end >= gene_end_pos)
-            ):
+    for gene_id, data in annot_info.items():
+        gene_start_pos = data[1]
+        gene_end_pos = data[2]
+        if (seq_start <= gene_start_pos and seq_end >= gene_start_pos) \
+            or (seq_start <= gene_end_pos and seq_end >= gene_end_pos)  \ 
+            or (seq_start >= gene_start_pos and seq_end <= gene_end_pos) \ 
+            or (seq_start <= gene_start_pos and seq_end >= gene_end_pos):
             return data.insert(0, gene_id)
 
 def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
