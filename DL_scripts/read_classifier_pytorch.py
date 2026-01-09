@@ -13,11 +13,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoaderF
 from transformers import BertForSequenceClassification, BertConfig
-print(os.path.dirname(os.path.abspath(__file__)))
-print(os.path.dirname(os.path.abspath(__file__)).split('/'))
-print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.testing_utils import *
 
@@ -53,7 +50,7 @@ def test_step(inputs, model, device):
     outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
     test_loss = outputs.loss
     _, predictions = torch.max(outputs.logits, dim=1)
-    probs = tf.nn.softmax(outputs.logits)
+    probs = nn.functional.softmax(outputs.logits, dim=1)
     label = torch.flatten(label)
     correct = (predictions == label).sum().item()
     test_accuracy = correct/args.batch_size
