@@ -15,7 +15,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertForSequenceClassification, BertConfig
-
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from testing_utils import *
 
 
 def train_step(inputs, model, optimizer, device):
@@ -49,11 +50,12 @@ def test_step(inputs, model, device):
     outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
     test_loss = outputs.loss
     _, predictions = torch.max(outputs.logits, dim=1)
+    probs = tf.nn.softmax(outputs.logits)
     label = torch.flatten(label)
     correct = (predictions == label).sum().item()
     test_accuracy = correct/args.batch_size
 
-    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist()
+    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist()
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
@@ -116,6 +118,10 @@ if __name__ == "__main__":
     parser.add_argument('--train_tsv_file', type=str, help='input file containing labels and reads from training dataset')
     parser.add_argument('--val_tsv_file', type=str, help='input file containing labels and reads from validation dataset')
     parser.add_argument('--test_tsv_file', type=str, help='input file containing labels and reads from testing dataset')
+    parser.add_argument('--train_fasta', type=str, help='fasta file of training genome', required=('--testing' in sys.argv))
+    parser.add_argument('--test_fasta', type=str, help='fasta file of testing genome', required=('--testing' in sys.argv))
+    parser.add_argument('--test_genome_id', type=str, help='accession ID of testing genome', required=('--testing' in sys.argv))
+    parser.add_argument('--genome', help='do testing at the genome level', action='store_true', required=('--testing' in sys.argv))
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--testing_sum_dir', help='input directory for summarizing testing results', default=os.getcwd())
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
@@ -307,12 +313,14 @@ if __name__ == "__main__":
         epoch_test_acc = 0.0
         ground_truth = []
         predictions = []
+        confidence_scores = []
         for batch, inputs in enumerate(test_dataloader, 0):
-            test_loss, test_accuracy, batch_predictions, batch_ground_truth = test_step(inputs, model, device)
+            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs = test_step(inputs, model, device)
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
             ground_truth += batch_ground_truth
             predictions += batch_predictions
+            confidence_scores += probs
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
         # get number of FP, FN, TP, TN
         FP = 0
@@ -369,6 +377,42 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+        
+        if args.genome:
+            # create output file
+            outfile = os.path.join(args.output_dir, '')
+            # get annotations of testing genome
+            input_dir = os.getcwd()
+            annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
+            annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, annotations_dir, args.output_dir)
+            correct_genes = {}
+            incorrect_genes = {}
+            correct_seq = {}
+            incorrect_seq = {}
+            with open(args.test_tsv_file, 'r') as f:
+                for idx, line in enumerate(f):
+                    seq_start = line.rstrip().split('\t')[2]
+                    seq_end = line.rstrip().split('\t')[3]
+                    gene_info = GetGenes(annot_info, seq_start, seq_end)
+                    output = ''
+                    if predictions[idx] == ground_truth[idx]
+                        output = 'C'
+                        correct_genes[gene_info[0]] = gene_info
+                        correct_seq[idx] = [seq_start, seq_end]
+                    else:
+                        output = 'I'
+                        incorrect_genes[gene_info[0]] = gene_info
+                        incorrect_seq[idx] = [seq_start, seq_end]
+                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}')
+                    for i in range(len(gene_info)):
+                        outfile.write(f'\t{gene_info[i]}')
+                    if gene_info[1] == 'protein_coding':
+                        outfile.write('\n')
+                    else:
+                        outfile.write('\tNA\tNA\n')
+            
+            # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes):
+
 
     if args.lc_dir is not None:
         # create learning curves
