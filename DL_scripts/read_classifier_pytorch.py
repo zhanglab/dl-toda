@@ -396,6 +396,7 @@ if __name__ == "__main__":
                     seq_start = int(line.rstrip().split('\t')[2])
                     seq_end = int(line.rstrip().split('\t')[3])
                     gene_info = GetGenes(annot_info, seq_start, seq_end)
+                    print(gene_info)
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'
