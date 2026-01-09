@@ -399,11 +399,11 @@ if __name__ == "__main__":
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'
-                        correct_genes[gene_id] = gene_info.insert(0, gene_id)
+                        correct_genes[gene_id] = gene_info
                         correct_seq[idx] = [seq_start, seq_end]
                     else:
                         output = 'I'
-                        incorrect_genes[gene_id] = gene_info.insert(0, gene_id)
+                        incorrect_genes[gene_id] = gene_info
                         incorrect_seq[idx] = [seq_start, seq_end]
                     outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}')
                     for i in range(len(gene_info)):
