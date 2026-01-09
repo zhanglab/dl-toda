@@ -434,6 +434,8 @@ if __name__ == "__main__":
         plot.add_legend()
         plt.savefig(os.path.join(args.lc_dir, 'learning_curves.png'), dpi=300)
 
+    # if args.embeddings is not None:
+
 
     # if args.testing_sum_dir:
     #     # create learning curves
