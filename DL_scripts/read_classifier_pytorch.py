@@ -380,7 +380,7 @@ if __name__ == "__main__":
         
         if args.genome:
             # create output file
-            outfile = os.path.join(args.output_dir, 'summary_genes.tsv', 'w')
+            outfile = open(os.path.join(args.output_dir, 'summary_genes.tsv'), 'w')
             # get annotations of testing genome
             input_dir = os.getcwd()
             annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
@@ -396,7 +396,6 @@ if __name__ == "__main__":
                     seq_start = int(line.rstrip().split('\t')[2])
                     seq_end = int(line.rstrip().split('\t')[3])
                     gene_info = GetGenes(annot_info, seq_start, seq_end)
-                    print(gene_info)
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'

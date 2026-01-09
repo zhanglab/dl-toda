@@ -299,9 +299,7 @@ def GetGenes(annot_info, seq_start, seq_end):
             or (seq_start <= gene_end_pos and seq_end >= gene_end_pos) \
             or (seq_start >= gene_start_pos and seq_end <= gene_end_pos) \
             or (seq_start <= gene_start_pos and seq_end >= gene_end_pos):
-            print(data)
             data.insert(0, gene_id)
-            print(data)
             return data
 
 def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
