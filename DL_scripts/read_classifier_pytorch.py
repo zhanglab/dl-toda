@@ -387,23 +387,23 @@ if __name__ == "__main__":
             if not os.path.exists(annotations_dir):
                 os.makedirs(annotations_dir)
             annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, annotations_dir, args.output_dir)
-            correct_genes = defaultdict(list)
-            incorrect_genes = defaultdict(list)
+            correct_genes = {}
+            incorrect_genes = {}
             correct_seq = {}
             incorrect_seq = {}
             with open(args.test_tsv_file, 'r') as f:
                 for idx, line in enumerate(f):
                     seq_start = int(line.rstrip().split('\t')[2])
                     seq_end = int(line.rstrip().split('\t')[3])
-                    gene_info = GetGenes(annot_info, seq_start, seq_end)
+                    gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'
-                        correct_genes[gene_info[0]].append(gene_info)
+                        correct_genes[gene_id] = gene_info.insert(0, gene_id)
                         correct_seq[idx] = [seq_start, seq_end]
                     else:
                         output = 'I'
-                        incorrect_genes[gene_info[0]].append(gene_info)
+                        incorrect_genes[gene_id] = gene_info.insert(0, gene_id)
                         incorrect_seq[idx] = [seq_start, seq_end]
                     outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}')
                     for i in range(len(gene_info)):
@@ -412,8 +412,9 @@ if __name__ == "__main__":
                         outfile.write('\n')
                     else:
                         outfile.write('\tNA\tNA\n')
-            for k, v in incorrect_genes.items():
-                print(k, len(v), v[0])
+            c_genes = list(correct_genes.keys())
+            i_genes = list(incorrect_genes.keys())
+            print('incorrect and correct genes', set(c_genes).intersection(set(i_genes)))
             # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes):
 
 
