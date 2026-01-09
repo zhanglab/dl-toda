@@ -13,7 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoaderF
+from torch.utils.data import Dataset, DataLoader
 from transformers import BertForSequenceClassification, BertConfig
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.testing_utils import *
