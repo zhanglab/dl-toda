@@ -15,6 +15,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertForSequenceClassification, BertConfig
+print(os.path.dirname(os.path.abspath(__file__)))
+print(os.path.dirname(os.path.abspath(__file__)).split('/'))
+print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from testing_utils import *
 
