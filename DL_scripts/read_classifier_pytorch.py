@@ -405,13 +405,19 @@ if __name__ == "__main__":
                         output = 'I'
                         incorrect_genes[gene_id] = gene_info
                         incorrect_seq[idx] = [seq_start, seq_end]
-                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}')
-                    for i in range(len(gene_info)):
-                        outfile.write(f'\t{gene_info[i]}')
-                    if gene_info[1] == 'protein_coding':
-                        outfile.write('\n')
+                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}\t{gene_id}')
+                    if len(gene_info) > 0:
+                        for i in range(len(gene_info)):
+                            outfile.write(f'\t{gene_info[i]}')
+                        if gene_info[0] == 'protein_coding':
+                            outfile.write('\n')
+                        else:
+                            outfile.write('\tNA\tNA\n')
                     else:
-                        outfile.write('\tNA\tNA\n')
+                        for i in range(7):
+                            outfile.write('\tNA')
+                        outfile.write('\n')
+                        
             c_genes = list(correct_genes.keys())
             i_genes = list(incorrect_genes.keys())
             print('incorrect and correct genes', set(c_genes).intersection(set(i_genes)))

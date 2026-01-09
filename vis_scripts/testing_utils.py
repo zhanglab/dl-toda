@@ -292,6 +292,8 @@ def GetGenomesInfo(fasta):
 # 	return avg_pct_identity, ani, test_strain, train_strain
 
 def GetGenes(annot_info, seq_start, seq_end):
+    target_gene_id = 'NA'
+    target_data = []
     for gene_id, data in annot_info.items():
         gene_start_pos = data[1]
         gene_end_pos = data[2]
@@ -302,8 +304,10 @@ def GetGenes(annot_info, seq_start, seq_end):
             or (seq_start <= gene_end_pos and seq_end >= gene_end_pos) \
             or (seq_start >= gene_start_pos and seq_end <= gene_end_pos) \
             or (seq_start <= gene_start_pos and seq_end >= gene_end_pos):
-            
-            return gene_id, data
+            target_gene_id = gene_id
+            target_data = data
+            break
+    return target_gene_id, target_data
 
 def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 	if f'{genome_id}_gtf' not in os.listdir(annotations_dir):
