@@ -297,9 +297,6 @@ def GetGenes(annot_info, seq_start, seq_end):
     for gene_id, data in annot_info.items():
         gene_start_pos = data[1]
         gene_end_pos = data[2]
-        print(gene_id, data)
-        print(type(gene_start_pos), gene_start_pos)
-        print(type(gene_end_pos), gene_end_pos)
         if (seq_start <= gene_start_pos and seq_end >= gene_start_pos) \
             or (seq_start <= gene_end_pos and seq_end >= gene_end_pos) \
             or (seq_start >= gene_start_pos and seq_end <= gene_end_pos) \

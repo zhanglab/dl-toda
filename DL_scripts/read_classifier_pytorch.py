@@ -395,6 +395,10 @@ if __name__ == "__main__":
                 for idx, line in enumerate(f):
                     seq_start = int(line.rstrip().split('\t')[2])
                     seq_end = int(line.rstrip().split('\t')[3])
+                    list_tokens = line.rstrip().split('\t')[1].split(' ')
+                    seq = list_tokens[0]
+                    for i in range(len(list_tokens)):
+                        seq += list_tokens[i][-1]
                     gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
@@ -405,7 +409,7 @@ if __name__ == "__main__":
                         output = 'I'
                         incorrect_genes[gene_id] = gene_info
                         incorrect_seq[idx] = [seq_start, seq_end]
-                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{output}\t{confidence_scores[idx]}\t{line.rstrip().split('\t')[4]}\t{gene_id}')
+                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx]}\t{gene_id}')
                     if len(gene_info) > 0:
                         for i in range(len(gene_info)):
                             outfile.write(f'\t{gene_info[i]}')
@@ -417,10 +421,10 @@ if __name__ == "__main__":
                         for i in range(7):
                             outfile.write('\tNA')
                         outfile.write('\n')
-                        
+
             c_genes = list(correct_genes.keys())
             i_genes = list(incorrect_genes.keys())
-            print('incorrect and correct genes', set(c_genes).intersection(set(i_genes)))
+            print('incorrect and correct genes', len(set(c_genes).intersection(set(i_genes))))
             # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes):
 
 
