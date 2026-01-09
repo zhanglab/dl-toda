@@ -19,7 +19,7 @@ print(os.path.dirname(os.path.abspath(__file__)))
 print(os.path.dirname(os.path.abspath(__file__)).split('/'))
 print('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-from testing_utils import *
+from vis_scripts.testing_utils import *
 
 
 def train_step(inputs, model, optimizer, device):
