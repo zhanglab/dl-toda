@@ -135,7 +135,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
     align_coords, query_pident = GetMatchRegions(f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
-    with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
+    with open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
         for gene_id, gene_info in correct_genes.items():
             gene_start = gene_info[2]
             gene_end = gene_info[3]
@@ -279,7 +279,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 		
 		# # report GC content of train and test genomes
 		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
-		# with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
+		# with open(os.path.join(output_dir, f'{testing_genome}_GC_content.tsv'), 'w') as f:
 		# 	f.write(f'Testing genome:\t{test_genome_gc_content}\n')
 		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
 
