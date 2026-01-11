@@ -185,7 +185,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                 c_gene_num = 0
                 c_gene_length = 0
             else:
-                print(correct_genes[gene_id])
+                print(gene_id, correct_genes[gene_id])
                 gene_start = correct_genes[gene_id][0][3]
                 gene_end = correct_genes[gene_id][0][4]
                 c_gene_num = len(correct_genes[gene_id])
