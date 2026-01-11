@@ -193,8 +193,8 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 		scores_track.line(genome_pos, scores, color="deeppink")
 		print(f'added score track')
 
-		# add track for correct and incorrect classification
-		# if len(correct_genes) > 0:
+        # add track for correct and incorrect classification
+        # if len(correct_genes) > 0:
         min_r_pos -= 13
         # Setup track for forward and reverse strand CDS
         f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
