@@ -197,9 +197,9 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         min_r_pos -= 13
         # Setup track for forward and reverse strand CDS
         f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-        f_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+        f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
-        r_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+        r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         # get all the genes
         list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
         # for each egne define a score: 
