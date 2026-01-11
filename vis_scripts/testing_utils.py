@@ -99,40 +99,40 @@ def GetGenomesInfo(fasta):
 
 def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, training_fasta, testing_fasta, testing_genome, output_dir, num_processes):
 
-	# load data from training and testing genomes of label 1
-	query_fasta = Fasta(testing_fasta) # query --> testing genome
-	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
+    # load data from training and testing genomes of label 1
+    query_fasta = Fasta(testing_fasta) # query --> testing genome
+    ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
 
-	# Initialize circos instance
-	circos = Circos(
-	    sectors=query_fasta.get_seqid2size(),
-	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
-		space=10,
-	)
+    # Initialize circos instance
+    circos = Circos(
+        sectors=query_fasta.get_seqid2size(),
+        # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
+        space=10,
+    )
 
-	train_strain = GetGenomesInfo(training_fasta)
-	test_strain = GetGenomesInfo(testing_fasta)
-	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
+    train_strain = GetGenomesInfo(training_fasta)
+    test_strain = GetGenomesInfo(testing_fasta)
+    circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
-	with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
-		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
-		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
+    with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
+        f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
+        f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
-	min_r_pos = 100
-	for sector in circos.sectors:
-		# Setup outer track
-		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
-		outer_track.axis(fc="black")
-		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
-		min_r_pos -= 1
-		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+    min_r_pos = 100
+    for sector in circos.sectors:
+        # Setup outer track
+        outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+        outer_track.axis(fc="black")
+        outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+        min_r_pos -= 1
+        outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
-	# Blast genome comparison & plot match blocks
-	# store percentage identity between matching regions
-	percent_identity = []
-	# run blast
-	RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-	align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+    # Blast genome comparison & plot match blocks
+    # store percentage identity between matching regions
+    percent_identity = []
+    # run blast
+    RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+    align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
     with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
@@ -161,7 +161,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
             f.write(f'{gene_id}\t{avg_pident}\tI\n')
 
 
-	# count the number of identical positions across the aligned regions
+    # count the number of identical positions across the aligned regions
     identical_positions = 0
     for sector in circos.sectors:
         blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
