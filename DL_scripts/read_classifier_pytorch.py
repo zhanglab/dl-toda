@@ -400,14 +400,15 @@ if __name__ == "__main__":
                     for i in range(len(list_tokens)):
                         seq += list_tokens[i][-1]
                     gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
+                    gene_info_up = [seq_start, seq_end] + gene_info
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'
-                        correct_genes[gene_id].append(gene_info)
+                        correct_genes[gene_id].append(gene_info_up)
                         correct_seq[idx] = [seq_start, seq_end]
                     else:
                         output = 'I'
-                        incorrect_genes[gene_id].append(gene_info)
+                        incorrect_genes[gene_id].append(gene_info_up)
                         incorrect_seq[idx] = [seq_start, seq_end]
                     outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx][predictions[idx]]}\t{gene_id}')
                     if len(gene_info) > 0:
