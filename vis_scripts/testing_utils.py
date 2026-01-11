@@ -198,7 +198,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                 i_gene_num = len(incorrect_genes[gene_id])
                 i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
-            gene_score = (c_gene_length - i_gene_value)/100
+            gene_score = (c_gene_length - i_gene_length)/100
             print(gene_id, gene_score, c_gene_length, i_gene_length)
             
             pident_pos = []
