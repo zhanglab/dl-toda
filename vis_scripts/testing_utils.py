@@ -33,7 +33,7 @@ seed = 42
 random.seed(seed)
 
 
-def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY):
+def GetMatchRegions(input_file, identity_thr=MIN_IDENTITY):
 	align_coords = []
 	query_pident = {}
 	with open(input_file, 'r') as f:
@@ -132,7 +132,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
     percent_identity = []
     # run blast
     RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-    align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+    align_coords, query_pident = GetMatchRegions(f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
     with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
