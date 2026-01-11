@@ -156,15 +156,15 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # define x-axis vector for the next tracks
         genome_pos = list(range(query_fasta.full_genome_length))
 
-        # add track for scores
-        min_r_pos -= 5
-        scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-        scores_track.axis(ec="deeppink")
-        y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
-        y_labels = list(map(str, y_values))
-        scores_track.yticks(y_values, y_labels)
-        scores_track.line(genome_pos, scores, color="deeppink")
-        print(f'added score track')
+        # # add track for scores
+        # min_r_pos -= 5
+        # scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+        # scores_track.axis(ec="deeppink")
+        # y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
+        # y_labels = list(map(str, y_values))
+        # scores_track.yticks(y_values, y_labels)
+        # scores_track.line(genome_pos, scores, color="deeppink")
+        # print(f'added score track')
         # add track for correct and incorrect classification
         # if len(correct_genes) > 0:
         min_r_pos -= 13
