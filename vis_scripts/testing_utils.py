@@ -181,35 +181,36 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # get all the genes
         list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
         for gene_id in list_genes:
-            if gene_id not in correct_genes:
-                c_gene_num = 0
-                c_gene_length = 0
-            else:
-                print(gene_id, correct_genes[gene_id])
-                gene_start = correct_genes[gene_id][0][3]
-                gene_end = correct_genes[gene_id][0][4]
-                c_gene_num = len(correct_genes[gene_id])
-                c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
-            if gene_id not in incorrect_genes:
-                i_gene_num = 0
-                i_gene_length = 0
-            else:
-                gene_start = incorrect_genes[gene_id][0][3]
-                gene_end = incorrect_genes[gene_id][0][4]
-                i_gene_num = len(incorrect_genes[gene_id])
-                i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
-
-            gene_score = ((c_gene_length - i_gene_length)/(c_gene_length + i_gene_length))*100
-            print(gene_id, gene_score, c_gene_length, i_gene_length)
-            
-            pident_pos = []
-            for i in range(gene_start, gene_end+1, 1):
-                if i in query_pident:
-                    pident_pos.append(query_pident[i])
+            if gene_id != 'NA':
+                if gene_id not in correct_genes:
+                    c_gene_num = 0
+                    c_gene_length = 0
                 else:
-                    pident_pos.append(0)
-            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-            outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
+                    print(gene_id, correct_genes[gene_id])
+                    gene_start = correct_genes[gene_id][0][3]
+                    gene_end = correct_genes[gene_id][0][4]
+                    c_gene_num = len(correct_genes[gene_id])
+                    c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
+                if gene_id not in incorrect_genes:
+                    i_gene_num = 0
+                    i_gene_length = 0
+                else:
+                    gene_start = incorrect_genes[gene_id][0][3]
+                    gene_end = incorrect_genes[gene_id][0][4]
+                    i_gene_num = len(incorrect_genes[gene_id])
+                    i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
+
+                gene_score = ((c_gene_length - i_gene_length)/(c_gene_length + i_gene_length))*100
+                print(gene_id, gene_score, c_gene_length, i_gene_length)
+                
+                pident_pos = []
+                for i in range(gene_start, gene_end+1, 1):
+                    if i in query_pident:
+                        pident_pos.append(query_pident[i])
+                    else:
+                        pident_pos.append(0)
+                avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+                outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
             
             
             #     print('strand', gene_info[4])
