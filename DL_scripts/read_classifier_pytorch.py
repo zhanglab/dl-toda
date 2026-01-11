@@ -130,6 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
+    parser.add_argument('--num_processes', type=int, help='number of proces to run Blast', default=1)
     parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
     parser.add_argument('--taxonomy', type=str, help='path to file mapping labels to taxonomy')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
