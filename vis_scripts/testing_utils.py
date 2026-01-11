@@ -97,199 +97,218 @@ def GetGenomesInfo(fasta):
 	
 	return strain
 
-# def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, training_fasta, testing_fasta, testing_genome, output_dir, num_processes):
+def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, training_fasta, testing_fasta, testing_genome, output_dir, num_processes):
 
-# 	# load data from training and testing genomes of label 1
-# 	query_fasta = Fasta(testing_fasta) # query --> testing genome
-# 	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
+	# load data from training and testing genomes of label 1
+	query_fasta = Fasta(testing_fasta) # query --> testing genome
+	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
 
-# 	# Initialize circos instance
-# 	circos = Circos(
-# 	    sectors=query_fasta.get_seqid2size(),
-# 	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
-# 		space=10,
-# 	)
+	# Initialize circos instance
+	circos = Circos(
+	    sectors=query_fasta.get_seqid2size(),
+	    # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
+		space=10,
+	)
 
-# 	train_strain = GetGenomesInfo(training_fasta)
-# 	test_strain = GetGenomesInfo(testing_fasta)
-# 	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
+	train_strain = GetGenomesInfo(training_fasta)
+	test_strain = GetGenomesInfo(testing_fasta)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
-# 	with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
-# 		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
-# 		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
+	with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
+		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
+		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
-# 	min_r_pos = 100
-# 	for sector in circos.sectors:
-# 		# Setup outer track
-# 		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
-# 		outer_track.axis(fc="black")
-# 		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
-# 		min_r_pos -= 1
-# 		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+	min_r_pos = 100
+	for sector in circos.sectors:
+		# Setup outer track
+		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+		outer_track.axis(fc="black")
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+		min_r_pos -= 1
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
-# 	# Blast genome comparison & plot match blocks
-# 	# store percentage identity between matching regions
-# 	percent_identity = []
-# 	# run blast
-# 	RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-# 	align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	# Blast genome comparison & plot match blocks
+	# store percentage identity between matching regions
+	percent_identity = []
+	# run blast
+	RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
-# 	# get average percentage identity per gene
-# 	with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
-# 		for gene_id, gene_info in correct_genes.items():
-# 			gene_start = gene_info[2]
-# 			gene_end = gene_info[3]
-# 			pident_pos = []
-# 			for i in range(gene_start, gene_end+1, 1):
-# 				if i in query_pident:
-# 					pident_pos.append(query_pident[i])
-# 				else:
-# 					pident_pos.append(0)
-# 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-# 			f.write(f'{gene_id}\t{avg_pident}\tC\n')
+	# get average percentage identity per gene
+	with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
+		for gene_id, gene_info in correct_genes.items():
+			gene_start = gene_info[2]
+			gene_end = gene_info[3]
+			pident_pos = []
+			for i in range(gene_start, gene_end+1, 1):
+				if i in query_pident:
+					pident_pos.append(query_pident[i])
+				else:
+					pident_pos.append(0)
+			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+			f.write(f'{gene_id}\t{avg_pident}\tC\n')
 
-# 		for gene_id, gene_info in incorrect_genes.items():
-# 			gene_start = gene_info[2]
-# 			gene_end = gene_info[3]
-# 			pident_pos = []
-# 			for i in range(gene_start, gene_end+1, 1):
-# 				if i in query_pident:
-# 					pident_pos.append(query_pident[i])
-# 				else:
-# 					pident_pos.append(0)
-# 			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-# 			f.write(f'{gene_id}\t{avg_pident}\tI\n')
+		for gene_id, gene_info in incorrect_genes.items():
+			gene_start = gene_info[2]
+			gene_end = gene_info[3]
+			pident_pos = []
+			for i in range(gene_start, gene_end+1, 1):
+				if i in query_pident:
+					pident_pos.append(query_pident[i])
+				else:
+					pident_pos.append(0)
+			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+			f.write(f'{gene_id}\t{avg_pident}\tI\n')
 
 
-# 	# count the number of identical positions across the aligned regions
-# 	identical_positions = 0
-# 	for sector in circos.sectors:
-# 		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-# 		min_r_pos -= 5	
-# 		for ac in align_coords:
-# 			percent_identity.append(ac[2])
-# 			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-# 			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-# 			blast_track.rect(ac[0], ac[1], color=rect_color)
+	# count the number of identical positions across the aligned regions
+	identical_positions = 0
+	for sector in circos.sectors:
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos -= 5	
+		for ac in align_coords:
+			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+			blast_track.rect(ac[0], ac[1], color=rect_color)
 
-# 	# get stats on percentage identity
-# 	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-# 	ani = round(statistics.mean(percent_identity), 2)
-# 	with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
-# 		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
-# 		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
+	# get stats on percentage identity
+	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	ani = round(statistics.mean(percent_identity), 2)
+	with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
 
-# 	for sector in circos.sectors:
-# 		# define x-axis vector for the next tracks
-# 		genome_pos = list(range(query_fasta.full_genome_length))
+	for sector in circos.sectors:
+		# define x-axis vector for the next tracks
+		genome_pos = list(range(query_fasta.full_genome_length))
 
-# 		# add track for scores
-# 		min_r_pos -= 5
-# 		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-# 		scores_track.axis(ec="deeppink")
-# 		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
-# 		y_labels = list(map(str, y_values))
-# 		scores_track.yticks(y_values, y_labels)
-# 		scores_track.line(genome_pos, scores, color="deeppink")
-# 		print(f'added score track')
+		# add track for scores
+		min_r_pos -= 5
+		scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		scores_track.axis(ec="deeppink")
+		y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
+		y_labels = list(map(str, y_values))
+		scores_track.yticks(y_values, y_labels)
+		scores_track.line(genome_pos, scores, color="deeppink")
+		print(f'added score track')
 
-# 		# add track for correct classification
-# 		if len(correct_genes) > 0:
-# 			min_r_pos -= 13
-#             # Setup track for forward and reverse strand CDS
-# 			f_cds_correct_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-# 			f_cds_correct_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-#             r_cds_correct_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
-# 			r_cds_correct_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-# 			# Plot fw and rev strand CDS
-#             for gene_id, gene_info in correct_genes.items():
-#                 print('strand', gene_info[4])
-#                 if gene_info[4] == 1:
-#                     f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
-#                 else:
-#                     r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
-# 			print(f'added correct track')
+		# add track for correct and incorrect classification
+		# if len(correct_genes) > 0:
+			min_r_pos -= 13
+            # Setup track for forward and reverse strand CDS
+			f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			f_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+            r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
+			r_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+			# get all the genes
+            list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
+            # for each egne define a score: 
+            # Plot fw and rev strand CDS
+            # for gene_id, gene_info in correct_genes.items():
+            for gene_id in list_genes:
+                if gene_id not in correct_genes:
+                    # c_gene_num = 0
+                    c_gene_length = 0
+                else:
+                    # c_gene_num = len(correct_genes[gene_id])
+                    c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
+                if gene_id not in incorrect_genes:
+                    # i_gene_num = 0
+                    i_gene_length = 0
+                else:
+                    # i_gene_num = len(incorrect_genes[gene_id])
+                    i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
-# 		# add tracks for misclassifications
-# 		if len(incorrect_alignments) > 0:
-# 			min_r_pos -= 13
-#             # Setup track for forward and reverse strand CDS
-# 			f_cds_incorrect_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-# 			f_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-#             r_cds_incorrect_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
-# 			r_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-# 			# Plot fw and rev strand CDS
-#             for gene_id, gene_info in incorrect_genes.items():
-#                 print('strand', gene_info[4])
-#                 if gene_info[4] == 1:
-#                     f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
-#                 else:
-#                     r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
-# 			print(f'added incorrect track')
+                gene_score = (c_gene_length - i_gene_value)/100
+                print(gene_id, gene_score, c_gene_length, i_gene_length)
+            #     print('strand', gene_info[4])
+            #     if gene_info[4] == '+:
+            #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
+            #     else:
+            #         r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
+			# print(f'added correct track')
+
+		# add tracks for misclassifications
+		# if len(incorrect_alignments) > 0:
+			# min_r_pos -= 13
+            # Setup track for forward and reverse strand CDS
+			# f_cds_incorrect_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+			# f_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+            # r_cds_incorrect_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
+			# r_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+			# Plot fw and rev strand CDS
+            # for gene_id, gene_info in incorrect_genes.items():
+            #     print('strand', gene_info[4])
+            #     if gene_info[4] == '+:
+            #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
+            #     else:
+            #         r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
+			# print(f'added incorrect track')
 			
 
-# 		# # Plot GC skew
-# 		# min_r_pos -= 11
-# 		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
-# 		# pos_list, gcskews = GetGCSkew(test_record_seq)
-# 		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
-# 		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
-# 		# abs_max_gcskew = np.max(np.abs(gcskews))
-# 		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
-# 		# gcskew_track.fill_between(
-# 		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
-# 		# )
-# 		# gcskew_track.fill_between(
-# 		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
-# 		# )
+		# # Plot GC skew
+		# min_r_pos -= 11
+		# gcskew_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gcskews = GetGCSkew(test_record_seq)
+		# positive_gcskews = np.where(gcskews > 0, gcskews, 0)
+		# negative_gcskews = np.where(gcskews < 0, gcskews, 0)
+		# abs_max_gcskew = np.max(np.abs(gcskews))
+		# vmin, vmax = -abs_max_gcskew, abs_max_gcskew
+		# gcskew_track.fill_between(
+		# 	pos_list, positive_gcskews, 0, vmin=vmin, vmax=vmax, color="grey"
+		# )
+		# gcskew_track.fill_between(
+		# 	pos_list, negative_gcskews, 0, vmin=vmin, vmax=vmax, color="limegreen"
+		# )
 
-# 		# # Plot GC content
-# 		# min_r_pos -= 5
-# 		# gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
-# 		# pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
-# 		# gc_content_updated = gc_content - test_genome_gc_content
-# 		# positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
-# 		# negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
-# 		# abs_max_gc_content = np.max(np.abs(gc_content_updated))
-# 		# vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-# 		# gc_content_track.fill_between(
-# 		# 	pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
-# 		# )
-# 		# gc_content_track.fill_between(
-# 		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
-# 		# )
+		# # Plot GC content
+		# min_r_pos -= 5
+		# gc_content_track = sector.add_track((min_r_pos-5, min_r_pos))
+		# pos_list, gc_content, test_genome_gc_content = GetGCContent(test_record_seq)
+		# gc_content_updated = gc_content - test_genome_gc_content
+		# positive_gc_content = np.where(gc_content_updated > 0, gc_content_updated, 0)
+		# negative_gc_content = np.where(gc_content_updated < 0, gc_content_updated, 0)
+		# abs_max_gc_content = np.max(np.abs(gc_content_updated))
+		# vmin, vmax = -abs_max_gc_content, abs_max_gc_content
+		# gc_content_track.fill_between(
+		# 	pos_list, positive_gc_content, 0, vmin=vmin, vmax=vmax, color="black"
+		# )
+		# gc_content_track.fill_between(
+		# 	pos_list, negative_gc_content, 0, vmin=vmin, vmax=vmax, color="deeppink"
+		# )
 		
-# 		# # report GC content of train and test genomes
-# 		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
-# 		# with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
-# 		# 	f.write(f'Testing genome:\t{test_genome_gc_content}\n')
-# 		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
+		# # report GC content of train and test genomes
+		# _, _, train_genome_gc_content = GetGCContent(train_record_seq)
+		# with open(os.path.join(args.output_dir, f'{args.testing_genome}_GC_content.tsv'), 'w') as f:
+		# 	f.write(f'Testing genome:\t{test_genome_gc_content}\n')
+		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
 
-# 	# Save figure
-# 	# Enable annotation text adjustment (Default)
-# 	# config.ann_adjust.enable = True
-# 	fig = circos.plotfig()
-# 	# Add legend
-# 	handles = []
-# 	handles += [
-# 		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
-# 		Patch(color='deeppink', label='Score')
-# 	]
-# 	if len(correct_alignments) > 0:
-# 		handles.append(Patch(color='blue', label='True Positives'))
-# 	if len(incorrect_alignments) > 0:
-# 		handles.append(Patch(color='darkviolet', label='False Positives'))
+	# # Save figure
+	# # Enable annotation text adjustment (Default)
+	# # config.ann_adjust.enable = True
+	# fig = circos.plotfig()
+	# # Add legend
+	# handles = []
+	# handles += [
+	# 	Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
+	# 	Patch(color='deeppink', label='Score')
+	# ]
+	# if len(correct_alignments) > 0:
+	# 	handles.append(Patch(color='blue', label='True Positives'))
+	# if len(incorrect_alignments) > 0:
+	# 	handles.append(Patch(color='darkviolet', label='False Positives'))
 		
-# 	# handles += [
-# 	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
-# 	# 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
-# 	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
-# 	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
-# 	# 	]
-# 	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
-# 	fig.savefig(outfigpath, dpi=300)
+	# # handles += [
+	# # 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+	# # 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+	# # 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+	# # 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
+	# # 	]
+	# _ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	# fig.savefig(outfigpath, dpi=300)
 
-# 	return avg_pct_identity, ani, test_strain, train_strain
+	# return avg_pct_identity, ani, test_strain, train_strain
 
 def GetGenes(annot_info, seq_start, seq_end):
     target_gene_id = 'NA'
