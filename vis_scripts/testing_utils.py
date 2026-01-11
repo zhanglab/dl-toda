@@ -195,33 +195,33 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 
 		# add track for correct and incorrect classification
 		# if len(correct_genes) > 0:
-			min_r_pos -= 13
-            # Setup track for forward and reverse strand CDS
-			f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-			f_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-            r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
-			r_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-			# get all the genes
-            list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
-            # for each egne define a score: 
-            # Plot fw and rev strand CDS
-            # for gene_id, gene_info in correct_genes.items():
-            for gene_id in list_genes:
-                if gene_id not in correct_genes:
-                    # c_gene_num = 0
-                    c_gene_length = 0
-                else:
-                    # c_gene_num = len(correct_genes[gene_id])
-                    c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
-                if gene_id not in incorrect_genes:
-                    # i_gene_num = 0
-                    i_gene_length = 0
-                else:
-                    # i_gene_num = len(incorrect_genes[gene_id])
-                    i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
+        min_r_pos -= 13
+        # Setup track for forward and reverse strand CDS
+        f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+        f_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+        r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
+        r_cds_track.axis(ec="lightgrey", ec="none", alpha=0.5)
+        # get all the genes
+        list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
+        # for each egne define a score: 
+        # Plot fw and rev strand CDS
+        # for gene_id, gene_info in correct_genes.items():
+        for gene_id in list_genes:
+            if gene_id not in correct_genes:
+                # c_gene_num = 0
+                c_gene_length = 0
+            else:
+                # c_gene_num = len(correct_genes[gene_id])
+                c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
+            if gene_id not in incorrect_genes:
+                # i_gene_num = 0
+                i_gene_length = 0
+            else:
+                # i_gene_num = len(incorrect_genes[gene_id])
+                i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
-                gene_score = (c_gene_length - i_gene_value)/100
-                print(gene_id, gene_score, c_gene_length, i_gene_length)
+            gene_score = (c_gene_length - i_gene_value)/100
+            print(gene_id, gene_score, c_gene_length, i_gene_length)
             #     print('strand', gene_info[4])
             #     if gene_info[4] == '+:
             #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
