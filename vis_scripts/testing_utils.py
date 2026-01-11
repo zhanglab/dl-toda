@@ -135,50 +135,50 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	align_coords, query_pident = GetMatchRegions(args, f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
 	# get average percentage identity per gene
-	with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
-		for gene_id, gene_info in correct_genes.items():
-			gene_start = gene_info[2]
-			gene_end = gene_info[3]
-			pident_pos = []
-			for i in range(gene_start, gene_end+1, 1):
-				if i in query_pident:
-					pident_pos.append(query_pident[i])
-				else:
-					pident_pos.append(0)
-			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-			f.write(f'{gene_id}\t{avg_pident}\tC\n')
+    with open(os.path.join(args.output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
+        for gene_id, gene_info in correct_genes.items():
+            gene_start = gene_info[2]
+            gene_end = gene_info[3]
+            pident_pos = []
+            for i in range(gene_start, gene_end+1, 1):
+                if i in query_pident:
+                    pident_pos.append(query_pident[i])
+                else:
+                    pident_pos.append(0)
+            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+            f.write(f'{gene_id}\t{avg_pident}\tC\n')
 
-		for gene_id, gene_info in incorrect_genes.items():
-			gene_start = gene_info[2]
-			gene_end = gene_info[3]
-			pident_pos = []
-			for i in range(gene_start, gene_end+1, 1):
-				if i in query_pident:
-					pident_pos.append(query_pident[i])
-				else:
-					pident_pos.append(0)
-			avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-			f.write(f'{gene_id}\t{avg_pident}\tI\n')
+        for gene_id, gene_info in incorrect_genes.items():
+            gene_start = gene_info[2]
+            gene_end = gene_info[3]
+            pident_pos = []
+            for i in range(gene_start, gene_end+1, 1):
+                if i in query_pident:
+                    pident_pos.append(query_pident[i])
+                else:
+                    pident_pos.append(0)
+            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+            f.write(f'{gene_id}\t{avg_pident}\tI\n')
 
 
 	# count the number of identical positions across the aligned regions
-	identical_positions = 0
-	for sector in circos.sectors:
-		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-		min_r_pos -= 5	
-		for ac in align_coords:
-			percent_identity.append(ac[2])
-			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-			blast_track.rect(ac[0], ac[1], color=rect_color)
+    identical_positions = 0
+    for sector in circos.sectors:
+        blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+        min_r_pos -= 5	
+        for ac in align_coords:
+            percent_identity.append(ac[2])
+            identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+            rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+            blast_track.rect(ac[0], ac[1], color=rect_color)
 
 	# get stats on percentage identity
-	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-	ani = round(statistics.mean(percent_identity), 2)
-	with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
-		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
-		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
-
+    avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+    ani = round(statistics.mean(percent_identity), 2)
+    with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
+        f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
+        f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
+    
     for sector in circos.sectors:
         # define x-axis vector for the next tracks
         genome_pos = list(range(query_fasta.full_genome_length))
