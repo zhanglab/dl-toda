@@ -134,33 +134,6 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
     RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
     align_coords, query_pident = GetMatchRegions(f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
-	# get average percentage identity per gene
-    with open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w') as f:
-        for gene_id, gene_info in correct_genes.items():
-            gene_start = gene_info[2]
-            gene_end = gene_info[3]
-            pident_pos = []
-            for i in range(gene_start, gene_end+1, 1):
-                if i in query_pident:
-                    pident_pos.append(query_pident[i])
-                else:
-                    pident_pos.append(0)
-            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-            f.write(f'{gene_id}\t{avg_pident}\tC\n')
-
-        for gene_id, gene_info in incorrect_genes.items():
-            gene_start = gene_info[2]
-            gene_end = gene_info[3]
-            pident_pos = []
-            for i in range(gene_start, gene_end+1, 1):
-                if i in query_pident:
-                    pident_pos.append(query_pident[i])
-                else:
-                    pident_pos.append(0)
-            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-            f.write(f'{gene_id}\t{avg_pident}\tI\n')
-
-
     # count the number of identical positions across the aligned regions
     identical_positions = 0
     for sector in circos.sectors:
@@ -200,27 +173,44 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
         r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-        # get all the genes
-        list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
+        
         # for each egne define a score: 
         # Plot fw and rev strand CDS
         # for gene_id, gene_info in correct_genes.items():
+        outfile = open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w')
+        # get all the genes
+        list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
         for gene_id in list_genes:
             if gene_id not in correct_genes:
-                # c_gene_num = 0
+                c_gene_num = 0
                 c_gene_length = 0
             else:
-                # c_gene_num = len(correct_genes[gene_id])
+                gene_start = correct_genes[gene_id][0][3]
+                gene_end = correct_genes[gene_id][0][4]
+                c_gene_num = len(correct_genes[gene_id])
                 c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
             if gene_id not in incorrect_genes:
-                # i_gene_num = 0
+                i_gene_num = 0
                 i_gene_length = 0
             else:
-                # i_gene_num = len(incorrect_genes[gene_id])
+                gene_start = incorrect_genes[gene_id][0][3]
+                gene_end = incorrect_genes[gene_id][0][4]
+                i_gene_num = len(incorrect_genes[gene_id])
                 i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
             gene_score = (c_gene_length - i_gene_value)/100
             print(gene_id, gene_score, c_gene_length, i_gene_length)
+            
+            pident_pos = []
+            for i in range(gene_start, gene_end+1, 1):
+                if i in query_pident:
+                    pident_pos.append(query_pident[i])
+                else:
+                    pident_pos.append(0)
+            avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+            outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
+            
+            
             #     print('strand', gene_info[4])
             #     if gene_info[4] == '+:
             #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
