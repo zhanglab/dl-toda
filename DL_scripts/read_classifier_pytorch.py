@@ -387,8 +387,8 @@ if __name__ == "__main__":
             if not os.path.exists(annotations_dir):
                 os.makedirs(annotations_dir)
             annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, annotations_dir, args.output_dir)
-            correct_genes = {}
-            incorrect_genes = {}
+            correct_genes = defaultdict(list)
+            incorrect_genes = defaultdict(list)
             correct_seq = {}
             incorrect_seq = {}
             with open(args.test_tsv_file, 'r') as f:
@@ -403,11 +403,11 @@ if __name__ == "__main__":
                     output = ''
                     if predictions[idx] == ground_truth[idx]:
                         output = 'C'
-                        correct_genes[gene_id] = gene_info
+                        correct_genes[gene_id].append(gene_info)
                         correct_seq[idx] = [seq_start, seq_end]
                     else:
                         output = 'I'
-                        incorrect_genes[gene_id] = gene_info
+                        incorrect_genes[gene_id].append(gene_info)
                         incorrect_seq[idx] = [seq_start, seq_end]
                     outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx][predictions[idx]]}\t{gene_id}')
                     if len(gene_info) > 0:
@@ -424,6 +424,8 @@ if __name__ == "__main__":
 
             c_genes = list(correct_genes.keys())
             i_genes = list(incorrect_genes.keys())
+            for k, v in c_genes.items():
+                print(k, len(v), v)
             print('incorrect and correct genes', len(set(c_genes).intersection(set(i_genes))))
             # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes):
 
