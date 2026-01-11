@@ -428,7 +428,7 @@ if __name__ == "__main__":
             for k, v in correct_genes.items():
                 print(k, len(v), v)
             print('incorrect and correct genes', len(set(c_genes).intersection(set(i_genes))))
-            CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes):
+            CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
 
 
     if args.lc_dir is not None:
