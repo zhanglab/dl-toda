@@ -221,7 +221,7 @@ if __name__ == "__main__":
             epoch_val_loss = 0.0
             epoch_val_acc = 0.0
             for val_batch, inputs in enumerate(val_dataloader, 0):
-                val_loss, val_accuracy, _, _ = test_step(inputs, model, device)
+                val_loss, val_accuracy, _, _, _ = test_step(inputs, model, device)
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
