@@ -160,7 +160,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         genome_pos = list(range(query_fasta.full_genome_length))
 
         # # add track for scores
-        min_r_pos -= 5
+        min_r_pos -= 0.3
         # scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         # scores_track.axis(ec="deeppink")
         # y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
@@ -174,7 +174,8 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # Setup track for forward and reverse strand CDS
         f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-        r_cds_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
+        min_r_pos -= 0.3
+        r_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         
         # for each egne define a score: 
