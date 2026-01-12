@@ -98,6 +98,7 @@ def main():
     # if args.bert_step == 'pretraining' or args.multiclass:
     # get size of training genomes
     train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    train_genomes_df.columns = ['label','genome','fasta']
     print(train_genomes_df)
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
@@ -124,12 +125,12 @@ def main():
 
     with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
         sequences = manager.dict()
-        # create list of Process objects
-        processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(args.num_processes)]
-        for p in processes:
-            p.start() # start the processes
-        for p in processes:
-            p.join() # join the processes, program will hang and wait until all the processes are done
+        # # create list of Process objects
+        # processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(args.num_processes)]
+        # for p in processes:
+        #     p.start() # start the processes
+        # for p in processes:
+        #     p.join() # join the processes, program will hang and wait until all the processes are done
 
         if args.bert_step == 'pretraining' or args.multiclass:
             # args.min_coverage == 1.5 for pre-training
@@ -166,12 +167,15 @@ def main():
                 out_f.write(''.join(all_val_data))
 
         elif args.bert_step == "finetuning":
+            # get training genome of target label
+            target_genome = train_genomes_df.loc[train_genomes_df['label'] == args.target_label, 'genome'].tolist()[0]
             # get genus of target label
             genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             for k, v in genome_to_tax.items():
                 print(k, v)
                 break
+            print(genome_to_tax[target_genome])
             sys.exit(1)
             num = len(sequences[args.target_label])
             div = len(labels) -1
