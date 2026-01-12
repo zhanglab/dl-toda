@@ -226,7 +226,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
         # set the data for the mappable
         print(score_values[0:10])
-        mappable.set_array(score_values) 
+        score_values = mappable.set_array(score_values) 
         print(score_values[0:10])
         
         # plot genes
