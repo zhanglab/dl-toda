@@ -225,19 +225,25 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # create a ScalarMappable to map values to colors and generate a colorbar
         mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
         # set the data for the mappable
-        print(values[0:10])
+        print(score_values[0:10])
         mappable.set_array(list(score_values.values())) 
-        print(values[0:10])
+        print(score_values[0:10])
         
-        # # plot genes
-        # for gene_id in list_genes:
-        #     if gene_id != 'NA':
-        #         if gene_id in correct_genes:
-        #             gene_start = correct_genes[gene_id][0][3]
-        #             gene_end = correct_genes[gene_id][0][4]
-        #         elif gene_id in incorrect_genes:
-        #             gene_start = correct_genes[gene_id][0][3]
-        #             gene_end = correct_genes[gene_id][0][4]
+        # plot genes
+        for idx, gene_id in enumerate(list_genes):
+            if gene_id != 'NA':
+                if gene_id in correct_genes:
+                    gene_start = correct_genes[gene_id][0][3]
+                    gene_end = correct_genes[gene_id][0][4]
+                    gene_strand = correct_genes[gene_id][0][5]
+                elif gene_id in incorrect_genes:
+                    gene_start = correct_genes[gene_id][0][3]
+                    gene_end = correct_genes[gene_id][0][4]
+                    gene_strand = correct_genes[gene_id][0][5]
+                if gene_strand == '+':
+                    gene_color = score_values[idx]
+                    print(gene_color)
+                    f_cds_track.genomic_features(gene_start, gene_end, plotstyle="arrow", fc=gene_color, lw=0.5)
 
 
 
