@@ -205,13 +205,12 @@ def main():
                     for i in range(len(labels_same_genus)):
                         num_seq = num_seq_per_genus.pop()
                         other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
-                        print(other_labels_seq[:10])
+                    print(f'# sequences: {len(other_labels_seq)}')
                     
                     # at other levels
                     for i in range(len(labels_other)):
                         num_seq = num_seq_per_sp.pop()
-                        other_labels_seq += sequences[labels_others[i]][:num_seq]
-                        print(other_labels_seq[:10])
+                        other_labels_seq += sequences[labels_other[i]][:num_seq]
                     print(f'# sequences: {len(other_labels_seq)}')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
