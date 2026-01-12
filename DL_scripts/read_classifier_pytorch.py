@@ -8,6 +8,7 @@ import csv
 import datetime
 import pandas as pd
 import seaborn as sns
+import statistics
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
     parser.add_argument('--num_processes', type=int, help='number of proces to run Blast', default=1)
+    parser.add_argument('--threshold', type=float, help='threshold of probability score', default=0.9)
     parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
     parser.add_argument('--taxonomy', type=str, help='path to file mapping labels to taxonomy')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
@@ -392,43 +394,41 @@ if __name__ == "__main__":
             incorrect_genes = defaultdict(list)
             correct_seq = {}
             incorrect_seq = {}
+            conf_score_kept = []
             with open(args.test_tsv_file, 'r') as f:
                 for idx, line in enumerate(f):
-                    seq_start = int(line.rstrip().split('\t')[2])
-                    seq_end = int(line.rstrip().split('\t')[3])
-                    list_tokens = line.rstrip().split('\t')[1].split(' ')
-                    seq = list_tokens[0]
-                    for i in range(len(list_tokens)):
-                        seq += list_tokens[i][-1]
-                    gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
-                    gene_info_up = [seq_start, seq_end] + gene_info
-                    output = ''
-                    if predictions[idx] == ground_truth[idx]:
-                        output = 'C'
-                        correct_genes[gene_id].append(gene_info_up)
-                        correct_seq[idx] = [seq_start, seq_end]
-                    else:
-                        output = 'I'
-                        incorrect_genes[gene_id].append(gene_info_up)
-                        incorrect_seq[idx] = [seq_start, seq_end]
-                    outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx][predictions[idx]]}\t{gene_id}')
-                    if len(gene_info) > 0:
-                        for i in range(len(gene_info)):
-                            outfile.write(f'\t{gene_info[i]}')
-                        if gene_info[0] == 'protein_coding':
-                            outfile.write('\n')
+                    if confidence_scores[idx][predictions[idx]] >= args.threshold:
+                        conf_score_kept.append(confidence_scores[idx][predictions[idx]])
+                        seq_start = int(line.rstrip().split('\t')[2])
+                        seq_end = int(line.rstrip().split('\t')[3])
+                        list_tokens = line.rstrip().split('\t')[1].split(' ')
+                        seq = list_tokens[0]
+                        for i in range(len(list_tokens)):
+                            seq += list_tokens[i][-1]
+                        gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
+                        gene_info_up = [seq_start, seq_end] + gene_info
+                        output = ''
+                        if predictions[idx] == ground_truth[idx]:
+                            output = 'C'
+                            correct_genes[gene_id].append(gene_info_up)
+                            correct_seq[idx] = [seq_start, seq_end]
                         else:
-                            outfile.write('\tNA\tNA\n')
-                    else:
-                        for i in range(7):
-                            outfile.write('\tNA')
-                        outfile.write('\n')
-
-            c_genes = list(correct_genes.keys())
-            i_genes = list(incorrect_genes.keys())
-            for k, v in correct_genes.items():
-                print(k, len(v), v)
-            print('incorrect and correct genes', len(set(c_genes).intersection(set(i_genes))))
+                            output = 'I'
+                            incorrect_genes[gene_id].append(gene_info_up)
+                            incorrect_seq[idx] = [seq_start, seq_end]
+                        outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx][predictions[idx]]}\t{gene_id}')
+                        if len(gene_info) > 0:
+                            for i in range(len(gene_info)):
+                                outfile.write(f'\t{gene_info[i]}')
+                            if gene_info[0] == 'protein_coding':
+                                outfile.write('\n')
+                            else:
+                                outfile.write('\tNA\tNA\n')
+                        else:
+                            for i in range(7):
+                                outfile.write('\tNA')
+                            outfile.write('\n')
+            print(f'mean:\t{statistics.mean(conf_score_kept)}\nmedian:\t{statistics.median(conf_score_kept)}\nmin:\t{min(conf_score_kept)}\nmax:\t{max(conf_score_kept)}')
             CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
 
 
