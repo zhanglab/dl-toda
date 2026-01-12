@@ -285,12 +285,12 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
-	fig = circos.plotfig()
+    fig = circos.plotfig()
 	# Add legend
-	handles = []
-	handles += [
-		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
-	]
+    handles = []
+    handles += [
+        Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
+    ]
 
 	# handles += [
 	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
@@ -298,8 +298,8 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
 	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
 	# 	]
-	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
-	fig.savefig(os.path.join(output_dir, 'circos.png'), dpi=300)
+    _ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+    fig.savefig(os.path.join(output_dir, 'circos.png'), dpi=300)
 
 def GetGenes(annot_info, seq_start, seq_end):
     target_gene_id = 'NA'
