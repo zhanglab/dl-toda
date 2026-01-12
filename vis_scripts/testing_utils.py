@@ -291,7 +291,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 
     # Create a ScalarMappable only for the colorbar
     sm = matplotlib.cm.ScalarMappable(cmap=cmap)
-    sm.set_clim(vmin=vmin, vmax=vmax)
+    sm.set_clim(vmin=v_min, vmax=v_max)
 
     # Add colorbar (legend for heatmap)
     cbar = fig.colorbar(sm, ax=circos.ax, fraction=0.046, pad=0.04)
