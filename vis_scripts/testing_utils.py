@@ -222,8 +222,9 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         cmap = plt.get_cmap('viridis')
         # normalize colors based on our values
         norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
-        rgba_colors = cmap(norm)
-        value_to_color = dict(zip(score_values, rgba_colors))
+        normalized_score_values = norm(score_values)
+        rgba_colors = cmap(normalized_score_values)
+        value_to_color = dict(zip(normalized_score_values, rgba_colors))
         for value, color in value_to_color.items():
             print(f"Value: {value}, Color (RGBA): {color}")
         
@@ -239,8 +240,8 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     gene_end = correct_genes[gene_id][0][4]
                     gene_strand = correct_genes[gene_id][0][5]
                 if gene_strand == '+':
-                    print(value_to_color[score_values[idx]])
-                    f_cds_track.genomic_features(gene_start, gene_end, plotstyle="arrow", fc=value_to_color[score_values[idx]], lw=0.5)
+                    print(value_to_color[normalized_score_values[idx]])
+                    f_cds_track.genomic_features(gene_start, gene_end, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
 
 
 
