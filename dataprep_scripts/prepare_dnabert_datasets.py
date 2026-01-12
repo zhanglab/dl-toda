@@ -184,10 +184,11 @@ def main():
                 for i in range(len(train_genomes)):
                     if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
                         if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
-                            labels_same_genus.append(train_labels[i])
+                            labels_same_genus.append(str(train_labels[i]))
                 print(labels_same_genus, len(labels_same_genus))
                 
                 num = len(sequences[args.target_label]) // 2
+                # num_genus = len(sequences[args.target_label]) * args.
                 num_genus_labels = len(labels_same_genus)
                 num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
                 labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
