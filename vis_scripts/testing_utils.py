@@ -241,7 +241,9 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     gene_strand = correct_genes[gene_id][0][5]
                 if gene_strand == '+':
                     print(value_to_color[normalized_score_values[idx]])
-                    f_cds_track.genomic_features(gene_start, gene_end, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+                    f_cds_track.genomic_features((gene_start, gene_end), plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+                elif gene_strand == '-':
+                    r_cds_track.genomic_features((gene_start, gene_end), plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
 
 
 
