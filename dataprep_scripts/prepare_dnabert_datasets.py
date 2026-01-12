@@ -173,10 +173,10 @@ def main():
             # get genus of target label
             genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
-            for k, v in genome_to_tax.items():
-                print(k, v)
-                break
-            print(genome_to_tax[target_genome])
+            target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
+            print(target_genus)
+            labels_same_genus = [k for k, v in genome_to_tax.items() if v.split(';')[-2].split('__')[1] == target_genus]
+            print(labels_same_genus, len(labels_same_genus))
             sys.exit(1)
             num = len(sequences[args.target_label])
             div = len(labels) -1
