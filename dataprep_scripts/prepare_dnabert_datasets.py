@@ -179,8 +179,9 @@ def main():
             train_genomes = train_genomes_df['genome'].tolist()
             train_labels = train_genomes_df['label'].tolist()
             for i in range(len(train_genomes)):
-                if train_genomes[i]!= target_genome and genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1] == target_genus:
-                    labels_same_genus.append(train_labels[i])
+                if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
+                    if genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1] == target_genus:
+                        labels_same_genus.append(train_labels[i])
             print(labels_same_genus, len(labels_same_genus))
             sys.exit(1)
             
