@@ -18,6 +18,7 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import matplotlib
 
 ColorCycler.set_cmap("Set1")
 
