@@ -179,6 +179,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # for gene_id, gene_info in correct_genes.items():
         outfile = open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w')
         # get all the genes
+        scores = {}
         list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
         for gene_id in list_genes:
             if gene_id != 'NA':
@@ -210,8 +211,26 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     else:
                         pident_pos.append(0)
                 avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+                scores[gene_id] = gene_score
                 outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
             
+        # create a color palette
+        list_genes = list(scores.keys())
+        values = [scores[k] for k in list_genes]
+        v_min = min(values)
+        v_max = max(values)
+        # get a color palette from matplotlib
+        cmap = plt.get_cmap('viridis')
+        # normalize colors based on our values
+        norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
+        # create a ScalarMappable to map values to colors and generate a colorbar
+        mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+        # set the data for the mappable
+        print(values[0:10])
+        mappable.set_array(list(values.values())) 
+        print(values[0:10])
+
+
             
             #     print('strand', gene_info[4])
             #     if gene_info[4] == '+:
@@ -220,22 +239,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
             #         r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
 			# print(f'added correct track')
 
-		# add tracks for misclassifications
-		# if len(incorrect_alignments) > 0:
-			# min_r_pos -= 13
-            # Setup track for forward and reverse strand CDS
-			# f_cds_incorrect_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-			# f_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-            # r_cds_incorrect_track = sector.add_track((min_r_pos-15, min_r_pos-5), r_pad_ratio=0.1)
-			# r_cds_incorrect_track.axis(ec="lightgrey", ec="none", alpha=0.5)
-			# Plot fw and rev strand CDS
-            # for gene_id, gene_info in incorrect_genes.items():
-            #     print('strand', gene_info[4])
-            #     if gene_info[4] == '+:
-            #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
-            #     else:
-            #         r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
-			# print(f'added incorrect track')
+
 			
 
 		# # Plot GC skew
