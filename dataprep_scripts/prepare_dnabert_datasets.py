@@ -168,7 +168,7 @@ def main():
 
         elif args.bert_step == "finetuning":
             # get training genome of target label
-            target_genome = train_genomes_df.loc[train_genomes_df['label'] == args.target_label, 'genome'].tolist()[0]
+            target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
             # get genus of target label
             genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
