@@ -174,7 +174,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # Setup track for forward and reverse strand CDS
         f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-        min_r_pos -= 0.3
+        min_r_pos -= 10.3
         r_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         
