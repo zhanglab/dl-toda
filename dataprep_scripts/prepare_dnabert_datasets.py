@@ -174,23 +174,28 @@ def main():
             genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
-            print(target_genus)
             labels_same_genus = []
             train_genomes = train_genomes_df['genome'].tolist()
             train_labels = train_genomes_df['label'].tolist()
             for i in range(len(train_genomes)):
-                print(train_genomes[i])
                 if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
-                    print(genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1])
                     if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
                         labels_same_genus.append(train_labels[i])
             print(labels_same_genus, len(labels_same_genus))
-            sys.exit(1)
             
-            num = len(sequences[args.target_label])
-            div = len(labels) -1
-            num_seq_per_sp = [num // div + (1 if x < num % div else 0)  for x in range (div)]
-            print(f'{num}\t{div}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
+            num = len(sequences[args.target_label]) // 2
+            div_genus = len(labels_same_genus)
+            num_seq_per_genus = [num // div_genus + (1 if x < num % div else 0) for x in range (div_genus)]
+            print(num, div_genus)
+            print(num_seq_per_genus)
+            print(sum(num_seq_per_genus))
+            div_sp = len(labels) -1 -len(labels_same_genus)
+            num_seq_per_sp = [num // div_sp + (1 if x < num % div_sp else 0) for x in range (div_sp)]
+            print(num, div_sp)
+            print(num_seq_per_sp)
+            print(sum(num_seq_per_sp))
+            sys.exit(1)
+            # print(f'{num}\t{div}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
             if args.dataset == 'train':
                 # get number of reads per label
                 other_labels_seq = []
