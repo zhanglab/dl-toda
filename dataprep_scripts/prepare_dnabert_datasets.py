@@ -97,8 +97,8 @@ def main():
 
     # if args.bert_step == 'pretraining' or args.multiclass:
     # get size of training genomes
-    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    train_genomes_df.columns = ['label','genome','fasta']
+    # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    # train_genomes_df.columns = ['label','genome','fasta']
 
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
@@ -167,49 +167,53 @@ def main():
                 out_f.write(''.join(all_val_data))
 
         elif args.bert_step == "finetuning":
-            # get training genome of target label
-            target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
-            print(target_genome)
-            # get genus of target label
+            # load gtdb metadata
             genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
-            target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
-            labels_same_genus = []
-            train_genomes = train_genomes_df['genome'].tolist()
-            train_labels = train_genomes_df['label'].tolist()
-            for i in range(len(train_genomes)):
-                if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
-                    if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
-                        labels_same_genus.append(train_labels[i])
-            print(labels_same_genus, len(labels_same_genus))
-            
-            num = len(sequences[args.target_label]) // 2
-            div_genus = len(labels_same_genus)
-            num_seq_per_genus = [num // div_genus + (1 if x < num % div_genus else 0) for x in range (div_genus)]
-            print(num, div_genus)
-            print(num_seq_per_genus)
-            print(sum(num_seq_per_genus))
-            div_sp = len(labels) -1 -len(labels_same_genus)
-            num_seq_per_sp = [num // div_sp + (1 if x < num % div_sp else 0) for x in range (div_sp)]
-            print(num, div_sp)
-            print(num_seq_per_sp)
-            print(sum(num_seq_per_sp))
-            sys.exit(1)
-            # print(f'{num}\t{div}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
             if args.dataset == 'train':
-                # get number of reads per label
+                train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+                train_genomes_df.columns = ['label','genome','fasta']
+                # get training genome of target label
+                target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
+                print(target_genome)
+                # get genus of target label
+                target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
+                labels_same_genus = []
+                train_genomes = train_genomes_df['genome'].tolist()
+                train_labels = train_genomes_df['label'].tolist()
+                for i in range(len(train_genomes)):
+                    if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
+                        if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
+                            labels_same_genus.append(train_labels[i])
+                print(labels_same_genus, len(labels_same_genus))
+                
+                num = len(sequences[args.target_label]) // 2
+                num_genus_labels = len(labels_same_genus)
+                num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
+                labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
+                num_sp_labels = len(labels_other)
+                num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
+                print(f'{len(sequences[args.target_label])}\t{num}\t{num_genus_labels}\t{sum(num_seq_per_genus)}\t{len(num_seq_per_genus)}\t{num_sp_labels}\t{sum(num_seq_per_sp)}\t{len(num_seq_per_sp)}')
+                
+                # get sequences 
                 other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
-                    for i in range(len(labels)):
-                        if labels[i] != args.target_label:
-                            num_seq = num_seq_per_sp.pop()
-                            other_labels_seq += sequences[labels[i]][:num_seq]
-                
-                print(other_labels_seq[:10])
-                get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
-                get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
+                    # at the genus level
+                    for i in range(len(labels_same_genus)):
+                        num_seq = num_seq_per_genus.pop()
+                        other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
+                        print(other_labels_seq[:10])
+                    
+                    # at other levels
+                    for i in range(len(labels_other)):
+                        num_seq = num_seq_per_sp.pop()
+                        other_labels_seq += sequences[labels_others[i]][:num_seq]
+                        print(other_labels_seq[:10])
+                    print(f'# sequences: {len(other_labels_seq)}')
+                    get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
+                    get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
 
                 random.shuffle(all_val_data)
                 random.shuffle(all_train_data)
