@@ -7,7 +7,8 @@ import subprocess
 import random
 import statistics
 import numpy as np
-# from Bio import SeqIO, SeqUtils
+from Bio import SeqIO, SeqUtils
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 from collections import defaultdict
 from pycirclize import Circos, config
 from pygenomeviz.parser import Fasta
@@ -239,11 +240,12 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     gene_start = correct_genes[gene_id][0][3]
                     gene_end = correct_genes[gene_id][0][4]
                     gene_strand = correct_genes[gene_id][0][5]
-                if gene_strand == '+':
-                    print(value_to_color[normalized_score_values[idx]])
-                    f_cds_track.genomic_features((gene_start, gene_end), plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
-                elif gene_strand == '-':
-                    r_cds_track.genomic_features((gene_start, gene_end), plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+                gene_strand = 1 if gene_strand == '+' else -1
+                feature = SeqFeature(FeatureLocation(gene_start, gene_end, strand=gene_strand),type="CDS")
+                if gene_strand == 1:
+                    f_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+                elif gene_strand == -1:
+                    r_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
 
 
 
