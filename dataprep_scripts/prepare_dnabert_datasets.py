@@ -175,9 +175,15 @@ def main():
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
             print(target_genus)
-            labels_same_genus = [(k, v) for k, v in genome_to_tax.items() if v.split(';')[-2].split('__')[1] == target_genus and k in train_genomes_df['genome'].tolist()]
+            labels_same_genus = []
+            train_genomes = train_genomes_df['genome'].tolist()
+            train_labels = train_genomes_df['label'].tolist()
+            for i in range(len(train_genomes)):
+                if train_genomes[i]!= target_genome and genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1] == target_genus:
+                    labels_same_genus.append(train_labels[i])
             print(labels_same_genus, len(labels_same_genus))
             sys.exit(1)
+            
             num = len(sequences[args.target_label])
             div = len(labels) -1
             num_seq_per_sp = [num // div + (1 if x < num % div else 0)  for x in range (div)]
