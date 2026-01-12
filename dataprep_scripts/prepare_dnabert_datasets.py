@@ -172,7 +172,6 @@ def main():
             print(target_genome)
             # get genus of target label
             genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
-            genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             for k, v in genome_to_tax.items():
                 print(k, v)
