@@ -12,8 +12,9 @@ def get_gtdb_info(gtdb_info):
     ncbi_genome_category = gtdb_df['ncbi_genome_category'].tolist()
     ncbi_genome_representation = gtdb_df['ncbi_genome_representation'].tolist()
     gtdb_rep_genome = [i[3:] for i in gtdb_df['gtdb_genome_representative'].tolist()]
+    gtdb_taxonomy = gtdb_df['gtdb_taxonomy'].tolist()
 
-    return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome
+    return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy
 
 def clean_fasta(genome_id, fastafile, path_to_db, output_dir, out_f):
     updated_seq = []

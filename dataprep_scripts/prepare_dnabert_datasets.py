@@ -99,7 +99,7 @@ def main():
     # get size of training genomes
     train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
     train_genomes_df.columns = ['label','genome','fasta']
-    print(train_genomes_df)
+
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     sam_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_sam_data]
@@ -169,8 +169,10 @@ def main():
         elif args.bert_step == "finetuning":
             # get training genome of target label
             target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
+            print(target_genome)
             # get genus of target label
-            genomes, _, _, _, _, gtdb_taxonomy, _ = get_gtdb_info(args.gtdb_info)
+            genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
+            genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             for k, v in genome_to_tax.items():
                 print(k, v)
