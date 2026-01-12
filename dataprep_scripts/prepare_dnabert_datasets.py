@@ -125,12 +125,12 @@ def main():
 
     with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
         sequences = manager.dict()
-        # # create list of Process objects
-        # processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(args.num_processes)]
-        # for p in processes:
-        #     p.start() # start the processes
-        # for p in processes:
-        #     p.join() # join the processes, program will hang and wait until all the processes are done
+        # create list of Process objects
+        processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(args.num_processes)]
+        for p in processes:
+            p.start() # start the processes
+        for p in processes:
+            p.join() # join the processes, program will hang and wait until all the processes are done
 
         if args.bert_step == 'pretraining' or args.multiclass:
             # args.min_coverage == 1.5 for pre-training
