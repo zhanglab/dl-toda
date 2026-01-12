@@ -226,13 +226,9 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         normalized_score_values = norm(score_values)
         rgba_colors = cmap(normalized_score_values)
         value_to_color = dict(zip(normalized_score_values, rgba_colors))
-        for value, color in value_to_color.items():
-            print(f"Value: {value}, Color (RGBA): {color}")
-            break
-        
+
         # plot genes
         for idx, gene_id in enumerate(list_genes):
-            print(idx, gene_id)
             if gene_id != 'NA':
                 if gene_id in correct_genes:
                     gene_start = correct_genes[gene_id][0][3]
@@ -248,19 +244,6 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     f_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
                 elif gene_strand == -1:
                     r_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
-
-
-
-            
-            #     print('strand', gene_info[4])
-            #     if gene_info[4] == '+:
-            #         f_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="salmon", lw=0.5)
-            #     else:
-            #         r_cds_correct_track.genomic_features(gene_info[2], gene_info[3], plotstyle="arrow", fc="skyblue", lw=0.5)
-			# print(f'added correct track')
-
-
-			
 
 		# # Plot GC skew
 		# min_r_pos -= 11
@@ -299,31 +282,24 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 		# 	f.write(f'Testing genome:\t{test_genome_gc_content}\n')
 		# 	f.write(f'Training genome:\t{train_genome_gc_content}')
 
-	# # Save figure
-	# # Enable annotation text adjustment (Default)
-	# # config.ann_adjust.enable = True
-	# fig = circos.plotfig()
-	# # Add legend
-	# handles = []
-	# handles += [
-	# 	Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
-	# 	Patch(color='deeppink', label='Score')
-	# ]
-	# if len(correct_alignments) > 0:
-	# 	handles.append(Patch(color='blue', label='True Positives'))
-	# if len(incorrect_alignments) > 0:
-	# 	handles.append(Patch(color='darkviolet', label='False Positives'))
-		
-	# # handles += [
-	# # 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
-	# # 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
-	# # 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
-	# # 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
-	# # 	]
-	# _ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
-	# fig.savefig(outfigpath, dpi=300)
+	# Save figure
+	# Enable annotation text adjustment (Default)
+	# config.ann_adjust.enable = True
+	fig = circos.plotfig()
+	# Add legend
+	handles = []
+	handles += [
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
+	]
 
-	# return avg_pct_identity, ani, test_strain, train_strain
+	# handles += [
+	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='gold', label='Negative GC Skew', marker="v", ms=6, ls="None"),
+	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
+	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
+	# 	]
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	fig.savefig(os.path.join(output_dir, 'circos.png'), dpi=300)
 
 def GetGenes(annot_info, seq_start, seq_end):
     target_gene_id = 'NA'
