@@ -185,7 +185,7 @@ def main():
             
             num = len(sequences[args.target_label]) // 2
             div_genus = len(labels_same_genus)
-            num_seq_per_genus = [num // div_genus + (1 if x < num % div else 0) for x in range (div_genus)]
+            num_seq_per_genus = [num // div_genus + (1 if x < num % div_genus else 0) for x in range (div_genus)]
             print(num, div_genus)
             print(num_seq_per_genus)
             print(sum(num_seq_per_genus))
