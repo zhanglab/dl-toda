@@ -228,18 +228,20 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         value_to_color = dict(zip(normalized_score_values, rgba_colors))
         for value, color in value_to_color.items():
             print(f"Value: {value}, Color (RGBA): {color}")
+            break
         
         # plot genes
         for idx, gene_id in enumerate(list_genes):
+            print(idx, gene_id)
             if gene_id != 'NA':
                 if gene_id in correct_genes:
                     gene_start = correct_genes[gene_id][0][3]
                     gene_end = correct_genes[gene_id][0][4]
                     gene_strand = correct_genes[gene_id][0][5]
                 elif gene_id in incorrect_genes:
-                    gene_start = correct_genes[gene_id][0][3]
-                    gene_end = correct_genes[gene_id][0][4]
-                    gene_strand = correct_genes[gene_id][0][5]
+                    gene_start = incorrect_genes[gene_id][0][3]
+                    gene_end = incorrect_genes[gene_id][0][4]
+                    gene_strand = incorrect_genes[gene_id][0][5]
                 gene_strand = 1 if gene_strand == '+' else -1
                 feature = SeqFeature(FeatureLocation(gene_start, gene_end, strand=gene_strand),type="CDS")
                 if gene_strand == 1:
