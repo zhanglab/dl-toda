@@ -215,9 +215,9 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
             
         # create a color palette
         list_genes = list(scores.keys())
-        values = [scores[k] for k in list_genes]
-        v_min = min(values)
-        v_max = max(values)
+        score_values = [scores[k] for k in list_genes]
+        v_min = min(score_values)
+        v_max = max(score_values)
         # get a color palette from matplotlib
         cmap = plt.get_cmap('viridis')
         # normalize colors based on our values
@@ -226,11 +226,18 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
         # set the data for the mappable
         print(values[0:10])
-        mappable.set_array(list(values.values())) 
+        mappable.set_array(list(score_values.values())) 
         print(values[0:10])
         
-        # plot genes
+        # # plot genes
         # for gene_id in list_genes:
+        #     if gene_id != 'NA':
+        #         if gene_id in correct_genes:
+        #             gene_start = correct_genes[gene_id][0][3]
+        #             gene_end = correct_genes[gene_id][0][4]
+        #         elif gene_id in incorrect_genes:
+        #             gene_start = correct_genes[gene_id][0][3]
+        #             gene_end = correct_genes[gene_id][0][4]
 
 
 
