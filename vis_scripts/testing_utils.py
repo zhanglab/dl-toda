@@ -15,6 +15,7 @@ from pygenomeviz.utils import load_example_fasta_dataset, ColorCycler, interpola
 from pygenomeviz.align import AlignCoord, Blast
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
 ColorCycler.set_cmap("Set1")
@@ -187,7 +188,6 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     c_gene_num = 0
                     c_gene_length = 0
                 else:
-                    print(gene_id, correct_genes[gene_id])
                     gene_start = correct_genes[gene_id][0][3]
                     gene_end = correct_genes[gene_id][0][4]
                     c_gene_num = len(correct_genes[gene_id])
@@ -202,7 +202,6 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
                     i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
                 gene_score = ((c_gene_length - i_gene_length)/(c_gene_length + i_gene_length))
-                print(gene_id, gene_score, c_gene_length, i_gene_length)
                 
                 pident_pos = []
                 for i in range(gene_start, gene_end+1, 1):
@@ -229,6 +228,10 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         print(values[0:10])
         mappable.set_array(list(values.values())) 
         print(values[0:10])
+        
+        # plot genes
+        # for gene_id in list_genes:
+
 
 
             
