@@ -216,6 +216,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
             
         # create a color palette
         list_genes = list(scores.keys())
+        print(f'# genes: {len(list_genes)}')
         score_values = [scores[k] for k in list_genes]
         v_min = min(score_values)
         v_max = max(score_values)
@@ -286,6 +287,14 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
     fig = circos.plotfig()
+
+    # Create a ScalarMappable only for the colorbar
+    sm = ScalarMappable(cmap=cmap)
+    sm.set_clim(vmin=vmin, vmax=vmax)
+
+    # Add colorbar (legend for heatmap)
+    cbar = fig.colorbar(sm, ax=circos.ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Score")
 	# Add legend
     handles = []
     handles += [
