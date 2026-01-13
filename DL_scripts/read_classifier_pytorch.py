@@ -123,6 +123,7 @@ if __name__ == "__main__":
     parser.add_argument('--test_fasta', type=str, help='fasta file of testing genome', required=('--testing' in sys.argv))
     parser.add_argument('--test_genome_id', type=str, help='accession ID of testing genome', required=('--testing' in sys.argv))
     parser.add_argument('--genome', help='do testing at the genome level', action='store_true', required=('--testing' in sys.argv))
+    parser.add_argument('--resume', help='resume training', action='store_true', required=('training' in sys.argv))
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--testing_sum_dir', help='input directory for summarizing testing results', default=os.getcwd())
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
@@ -169,7 +170,10 @@ if __name__ == "__main__":
         print(config_dict)
         # create BERT config object and model
         bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
-        model = BertForSequenceClassification(config=bert_config)
+        if args.resume:
+            model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+        else:
+            model = BertForSequenceClassification(config=bert_config)
         model.to(device)
 
         embeddings = model.bert.embeddings.word_embeddings.weight
