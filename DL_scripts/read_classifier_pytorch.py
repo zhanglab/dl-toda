@@ -251,17 +251,22 @@ if __name__ == "__main__":
                     found_min = True
                 else:
                     patience += 1
+            
+            # save model every 100 epochs
+            if (epoch+1) % 1 == 0:
+                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
 
             # save model
             if stop_training or (epoch+1) == args.num_epochs:
                 if found_min:
-                    torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}-best.pth'))
+                    torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}-best.pth'))
                     model.load_state_dict(best_model)
-                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}-best'))
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}-best'))
                     
                 else:
-                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}'))
-                    torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch}.pth'))
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                    torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
                 break
 
         train_logs_file.close()
