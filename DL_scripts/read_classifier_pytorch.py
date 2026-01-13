@@ -253,7 +253,7 @@ if __name__ == "__main__":
                     patience += 1
             
             # save model every 100 epochs
-            if (epoch+1) % 1 == 0:
+            if (epoch+1) % 100 == 0:
                 model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
                 torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
 
@@ -276,6 +276,7 @@ if __name__ == "__main__":
         total_time = end - start
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
+        days = total_time.days
 
         embeddings = model.bert.embeddings.word_embeddings.weight
         data = []
@@ -290,7 +291,7 @@ if __name__ == "__main__":
             writer.writerows(data)
 
         with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
-            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+            f.write(f'Runtime\t{days}:{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
     if args.mode == "testing":
 
