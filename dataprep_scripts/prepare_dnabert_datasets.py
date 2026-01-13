@@ -192,7 +192,8 @@ def main():
                 num_genus_labels = len(labels_same_genus)
                 num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
                                 
-                # get sequences 
+                # get sequences
+                other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
@@ -201,12 +202,9 @@ def main():
                         num_seq = num_seq_per_genus.pop()
                         other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
                     print(f'# sequences: {len(other_labels_seq)}')
-                    get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
-
                     
-                    # at other levels
+                    # for other species
                     if num != len(sequences[args.target_label]):
-                        other_labels_seq = []
                         labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
                         num_sp_labels = len(labels_other)
                         num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
@@ -215,7 +213,9 @@ def main():
                             other_labels_seq += sequences[labels_other[i]][:num_seq]
                         print(f'# sequences: {len(other_labels_seq)}')
                     
-                        get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
+                    # split sequences between train and val datasets
+                    get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
+                    get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
 
                 random.shuffle(all_val_data)
