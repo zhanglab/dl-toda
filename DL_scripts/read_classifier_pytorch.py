@@ -56,7 +56,8 @@ def test_step(inputs, model, device):
     correct = (predictions == label).sum().item()
     test_accuracy = correct/args.batch_size
 
-    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist()
+
+    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), outputs
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
@@ -136,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--threshold', type=float, help='threshold of probability score', default=0.9)
     parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
     parser.add_argument('--taxonomy', type=str, help='path to file mapping labels to taxonomy')
+    parser.add_argument('--annotations_dir', type=str, help='path to directory to store annotations downloaded from NCBI')
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--lc_dir', type=str, help='input directory for creating learning curves')
     args = parser.parse_args()
@@ -320,6 +322,16 @@ if __name__ == "__main__":
         with open(args.test_tsv_file, 'r') as f:
             num_test_reads = len(f.readlines())
 
+        with open(args.tokens_file, 'r') as f:
+            list_tokens = [line.rstrip() for line in f.readlines()]
+
+            for idx, line in enumerate(f.readlines()):
+                token_embeddings = embeddings[idx].tolist()
+                token_embeddings.insert(0,line.rstrip())
+                data.append(token_embeddings)
+
+
+
         print(f'num_test_reads\t{num_test_reads}\ntest_steps\t{math.ceil(num_test_reads/args.batch_size)}\n')
 
         epoch_test_loss = 0.0
@@ -327,13 +339,16 @@ if __name__ == "__main__":
         ground_truth = []
         predictions = []
         confidence_scores = []
+        all_token_embeddings = []
+        all_sentence_embeddings = []
         for batch, inputs in enumerate(test_dataloader, 0):
-            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs = test_step(inputs, model, device)
+            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
             ground_truth += batch_ground_truth
             predictions += batch_predictions
             confidence_scores += probs
+            
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
         # get number of FP, FN, TP, TN
         FP = 0
@@ -396,10 +411,7 @@ if __name__ == "__main__":
             outfile = open(os.path.join(args.output_dir, 'summary_genes.tsv'), 'w')
             # get annotations of testing genome
             input_dir = os.getcwd()
-            annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
-            if not os.path.exists(annotations_dir):
-                os.makedirs(annotations_dir)
-            annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, annotations_dir, args.output_dir)
+            annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, args.annotations_dir, args.output_dir)
             correct_genes = defaultdict(list)
             incorrect_genes = defaultdict(list)
             correct_seq = {}
