@@ -451,7 +451,7 @@ if __name__ == "__main__":
                                 outfile.write('\tNA')
                             outfile.write('\n')
             print(f'mean:\t{statistics.mean(conf_score_kept)}\nmedian:\t{statistics.median(conf_score_kept)}\nmin:\t{min(conf_score_kept)}\nmax:\t{max(conf_score_kept)}')
-            CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
+            # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
 
 
     if args.lc_dir is not None:
