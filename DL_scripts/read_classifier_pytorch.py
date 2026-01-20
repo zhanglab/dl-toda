@@ -353,8 +353,8 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
 
-        if not os.path.isdir(os.path.join(args.output_dir, 'testing')):
-            os.makedirs(os.path.join(args.output_dir, 'testing'))
+        if not os.path.isdir(args.output_dir):
+            os.makedirs(args.output_dir)
 
         # prepare input data
         test_data = TaxClassDataset(args.test_tsv_file, args.tokens_file, args.label)
@@ -386,7 +386,6 @@ if __name__ == "__main__":
         if args.genome:
             # get annotations of testing genome
             input_dir = os.getcwd()
-            annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
             if not os.path.exists(annotations_dir):
                 os.makedirs(annotations_dir)
             annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, args.annotations_dir, args.output_dir)
