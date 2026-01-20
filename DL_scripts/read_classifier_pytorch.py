@@ -386,8 +386,8 @@ if __name__ == "__main__":
         if args.genome:
             # get annotations of testing genome
             input_dir = os.getcwd()
-            if not os.path.exists(annotations_dir):
-                os.makedirs(annotations_dir)
+            if not os.path.exists(args.annotations_dir):
+                os.makedirs(args.annotations_dir)
             annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, args.annotations_dir, args.output_dir)
             correct_genes = defaultdict(list)
             incorrect_genes = defaultdict(list)
