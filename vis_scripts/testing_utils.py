@@ -180,7 +180,6 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         
         # for each egne define a score: 
         # Plot fw and rev strand CDS
-        # for gene_id, gene_info in correct_genes.items():
         outfile = open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w')
         # get all the genes
         scores = {}
@@ -343,6 +342,8 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 
 	annot_file = glob.glob(os.path.join(annotations_dir, f'{genome_id}_gtf/ncbi_dataset/data/{genome_id}/genomic.gtf'))
 	if len(annot_file) == 0:
+		if not os.path.exists(os.path.join(output_dir, 'Genomes_GTF_missing')):
+			os.makedirs(os.path.join(output_dir, 'Genomes_GTF_missing'))
 		f = open(os.path.join(output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
 		f.close()
 		return {}
