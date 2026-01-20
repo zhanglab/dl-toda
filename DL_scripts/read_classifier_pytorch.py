@@ -486,7 +486,7 @@ if __name__ == "__main__":
                 outfile.write('\n')
 
         # perform dimensionality reduction on embeddings
-        ProcessEmbeddings(correct_sequence_embeddings+incorrect_sequence_embeddings)
+        # ProcessEmbeddings(args, correct_sequence_embeddings+incorrect_sequence_embeddings)
         
         # visualize incorrect and correct classifications on circos plot 
         if args.genome:
