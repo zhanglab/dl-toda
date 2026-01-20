@@ -416,6 +416,7 @@ if __name__ == "__main__":
         confidence_scores = []
         # randomly select sequences for analysis of embeddings
         seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
+        print(f'# sequences: {len(seq_selected)}')
         correct_sequence_embeddings = []
         incorrect_sequence_embeddings = []
         
@@ -448,6 +449,11 @@ if __name__ == "__main__":
                 
                 outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}')
 
+                # write embeddings to file
+                outfile.write(f'\t{embeddings[0][0][0]}')
+                for i in range(1, len(embeddings[0][0]), 1):
+                    outfile.write(f' {embeddings[0][0][i]}')
+                
                 if args.genome:
                     # get gene associated with DNA sequence
                     seq_start = test_sequences[batch][1]
@@ -478,12 +484,9 @@ if __name__ == "__main__":
                         for i in range(7):
                             outfile.write('\tNA')
                         outfile.write('\n')
+                else:
+                    outfile.write('\n')
                     
-                # write embeddings to file
-                outfile.write(f'\t{embeddings[0][0][0]}')
-                for i in range(1, len(embeddings[0][0]), 1):
-                    outfile.write(f' {embeddings[0][0][i]}')
-                outfile.write('\n')
 
         # perform dimensionality reduction on embeddings
         # ProcessEmbeddings(args, correct_sequence_embeddings+incorrect_sequence_embeddings)
