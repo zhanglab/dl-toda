@@ -429,7 +429,7 @@ if __name__ == "__main__":
             # embeddings shape: (batch_size, 512, 768)
             # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
             # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
-            if batch in seq_selected and probs[0] >= args.threshold:
+            if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
                 # verify DNA sequence
                 input_ids, _, _, _, _ = inputs
                 input_ids = input_ids.tolist()[0]
@@ -479,10 +479,11 @@ if __name__ == "__main__":
                             outfile.write('\tNA')
                         outfile.write('\n')
                     
-                # # write embeddings to file
-                # for i in range(len(embeddings[0][0])):
-                #     outfile.write(f'\t{embeddings[0][0][i]}')
-                # outfile.write('\n')
+                # write embeddings to file
+                outfile.write(f'\t{embeddings[0][0][0]}')
+                for i in range(1, len(embeddings[0][0]), 1):
+                    outfile.write(f' {embeddings[0][0][i]}')
+                outfile.write('\n')
 
         # perform dimensionality reduction on embeddings
         ProcessEmbeddings(correct_sequence_embeddings+incorrect_sequence_embeddings)
