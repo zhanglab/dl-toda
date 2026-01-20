@@ -372,8 +372,8 @@ if __name__ == "__main__":
 
         start = datetime.datetime.now()
 
-        test_metrics = open(os.path.join(args.output_dir, 'testing', 'metrics.tsv'), 'w')
-        test_sum = open(os.path.join(args.output_dir, 'testing', 'summary.tsv'), 'w')
+        test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
+        test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
 
         with open(args.test_tsv_file, 'r') as f:
             num_test_reads = len(f.readlines())
@@ -394,9 +394,9 @@ if __name__ == "__main__":
             incorrect_genes = defaultdict(list)
             correct_seq = {}
             incorrect_seq = {}
-            outfile = open(os.path.join(args.output_dir, 'testing', f'{args.test_genome_id}_embeddings_info.tsv'), 'w')
+            outfile = open(os.path.join(args.output_dir, f'{args.test_genome_id}_embeddings_info.tsv'), 'w')
         else:
-            outfile = open(os.path.join(args.output_dir, 'testing', f'embeddings_info.tsv'), 'w')
+            outfile = open(os.path.join(args.output_dir,  f'embeddings_info.tsv'), 'w')
 
         # load DNA sequences
         test_sequences = []
@@ -528,19 +528,19 @@ if __name__ == "__main__":
             neg_precision = round(TN/(TN+FN),3)
         except ZeroDivisionError:
             neg_precision = 0
-        test_metrics.write(f'1\tprecision\t{neg_precision}\n')
+        test_metrics.write(f'0\tprecision\t{neg_precision}\n')
 
         try:
             pos_recall = round(TP/(TP+FN),3)
         except ZeroDivisionError:
             pos_recall = 0
-        test_metrics.write(f'1\tprecision\t{pos_recall}\n')
+        test_metrics.write(f'1\trecall\t{pos_recall}\n')
 
         try:
             neg_recall = round(TN/(TN+FP),3)
         except ZeroDivisionError:
             neg_recall = 0
-        test_metrics.write(f'1\tprecision\t{neg_recall}\n')
+        test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         test_metrics.close()
         test_sum.close()
@@ -550,7 +550,7 @@ if __name__ == "__main__":
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
 
-        with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
+        with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
         
         # if args.genome:
