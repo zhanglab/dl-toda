@@ -180,6 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--test_genome_id', type=str, help='accession ID of testing genome', required=('--testing' in sys.argv))
     parser.add_argument('--genome', help='do testing at the genome level', action='store_true', required=('--testing' in sys.argv))
     parser.add_argument('--resume', help='resume training', action='store_true')
+    parser.add_argument('--embeddings', help='analyze contextualized embeddings', action='store_true')
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--testing_sum_dir', help='input directory for summarizing testing results', default=os.getcwd())
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
-    parser.add_argument('--sample_size', type=int, help='number of DNA sequences to sample from the test set for embeddings analysis', default=100)
+    parser.add_argument('--sample_size', type=int, help='number of DNA sequences to sample from the test set for embeddings analysis')
     parser.add_argument('--num_processes', type=int, help='number of proces to run Blast', default=1)
     parser.add_argument('--threshold', type=float, help='threshold of probability score', default=0.9)
     parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
@@ -196,6 +197,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, help='path to output directory', default=os.getcwd())
     parser.add_argument('--lc_dir', type=str, help='input directory for creating learning curves')
     parser.add_argument('--annotations_dir', type=str, help='path to directory to store annotations downloaded from NCBI')
+    parser
     args = parser.parse_args()
 
     start = datetime.datetime.now()
@@ -413,8 +415,11 @@ if __name__ == "__main__":
         ground_truth = []
         predictions = []
         confidence_scores = []
-        # randomly select sequences for analysis of embeddings
-        seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
+        # randomly select sequences for analysis of embeddings 
+        if args.sample_size != None:
+            seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
+        else:
+            seq_selected = list(range(len(test_sequences)))
         print(f'# sequences: {len(seq_selected)}')
         correct_sequence_embeddings = []
         incorrect_sequence_embeddings = []
@@ -485,10 +490,6 @@ if __name__ == "__main__":
                         outfile.write('\n')
                 else:
                     outfile.write('\n')
-                    
-
-        # perform dimensionality reduction on embeddings
-        # ProcessEmbeddings(args, correct_sequence_embeddings+incorrect_sequence_embeddings)
         
         # visualize incorrect and correct classifications on circos plot 
         if args.genome:
@@ -551,57 +552,14 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
-        
-        # if args.genome:
-            # # create output file
-            # outfile = open(os.path.join(args.output_dir, 'summary_genes.tsv'), 'w')
-            # # get annotations of testing genome
-            # input_dir = os.getcwd()
-            # annotations_dir = os.path.join(args.output_dir, 'annotations_dir')
-            # if not os.path.exists(annotations_dir):
-            #     os.makedirs(annotations_dir)
-            # annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, args.annotations_dir, args.output_dir)
-            # correct_genes = defaultdict(list)
-            # incorrect_genes = defaultdict(list)
-            # correct_seq = {}
-            # incorrect_seq = {}
-            # conf_score_kept = []
-            # with open(args.test_tsv_file, 'r') as f:
-            #     for idx, line in enumerate(f):
-                    # if confidence_scores[idx][predictions[idx]] >= args.threshold:
-                        # conf_score_kept.append(confidence_scores[idx][predictions[idx]])
-                        # seq_start = int(line.rstrip().split('\t')[2])
-                        # seq_end = int(line.rstrip().split('\t')[3])
-                        # list_tokens = line.rstrip().split('\t')[1].split(' ')
-                        # seq = list_tokens[0]
-                        # for i in range(len(list_tokens)):
-                        #     seq += list_tokens[i][-1]
-                        # gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
-                        # gene_info_up = [seq_start, seq_end] + gene_info
-                        # output = ''
-                        # if predictions[idx] == ground_truth[idx]:
-                        #     output = 'C'
-                        #     correct_genes[gene_id].append(gene_info_up)
-                        #     correct_seq[idx] = [seq_start, seq_end]
-                        # else:
-                        #     output = 'I'
-                        #     incorrect_genes[gene_id].append(gene_info_up)
-                        #     incorrect_seq[idx] = [seq_start, seq_end]
-                        # outfile.write(f'{line.rstrip().split('\t')[0]}\t{seq}\t{seq_start}\t{seq_end}\t{line.rstrip().split('\t')[4]}\t{output}\t{confidence_scores[idx][predictions[idx]]}\t{gene_id}')
-                        # if len(gene_info) > 0:
-                        #     for i in range(len(gene_info)):
-                        #         outfile.write(f'\t{gene_info[i]}')
-                        #     if gene_info[0] == 'protein_coding':
-                        #         outfile.write('\n')
-                        #     else:
-                        #         outfile.write('\tNA\tNA\n')
-                        # else:
-                        #     for i in range(7):
-                        #         outfile.write('\tNA')
-                        #     outfile.write('\n')
-            # print(f'mean:\t{statistics.mean(conf_score_kept)}\nmedian:\t{statistics.median(conf_score_kept)}\nmin:\t{min(conf_score_kept)}\nmax:\t{max(conf_score_kept)}')
-            # CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
 
+    if args.embeddings:
+        # get input files
+        emb_files = glob.glob(os.path.join(args.input_dir, '*_embeddings_info.tsv'))
+        print(f'# embedding files: {len(emb_files)}')
+
+        # perform dimensionality reduction on embeddings
+        ProcessEmbeddings(args, correct_sequence_embeddings+incorrect_sequence_embeddings)
 
     if args.lc_dir is not None:
         # create learning curves
