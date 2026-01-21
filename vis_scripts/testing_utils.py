@@ -106,7 +106,7 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
     query_fasta = Fasta(testing_fasta) # query --> testing genome
     ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
 
-	if len(query_fasta.get_seqid2size()) > 1 or len(ref_fasta.get_seqid2size()):
+	if len(query_fasta.get_seqid2size()) > 1 or len(ref_fasta.get_seqid2size()) > 1:
 		return
 
     # Initialize circos instance
