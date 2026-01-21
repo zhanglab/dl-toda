@@ -192,63 +192,63 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 				if gene_id not in correct_genes:
 					c_gene_num = 0
 					c_gene_length = 0
-                else:
-                    gene_start = correct_genes[gene_id][0][3]
-                    gene_end = correct_genes[gene_id][0][4]
-                    c_gene_num = len(correct_genes[gene_id])
-                    c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
-                if gene_id not in incorrect_genes:
-                    i_gene_num = 0
-                    i_gene_length = 0
-                else:
-                    gene_start = incorrect_genes[gene_id][0][3]
-                    gene_end = incorrect_genes[gene_id][0][4]
-                    i_gene_num = len(incorrect_genes[gene_id])
-                    i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
+				else:
+					gene_start = correct_genes[gene_id][0][3]
+					gene_end = correct_genes[gene_id][0][4]
+					c_gene_num = len(correct_genes[gene_id])
+					c_gene_length = sum([seq[1] - seq[0] for seq in correct_genes[gene_id]])
+				if gene_id not in incorrect_genes:
+					i_gene_num = 0
+					i_gene_length = 0
+				else:
+					gene_start = incorrect_genes[gene_id][0][3]
+					gene_end = incorrect_genes[gene_id][0][4]
+					i_gene_num = len(incorrect_genes[gene_id])
+					i_gene_length = sum([seq[1] - seq[0] for seq in incorrect_genes[gene_id]])
 
-                gene_score = ((c_gene_length - i_gene_length)/(c_gene_length + i_gene_length))
+				gene_score = ((c_gene_length - i_gene_length)/(c_gene_length + i_gene_length))
                 
-                pident_pos = []
-                for i in range(gene_start, gene_end+1, 1):
-                    if i in query_pident:
-                        pident_pos.append(query_pident[i])
-                    else:
-                        pident_pos.append(0)
-                avg_pident = round(sum(pident_pos)/len(pident_pos),3)
-                scores[gene_id] = gene_score
-                outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
+				pident_pos = []
+				for i in range(gene_start, gene_end+1, 1):
+					if i in query_pident:
+						pident_pos.append(query_pident[i])
+					else:
+						pident_pos.append(0)
+				avg_pident = round(sum(pident_pos)/len(pident_pos),3)
+				scores[gene_id] = gene_score
+				outfile.write(f'{gene_id}\t{avg_pident}\t{c_gene_num}\t{i_gene_num}\t{c_gene_length}\t{i_gene_length}\t{gene_score}\n')
             
         # create a color palette
-        list_genes = list(scores.keys())
-        print(f'# genes: {len(list_genes)}')
-        score_values = [scores[k] for k in list_genes]
-        v_min = min(score_values)
-        v_max = max(score_values)
+		list_genes = list(scores.keys())
+		print(f'# genes: {len(list_genes)}')
+		score_values = [scores[k] for k in list_genes]
+		v_min = min(score_values)
+		v_max = max(score_values)
         # get a color palette from matplotlib
-        cmap = plt.get_cmap('viridis')
+		cmap = plt.get_cmap('viridis')
         # normalize colors based on our values
-        norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
-        normalized_score_values = norm(score_values)
-        rgba_colors = cmap(normalized_score_values)
-        value_to_color = dict(zip(normalized_score_values, rgba_colors))
+		norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
+		normalized_score_values = norm(score_values)
+		rgba_colors = cmap(normalized_score_values)
+		value_to_color = dict(zip(normalized_score_values, rgba_colors))
 
         # plot genes
-        for idx, gene_id in enumerate(list_genes):
-            if gene_id != 'NA':
-                if gene_id in correct_genes:
-                    gene_start = correct_genes[gene_id][0][3]
-                    gene_end = correct_genes[gene_id][0][4]
-                    gene_strand = correct_genes[gene_id][0][5]
-                elif gene_id in incorrect_genes:
-                    gene_start = incorrect_genes[gene_id][0][3]
-                    gene_end = incorrect_genes[gene_id][0][4]
-                    gene_strand = incorrect_genes[gene_id][0][5]
-                gene_strand = 1 if gene_strand == '+' else -1
-                feature = SeqFeature(FeatureLocation(gene_start, gene_end, strand=gene_strand),type="CDS")
-                if gene_strand == 1:
-                    f_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
-                elif gene_strand == -1:
-                    r_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+		for idx, gene_id in enumerate(list_genes):
+			if gene_id != 'NA':
+				if gene_id in correct_genes:
+					gene_start = correct_genes[gene_id][0][3]
+					gene_end = correct_genes[gene_id][0][4]
+					gene_strand = correct_genes[gene_id][0][5]
+				elif gene_id in incorrect_genes:
+					gene_start = incorrect_genes[gene_id][0][3]
+					gene_end = incorrect_genes[gene_id][0][4]
+					gene_strand = incorrect_genes[gene_id][0][5]
+				gene_strand = 1 if gene_strand == '+' else -1
+				feature = SeqFeature(FeatureLocation(gene_start, gene_end, strand=gene_strand),type="CDS")
+				if gene_strand == 1:
+					f_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
+				elif gene_strand == -1:
+					r_cds_track.genomic_features(feature, plotstyle="arrow", fc=value_to_color[normalized_score_values[idx]], lw=0.5)
 
 		# # Plot GC skew
 		# min_r_pos -= 11
@@ -290,20 +290,20 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	# Save figure
 	# Enable annotation text adjustment (Default)
 	# config.ann_adjust.enable = True
-    fig = circos.plotfig()
+	fig = circos.plotfig()
 
     # Create a ScalarMappable only for the colorbar
-    sm = matplotlib.cm.ScalarMappable(cmap=cmap)
-    sm.set_clim(vmin=v_min, vmax=v_max)
+	sm = matplotlib.cm.ScalarMappable(cmap=cmap)
+	sm.set_clim(vmin=v_min, vmax=v_max)
 
     # Add colorbar (legend for heatmap)
-    cbar = fig.colorbar(sm, ax=circos.ax, fraction=0.046, pad=0.04)
-    cbar.set_label("Score")
+	cbar = fig.colorbar(sm, ax=circos.ax, fraction=0.046, pad=0.04)
+	cbar.set_label("Score")
 	# Add legend
-    handles = []
-    handles += [
-        Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
-    ]
+	handles = []
+	handles += [
+		Patch(color='black', label=f'{train_strain}\n{ref_fasta.full_genome_length:,} bp (training genome) - {avg_pct_identity}% - {ani}%'),
+	]
 
 	# handles += [
 	# 	Line2D([], [], color='blue', label='Positive GC Skew', marker="^", ms=6, ls="None"),
@@ -311,8 +311,8 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 	# 	Line2D([], [], color='darkviolet', label='Positive GC Content', marker="^", ms=6, ls="None"),
 	# 	Line2D([], [], color='orangered', label='Negative GC Content', marker="v", ms=6, ls="None")
 	# 	]
-    _ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
-    fig.savefig(os.path.join(output_dir, 'circos.png'), dpi=300)
+	_ = circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.475), loc="center", fontsize=8)
+	fig.savefig(os.path.join(output_dir, 'circos.png'), dpi=300)
 
 def GetGenes(annot_info, seq_start, seq_end):
     target_gene_id = 'NA'
