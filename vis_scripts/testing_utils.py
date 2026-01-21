@@ -111,59 +111,59 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
 
     # Initialize circos instance
 	circos = Circos(
-        sectors=query_fasta.get_seqid2size(),
-        # space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
-        space=10,
-    )
+		sectors=query_fasta.get_seqid2size(),
+		# space=0 if len(ref_fasta.get_seqid2size()) == 1 else 2,
+		space=10,
+	)
 
-    train_strain = GetGenomesInfo(training_fasta)
-    test_strain = GetGenomesInfo(testing_fasta)
-    circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
+	train_strain = GetGenomesInfo(training_fasta)
+	test_strain = GetGenomesInfo(testing_fasta)
+	circos.text(f'{test_strain}\n{query_fasta.full_genome_length:,} bp\n(testing genome)', size=9, r=22)
 
-    with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
-        f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
-        f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
+	with open(os.path.join(output_dir, f'{testing_genome}_genomes_length.tsv'), 'w') as f:
+		f.write(f'Testing genome:\t{query_fasta.name}\t{query_fasta.full_genome_length}\n')
+		f.write(f'Training genome:\t{ref_fasta.name}\t{ref_fasta.full_genome_length}\n')
 
-    min_r_pos = 100
-    for sector in circos.sectors:
+	min_r_pos = 100
+	for sector in circos.sectors:
         # Setup outer track
-        outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
-        outer_track.axis(fc="black")
-        outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
-        min_r_pos -= 1
-        outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
+		outer_track = sector.add_track((min_r_pos-0.3, min_r_pos))
+		outer_track.axis(fc="black")
+		outer_track.xticks_by_interval(TICKS_INTERVAL, label_formatter=lambda v: f"{v/1000000:.1f} Mb",)
+		min_r_pos -= 1
+		outer_track.xticks_by_interval(100000, tick_length=1, show_label=False)
 
     # Blast genome comparison & plot match blocks
     # store percentage identity between matching regions
-    percent_identity = []
+	percent_identity = []
     # run blast
-    RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
-    align_coords, query_pident = GetMatchRegions(f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
+	RunBlast(os.path.join(output_dir, 'blast', testing_genome, 'test_train_genomes'), testing_fasta, num_processes, subject=[training_fasta], outfilename=f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out')
+	align_coords, query_pident = GetMatchRegions(f'{output_dir}/blast/{testing_genome}/test_train_genomes/test_train_genomes_blastn.out', identity_thr=MIN_IDENTITY)
 
     # count the number of identical positions across the aligned regions
-    identical_positions = 0
-    for sector in circos.sectors:
-        blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
-        min_r_pos -= 5	
-        for ac in align_coords:
-            percent_identity.append(ac[2])
-            identical_positions += (ac[2]/100*(ac[1]-ac[0]))
-            rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
-            blast_track.rect(ac[0], ac[1], color=rect_color)
+	identical_positions = 0
+	for sector in circos.sectors:
+		blast_track = sector.add_track((min_r_pos-5, min_r_pos), r_pad_ratio=0.1)
+		min_r_pos -= 5	
+		for ac in align_coords:
+			percent_identity.append(ac[2])
+			identical_positions += (ac[2]/100*(ac[1]-ac[0]))
+			rect_color = interpolate_color("black", v=ac[2], vmin=MIN_IDENTITY)
+			blast_track.rect(ac[0], ac[1], color=rect_color)
 
 	# get stats on percentage identity
-    avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
-    ani = round(statistics.mean(percent_identity), 2)
-    with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
-        f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
-        f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
+	avg_pct_identity = round(identical_positions/query_fasta.full_genome_length*100,2)
+	ani = round(statistics.mean(percent_identity), 2)
+	with open(os.path.join(output_dir, f'{testing_genome}_pct_identity_matching_regions.tsv'), 'w') as f:
+		f.write(f'# identical positions\t{identical_positions}\npercentage identity\t{avg_pct_identity}%\n')
+		f.write(f'Stats on aligned regions\nmean\t{statistics.mean(percent_identity)}\nmedian\t{statistics.median(percent_identity)}\nmin\t{min(percent_identity)}\nmax\t{max(percent_identity)}')
     
-    for sector in circos.sectors:
+	for sector in circos.sectors:
         # define x-axis vector for the next tracks
-        genome_pos = list(range(query_fasta.full_genome_length))
+		genome_pos = list(range(query_fasta.full_genome_length))
 
         # # add track for scores
-        min_r_pos -= 0.3
+		min_r_pos -= 0.3
         # scores_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
         # scores_track.axis(ec="deeppink")
         # y_values = list(range(math.floor(min(scores)), math.ceil(max(scores))+1, 1))
@@ -175,23 +175,23 @@ def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train
         # if len(correct_genes) > 0:
         # min_r_pos -= 13
         # Setup track for forward and reverse strand CDS
-        f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-        f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
-        min_r_pos -= 10.3
-        r_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
-        r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
+		f_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		f_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
+		min_r_pos -= 10.3
+		r_cds_track = sector.add_track((min_r_pos-10, min_r_pos), r_pad_ratio=0.1)
+		r_cds_track.axis(fc="lightgrey", ec="none", alpha=0.5)
         
         # for each egne define a score: 
-        # Plot fw and rev strand CDS
-        outfile = open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w')
+    	# Plot fw and rev strand CDS
+		outfile = open(os.path.join(output_dir, 'testing_genes_pident_training_genome.tsv'), 'w')
         # get all the genes
-        scores = {}
-        list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
-        for gene_id in list_genes:
-            if gene_id != 'NA':
-                if gene_id not in correct_genes:
-                    c_gene_num = 0
-                    c_gene_length = 0
+		scores = {}
+		list_genes = list(set(list(correct_genes.keys()) + list(incorrect_genes.keys())))
+		for gene_id in list_genes:
+			if gene_id != 'NA':
+				if gene_id not in correct_genes:
+					c_gene_num = 0
+					c_gene_length = 0
                 else:
                     gene_start = correct_genes[gene_id][0][3]
                     gene_end = correct_genes[gene_id][0][4]
