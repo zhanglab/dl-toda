@@ -103,8 +103,8 @@ def GetGenomesInfo(fasta):
 def CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, training_fasta, testing_fasta, testing_genome, output_dir, num_processes):
 
     # load data from training and testing genomes of label 1
-    query_fasta = Fasta(testing_fasta) # query --> testing genome
-    ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
+	query_fasta = Fasta(testing_fasta) # query --> testing genome
+	ref_fasta = Fasta(training_fasta) # ref/subject --> training genome
 
 	if len(query_fasta.get_seqid2size()) > 1 or len(ref_fasta.get_seqid2size()) > 1:
 		return
