@@ -189,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
-    parser.add_argument('--sample_size', type=int, help='number of DNA sequences to sample from the test set for embeddings analysis')
+    parser.add_argument('--sample_size', type=int, help='number of DNA sequences to sample from the test set for embeddings analysis', default=100)
     parser.add_argument('--num_processes', type=int, help='number of proces to run Blast', default=1)
     parser.add_argument('--threshold', type=float, help='threshold of probability score', default=0.9)
     parser.add_argument('--learning_rate', type=float, help='initial learning rate', default=0.000002)
@@ -416,10 +416,7 @@ if __name__ == "__main__":
         predictions = []
         confidence_scores = []
         # randomly select sequences for analysis of embeddings 
-        if args.sample_size != None:
-            seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
-        else:
-            seq_selected = list(range(len(test_sequences)))
+        seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
         print(f'# sequences: {len(seq_selected)}')
         correct_sequence_embeddings = []
         incorrect_sequence_embeddings = []
