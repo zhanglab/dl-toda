@@ -369,8 +369,8 @@ if __name__ == "__main__":
 
                 output_dir = os.path.join(args.output_dir, f'label_{label}')
 
-                if not os.path.isdir(args.output_dir):
-                    os.makedirs(args.output_dir)
+                if not os.path.isdir(output_dir):
+                    os.makedirs(output_dir)
 
                 # prepare input data
                 test_data = TaxClassDataset(test_tsv_file, args.tokens_file, label)
