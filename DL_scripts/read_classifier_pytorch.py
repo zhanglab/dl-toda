@@ -391,7 +391,7 @@ if __name__ == "__main__":
                 test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
                 test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
 
-                with open(args.test_tsv_file, 'r') as f:
+                with open(test_tsv_file, 'r') as f:
                     num_test_reads = len(f.readlines())
 
                 dict_tokens = {}
