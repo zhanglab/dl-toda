@@ -408,7 +408,7 @@ if __name__ == "__main__":
                 for i in range(1, len(list_tokens), 1):
                     seq += list_tokens[i][-1]
                 test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
-        print(f'# sequences: {len(test_sequences)}')
+        print(f'# sequences: {len(test_sequences)}\t{test_sequences[:5]}')
 
         epoch_test_loss = 0.0
         epoch_test_acc = 0.0
@@ -448,7 +448,7 @@ if __name__ == "__main__":
                 elif result == 'C':
                     correct_sequence_embeddings.append(embeddings[0][0])
                 
-                outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}')
+                outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}\t{batch_seq}')
 
                 # write embeddings to file
                 outfile.write(f'\t{embeddings[0][0][0]}')
