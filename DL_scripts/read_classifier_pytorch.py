@@ -357,7 +357,7 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
 
-        with open(args.input_test_file, 'r'):
+        with open(args.input_test_file, 'r') as f:
             for line in f:
                 label = line.rstrip().split('\t')[0]
                 test_genome_id = line.rstrip().split('\t')[3]
