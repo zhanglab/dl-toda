@@ -355,200 +355,211 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
 
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(args.output_dir)
+        with open(args.input_test_file, 'r'):
+            for line in f:
+                label = line.rstrip().split('\t')[0]
+                test_genome_id = line.rstrip().split('\t')[3]
+                test_fasta = line.rstrip().split('\t')[4]
+                train_fasta = line.rstrip().split('\t')[5]
 
-        # prepare input data
-        test_data = TaxClassDataset(args.test_tsv_file, args.tokens_file, args.label)
-        test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False)
-        
-        # load parameters for BERT
-        with open(args.bert_config_file, "r") as f:
-            config_dict = json.load(f)
-        print(config_dict)
-        
-        # create BERT config object and model
-        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
-        model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
-        model.to(device)
+                test_tsv_file = os.path.join(args.test_data_dir, f'label_{label}', f'k{args.kmer}', 'dataset.tsv')
 
-        start = datetime.datetime.now()
+                args.output_dir = os.path.join(args.output_dir, f'label_{label}')
 
-        test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
-        test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
+                if not os.path.isdir(args.output_dir):
+                    os.makedirs(args.output_dir)
 
-        with open(args.test_tsv_file, 'r') as f:
-            num_test_reads = len(f.readlines())
-
-        dict_tokens = {}
-        with open(args.tokens_file, 'r') as f:
-            for idx, line in enumerate(f):
-                dict_tokens[idx] = line.rstrip()
-        
-        if args.genome:
-            # get annotations of testing genome
-            input_dir = os.getcwd()
-            if not os.path.exists(args.annotations_dir):
-                os.makedirs(args.annotations_dir)
-            annot_info, _ = GetAnnotInfo(args.test_genome_id, input_dir, args.annotations_dir, args.output_dir)
-            correct_genes = defaultdict(list)
-            incorrect_genes = defaultdict(list)
-            correct_seq = {}
-            incorrect_seq = {}
-            outfile = open(os.path.join(args.output_dir, f'{args.test_genome_id}_embeddings_info.tsv'), 'w')
-        else:
-            outfile = open(os.path.join(args.output_dir,  f'embeddings_info.tsv'), 'w')
-
-        # load DNA sequences
-        test_sequences = []
-        with open(args.test_tsv_file, 'r') as f:
-            for idx, line in enumerate(f):
-                list_tokens = line.rstrip().split('\t')[1].split(' ')
-                seq = list_tokens[0]
-                for i in range(1, len(list_tokens), 1):
-                    seq += list_tokens[i][-1]
-                test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
-        print(f'# sequences: {len(test_sequences)}\t{test_sequences[:5]}')
-
-        epoch_test_loss = 0.0
-        epoch_test_acc = 0.0
-        ground_truth = []
-        predictions = []
-        confidence_scores = []
-        # randomly select sequences for analysis of embeddings 
-        seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
-        print(f'# sequences: {len(seq_selected)}')
-        correct_sequence_embeddings = []
-        incorrect_sequence_embeddings = []
-        
-        for batch, inputs in enumerate(test_dataloader, 0):
-            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
-            epoch_test_loss += test_loss
-            epoch_test_acc += test_accuracy
-            ground_truth += batch_ground_truth
-            predictions += batch_predictions
-            confidence_scores += probs
-            # embeddings shape: (batch_size, 512, 768)
-            # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
-            # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
-            if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
-                # verify DNA sequence
-                input_ids, _, _, _, _ = inputs
-                input_ids = input_ids.tolist()[0]
-                batch_seq = dict_tokens[input_ids[1]]
-                for i in range(2,len(input_ids),1):
-                    if input_ids[i] not in [3, 0]:
-                        batch_seq += dict_tokens[input_ids[i]][-1]
-                assert batch_seq == test_sequences[batch][0], f'not the same sequence: {batch_seq}\t{test_sequences[batch][0]}'
-                result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
-                # get embeddings from ['CLS']
-                embeddings = outputs.hidden_states[-1].tolist()
-                if result == 'I':
-                    incorrect_sequence_embeddings.append(embeddings[0][0])
-                elif result == 'C':
-                    correct_sequence_embeddings.append(embeddings[0][0])
+                # prepare input data
+                test_data = TaxClassDataset(test_tsv_file, args.tokens_file, label)
+                test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False)
                 
-                outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}\t{batch_seq}')
+                # load parameters for BERT
+                with open(args.bert_config_file, "r") as f:
+                    config_dict = json.load(f)
+                print(config_dict)
+                
+                # create BERT config object and model
+                bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+                model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+                model.to(device)
 
-                # write embeddings to file
-                outfile.write(f'\t{embeddings[0][0][0]}')
-                for i in range(1, len(embeddings[0][0]), 1):
-                    outfile.write(f' {embeddings[0][0][i]}')
+                start = datetime.datetime.now()
+
+                test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
+                test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
+
+                with open(args.test_tsv_file, 'r') as f:
+                    num_test_reads = len(f.readlines())
+
+                dict_tokens = {}
+                with open(args.tokens_file, 'r') as f:
+                    for idx, line in enumerate(f):
+                        dict_tokens[idx] = line.rstrip()
                 
                 if args.genome:
-                    # get gene associated with DNA sequence
-                    seq_start = test_sequences[batch][1]
-                    seq_end = test_sequences[batch][2]
-                    list_tokens = line.rstrip().split('\t')[1].split(' ')
-                    seq = list_tokens[0]
-                    for i in range(len(list_tokens)):
-                        seq += list_tokens[i][-1]
-                    gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
-                    gene_info_up = [seq_start, seq_end] + gene_info
-                    
-                    if result == 'C':
-                        correct_genes[gene_id].append(gene_info_up)
-                        correct_seq[batch] = [seq_start, seq_end]
-                    elif result == 'I':
-                        incorrect_genes[gene_id].append(gene_info_up)
-                        incorrect_seq[batch] = [seq_start, seq_end]
-
-                    outfile.write(f'\t{gene_id}')
-                    if len(gene_info) > 0:
-                        for i in range(len(gene_info)):
-                            outfile.write(f'\t{gene_info[i]}')
-                        if gene_info[0] == 'protein_coding':
-                            outfile.write('\n')
-                        else:
-                            outfile.write('\tNA\tNA\n')
-                    else:
-                        for i in range(7):
-                            outfile.write('\tNA')
-                        outfile.write('\n')
+                    # get annotations of testing genome
+                    input_dir = os.getcwd()
+                    if not os.path.exists(args.annotations_dir):
+                        os.makedirs(args.annotations_dir)
+                    annot_info, _ = GetAnnotInfo(test_genome_id, input_dir, args.annotations_dir, args.output_dir)
+                    correct_genes = defaultdict(list)
+                    incorrect_genes = defaultdict(list)
+                    correct_seq = {}
+                    incorrect_seq = {}
+                    outfile = open(os.path.join(args.output_dir, f'{test_genome_id}_embeddings_info.tsv'), 'w')
                 else:
-                    outfile.write('\n')
-        
-        # visualize incorrect and correct classifications on circos plot 
-        if args.genome:
-            CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, args.train_fasta, args.test_fasta, args.test_genome_id, args.output_dir, args.num_processes)
+                    outfile = open(os.path.join(args.output_dir,  f'embeddings_info.tsv'), 'w')
 
-        # update testing loss
-        epoch_test_loss = round(epoch_test_loss/(batch+1),3)
-        # get number of FP, FN, TP, TN
-        FP = 0
-        FN = 0
-        TN = 0
-        TP = 0
-        assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
+                # load DNA sequences
+                test_sequences = []
+                with open(test_tsv_file, 'r') as f:
+                    for idx, line in enumerate(f):
+                        list_tokens = line.rstrip().split('\t')[1].split(' ')
+                        seq = list_tokens[0]
+                        for i in range(1, len(list_tokens), 1):
+                            seq += list_tokens[i][-1]
+                        test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
+                print(f'# sequences: {len(test_sequences)}\t{test_sequences[:5]}')
 
-        for i in range(len(predictions)):
-            if ground_truth[i] == 1 and predictions[i] == 1:
-                TP += 1
-            elif ground_truth[i] == 1 and predictions[i] == 0:
-                FN += 1
-            elif ground_truth[i] == 0 and predictions[i] == 0:
-                TN += 1
-            elif ground_truth[i] == 0 and predictions[i] == 1:
-                FP += 1
-        accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
-        print(accuracy, epoch_test_acc)
-        test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
-        test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
-        
-        try:
-            pos_precision = round(TP/(TP+FP),3)
-        except ZeroDivisionError:
-            pos_precision = 0
-        test_metrics.write(f'1\tprecision\t{pos_precision}\n')
+                epoch_test_loss = 0.0
+                epoch_test_acc = 0.0
+                ground_truth = []
+                predictions = []
+                confidence_scores = []
+                # randomly select sequences for analysis of embeddings 
+                seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
+                print(f'# sequences: {len(seq_selected)}')
+                correct_sequence_embeddings = []
+                incorrect_sequence_embeddings = []
+                
+                for batch, inputs in enumerate(test_dataloader, 0):
+                    test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
+                    epoch_test_loss += test_loss
+                    epoch_test_acc += test_accuracy
+                    ground_truth += batch_ground_truth
+                    predictions += batch_predictions
+                    confidence_scores += probs
+                    # embeddings shape: (batch_size, 512, 768)
+                    # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
+                    # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
+                    if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
+                        # verify DNA sequence
+                        input_ids, _, _, _, _ = inputs
+                        input_ids = input_ids.tolist()[0]
+                        batch_seq = dict_tokens[input_ids[1]]
+                        for i in range(2,len(input_ids),1):
+                            if input_ids[i] not in [3, 0]:
+                                batch_seq += dict_tokens[input_ids[i]][-1]
+                        assert batch_seq == test_sequences[batch][0], f'not the same sequence: {batch_seq}\t{test_sequences[batch][0]}'
+                        result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
+                        # get embeddings from ['CLS']
+                        embeddings = outputs.hidden_states[-1].tolist()
+                        if result == 'I':
+                            incorrect_sequence_embeddings.append(embeddings[0][0])
+                        elif result == 'C':
+                            correct_sequence_embeddings.append(embeddings[0][0])
+                        
+                        outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}\t{batch_seq}')
 
-        try:
-            neg_precision = round(TN/(TN+FN),3)
-        except ZeroDivisionError:
-            neg_precision = 0
-        test_metrics.write(f'0\tprecision\t{neg_precision}\n')
+                        # write embeddings to file
+                        outfile.write(f'\t{embeddings[0][0][0]}')
+                        for i in range(1, len(embeddings[0][0]), 1):
+                            outfile.write(f' {embeddings[0][0][i]}')
+                        
+                        if args.genome:
+                            # get gene associated with DNA sequence
+                            seq_start = test_sequences[batch][1]
+                            seq_end = test_sequences[batch][2]
+                            list_tokens = line.rstrip().split('\t')[1].split(' ')
+                            seq = list_tokens[0]
+                            for i in range(len(list_tokens)):
+                                seq += list_tokens[i][-1]
+                            gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
+                            gene_info_up = [seq_start, seq_end] + gene_info
+                            
+                            if result == 'C':
+                                correct_genes[gene_id].append(gene_info_up)
+                                correct_seq[batch] = [seq_start, seq_end]
+                            elif result == 'I':
+                                incorrect_genes[gene_id].append(gene_info_up)
+                                incorrect_seq[batch] = [seq_start, seq_end]
 
-        try:
-            pos_recall = round(TP/(TP+FN),3)
-        except ZeroDivisionError:
-            pos_recall = 0
-        test_metrics.write(f'1\trecall\t{pos_recall}\n')
+                            outfile.write(f'\t{gene_id}')
+                            if len(gene_info) > 0:
+                                for i in range(len(gene_info)):
+                                    outfile.write(f'\t{gene_info[i]}')
+                                if gene_info[0] == 'protein_coding':
+                                    outfile.write('\n')
+                                else:
+                                    outfile.write('\tNA\tNA\n')
+                            else:
+                                for i in range(7):
+                                    outfile.write('\tNA')
+                                outfile.write('\n')
+                        else:
+                            outfile.write('\n')
+                
+                # visualize incorrect and correct classifications on circos plot 
+                if args.genome:
+                    CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, args.output_dir, args.num_processes)
 
-        try:
-            neg_recall = round(TN/(TN+FP),3)
-        except ZeroDivisionError:
-            neg_recall = 0
-        test_metrics.write(f'0\trecall\t{neg_recall}\n')
-        
-        test_metrics.close()
-        test_sum.close()
+                # update testing loss
+                epoch_test_loss = round(epoch_test_loss/(batch+1),3)
+                # get number of FP, FN, TP, TN
+                FP = 0
+                FN = 0
+                TN = 0
+                TP = 0
+                assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
 
-        end = datetime.datetime.now()
-        total_time = end - start
-        hours, seconds = divmod(total_time.seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
+                for i in range(len(predictions)):
+                    if ground_truth[i] == 1 and predictions[i] == 1:
+                        TP += 1
+                    elif ground_truth[i] == 1 and predictions[i] == 0:
+                        FN += 1
+                    elif ground_truth[i] == 0 and predictions[i] == 0:
+                        TN += 1
+                    elif ground_truth[i] == 0 and predictions[i] == 1:
+                        FP += 1
+                accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
+                print(accuracy, epoch_test_acc)
+                test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
+                test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
+                
+                try:
+                    pos_precision = round(TP/(TP+FP),3)
+                except ZeroDivisionError:
+                    pos_precision = 0
+                test_metrics.write(f'1\tprecision\t{pos_precision}\n')
 
-        with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
-            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+                try:
+                    neg_precision = round(TN/(TN+FN),3)
+                except ZeroDivisionError:
+                    neg_precision = 0
+                test_metrics.write(f'0\tprecision\t{neg_precision}\n')
+
+                try:
+                    pos_recall = round(TP/(TP+FN),3)
+                except ZeroDivisionError:
+                    pos_recall = 0
+                test_metrics.write(f'1\trecall\t{pos_recall}\n')
+
+                try:
+                    neg_recall = round(TN/(TN+FP),3)
+                except ZeroDivisionError:
+                    neg_recall = 0
+                test_metrics.write(f'0\trecall\t{neg_recall}\n')
+                
+                test_metrics.close()
+                test_sum.close()
+
+                end = datetime.datetime.now()
+                total_time = end - start
+                hours, seconds = divmod(total_time.seconds, 3600)
+                minutes, seconds = divmod(seconds, 60)
+
+                with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+                    f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
     if args.embeddings:
         # get input files
