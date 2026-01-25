@@ -188,6 +188,7 @@ if __name__ == "__main__":
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
+    parser.add_argument('--kmer', type=str, help='kmer value')
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
