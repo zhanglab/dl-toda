@@ -367,7 +367,7 @@ if __name__ == "__main__":
 
                 test_tsv_file = os.path.join(args.test_data_dir, f'label_{label}', f'k{args.kmer}', 'dataset.tsv')
 
-                args.output_dir = os.path.join(args.output_dir, f'label_{label}')
+                output_dir = os.path.join(args.output_dir, f'label_{label}')
 
                 if not os.path.isdir(args.output_dir):
                     os.makedirs(args.output_dir)
@@ -388,8 +388,8 @@ if __name__ == "__main__":
 
                 start = datetime.datetime.now()
 
-                test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
-                test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
+                test_metrics = open(os.path.join(output_dir, 'metrics.tsv'), 'w')
+                test_sum = open(os.path.join(output_dir, 'summary.tsv'), 'w')
 
                 with open(test_tsv_file, 'r') as f:
                     num_test_reads = len(f.readlines())
@@ -404,14 +404,14 @@ if __name__ == "__main__":
                     input_dir = os.getcwd()
                     if not os.path.exists(args.annotations_dir):
                         os.makedirs(args.annotations_dir)
-                    annot_info, _ = GetAnnotInfo(test_genome_id, input_dir, args.annotations_dir, args.output_dir)
+                    annot_info, _ = GetAnnotInfo(test_genome_id, input_dir, args.annotations_dir, output_dir)
                     correct_genes = defaultdict(list)
                     incorrect_genes = defaultdict(list)
                     correct_seq = {}
                     incorrect_seq = {}
-                    outfile = open(os.path.join(args.output_dir, f'{test_genome_id}_embeddings_info.tsv'), 'w')
+                    outfile = open(os.path.join(output_dir, f'{test_genome_id}_embeddings_info.tsv'), 'w')
                 else:
-                    outfile = open(os.path.join(args.output_dir,  f'embeddings_info.tsv'), 'w')
+                    outfile = open(os.path.join(output_dir,  f'embeddings_info.tsv'), 'w')
 
                 # load DNA sequences
                 test_sequences = []
@@ -504,7 +504,7 @@ if __name__ == "__main__":
                 
                 # visualize incorrect and correct classifications on circos plot 
                 if args.genome:
-                    CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, args.output_dir, args.num_processes)
+                    CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
 
                 # update testing loss
                 epoch_test_loss = round(epoch_test_loss/(batch+1),3)
@@ -561,7 +561,7 @@ if __name__ == "__main__":
                 hours, seconds = divmod(total_time.seconds, 3600)
                 minutes, seconds = divmod(seconds, 60)
 
-                with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+                with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
                     f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
     if args.embeddings:
