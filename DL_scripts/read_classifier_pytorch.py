@@ -459,6 +459,7 @@ if __name__ == "__main__":
                                     i += 3
                                     continue
                                 else:
+                                    print(dict_tokens[input_ids[i]], dict_tokens[input_ids[i]][-1])
                                     batch_seq += dict_tokens[input_ids[i]][-1]
                             i += 1
                         # update original sequence if presence of unknown character
