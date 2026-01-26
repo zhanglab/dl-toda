@@ -349,7 +349,7 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 			os.makedirs(os.path.join(output_dir, 'Genomes_GTF_missing'))
 		f = open(os.path.join(output_dir, 'Genomes_GTF_missing', f'{genome_id}.txt'), 'w')
 		f.close()
-		return {}
+		return {}, {}
 	else:
 		genes_type = defaultdict(str)
 		annot_info = defaultdict(list)
