@@ -502,9 +502,9 @@ if __name__ == "__main__":
                         else:
                             outfile.write('\n')
                 
-                # visualize incorrect and correct classifications on circos plot 
-                if args.genome:
-                    CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
+                # # visualize incorrect and correct classifications on circos plot 
+                # if args.genome:
+                #     CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
 
                 # update testing loss
                 epoch_test_loss = round(epoch_test_loss/(batch+1),3)
