@@ -456,7 +456,7 @@ if __name__ == "__main__":
                             if input_ids[i] not in [3, 0]:
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
-                                    i += 3
+                                    i += 4
                                     continue
                                 else:
                                     if i == 1:
