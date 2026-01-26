@@ -465,7 +465,10 @@ if __name__ == "__main__":
                                 original_seq_updated += test_sequences[batch][0][j]
                             else:
                                 original_seq_updated += 'UUUU'
-                                j += 4 if j + 4 < len(test_sequences[batch][0]) else break
+                                if j + 4 < len(test_sequences[batch][0]):
+                                    j += 4
+                                else:
+                                    break
                         print(original_seq_updated)
                         assert batch_seq == original_seq_updated, f'not the same sequence: {batch_seq}\t{original_seq_updated}\t{test_sequences[batch][0]}'
                         result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
