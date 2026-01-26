@@ -456,8 +456,9 @@ if __name__ == "__main__":
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
                                 else:
+                                    print(dict_tokens[input_ids[i]])
                                     batch_seq += dict_tokens[input_ids[i]][-1]
-                        # update original sequence if unknown character
+                        # update original sequence if presence of unknown character
                         original_seq_updated = ''.join([c if c in ['A','T','C','G'] else 'UUUU' for c in test_sequences[batch][0]])
                         print(original_seq_updated)
                         assert batch_seq == original_seq_updated, f'not the same sequence: {batch_seq}\t{original_seq_updated}\t{test_sequences[batch][0]}'
