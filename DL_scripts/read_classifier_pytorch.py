@@ -450,6 +450,7 @@ if __name__ == "__main__":
                         # verify DNA sequence
                         input_ids, _, _, _, _ = inputs
                         input_ids = input_ids.tolist()[0]
+                        batch_seq = ''
                         while i < len(input_ids):
                             if input_ids[i] not in [3, 0]:
                                 if input_ids[i] == 1:
