@@ -373,7 +373,7 @@ if __name__ == "__main__":
                     os.makedirs(output_dir)
 
                 # prepare input data
-                test_data = TaxClassDataset(test_tsv_file, args.tokens_file, label)
+                test_data = TaxClassDataset(test_tsv_file, args.tokens_file, args.label)
                 test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False)
                 
                 # load parameters for BERT
