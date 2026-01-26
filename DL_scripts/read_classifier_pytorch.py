@@ -450,27 +450,18 @@ if __name__ == "__main__":
                         # verify DNA sequence
                         input_ids, _, _, _, _ = inputs
                         input_ids = input_ids.tolist()[0]
-                        batch_seq = dict_tokens[input_ids[1]]
-                        for i in range(2,len(input_ids),1):
+                        while i < len(input_ids):
                             if input_ids[i] not in [3, 0]:
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
+                                    i += 4
+                                    continue
                                 else:
-                                    print(dict_tokens[input_ids[i]])
                                     batch_seq += dict_tokens[input_ids[i]][-1]
                         # update original sequence if presence of unknown character
-                        original_seq_updated = ''
-                        for j in range(len(test_sequences[batch][0])):
-                            if test_sequences[batch][0][j] in ['A','T','C','G']:
-                                original_seq_updated += test_sequences[batch][0][j]
-                            else:
-                                original_seq_updated += 'UUUU'
-                                if j + 4 < len(test_sequences[batch][0]):
-                                    j += 4
-                                else:
-                                    break
-                        print(original_seq_updated)
-                        assert batch_seq == original_seq_updated, f'not the same sequence: {batch_seq}\t{original_seq_updated}\t{test_sequences[batch][0]}'
+                        seq_updated = ''.join([c if c in ['A','T','C','G'] else 'U' for c in test_sequences[batch][0]])
+                        print(seq_updated)
+                        assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{test_sequences[batch][0]}'
                         result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
                         # get embeddings from ['CLS']
                         embeddings = outputs.hidden_states[-1].tolist()
