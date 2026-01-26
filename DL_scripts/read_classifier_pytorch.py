@@ -453,8 +453,14 @@ if __name__ == "__main__":
                         batch_seq = dict_tokens[input_ids[1]]
                         for i in range(2,len(input_ids),1):
                             if input_ids[i] not in [3, 0]:
-                                batch_seq += dict_tokens[input_ids[i]][-1]
-                        assert batch_seq == test_sequences[batch][0], f'not the same sequence: {batch_seq}\t{test_sequences[batch][0]}'
+                                if input_ids[i] == 1:
+                                    batch_seq += 'U'
+                                else:
+                                    batch_seq += dict_tokens[input_ids[i]][-1]
+                        # update original sequence if unknown character
+                        original_seq_updated = ''.join([c if c in ['A','T','C','G'] else 'U' for c in test_sequences[batch][0]])
+                        print(original_seq_updated)
+                        assert batch_seq == original_seq_updated, f'not the same sequence: {batch_seq}\t{original_seq_updated}\t{test_sequences[batch][0]}'
                         result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
                         # get embeddings from ['CLS']
                         embeddings = outputs.hidden_states[-1].tolist()
