@@ -436,6 +436,7 @@ if __name__ == "__main__":
                 incorrect_sequence_embeddings = []
                 
                 for batch, inputs in enumerate(test_dataloader, 0):
+                    print(f'batch: {batch}')
                     test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
                     epoch_test_loss += test_loss
                     epoch_test_acc += test_accuracy
