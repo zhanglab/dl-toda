@@ -368,7 +368,7 @@ if __name__ == "__main__":
                 test_tsv_file = os.path.join(args.test_data_dir, f'label_{label}', f'k{args.kmer}', 'dataset.tsv')
 
                 output_dir = os.path.join(args.output_dir, f'label_{label}')
-
+                print(f'{label}\n{test_tsv_file}')
                 if not os.path.isdir(output_dir):
                     os.makedirs(output_dir)
 
