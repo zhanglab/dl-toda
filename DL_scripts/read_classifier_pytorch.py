@@ -451,15 +451,15 @@ if __name__ == "__main__":
                         input_ids, _, _, _, _ = inputs
                         input_ids = input_ids.tolist()[0]
                         batch_seq = ''
-                        i = 0
+                        i = 1
                         while i < len(input_ids):
-                            if input_ids[i] not in [3, 0]:
+                            if input_ids[i] != 3:
+                                print(input_ids[i], dict_tokens[input_ids[i]], dict_tokens[input_ids[i]][-1])
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
                                     i += 3
                                     continue
                                 else:
-                                    print(dict_tokens[input_ids[i]], dict_tokens[input_ids[i]][-1])
                                     batch_seq += dict_tokens[input_ids[i]][-1]
                             i += 1
                         # update original sequence if presence of unknown character
