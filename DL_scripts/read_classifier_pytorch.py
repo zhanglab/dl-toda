@@ -436,7 +436,6 @@ if __name__ == "__main__":
                 incorrect_sequence_embeddings = []
                 
                 for batch, inputs in enumerate(test_dataloader, 0):
-                    print(f'batch: {batch}')
                     test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
                     epoch_test_loss += test_loss
                     epoch_test_acc += test_accuracy
@@ -474,7 +473,6 @@ if __name__ == "__main__":
                                 seq_updated += 'UUUU'
                                 i += 3
                             i += 1
-                        print(seq_updated)
                         assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{test_sequences[batch][0]}'
                         result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
                         # get embeddings from ['CLS']
