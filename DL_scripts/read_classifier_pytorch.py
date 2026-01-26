@@ -459,7 +459,13 @@ if __name__ == "__main__":
                                     print(dict_tokens[input_ids[i]])
                                     batch_seq += dict_tokens[input_ids[i]][-1]
                         # update original sequence if presence of unknown character
-                        original_seq_updated = ''.join([c if c in ['A','T','C','G'] else 'UUUU' for c in test_sequences[batch][0]])
+                        original_seq_updated = ''
+                        for j in range(len(test_sequences[batch][0])):
+                            if test_sequences[batch][0][j] in ['A','T','C','G']:
+                                original_seq_updated += test_sequences[batch][0][j]
+                            else:
+                                original_seq_updated += 'UUUU'
+                                j += 4 if j += 4 < len(test_sequences[batch][0]) else break
                         print(original_seq_updated)
                         assert batch_seq == original_seq_updated, f'not the same sequence: {batch_seq}\t{original_seq_updated}\t{test_sequences[batch][0]}'
                         result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
