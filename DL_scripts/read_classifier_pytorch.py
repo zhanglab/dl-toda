@@ -457,6 +457,7 @@ if __name__ == "__main__":
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
                                     i += 3
+                                    continue
                                 else:
                                     batch_seq += dict_tokens[input_ids[i]][-1]
                             i += 1
