@@ -456,13 +456,10 @@ if __name__ == "__main__":
                             if input_ids[i] not in [3, 0]:
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
-                                    i += 4
-                                    continue
+                                    i += 3
                                 else:
                                     batch_seq += dict_tokens[input_ids[i]][-1]
-                                    i += 1
-                            else:
-                                i += 1
+                            i += 1
                         # update original sequence if presence of unknown character
                         seq_updated = ''.join([c if c in ['A','T','C','G'] else 'U' for c in test_sequences[batch][0]])
                         print(seq_updated)
