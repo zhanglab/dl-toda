@@ -453,7 +453,7 @@ if __name__ == "__main__":
                         batch_seq = ''
                         i = 1
                         while i < len(input_ids):
-                            if input_ids[i] != 3:
+                            if input_ids[i] not in [3, 0]:
                                 if input_ids[i] == 1:
                                     batch_seq += 'U'
                                     i += 3
