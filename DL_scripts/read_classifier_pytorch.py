@@ -398,6 +398,7 @@ if __name__ == "__main__":
             _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
             test_label = sequences[batch][0]
             test_genome = sequences[batch][1]
+            print(probs)
             
             # get annotations of testing genome
             if test_genome != genome:
