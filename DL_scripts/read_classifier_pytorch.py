@@ -485,7 +485,7 @@ if __name__ == "__main__":
             df.index = df_kmers
             # save attentions dataframe to file
             df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_df.tsv'), sep='\t', index=False)
-                
+            print(df)
             # get gene associated with DNA sequence
             seq_start = sequences[batch][3]
             seq_end = sequences[batch][4]
@@ -515,6 +515,7 @@ if __name__ == "__main__":
                 for i in range(7):
                     outfile.write('\tNA')
                 outfile.write('\n')
+            sys.exit(1)
         
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
