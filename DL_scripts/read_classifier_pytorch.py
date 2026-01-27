@@ -450,7 +450,8 @@ if __name__ == "__main__":
             assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
             outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
-
+            print(batch_seq)
+            print(sequences[batch][2])
             # get embeddings from ['CLS']
             embeddings = outputs.hidden_states[-1].tolist()
             # write embeddings to file
