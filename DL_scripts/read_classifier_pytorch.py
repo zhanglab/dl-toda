@@ -486,9 +486,10 @@ if __name__ == "__main__":
                             outfile.write(f' {embeddings[0][0][i]}')
                         
                         # get attentions
+                        # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
                         attentions = list(outputs.attentions)
                         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-                        print(outputs.attentions.shape)
+                        print(len(attentions))
                         attentions_scores = attentions[-1][0][-1].tolist()
                         print(attentions_scores)
                         df = pd.DataFrame(attentions_scores)
