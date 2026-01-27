@@ -471,6 +471,7 @@ if __name__ == "__main__":
             # get list of tokens
             tokens = [dict_tokens[i] for i in input_ids]
             df.columns = tokens
+            print(df)
             # remove rows ['PAD'], ['CLS'] and ['SEP']
             idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
             df = df.drop(idx_to_rm, axis='index')
@@ -483,6 +484,7 @@ if __name__ == "__main__":
             df_kmers = df.columns.tolist()
             # rename index to kmers
             df.index = df_kmers
+            print(df)
             # save attentions dataframe to file
             df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_df.tsv'), sep='\t', index=False)
             print(df)
