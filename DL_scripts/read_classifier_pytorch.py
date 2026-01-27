@@ -441,9 +441,9 @@ if __name__ == "__main__":
             # update original sequence if presence of unknown character
             seq_updated = ''
             i = 0
-            while i < len(sequences[batch][0]):
-                if sequences[batch][0][i] in ['A','T','C','G']:
-                    seq_updated += sequences[batch][0][i]
+            while i < len(sequences[batch][2]):
+                if sequences[batch][2][i] in ['A','T','C','G']:
+                    seq_updated += sequences[batch][2][i]
                 else:
                     seq_updated += 'UUUU'
                     i += 3
