@@ -491,11 +491,11 @@ if __name__ == "__main__":
                         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                         print(len(attentions))
                         attentions_scores = attentions[-1][0][-1].tolist()
-                        print(attentions_scores)
                         df = pd.DataFrame(attentions_scores)
                         # get list of tokens
                         tokens = [dict_tokens[i] for i in input_ids]
                         df.columns = tokens
+                        print(tokens)
                         # remove rows ['PAD'], ['CLS'] and ['SEP']
                         idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
                         df = df.drop(idx_to_rm, axis='index')
