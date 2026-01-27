@@ -23,6 +23,7 @@ from sklearn.manifold import TSNE
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.testing_utils import *
 
+
 def ProcessEmbeddings(args, embeddings):
     """ Do dimensionality reduction on embeddings """
     emb_df = pd.DataFrame(embeddings)
@@ -103,7 +104,7 @@ def test_step(inputs, model, device):
     position_ids = position_ids.to(device)
     token_type_ids = token_type_ids.to(device)
     label = label.to(device)
-    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True)
+    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
     test_loss = outputs.loss
     _, predictions = torch.max(outputs.logits, dim=1)
     probs = nn.functional.softmax(outputs.logits, dim=1)
@@ -479,13 +480,35 @@ if __name__ == "__main__":
                             correct_sequence_embeddings.append(embeddings[0][0])
                         
                         outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}\t{batch_seq}')
-
                         # write embeddings to file
                         outfile.write(f'\t{embeddings[0][0][0]}')
                         for i in range(1, len(embeddings[0][0]), 1):
                             outfile.write(f' {embeddings[0][0][i]}')
                         
+                        # get attentions
+                        attentions = list(outputs.attentions)
+                        # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+                        attentions_scores = attentions[-1][0][-1].numpy()
+                        df = pd.DataFrame(attentions_scores)
+                        # get list of tokens
+                        seq_ids = data["input_ids"].numpy()[0]
+                        tokens = [dict_tokens[i] for i in seq_ids]
+                        df.columns = tokens
+                        # remove rows ['PAD'], ['CLS'] and ['SEP']
+                        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+                        df = df.drop(idx_to_rm, axis='index')
+                        # remove columns ['PAD'], ['CLS'] and ['SEP']
+                        df = df.drop('[PAD]', axis='columns')
+                        df = df.drop('[CLS]', axis='columns')
+                        df = df.drop('[SEP]', axis='columns')
+                        # get list of kmers in the sequence
+                        df_kmers = df.columns.tolist()
+                        # rename index to kmers
+                        df.index = df_kmers
+
                         if args.genome:
+                            # save attentions dataframe to file
+                            df.to_csv(os.path.join(output_dir,f'{test_genome_id}_attentions_df.tsv'), sep='\t', index=False)
                             # get gene associated with DNA sequence
                             seq_start = test_sequences[batch][1]
                             seq_end = test_sequences[batch][2]
@@ -517,6 +540,8 @@ if __name__ == "__main__":
                                 outfile.write('\n')
                         else:
                             outfile.write('\n')
+                            # save attentions dataframe to file
+                            df.to_csv(os.path.join(output_dir,f'attentions_df.tsv'), sep='\t', index=False)
                 
                 # # visualize incorrect and correct classifications on circos plot 
                 # if args.genome:
