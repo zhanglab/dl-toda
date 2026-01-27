@@ -491,7 +491,7 @@ if __name__ == "__main__":
                         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                         print(len(attentions))
                         print(type(attentions[-1]))
-                        print(attentions[-1])
+                        print(attentions[-1].numpy())
                         attentions_scores = attentions[-1][0][-1].tolist()
                         df = pd.DataFrame(attentions_scores)
                         # get list of tokens
@@ -502,7 +502,8 @@ if __name__ == "__main__":
                         idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
                         df = df.drop(idx_to_rm, axis='index')
                         # remove columns ['PAD'], ['CLS'] and ['SEP']
-                        df = df.drop('[PAD]', axis='columns')
+                        if '[PAD]' in tokens:
+                            df = df.drop('[PAD]', axis='columns')
                         df = df.drop('[CLS]', axis='columns')
                         df = df.drop('[SEP]', axis='columns')
                         # get list of kmers in the sequence
