@@ -491,7 +491,7 @@ if __name__ == "__main__":
                         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
                         print(len(attentions))
                         print(type(attentions[-1]))
-                        print(attentions[-1].cpu().numpy())
+                        print(attentions[-1].detach().numpy())
                         attentions_scores = attentions[-1][0][-1].tolist()
                         df = pd.DataFrame(attentions_scores)
                         # get list of tokens
