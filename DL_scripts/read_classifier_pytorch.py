@@ -451,8 +451,7 @@ if __name__ == "__main__":
             assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
             outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
-            print(batch_seq)
-            print(sequences[batch][2])
+
             # get embeddings from ['CLS']
             embeddings = outputs.hidden_states[-1].tolist()
             # write embeddings to file
@@ -473,7 +472,6 @@ if __name__ == "__main__":
             # get list of tokens
             tokens = [dict_tokens[i] for i in input_ids]
             df.columns = tokens
-            print(df)
             # remove rows ['PAD'], ['CLS'] and ['SEP']
             idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
             df = df.drop(idx_to_rm, axis='index')
@@ -486,10 +484,9 @@ if __name__ == "__main__":
             df_kmers = df.columns.tolist()
             # rename index to kmers
             df.index = df_kmers
-            print(df)
             # save attentions dataframe to file
             df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_df.tsv'), sep='\t', index=False)
-            print(df)
+
             # get gene associated with DNA sequence
             seq_start = sequences[batch][3]
             seq_end = sequences[batch][4]
@@ -519,7 +516,6 @@ if __name__ == "__main__":
                 for i in range(7):
                     outfile.write('\tNA')
                 outfile.write('\n')
-            sys.exit(1)
         
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
