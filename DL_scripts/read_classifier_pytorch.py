@@ -488,7 +488,8 @@ if __name__ == "__main__":
                         # get attentions
                         attentions = list(outputs.attentions)
                         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-                        attentions_scores = attentions[-1][0][-1].numpy()
+                        print(attentions.shape)
+                        attentions_scores = attentions[-1][0][-1].tolist()
                         df = pd.DataFrame(attentions_scores)
                         # get list of tokens
                         seq_ids = data["input_ids"].numpy()[0]
