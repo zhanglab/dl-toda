@@ -448,14 +448,10 @@ if __name__ == "__main__":
                 i += 1
             assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
+            outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
+
             # get embeddings from ['CLS']
             embeddings = outputs.hidden_states[-1].tolist()
-            if result == 'I':
-                incorrect_sequence_embeddings.append(embeddings[0][0])
-            elif result == 'C':
-                correct_sequence_embeddings.append(embeddings[0][0])
-            
-            outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
             # write embeddings to file
             outfile.write(f'\t{embeddings[0][0][0]}')
             for i in range(1, len(embeddings[0][0]), 1):
@@ -523,6 +519,13 @@ if __name__ == "__main__":
         # if args.genome:
         #     CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
 
+        end = datetime.datetime.now()
+        total_time = end - start
+        hours, seconds = divmod(total_time.seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+
+        with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
 
     if args.mode == "testing":
