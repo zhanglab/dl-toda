@@ -387,7 +387,7 @@ if __name__ == "__main__":
                 seq = list_tokens[0]
                 for i in range(1, len(list_tokens), 1):
                     seq += list_tokens[i][-1]
-                sequences.append([label, genome_id, seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
+                sequences.append([label, genome_id, seq, int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
         print(f'# sequences: {len(test_sequences)}\n{test_sequences[:5]}')
         
         outfile = open(os.path.join(args.output_dir, 'interpretability_info.tsv'), 'w')
