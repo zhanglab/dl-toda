@@ -24,56 +24,56 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 from vis_scripts.testing_utils import *
 
 
-def ProcessEmbeddings(args, embeddings):
-    """ Do dimensionality reduction on embeddings """
-    emb_df = pd.DataFrame(embeddings)
-    labels = len(correct_sequence_embeddings)*['Correct'] + len(incorrect_sequence_embeddings)*['Incorrect']
-    # scale the data
-    X = emb_df.values
-    scaler = StandardScaler()
-    emb_scaled_df = scaler.fit_transform(X)
-    # PCA
-    pca = PCA()
-    pca_full = pca.fit(emb_scaled_df)
-    explained_variance_ratio = pca_full.explained_variance_ratio_
-    cumulative_variance = np.cumsum(explained_variance_ratio)
-    emb_transformed = pca.fit_transform(emb_scaled_df)
-    # Plot proportion of the total explained variance for each component and cumulative explained variance
-    plt.figure(figsize=(8, 5))
-    plt.plot(range(1, len(explained_variance_ratio) + 1), explained_variance_ratio, marker='o', linestyle='-', label='Explained variance ratio')
-    plt.plot(range(1, len(cumulative_variance) + 1), cumulative_variance, marker='o', linestyle='--', label='Cumulative explained variance ratio')
-    plt.xlabel('Number of Components')
-    plt.ylabel('Explained Variance Ratio')
-    plt.title('Explained Variance Ratio and Cumulative Explained Variance Ratio vs. Number of Components')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(os.path.join(args.output_dir,'testing', 'pca_variance.png'), dpi=300, bbox_inches='tight')
-    # Visualize the transformed data using a scatter plot
-    pca_result_df = pd.DataFrame({'PCA1': emb_transformed[:, 0], 'PCA2': emb_transformed[:, 1], 'label': labels})
-    fig, ax = plt.subplots(1)
-    sns.scatterplot(x='PCA1', y='PCA2', hue='label', data=pca_result_df, ax=ax,s=120)
-    lim = (emb_transformed.min()-5, emb_transformed.max()+5)
-    ax.set_xlim(lim)
-    ax.set_ylim(lim)
-    ax.set_aspect('equal')
-    ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-    plt.savefig(os.path.join(args.output_dir,'testing', 'pca_emb_transformed.png'), dpi=300, bbox_inches='tight')
-    print(len(correct_sequence_embeddings))
-    print(len(incorrect_sequence_embeddings))
-    # t-SNE
-    # get TSNE embedding with 2 dimensions
-    n_components = 2
-    tsne = TSNE(n_components)
-    tsne_result = tsne.fit_transform(X)
-    tsne_result_df = pd.DataFrame({'tsne_1': tsne_result[:,0], 'tsne_2': tsne_result[:,1], 'label': labels})
-    fig, ax = plt.subplots(1)
-    sns.scatterplot(x='tsne_1', y='tsne_2', hue='label', data=tsne_result_df, ax=ax,s=120)
-    lim = (tsne_result.min()-5, tsne_result.max()+5)
-    ax.set_xlim(lim)
-    ax.set_ylim(lim)
-    ax.set_aspect('equal')
-    ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-    plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
+# def ProcessEmbeddings(args, embeddings):
+#     """ Do dimensionality reduction on embeddings """
+#     emb_df = pd.DataFrame(embeddings)
+#     labels = len(correct_sequence_embeddings)*['Correct'] + len(incorrect_sequence_embeddings)*['Incorrect']
+#     # scale the data
+#     X = emb_df.values
+#     scaler = StandardScaler()
+#     emb_scaled_df = scaler.fit_transform(X)
+#     # PCA
+#     pca = PCA()
+#     pca_full = pca.fit(emb_scaled_df)
+#     explained_variance_ratio = pca_full.explained_variance_ratio_
+#     cumulative_variance = np.cumsum(explained_variance_ratio)
+#     emb_transformed = pca.fit_transform(emb_scaled_df)
+#     # Plot proportion of the total explained variance for each component and cumulative explained variance
+#     plt.figure(figsize=(8, 5))
+#     plt.plot(range(1, len(explained_variance_ratio) + 1), explained_variance_ratio, marker='o', linestyle='-', label='Explained variance ratio')
+#     plt.plot(range(1, len(cumulative_variance) + 1), cumulative_variance, marker='o', linestyle='--', label='Cumulative explained variance ratio')
+#     plt.xlabel('Number of Components')
+#     plt.ylabel('Explained Variance Ratio')
+#     plt.title('Explained Variance Ratio and Cumulative Explained Variance Ratio vs. Number of Components')
+#     plt.legend()
+#     plt.grid(True)
+#     plt.savefig(os.path.join(args.output_dir,'testing', 'pca_variance.png'), dpi=300, bbox_inches='tight')
+#     # Visualize the transformed data using a scatter plot
+#     pca_result_df = pd.DataFrame({'PCA1': emb_transformed[:, 0], 'PCA2': emb_transformed[:, 1], 'label': labels})
+#     fig, ax = plt.subplots(1)
+#     sns.scatterplot(x='PCA1', y='PCA2', hue='label', data=pca_result_df, ax=ax,s=120)
+#     lim = (emb_transformed.min()-5, emb_transformed.max()+5)
+#     ax.set_xlim(lim)
+#     ax.set_ylim(lim)
+#     ax.set_aspect('equal')
+#     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+#     plt.savefig(os.path.join(args.output_dir,'testing', 'pca_emb_transformed.png'), dpi=300, bbox_inches='tight')
+#     print(len(correct_sequence_embeddings))
+#     print(len(incorrect_sequence_embeddings))
+#     # t-SNE
+#     # get TSNE embedding with 2 dimensions
+#     n_components = 2
+#     tsne = TSNE(n_components)
+#     tsne_result = tsne.fit_transform(X)
+#     tsne_result_df = pd.DataFrame({'tsne_1': tsne_result[:,0], 'tsne_2': tsne_result[:,1], 'label': labels})
+#     fig, ax = plt.subplots(1)
+#     sns.scatterplot(x='tsne_1', y='tsne_2', hue='label', data=tsne_result_df, ax=ax,s=120)
+#     lim = (tsne_result.min()-5, tsne_result.max()+5)
+#     ax.set_xlim(lim)
+#     ax.set_ylim(lim)
+#     ax.set_aspect('equal')
+#     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+#     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
     
 
 def train_step(inputs, model, optimizer, device):
@@ -176,14 +176,13 @@ if __name__ == "__main__":
     parser.add_argument('--train_tsv_file', type=str, help='input file containing labels and reads from training dataset')
     parser.add_argument('--val_tsv_file', type=str, help='input file containing labels and reads from validation dataset')
     parser.add_argument('--test_data_dir', type=str, help='path to directory containing', required=('--testing' in sys.argv))
-    parser.add_argument('--input_test_file', type=str, help='path to file with testing info', required=('--testing' in sys.argv))
+    parser.add_argument('--tsv_file', type=str, help='path to file with dataset')
     parser.add_argument('--genome', help='do testing at the genome level', action='store_true', required=('--testing' in sys.argv))
     parser.add_argument('--resume', help='resume training', action='store_true')
-    parser.add_argument('--embeddings', help='analyze contextualized embeddings', action='store_true')
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--testing_sum_dir', help='input directory for summarizing testing results', default=os.getcwd())
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
-    parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing'])
+    parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
     parser.add_argument('--kmer', type=str, help='kmer value')
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
@@ -353,271 +352,296 @@ if __name__ == "__main__":
         with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
             f.write(f'Runtime\t{days}:{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
+
+    if args.mode == "interpretability":
+        
+        # prepare input data
+        data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label)
+        dataloader = DataLoader(data, batch_size=1, shuffle=False)
+        
+        # load parameters for BERT
+        with open(args.bert_config_file, "r") as f:
+            config_dict = json.load(f)
+        print(config_dict)
+        
+        # create BERT config object and model
+        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+        model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+        model.to(device)
+
+        start = datetime.datetime.now()
+
+        # with open(args.tsv_file, 'r') as f:
+        #     num_test_reads = len(f.readlines())
+
+        dict_tokens = {}
+        with open(args.tokens_file, 'r') as f:
+            for idx, line in enumerate(f):
+                dict_tokens[idx] = line.rstrip()
+        
+        # load DNA sequences
+        sequences = []
+        with open(args.tsv_file, 'r') as f:
+            for idx, line in enumerate(f):
+                label = line.rstrip().split('\t')[0]
+                genome_id = line.rstrip().split('\t')[1]
+                list_tokens = line.rstrip().split('\t')[2].split(' ')
+                seq = list_tokens[0]
+                for i in range(1, len(list_tokens), 1):
+                    seq += list_tokens[i][-1]
+                sequences.append([label, genome_id, seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
+        print(f'# sequences: {len(test_sequences)}\n{test_sequences[:5]}')
+        
+        outfile = open(os.path.join(args.output_dir, 'interpretability_info.tsv'), 'w')
+        genome = ''
+        label = ''
+        annot_info = {}
+        for batch, inputs in enumerate(dataloader, 0):
+            _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
+            test_label = sequences[batch][0]
+            test_genome = sequences[batch][1]
+            
+            # get annotations of testing genome
+            if test_genome != genome:
+                input_dir = os.getcwd()
+                if not os.path.exists(args.annotations_dir):
+                    os.makedirs(args.annotations_dir)
+                test_annot_info, _ = GetAnnotInfo(test_genome, input_dir, args.annotations_dir, args.output_dir)
+                correct_genes = defaultdict(list)
+                incorrect_genes = defaultdict(list)
+                correct_seq = {}
+                incorrect_seq = {}
+                genome = test_genome
+                annot_info = test_annot_info
+                if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
+                    os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
+
+            # get embeddings
+            # embeddings shape: (batch_size, 512, 768)
+            # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
+            # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
+            # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
+            # verify DNA sequence
+            input_ids, _, _, _, _ = inputs
+            input_ids = input_ids.tolist()[0]
+            batch_seq = ''
+            i = 1
+            while i < len(input_ids):
+                if input_ids[i] not in [3, 0]:
+                    if input_ids[i] == 1:
+                        batch_seq += 'UUUU'
+                        i += 4
+                        continue
+                    else:
+                        if i == 1:
+                            batch_seq += dict_tokens[input_ids[i]]
+                        else:
+                            batch_seq += dict_tokens[input_ids[i]][-1]
+                i += 1
+            # update original sequence if presence of unknown character
+            seq_updated = ''
+            i = 0
+            while i < len(test_sequences[batch][0]):
+                if test_sequences[batch][0][i] in ['A','T','C','G']:
+                    seq_updated += test_sequences[batch][0][i]
+                else:
+                    seq_updated += 'UUUU'
+                    i += 3
+                i += 1
+            assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
+            result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
+            # get embeddings from ['CLS']
+            embeddings = outputs.hidden_states[-1].tolist()
+            if result == 'I':
+                incorrect_sequence_embeddings.append(embeddings[0][0])
+            elif result == 'C':
+                correct_sequence_embeddings.append(embeddings[0][0])
+            
+            outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
+            # write embeddings to file
+            outfile.write(f'\t{embeddings[0][0][0]}')
+            for i in range(1, len(embeddings[0][0]), 1):
+                outfile.write(f' {embeddings[0][0][i]}')
+            
+            # get attentions
+            # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
+            attentions = list(outputs.attentions)
+            # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+            # len(attentions) --> 12 attention layers
+            # attentions[-1].size() --> torch.Size([1, 12, 512, 512])
+            # attentions[-1][0].size() --> torch.Size([12, 512, 512]) --> 12 attention heads
+            # attentions[-1][0][-1].size() --> torch.Size([512, 512]) --> last attention head
+            attentions_scores = attentions[-1][0][-1].tolist()
+            df = pd.DataFrame(attentions_scores)
+            # get list of tokens
+            tokens = [dict_tokens[i] for i in input_ids]
+            df.columns = tokens
+            # remove rows ['PAD'], ['CLS'] and ['SEP']
+            idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+            df = df.drop(idx_to_rm, axis='index')
+            # remove columns ['PAD'], ['CLS'] and ['SEP']
+            if '[PAD]' in tokens:
+                df = df.drop('[PAD]', axis='columns')
+            df = df.drop('[CLS]', axis='columns')
+            df = df.drop('[SEP]', axis='columns')
+            # get list of kmers in the sequence
+            df_kmers = df.columns.tolist()
+            # rename index to kmers
+            df.index = df_kmers
+            # save attentions dataframe to file
+            df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_df.tsv'), sep='\t', index=False)
+                
+            # get gene associated with DNA sequence
+            seq_start = sequences[batch][3]
+            seq_end = sequences[batch][4]
+            list_tokens = line.rstrip().split('\t')[1].split(' ')
+            seq = list_tokens[0]
+            for i in range(len(list_tokens)):
+                seq += list_tokens[i][-1]
+            gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
+            gene_info_up = [seq_start, seq_end] + gene_info
+            
+            if result == 'C':
+                correct_genes[gene_id].append(gene_info_up)
+                correct_seq[batch] = [seq_start, seq_end]
+            elif result == 'I':
+                incorrect_genes[gene_id].append(gene_info_up)
+                incorrect_seq[batch] = [seq_start, seq_end]
+
+            outfile.write(f'\t{gene_id}')
+            if len(gene_info) > 0:
+                for i in range(len(gene_info)):
+                    outfile.write(f'\t{gene_info[i]}')
+                if gene_info[0] == 'protein_coding':
+                    outfile.write('\n')
+                else:
+                    outfile.write('\tNA\tNA\n')
+            else:
+                for i in range(7):
+                    outfile.write('\tNA')
+                outfile.write('\n')
+        
+        # # visualize incorrect and correct classifications on circos plot 
+        # if args.genome:
+        #     CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
+
+
+
     if args.mode == "testing":
 
-        with open(args.input_test_file, 'r') as f:
-            for line in f:
-                label = line.rstrip().split('\t')[0]
-                test_genome_id = line.rstrip().split('\t')[3]
-                test_fasta = line.rstrip().split('\t')[4]
-                train_fasta = line.rstrip().split('\t')[5]
+        # prepare input data
+        test_data = TaxClassDataset(test_tsv_file, args.tokens_file, args.label)
+        test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
+        
+        # load parameters for BERT
+        with open(args.bert_config_file, "r") as f:
+            config_dict = json.load(f)
+        print(config_dict)
+        
+        # create BERT config object and model
+        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+        model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+        model.to(device)
 
-                test_tsv_file = os.path.join(args.test_data_dir, f'label_{label}', f'k{args.kmer}', 'dataset.tsv')
+        start = datetime.datetime.now()
 
-                output_dir = os.path.join(args.output_dir, f'label_{label}')
-                print(f'{label}\n{test_tsv_file}')
-                if not os.path.isdir(output_dir):
-                    os.makedirs(output_dir)
+        test_metrics = open(os.path.join(output_dir, 'metrics.tsv'), 'w')
+        test_sum = open(os.path.join(output_dir, 'summary.tsv'), 'w')
 
-                # prepare input data
-                test_data = TaxClassDataset(test_tsv_file, args.tokens_file, args.label)
-                test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False)
-                
-                # load parameters for BERT
-                with open(args.bert_config_file, "r") as f:
-                    config_dict = json.load(f)
-                print(config_dict)
-                
-                # create BERT config object and model
-                bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
-                model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
-                model.to(device)
+        with open(test_tsv_file, 'r') as f:
+            num_test_reads = len(f.readlines())
 
-                start = datetime.datetime.now()
+        dict_tokens = {}
+        with open(args.tokens_file, 'r') as f:
+            for idx, line in enumerate(f):
+                dict_tokens[idx] = line.rstrip()
+        
+        # load DNA sequences
+        test_sequences = []
+        with open(test_tsv_file, 'r') as f:
+            for idx, line in enumerate(f):
+                list_tokens = line.rstrip().split('\t')[1].split(' ')
+                seq = list_tokens[0]
+                for i in range(1, len(list_tokens), 1):
+                    seq += list_tokens[i][-1]
+                test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
 
-                test_metrics = open(os.path.join(output_dir, 'metrics.tsv'), 'w')
-                test_sum = open(os.path.join(output_dir, 'summary.tsv'), 'w')
+        epoch_test_loss = 0.0
+        epoch_test_acc = 0.0
+        ground_truth = []
+        predictions = []
+        confidence_scores = []
+        # # randomly select sequences for analysis of embeddings 
+        # seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
+        # print(f'# sequences: {len(seq_selected)}')
+        # correct_sequence_embeddings = []
+        # incorrect_sequence_embeddings = []
+        
+        for batch, inputs in enumerate(test_dataloader, 0):
+            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
+            epoch_test_loss += test_loss
+            epoch_test_acc += test_accuracy
+            ground_truth += batch_ground_truth
+            predictions += batch_predictions
+            confidence_scores += probs
 
-                with open(test_tsv_file, 'r') as f:
-                    num_test_reads = len(f.readlines())
+        # update testing loss
+        epoch_test_loss = round(epoch_test_loss/(batch+1),3)
+        # get number of FP, FN, TP, TN
+        FP = 0
+        FN = 0
+        TN = 0
+        TP = 0
+        assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
 
-                dict_tokens = {}
-                with open(args.tokens_file, 'r') as f:
-                    for idx, line in enumerate(f):
-                        dict_tokens[idx] = line.rstrip()
-                
-                if args.genome:
-                    # get annotations of testing genome
-                    input_dir = os.getcwd()
-                    if not os.path.exists(args.annotations_dir):
-                        os.makedirs(args.annotations_dir)
-                    annot_info, _ = GetAnnotInfo(test_genome_id, input_dir, args.annotations_dir, output_dir)
-                    correct_genes = defaultdict(list)
-                    incorrect_genes = defaultdict(list)
-                    correct_seq = {}
-                    incorrect_seq = {}
-                    outfile = open(os.path.join(output_dir, f'{test_genome_id}_embeddings_info.tsv'), 'w')
-                else:
-                    outfile = open(os.path.join(output_dir,  f'embeddings_info.tsv'), 'w')
+        for i in range(len(predictions)):
+            if ground_truth[i] == 1 and predictions[i] == 1:
+                TP += 1
+            elif ground_truth[i] == 1 and predictions[i] == 0:
+                FN += 1
+            elif ground_truth[i] == 0 and predictions[i] == 0:
+                TN += 1
+            elif ground_truth[i] == 0 and predictions[i] == 1:
+                FP += 1
+        accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
+        print(accuracy, epoch_test_acc)
+        test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
+        test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
+        
+        try:
+            pos_precision = round(TP/(TP+FP),3)
+        except ZeroDivisionError:
+            pos_precision = 0
+        test_metrics.write(f'1\tprecision\t{pos_precision}\n')
 
-                # load DNA sequences
-                test_sequences = []
-                with open(test_tsv_file, 'r') as f:
-                    for idx, line in enumerate(f):
-                        list_tokens = line.rstrip().split('\t')[1].split(' ')
-                        seq = list_tokens[0]
-                        for i in range(1, len(list_tokens), 1):
-                            seq += list_tokens[i][-1]
-                        test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
-                print(f'# sequences: {len(test_sequences)}\t{test_sequences[:5]}')
+        try:
+            neg_precision = round(TN/(TN+FN),3)
+        except ZeroDivisionError:
+            neg_precision = 0
+        test_metrics.write(f'0\tprecision\t{neg_precision}\n')
 
-                epoch_test_loss = 0.0
-                epoch_test_acc = 0.0
-                ground_truth = []
-                predictions = []
-                confidence_scores = []
-                # randomly select sequences for analysis of embeddings 
-                seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
-                print(f'# sequences: {len(seq_selected)}')
-                correct_sequence_embeddings = []
-                incorrect_sequence_embeddings = []
-                
-                for batch, inputs in enumerate(test_dataloader, 0):
-                    test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
-                    epoch_test_loss += test_loss
-                    epoch_test_acc += test_accuracy
-                    ground_truth += batch_ground_truth
-                    predictions += batch_predictions
-                    confidence_scores += probs
-                    # embeddings shape: (batch_size, 512, 768)
-                    # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
-                    # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
-                    if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
-                        # verify DNA sequence
-                        input_ids, _, _, _, _ = inputs
-                        input_ids = input_ids.tolist()[0]
-                        batch_seq = ''
-                        i = 1
-                        while i < len(input_ids):
-                            if input_ids[i] not in [3, 0]:
-                                if input_ids[i] == 1:
-                                    batch_seq += 'UUUU'
-                                    i += 4
-                                    continue
-                                else:
-                                    if i == 1:
-                                        batch_seq += dict_tokens[input_ids[i]]
-                                    else:
-                                        batch_seq += dict_tokens[input_ids[i]][-1]
-                            i += 1
-                        # update original sequence if presence of unknown character
-                        seq_updated = ''
-                        i = 0
-                        while i < len(test_sequences[batch][0]):
-                            if test_sequences[batch][0][i] in ['A','T','C','G']:
-                                seq_updated += test_sequences[batch][0][i]
-                            else:
-                                seq_updated += 'UUUU'
-                                i += 3
-                            i += 1
-                        assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{test_sequences[batch][0]}'
-                        result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
-                        # get embeddings from ['CLS']
-                        embeddings = outputs.hidden_states[-1].tolist()
-                        if result == 'I':
-                            incorrect_sequence_embeddings.append(embeddings[0][0])
-                        elif result == 'C':
-                            correct_sequence_embeddings.append(embeddings[0][0])
-                        
-                        outfile.write(f'{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(batch_seq)}\t{batch_seq}')
-                        # write embeddings to file
-                        outfile.write(f'\t{embeddings[0][0][0]}')
-                        for i in range(1, len(embeddings[0][0]), 1):
-                            outfile.write(f' {embeddings[0][0][i]}')
-                        
-                        # get attentions
-                        # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
-                        attentions = list(outputs.attentions)
-                        # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
-                        print(len(attentions))
-                        print(attentions[-1].size())
-                        print(attentions[-1][0].size())
-                        print(attentions[-1][0][-1].size())
-                        sys.exit(1)
-                        attentions_scores = attentions[-1][0][-1].tolist()
-                        df = pd.DataFrame(attentions_scores)
-                        # get list of tokens
-                        tokens = [dict_tokens[i] for i in input_ids]
-                        df.columns = tokens
-                        # remove rows ['PAD'], ['CLS'] and ['SEP']
-                        idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-                        df = df.drop(idx_to_rm, axis='index')
-                        # remove columns ['PAD'], ['CLS'] and ['SEP']
-                        if '[PAD]' in tokens:
-                            df = df.drop('[PAD]', axis='columns')
-                        df = df.drop('[CLS]', axis='columns')
-                        df = df.drop('[SEP]', axis='columns')
-                        # get list of kmers in the sequence
-                        df_kmers = df.columns.tolist()
-                        # rename index to kmers
-                        df.index = df_kmers
+        try:
+            pos_recall = round(TP/(TP+FN),3)
+        except ZeroDivisionError:
+            pos_recall = 0
+        test_metrics.write(f'1\trecall\t{pos_recall}\n')
 
-                        if args.genome:
-                            # save attentions dataframe to file
-                            df.to_csv(os.path.join(output_dir,f'{test_genome_id}_attentions_df.tsv'), sep='\t', index=False)
-                            # get gene associated with DNA sequence
-                            seq_start = test_sequences[batch][1]
-                            seq_end = test_sequences[batch][2]
-                            list_tokens = line.rstrip().split('\t')[1].split(' ')
-                            seq = list_tokens[0]
-                            for i in range(len(list_tokens)):
-                                seq += list_tokens[i][-1]
-                            gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
-                            gene_info_up = [seq_start, seq_end] + gene_info
-                            
-                            if result == 'C':
-                                correct_genes[gene_id].append(gene_info_up)
-                                correct_seq[batch] = [seq_start, seq_end]
-                            elif result == 'I':
-                                incorrect_genes[gene_id].append(gene_info_up)
-                                incorrect_seq[batch] = [seq_start, seq_end]
+        try:
+            neg_recall = round(TN/(TN+FP),3)
+        except ZeroDivisionError:
+            neg_recall = 0
+        test_metrics.write(f'0\trecall\t{neg_recall}\n')
+        
+        test_metrics.close()
+        test_sum.close()
 
-                            outfile.write(f'\t{gene_id}')
-                            if len(gene_info) > 0:
-                                for i in range(len(gene_info)):
-                                    outfile.write(f'\t{gene_info[i]}')
-                                if gene_info[0] == 'protein_coding':
-                                    outfile.write('\n')
-                                else:
-                                    outfile.write('\tNA\tNA\n')
-                            else:
-                                for i in range(7):
-                                    outfile.write('\tNA')
-                                outfile.write('\n')
-                        else:
-                            outfile.write('\n')
-                            # save attentions dataframe to file
-                            df.to_csv(os.path.join(output_dir,f'attentions_df.tsv'), sep='\t', index=False)
-                
-                # # visualize incorrect and correct classifications on circos plot 
-                # if args.genome:
-                #     CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
+        end = datetime.datetime.now()
+        total_time = end - start
+        hours, seconds = divmod(total_time.seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
 
-                # update testing loss
-                epoch_test_loss = round(epoch_test_loss/(batch+1),3)
-                # get number of FP, FN, TP, TN
-                FP = 0
-                FN = 0
-                TN = 0
-                TP = 0
-                assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
-
-                for i in range(len(predictions)):
-                    if ground_truth[i] == 1 and predictions[i] == 1:
-                        TP += 1
-                    elif ground_truth[i] == 1 and predictions[i] == 0:
-                        FN += 1
-                    elif ground_truth[i] == 0 and predictions[i] == 0:
-                        TN += 1
-                    elif ground_truth[i] == 0 and predictions[i] == 1:
-                        FP += 1
-                accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
-                print(accuracy, epoch_test_acc)
-                test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
-                test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
-                
-                try:
-                    pos_precision = round(TP/(TP+FP),3)
-                except ZeroDivisionError:
-                    pos_precision = 0
-                test_metrics.write(f'1\tprecision\t{pos_precision}\n')
-
-                try:
-                    neg_precision = round(TN/(TN+FN),3)
-                except ZeroDivisionError:
-                    neg_precision = 0
-                test_metrics.write(f'0\tprecision\t{neg_precision}\n')
-
-                try:
-                    pos_recall = round(TP/(TP+FN),3)
-                except ZeroDivisionError:
-                    pos_recall = 0
-                test_metrics.write(f'1\trecall\t{pos_recall}\n')
-
-                try:
-                    neg_recall = round(TN/(TN+FP),3)
-                except ZeroDivisionError:
-                    neg_recall = 0
-                test_metrics.write(f'0\trecall\t{neg_recall}\n')
-                
-                test_metrics.close()
-                test_sum.close()
-
-                end = datetime.datetime.now()
-                total_time = end - start
-                hours, seconds = divmod(total_time.seconds, 3600)
-                minutes, seconds = divmod(seconds, 60)
-
-                with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
-                    f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
-
-    if args.embeddings:
-        # get input files
-        emb_files = glob.glob(os.path.join(args.input_dir, '*_embeddings_info.tsv'))
-        print(f'# embedding files: {len(emb_files)}')
-
-        # perform dimensionality reduction on embeddings
-        ProcessEmbeddings(args, correct_sequence_embeddings+incorrect_sequence_embeddings)
+        with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+            f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
     if args.lc_dir is not None:
         # create learning curves
