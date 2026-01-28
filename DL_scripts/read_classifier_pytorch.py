@@ -257,7 +257,7 @@ if __name__ == "__main__":
             num_val_reads = len(f.readlines())
 
         print(f'num_train_reads\t{num_train_reads}\nnum_val_reads\t{num_val_reads}\n'
-            f'train_steps\t{math.ceil(num_train_reads/args.batch_size)}\nval_steps\t{math.ceil(num_val_reads/args.batch_size)}\n')
+            f'train_steps\t{math.ceil((num_train_reads/args.batch_size)*args.num_epochs)}\nval_steps\t{math.ceil((num_val_reads/args.batch_size)*args.num_epochs)}\n')
 
         # define variables for early stopping
         best_val_accuracy = np.Inf
