@@ -177,51 +177,53 @@ def main():
             genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             if args.dataset == 'train':
-                train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-                train_genomes_df.columns = ['label','genome','fasta']
-                # get training genome of target label
-                target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
-                print(target_genome)
-                # get genus of target label
-                target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
-                # get labels with same genus
-                labels_same_genus = []
-                train_genomes = train_genomes_df['genome'].tolist()
-                train_labels = train_genomes_df['label'].tolist()
-                for i in range(len(train_genomes)):
-                    if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
-                        if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
-                            labels_same_genus.append(str(train_labels[i]))
-                print(labels_same_genus, len(labels_same_genus))
+                # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+                # train_genomes_df.columns = ['label','genome','fasta']
+                # # get training genome of target label
+                # target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
+                # print(target_genome)
+                # # get genus of target label
+                # target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
+                # # get labels with same genus
+                # labels_same_genus = []
+                # train_genomes = train_genomes_df['genome'].tolist()
+                # train_labels = train_genomes_df['label'].tolist()
+                # for i in range(len(train_genomes)):
+                #     if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
+                #         if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
+                #             labels_same_genus.append(str(train_labels[i]))
+                # print(labels_same_genus, len(labels_same_genus))
                 # calculate the number of sequences to sample
-                num = len(sequences[args.target_label]) // 1
-                num_genus_labels = len(labels_same_genus)
-                num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
+                # num = len(sequences[args.target_label]) // 1
+                # num_genus_labels = len(labels_same_genus)
+                # num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
                                 
                 # get sequences
                 other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
-                    # at the genus level
-                    for i in range(len(labels_same_genus)):
-                        num_seq = num_seq_per_genus.pop()
-                        seq = sequences[labels_same_genus[i]]
-                        random.shuffle(seq)
-                        # random.shuffle(seq)
-                        # other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
-                        other_labels_seq += seq[:num_seq]
-                    print(f'# sequences: {len(other_labels_seq)}')
+                    # # at the genus level
+                    # for i in range(len(labels_same_genus)):
+                    #     num_seq = num_seq_per_genus.pop()
+                    #     seq = sequences[labels_same_genus[i]]
+                    #     random.shuffle(seq)
+                    #     # random.shuffle(seq)
+                    #     # other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
+                    #     other_labels_seq += seq[:num_seq]
+                    # print(f'# sequences: {len(other_labels_seq)}')
                     
                     # for other species
-                    if num != len(sequences[args.target_label]):
-                        labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
-                        num_sp_labels = len(labels_other)
-                        num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
-                        for i in range(len(labels_other)):
-                            num_seq = num_seq_per_sp.pop()
-                            other_labels_seq += sequences[labels_other[i]][:num_seq]
-                        print(f'# sequences: {len(other_labels_seq)}')
+                    # if num != len(sequences[args.target_label]):
+                    # labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
+                    labels_other = [l for l in labels if l != args.target_label]
+                    print(f'# other labels: {len(labels_other)}')
+                    num_sp_labels = len(labels_other)
+                    num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
+                    for i in range(len(labels_other)):
+                        num_seq = num_seq_per_sp.pop()
+                        other_labels_seq += sequences[labels_other[i]][:num_seq]
+                    print(f'# sequences: {len(other_labels_seq)}')
                     
                     # split sequences between train and val datasets
                     print('split sequences between train and val datasets for label 1')
