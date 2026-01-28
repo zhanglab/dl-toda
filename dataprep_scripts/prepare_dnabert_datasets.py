@@ -207,6 +207,7 @@ def main():
                     for i in range(len(labels_same_genus)):
                         num_seq = num_seq_per_genus.pop()
                         seq = sequences[labels_same_genus[i]]
+                        random.shuffle(seq)
                         # random.shuffle(seq)
                         # other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
                         other_labels_seq += seq[:num_seq]
