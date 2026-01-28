@@ -165,7 +165,7 @@ class TaxClassDataset(Dataset):
         return list(self.data.shape)[0]
 
     def __getitem__(self, idx):
-        tokens = self.data.iloc[idx,2].split(' ')
+        tokens = self.data.iloc[idx,1].split(' ')
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
         label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         return input_ids, attention_mask, position_ids, token_type_ids, label
