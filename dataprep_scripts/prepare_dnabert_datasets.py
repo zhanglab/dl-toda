@@ -6,6 +6,7 @@ import os
 import math
 import argparse
 import pandas as pd
+import statistics
 # sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 # from dataprep_scripts.select_genomes import get_gtdb_info
 from select_genomes import get_gtdb_info
@@ -38,6 +39,11 @@ def get_number_sequences(sequences, genome_size, min_coverage):
     return train_size, val_size, sum_bases
 
 def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, label=None, train_genomes_df=None, label_train_size=None, label_val_size=None):
+    seq_size = [len(s.rstrip().split('\t')[1].split(' ')) for s in sequences]
+    print(seq_size[0])
+    print(sequences[].rstrip().split('\t')[1].split(' '))
+    print(len(sequences[0].rstrip().split('\t')[1].split(' ')))
+    print(f'{statistics.median(seq_size)}\t{min(seq_size)}\t{max(seq_size)}\t{statistics.mean(seq_size)}')
     random.shuffle(sequences)
     out_f.write(f'{label}\t')
     if args.multiclass:
@@ -214,7 +220,9 @@ def main():
                         print(f'# sequences: {len(other_labels_seq)}')
                     
                     # split sequences between train and val datasets
+                    print('split sequences between train and val datasets for label 1')
                     get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
+                    print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
 
