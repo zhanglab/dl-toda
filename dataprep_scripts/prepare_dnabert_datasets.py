@@ -173,9 +173,9 @@ def main():
                 out_f.write(''.join(all_val_data))
 
         elif args.bert_step == "finetuning":
-            # load gtdb metadata
-            genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
-            genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
+            # # load gtdb metadata
+            # genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
+            # genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             if args.dataset == 'train':
                 # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
                 # train_genomes_df.columns = ['label','genome','fasta']
@@ -194,7 +194,7 @@ def main():
                 #             labels_same_genus.append(str(train_labels[i]))
                 # print(labels_same_genus, len(labels_same_genus))
                 # calculate the number of sequences to sample
-                # num = len(sequences[args.target_label]) // 1
+                num = len(sequences[args.target_label])
                 # num_genus_labels = len(labels_same_genus)
                 # num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
                                 
