@@ -208,7 +208,6 @@ def main():
                     #     num_seq = num_seq_per_genus.pop()
                     #     seq = sequences[labels_same_genus[i]]
                     #     random.shuffle(seq)
-                    #     # random.shuffle(seq)
                     #     # other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
                     #     other_labels_seq += seq[:num_seq]
                     # print(f'# sequences: {len(other_labels_seq)}')
@@ -221,8 +220,11 @@ def main():
                     num_sp_labels = len(labels_other)
                     num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                     for i in range(len(labels_other)):
+                        seq = sequences[labels_other[i]]
+                        random.shuffle(seq)
                         num_seq = num_seq_per_sp.pop()
-                        other_labels_seq += sequences[labels_other[i]][:num_seq]
+                        other_labels_seq += seq[:num_seq]
+                        # other_labels_seq += sequences[labels_other[i]][:num_seq]
                     print(f'# sequences: {len(other_labels_seq)}')
                     
                     # split sequences between train and val datasets
