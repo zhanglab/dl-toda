@@ -117,11 +117,12 @@ def test_step(inputs, model, device):
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
-    def __init__(self, tsv_file, tokens_file, label):
+    def __init__(self, tsv_file, tokens_file, label, mode):
         self.data = pd.read_csv(tsv_file, sep='\t', header=None)
         self.tokens_dict = self.get_tokens_id(tokens_file)
         self.label = label
         self.max_position_embedding = 512
+        self.mode = mode
 
     def get_tokens_id(self, tokens_file):
         with open(tokens_file, 'r') as f:
@@ -165,7 +166,10 @@ class TaxClassDataset(Dataset):
         return list(self.data.shape)[0]
 
     def __getitem__(self, idx):
-        tokens = self.data.iloc[idx,1].split(' ')
+        if self.mode == 'testing' or self.mode == 'training':
+            tokens = self.data.iloc[idx,1].split(' ')
+        elif self.mode == 'interpretability':
+            tokens = self.data.iloc[idx,2].split(' ')
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
         label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         return input_ids, attention_mask, position_ids, token_type_ids, label
@@ -216,8 +220,8 @@ if __name__ == "__main__":
             os.makedirs(os.path.join(args.output_dir, 'model'))
 
         # prepare input data
-        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label)
-        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label)
+        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label, args.mode)
+        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label, args.mode)
         train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
         val_dataloader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
         
@@ -354,7 +358,7 @@ if __name__ == "__main__":
     if args.mode == "interpretability":
         
         # prepare input data
-        data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label)
+        data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode)
         dataloader = DataLoader(data, batch_size=1, shuffle=False)
         
         # load parameters for BERT
@@ -535,7 +539,7 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
         # prepare input data
-        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label)
+        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode)
         test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
         
         # load parameters for BERT
