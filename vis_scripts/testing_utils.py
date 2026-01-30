@@ -396,7 +396,7 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
 					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
 				
-				assert gene_id != '', f'gene id should not be unknown - {i}\t{content[i]}'
+				assert gene_id != '', f'gene id should not be unknown - {i}\t{content[i]}\t{annot_file}'
 		
 		with open(os.path.join(annotations_dir, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
