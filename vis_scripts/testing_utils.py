@@ -384,19 +384,22 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 					if 'protein_id' in e:
 						protein_id = e.split(' ')[2]
 
-				if content[i].rstrip().split('\t')[2] == 'gene':
-					genes_type[gene_id] = biotype
-					locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
-				elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
-					if function == '':
-						function = gene
-					annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
-				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
-					annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
-				elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
-					annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+				if gene_id != '':
+					if content[i].rstrip().split('\t')[2] == 'gene':
+						genes_type[gene_id] = biotype
+						locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
+					elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
+						if function == '':
+							function = gene
+						annot_info[gene_id] = ['protein_coding', begin, end, strand, gene, function, protein_id]
+					elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'tRNA':
+						annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
+					elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
+						annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
+				else:
+					print(f'gene id unknown - {i}\t{content[i]}\t{annot_file}')
 				
-				assert gene_id != '', f'gene id should not be unknown - {i}\t{content[i]}\t{annot_file}'
+				
 		
 		with open(os.path.join(annotations_dir, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
