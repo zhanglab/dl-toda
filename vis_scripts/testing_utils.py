@@ -401,7 +401,9 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 				
 		with open(os.path.join(annotations_dir, f'{genome_id}_genes_id.tsv'), 'w') as f:	
 			for k, v in annot_info.items():
-				f.write(f'{k}\t{v}\n')	
+				f.write(f'{k}\t{v}\n')
+			for k, v in locus_tags_info.items():
+				f.write(f'{k}\t{v}\n')
 		
 		with open(os.path.join(annotations_dir, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
