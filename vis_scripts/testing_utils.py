@@ -387,7 +387,7 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 				if gene_id != '':
 					if content[i].rstrip().split('\t')[2] == 'gene':
 						genes_type[gene_id] = biotype
-						locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand]
+						locus_tags_info[gene_id] = [begin, end, old_locus_tag, strand, biotype]
 					elif content[i].rstrip().split('\t')[2] == 'CDS' and genes_type[gene_id] == 'protein_coding':
 						if function == '':
 							function = gene
@@ -399,11 +399,11 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 				else:
 					print(f'gene id unknown - {i}\t{content[i]}\t{annot_file}')
 				
-		with open(os.path.join(annotations_dir, f'{genome_id}_genes_id.tsv'), 'w') as f:	
-			for k, v in annot_info.items():
-				f.write(f'{k}\t{v}\n')
-			for k, v in locus_tags_info.items():
-				f.write(f'{k}\t{v}\n')
+		# with open(os.path.join(annotations_dir, f'{genome_id}_genes_id.tsv'), 'w') as f:	
+		# 	for k, v in annot_info.items():
+		# 		f.write(f'{k}\t{v}\n')
+		# 	for k, v in locus_tags_info.items():
+		# 		f.write(f'{k}\t{v}\n')
 		
 		with open(os.path.join(annotations_dir, f'{genome_id}_genes.tsv'), 'w') as f:
 			num_proteins = len([k for k, v in annot_info.items() if v[0] == 'protein_coding'])
