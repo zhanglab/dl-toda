@@ -427,7 +427,6 @@ if __name__ == "__main__":
             # verify DNA sequence
             input_ids, _, _, _, _ = inputs
             input_ids = input_ids.tolist()[0]
-            print(input_ids)
             batch_seq = ''
             i = 1
             while i < len(input_ids):
