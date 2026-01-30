@@ -9,7 +9,7 @@ import pandas as pd
 import statistics
 # sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 # from dataprep_scripts.select_genomes import get_gtdb_info
-from select_genomes import get_gtdb_info
+# from select_genomes import get_gtdb_info
 
 def get_sequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
     for i in range(len(labels)):
@@ -86,9 +86,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, help='path to input directory')
     parser.add_argument('--output_dir', type=str, help='path to output file')
-    parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
-    parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
-    parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
+    # parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
+    # parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'])
     parser.add_argument('--kmer', type=int, help='length of kmers')
