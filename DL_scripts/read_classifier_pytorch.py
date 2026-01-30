@@ -467,25 +467,28 @@ if __name__ == "__main__":
             # attentions[-1].size() --> torch.Size([1, 12, 512, 512])
             # attentions[-1][0].size() --> torch.Size([12, 512, 512]) --> 12 attention heads
             # attentions[-1][0][-1].size() --> torch.Size([512, 512]) --> last attention head
-            attentions_scores = attentions[-1][0][-1].tolist()
-            df = pd.DataFrame(attentions_scores)
-            # get list of tokens
-            tokens = [dict_tokens[i] for i in input_ids]
-            df.columns = tokens
-            # remove rows ['PAD'], ['CLS'] and ['SEP']
-            idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
-            df = df.drop(idx_to_rm, axis='index')
-            # remove columns ['PAD'], ['CLS'] and ['SEP']
-            if '[PAD]' in tokens:
-                df = df.drop('[PAD]', axis='columns')
-            df = df.drop('[CLS]', axis='columns')
-            df = df.drop('[SEP]', axis='columns')
-            # get list of kmers in the sequence
-            df_kmers = df.columns.tolist()
-            # rename index to kmers
-            df.index = df_kmers
-            # save attentions dataframe to file
-            df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{batch}.tsv'), sep='\t', index=False)
+            # iterate over the scores of the 12 attention layers
+            for i in range(len(attentions)):
+                # get last attention head 
+                attentions_scores = attentions[i][0][-1].tolist()
+                df = pd.DataFrame(attentions_scores)
+                # get list of tokens
+                tokens = [dict_tokens[j] for j in input_ids]
+                df.columns = tokens
+                # remove rows ['PAD'], ['CLS'] and ['SEP']
+                idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+                df = df.drop(idx_to_rm, axis='index')
+                # remove columns ['PAD'], ['CLS'] and ['SEP']
+                if '[PAD]' in tokens:
+                    df = df.drop('[PAD]', axis='columns')
+                df = df.drop('[CLS]', axis='columns')
+                df = df.drop('[SEP]', axis='columns')
+                # get list of kmers in the sequence
+                df_kmers = df.columns.tolist()
+                # rename index to kmers
+                df.index = df_kmers
+                # save attentions dataframe to file
+                df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
 
             # get gene associated with DNA sequence
             seq_start = sequences[batch][3]
@@ -531,7 +534,6 @@ if __name__ == "__main__":
 
 
     if args.mode == "testing":
-
         # prepare input data
         test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label)
         test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
