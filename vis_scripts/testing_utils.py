@@ -396,8 +396,8 @@ def GetAnnotInfo(genome_id, input_dir, annotations_dir, output_dir):
 						annot_info[gene_id] = ['tRNA', begin, end, strand, gene]
 					elif content[i].rstrip().split('\t')[2] == 'transcript' and genes_type[gene_id] == 'rRNA':
 						annot_info[gene_id] = ['rRNA', begin, end, strand, gene]
-				else:
-					print(f'gene id unknown - {i}\t{content[i]}\t{annot_file}')
+				# else:
+				# 	print(f'gene id unknown - {i}\t{content[i]}\t{annot_file}')
 				
 		# with open(os.path.join(annotations_dir, f'{genome_id}_genes_id.tsv'), 'w') as f:	
 		# 	for k, v in annot_info.items():
