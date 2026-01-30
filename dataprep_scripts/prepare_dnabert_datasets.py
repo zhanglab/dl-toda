@@ -249,8 +249,9 @@ def main():
                 labels_other = [l for l in labels if l != args.target_label]
                 print(f'# other labels: {len(labels_other)}')
                 num_sp_labels = len(labels_other)
+                num = len(sequences[args.target_label])
                 num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
-                print(num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
+                print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                     for i in range(len(labels)):
                         if labels[i] == args.target_label:
