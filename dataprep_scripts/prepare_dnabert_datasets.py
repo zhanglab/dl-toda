@@ -88,6 +88,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output file')
     parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
     parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
+    parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'])
     parser.add_argument('--kmer', type=int, help='length of kmers')
