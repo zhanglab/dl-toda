@@ -526,14 +526,14 @@ if __name__ == "__main__":
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
 
-        with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+        with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
 
     if args.mode == "testing":
 
         # prepare input data
-        test_data = TaxClassDataset(test_tsv_file, args.tokens_file, args.label)
+        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label)
         test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
         
         # load parameters for BERT
@@ -548,10 +548,10 @@ if __name__ == "__main__":
 
         start = datetime.datetime.now()
 
-        test_metrics = open(os.path.join(output_dir, 'metrics.tsv'), 'w')
-        test_sum = open(os.path.join(output_dir, 'summary.tsv'), 'w')
+        test_metrics = open(os.path.join(args.output_dir, 'metrics.tsv'), 'w')
+        test_sum = open(os.path.join(args.output_dir, 'summary.tsv'), 'w')
 
-        with open(test_tsv_file, 'r') as f:
+        with open(args.tsv_file, 'r') as f:
             num_test_reads = len(f.readlines())
 
         dict_tokens = {}
@@ -561,7 +561,7 @@ if __name__ == "__main__":
         
         # load DNA sequences
         test_sequences = []
-        with open(test_tsv_file, 'r') as f:
+        with open(args.tsv_file, 'r') as f:
             for idx, line in enumerate(f):
                 list_tokens = line.rstrip().split('\t')[1].split(' ')
                 seq = list_tokens[0]
@@ -595,7 +595,7 @@ if __name__ == "__main__":
         FN = 0
         TN = 0
         TP = 0
-        assert len(predictions) == len(ground_truth), f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
+        assert len(predictions) == len(ground_truth) == num_test_reads, f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
 
         for i in range(len(predictions)):
             if ground_truth[i] == 1 and predictions[i] == 1:
@@ -643,7 +643,7 @@ if __name__ == "__main__":
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
 
-        with open(os.path.join(output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
+        with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
 
     if args.lc_dir is not None:
