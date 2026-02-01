@@ -431,24 +431,26 @@ if __name__ == "__main__":
             while i < len(input_ids):
                 if input_ids[i] not in [3, 0]:
                     if input_ids[i] == 1:
-                        batch_seq += 'UUUU'
-                        i += 4
-                        continue
+                        u_idx = i
+                        while u_idx < len(input_ids):
+                            if input_ids[u_idx] == 1:
+                                u_idx += 1
+                            else:
+                                batch_seq += id_to_token[input_ids[u_idx]]
+                                break
+                        i = u_idx
                     else:
                         if i == 1:
-                            batch_seq += dict_tokens[input_ids[i]]
+                            batch_seq += id_to_token[input_ids[i]]
                         else:
-                            batch_seq += dict_tokens[input_ids[i]][-1]
+                            batch_seq += id_to_token[input_ids[i]][-1]
                 i += 1
             # update original sequence if presence of unknown character
             seq_updated = ''
             i = 0
-            while i < len(sequences[batch][2]):
-                if sequences[batch][2][i] in ['A','T','C','G']:
-                    seq_updated += sequences[batch][2][i]
-                else:
-                    seq_updated += 'UUUU'
-                    i += 3
+            while i < len(original_seq):
+                if original_seq[i] in ['A','T','C','G']:
+                    seq_updated += original_seq[i]
                 i += 1
             assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
