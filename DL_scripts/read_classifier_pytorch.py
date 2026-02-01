@@ -377,11 +377,9 @@ if __name__ == "__main__":
         #     num_test_reads = len(f.readlines())
 
         dict_tokens = {}
-        id_to_token = {}
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f):
                 dict_tokens[idx] = line.rstrip()
-                id_to_token[line.rstrip()] = idx
         
         # load DNA sequences
         sequences = []
@@ -438,21 +436,21 @@ if __name__ == "__main__":
                             if input_ids[u_idx] == 1:
                                 u_idx += 1
                             else:
-                                batch_seq += id_to_token[input_ids[u_idx]]
+                                batch_seq += dict_tokens[input_ids[u_idx]]
                                 break
                         i = u_idx
                     else:
                         if i == 1:
-                            batch_seq += id_to_token[input_ids[i]]
+                            batch_seq += dict_tokens[input_ids[i]]
                         else:
-                            batch_seq += id_to_token[input_ids[i]][-1]
+                            batch_seq += dict_tokens[input_ids[i]][-1]
                 i += 1
             # update original sequence if presence of unknown character
             seq_updated = ''
             i = 0
-            while i < len(original_seq):
-                if original_seq[i] in ['A','T','C','G']:
-                    seq_updated += original_seq[i]
+            while i < len(sequences[batch][2]):
+                if sequences[batch][2][i] in ['A','T','C','G']:
+                    seq_updated += sequences[batch][2][i]
                 i += 1
             assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
