@@ -377,9 +377,11 @@ if __name__ == "__main__":
         #     num_test_reads = len(f.readlines())
 
         dict_tokens = {}
+        id_to_token = {}
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f):
                 dict_tokens[idx] = line.rstrip()
+                id_to_token[line.rstrip()] = idx
         
         # load DNA sequences
         sequences = []
