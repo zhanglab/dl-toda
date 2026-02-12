@@ -73,7 +73,7 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
 
     out_f.write(f'{train_size}\t{val_size}\n')
 
-def GetGenomeCov(data, train_genome_size):
+def GetGenomeCov(data, train_genome_size): 
     data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
@@ -254,7 +254,7 @@ def main():
                     train_pct_genome_covered = GetGenomeCov(all_train_data, train_genome_size)
                     out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}')
                     val_pct_genome_covered = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% train genome covered in val dataset\t{_pct_genome_covered}')
+                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}')
                     print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
