@@ -81,8 +81,8 @@ def GetGenomeCov(data, train_genome_size):
         for j in range(start, end+1, 1):
             data_cov[j] += 1
         print(start, end, end+1, j)
-    pct_genome_covered = (sum([1 for k, v in range(len(data_cov)) if v != 0])/train_genome_size)*100
-    print(sum([1 for k, v in range(len(data_cov)) if v != 0]), train_genome_size)
+    pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
+    print(sum([1 for v in data_cov.values() if v != 0]), train_genome_size, len(data_cov))
     return pct_genome_covered
 
 
