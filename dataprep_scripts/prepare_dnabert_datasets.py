@@ -120,7 +120,7 @@ def main():
     train_genomes_df.columns = ['label','genome','fasta']
     print(train_genomes_df)
     # get size of training genome
-    train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.target_label)].fasta
+    train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.target_label)]['fasta']
     print(train_fasta)
     for seq_record in SeqIO.parse(train_fasta, "fasta"):
         print('genome size', len(seq_record.seq))
