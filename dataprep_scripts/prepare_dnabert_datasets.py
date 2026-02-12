@@ -74,12 +74,12 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
     out_f.write(f'{train_size}\t{val_size}\n')
 
 def GetGenomeCov(data, train_genome_size):
-    data_cov = {i: 0 for i in range(1, train_genome_size+1, 1)}
+    data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
-        for j in range(start, end+1, 1):
-            print(start, end, end+1, j)
+        for j in range(start, end, 1):
+            print(start, end, j)
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
     print(sum([1 for v in data_cov.values() if v != 0]), train_genome_size, len(data_cov))
