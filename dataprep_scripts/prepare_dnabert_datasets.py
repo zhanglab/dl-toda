@@ -126,7 +126,6 @@ def main():
         print('genome size', len(seq_record.seq))
     train_genome_size = get_genome_size(train_fasta)
     print('genome size', train_genome_size)
-    sys.exit(1)
 
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
