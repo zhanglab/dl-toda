@@ -7,6 +7,7 @@ import math
 import argparse
 import pandas as pd
 import statistics
+from Bio.Seq import SeqIO
 # sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
@@ -72,6 +73,13 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
 
     out_f.write(f'{train_size}\t{val_size}\n')
 
+def GetGenomeCov(data, train_genome_size):
+    data_cov = {i: 0 for i in range(train_genome_size)}
+    for i in range(len(data)):
+    pct_genome_covered = (sum([1 for k, v in range(len(data_cov)) if v != 0])/train_genome_size)*100
+    print(sum([1 for k, v in range(len(data_cov)) if v != 0]), train_genome_size)
+    return pct_genome_covered
+
 
 def get_genome_size(fasta):
     seq = ''
@@ -87,7 +95,7 @@ def main():
     parser.add_argument('--input_dir', type=str, help='path to input directory')
     parser.add_argument('--output_dir', type=str, help='path to output file')
     # parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
-    # parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
+    parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'])
     parser.add_argument('--kmer', type=int, help='length of kmers')
@@ -103,8 +111,16 @@ def main():
 
     # if args.bert_step == 'pretraining' or args.multiclass:
     # get size of training genomes
-    # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    # train_genomes_df.columns = ['label','genome','fasta']
+    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    train_genomes_df.columns = ['label','genome','fasta']
+    # get size of training genome
+    train_fasta = train_genomes_df[train_genomes_df['label'] == args.target_label].fasta
+    print(train_fasta)
+    for seq_record in SeqIO.parse(train_fasta, "fasta"):
+        print('genome size', len(seq_record.seq))
+    train_genome_size = get_genome_size(train_fasta)
+    print('genome size', train_genome_size)
+    sys.exit(1)
 
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
@@ -154,7 +170,6 @@ def main():
                 label_train_size, label_val_size, _ = get_number_sequences(sequences[str(largest_genome_label)], largest_genome_size, args.min_coverage)
 
                 print(f'largest genome train size: {label_train_size}\tlargest genome val size: {label_val_size}')
-
 
             all_train_data = []
             all_val_data = []
@@ -230,6 +245,11 @@ def main():
                     # split sequences between train and val datasets
                     print('split sequences between train and val datasets for label 1')
                     get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
+                    # calculate percentage of training genome covered in train and val datasets
+                    train_pct_genome_covered = GetGenomeCov(all_train_data, train_genome_size)
+                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}')
+                    val_pct_genome_covered = GetGenomeCov(all_val_data, train_genome_size)
+                    out_f.write(f'% train genome covered in val dataset\t{_pct_genome_covered}')
                     print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     

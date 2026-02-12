@@ -492,7 +492,7 @@ if __name__ == "__main__":
                 # rename index to kmers
                 df.index = df_kmers
                 # save attentions dataframe to file
-                df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
+                df.to_csv(os.path.join(args.output_dir, f'{test_genome}_{test_label}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
 
             # get gene associated with DNA sequence
             seq_start = sequences[batch][3]
