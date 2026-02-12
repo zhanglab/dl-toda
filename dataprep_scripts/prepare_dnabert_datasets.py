@@ -7,7 +7,7 @@ import math
 import argparse
 import pandas as pd
 import statistics
-from Bio.Seq import SeqIO
+from Bio import SeqIO
 # sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
