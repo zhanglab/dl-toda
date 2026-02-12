@@ -74,7 +74,7 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
     out_f.write(f'{train_size}\t{val_size}\n')
 
 def GetGenomeCov(data, train_genome_size):
-    data_cov = {i: 0 for i in range(train_genome_size)}
+    data_cov = {i: 0 for i in range(1, train_genome_size+1, 1)}
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
