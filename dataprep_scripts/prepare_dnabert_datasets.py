@@ -66,7 +66,7 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
             out_f.write(f'{sum_bases/genome_size}\t')
         else:
             train_size = round(0.7*len(sequences))
-            val_size = len(sequences) - train_size 
+            val_size = len(sequences) - train_size
 
     all_train_data += sequences[:train_size]
     all_val_data += sequences[-val_size:]
@@ -115,17 +115,18 @@ def main():
         os.makedirs(args.output_dir)
 
     # if args.bert_step == 'pretraining' or args.multiclass:
-    # get size of training genomes
-    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    train_genomes_df.columns = ['label','genome','fasta']
-    print(train_genomes_df)
-    # get size of training genome
-    train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.target_label)]['fasta'].tolist()[0]
-    print(train_fasta)
-    for seq_record in SeqIO.parse(train_fasta, "fasta"):
-        print('genome size', len(seq_record.seq))
-    train_genome_size = get_genome_size(train_fasta)
-    print('genome size', train_genome_size)
+    if args.dataset == 'train':
+        # get size of training genomes
+        train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+        train_genomes_df.columns = ['label','genome','fasta']
+        print(train_genomes_df)
+        # get size of training genome
+        train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.target_label)]['fasta'].tolist()[0]
+        print(train_fasta)
+        for seq_record in SeqIO.parse(train_fasta, "fasta"):
+            print('genome size', len(seq_record.seq))
+        train_genome_size = get_genome_size(train_fasta)
+        print('genome size', train_genome_size)
 
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
@@ -252,9 +253,9 @@ def main():
                     get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
                     # calculate percentage of training genome covered in train and val datasets
                     train_pct_genome_covered = GetGenomeCov(all_train_data, train_genome_size)
-                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}')
+                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\n')
                     val_pct_genome_covered = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}')
+                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\n')
                     print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
