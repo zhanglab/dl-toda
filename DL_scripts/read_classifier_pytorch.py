@@ -689,7 +689,7 @@ if __name__ == "__main__":
         # create dataframe
         values = train_accuracy + val_accuracy + train_loss + val_loss
         metric = ['accuracy']*(len(train_accuracy)+len(val_accuracy)) + ['loss']*(len(train_loss)+len(val_loss))
-        dataset = ['train']*len(train_accuracy) + ['val']*len(val_accuracy) + ['train']*len(train_loss) + ['val']*len(val_loss)
+        dataset = ['training']*len(train_accuracy) + ['validation']*len(val_accuracy) + ['training']*len(train_loss) + ['validation']*len(val_loss)
         epoch = 4*list(range(len(train_accuracy)))
         assert len(values) == len(epoch) == len(dataset) == len(metric)
         data = {'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epoch}
