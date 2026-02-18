@@ -694,16 +694,15 @@ if __name__ == "__main__":
         assert len(values) == len(epoch) == len(dataset) == len(metric)
         data = {'value': values, 'metric': metric, 'dataset': dataset, 'epochs': epoch}
         df = pd.DataFrame(data)
+        max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
         print(df)
-        # max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
-        # min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
-        # print(df)
-        # print(df.shape)
-        # line_styles = ['-', '--']
-        # palette = {'training': 'black', 'validation': 'red'}
-        # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
-        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
-        # axes = plot.axes.flatten()
+        print(df.shape)
+        line_styles = ['-', '--']
+        palette = {'training': 'black', 'validation': 'red'}
+        plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
+        plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
+        axes = plot.axes.flatten()
         # axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
         # axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
         # axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
@@ -721,7 +720,7 @@ if __name__ == "__main__":
         #         ax.set_ylim(0,100)
         #     print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
         # plot.add_legend()
-        # plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
+        plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
 
     # if args.embeddings is not None:
 
