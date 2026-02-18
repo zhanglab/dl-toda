@@ -698,6 +698,7 @@ if __name__ == "__main__":
         min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
         print(df)
         print(df.shape)
+        print(max_loss, min_loss)
         line_styles = ['-', '--']
         palette = {'training': 'black', 'validation': 'red'}
         plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
@@ -714,10 +715,10 @@ if __name__ == "__main__":
             ax.lines[0].set_linestyle('-')
             ax.lines[1].set_color('red')
             ax.lines[1].set_linestyle('-')
-            if idx in [4,5,6,7]:
-                ax.set_ylim(min_loss,max_loss)
-            if idx in [0,1,2,3]:
+            if idx == 0:
                 ax.set_ylim(0,100)
+            if idx == 1:
+                ax.set_ylim(min_loss,max_loss)
             print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
         plot.add_legend()
         plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
