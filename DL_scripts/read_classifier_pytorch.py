@@ -692,7 +692,7 @@ if __name__ == "__main__":
         dataset = ['train']*len(train_accuracy) + ['val']*len(val_accuracy) + ['train']*len(train_loss) + ['val']*len(val_loss)
         epoch = 4*list(range(len(train_accuracy)))
         assert len(values) == len(epoch) == len(dataset) == len(metric)
-        data = {'value': values, 'metric': metric, 'dataset': dataset, 'epochs': epoch}
+        data = {'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epoch}
         df = pd.DataFrame(data)
         max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
         min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
