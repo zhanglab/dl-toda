@@ -182,6 +182,7 @@ if __name__ == "__main__":
     parser.add_argument('--tsv_file', type=str, help='path to file with dataset')
     parser.add_argument('--genome', help='do testing at the genome level', action='store_true')
     parser.add_argument('--resume', help='resume training', action='store_true')
+    parser.add_argument('--learning_curves', help='create learning curves', action='store_true')
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
@@ -415,8 +416,8 @@ if __name__ == "__main__":
                 incorrect_seq = {}
                 genome = test_genome
                 annot_info = test_annot_info
-                if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
-                    os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
+                # if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
+                #     os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
 
             # get embeddings
             # embeddings shape: (batch_size, 512, 768)
@@ -492,8 +493,7 @@ if __name__ == "__main__":
                 # rename index to kmers
                 df.index = df_kmers
                 # save attentions dataframe to file
-                df.to_csv(os.path.join(args.output_dir, f'{test_genome}_{test_label}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
-
+                df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
             # get gene associated with DNA sequence
             seq_start = sequences[batch][3]
             seq_end = sequences[batch][4]
@@ -655,69 +655,75 @@ if __name__ == "__main__":
     if args.lc_dir is not None:
         # create learning curves
         # get input data
-        training_files = sorted(glob.glob(os.path.join(args.lc_dir, '*/*/logs/metrics.tsv')))
-        validation_files = sorted(glob.glob(os.path.join(args.lc_dir, '*/*/logs/validation.tsv')))
-        assert len(training_files) == len(validation_files)
-        batch_size = []
-        values = []
-        metric = []
-        dataset = []
-        epochs = []
-        for i in range(len(training_files)):
-            train_bs = training_files[i].split('/')[-3].split('-')[-1]
-            val_bs = training_files[i].split('/')[-3].split('-')[-1]
-            assert train_bs == val_bs
-            train_df = pd.read_csv(training_files[i], sep='\t', header=None)
-            val_df = pd.read_csv(validation_files[i], sep='\t', header=None)
-            num_epochs, _ = val_df.shape
-            num_steps_per_epoch = train_df.iloc[:, 1].tolist()[-1]
-            train_accuracy = [train_df.iloc[:, 3].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
-            train_loss = [train_df.iloc[:, 2].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
-            values += train_accuracy
-            values += train_loss
-            dataset += ['training']*(len(train_accuracy)*2)
-            metric += ['accuracy']*len(train_accuracy) + ['loss']*len(train_loss)
-            val_accuracy = val_df.iloc[:, 3].tolist()
-            val_loss = val_df.iloc[:, 2].tolist()
-            values += val_accuracy
-            values += val_loss
-            batch_size += [int(train_bs)]*(len(train_accuracy)*2+len(val_accuracy)*2)
-            dataset += ['validation']*(len(val_accuracy)*2)
-            metric += ['accuracy']*len(val_accuracy) + ['loss']*len(val_loss)
-            epochs += list(range(1, num_epochs+1, 1))*4
+        training_file = os.path.join(args.lc_dir, 'logs/training.tsv')
+        validation_file = os.path.join(args.lc_dir, 'logs/validation.tsv')
+
+        # batch_size = []
+        # values = []
+        # metric = []
+        # dataset = []
+        # epochs = []
+        # for i in range(len(training_files)):
+            # train_bs = training_files[i].split('/')[-3].split('-')[-1]
+            # val_bs = training_files[i].split('/')[-3].split('-')[-1]
+            # assert train_bs == val_bs
+        train_df = pd.read_csv(training_file, sep='\t', header=None)
+        val_df = pd.read_csv(validation_file, sep='\t', header=None)
+        num_epochs, _ = val_df.shape
+        num_steps_per_epoch = train_df.iloc[:, 1].tolist()[-1]
+        print(num_steps_per_epoch)
+        train_accuracy = [train_df.iloc[:, 3].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+        train_loss = [train_df.iloc[:, 2].tolist()[j] for j in range(0, len(train_df), num_steps_per_epoch)]
+        # values += train_accuracy
+        # values += train_loss
+        # dataset += ['training']*(len(train_accuracy)*2)
+        # metric += ['accuracy']*len(train_accuracy) + ['loss']*len(train_loss)
+        val_accuracy = val_df.iloc[:, 3].tolist()
+        val_loss = val_df.iloc[:, 2].tolist()
+        # values += val_accuracy
+        # values += val_loss
+        # batch_size += [int(train_bs)]*(len(train_accuracy)*2+len(val_accuracy)*2)
+        # dataset += ['validation']*(len(val_accuracy)*2)
+        # metric += ['accuracy']*len(val_accuracy) + ['loss']*len(val_loss)
+        # epochs += list(range(1, num_epochs+1, 1))*4
         # create dataframe
-        data = {'batch_size': batch_size, 'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epochs}
+        values = train_accuracy + val_accuracy + train_loss + val_loss
+        metric = ['accuracy']*(len(train_accuracy)+len(val_accuracy)) + ['loss']*(len(train_loss)+len(val_loss))
+        dataset = ['train']*len(train_accuracy) + ['val']*len(val_accuracy) + ['train']*len(train_loss) + ['val']*len(val_loss)
+        epoch = 4*list(range(len(train_accuracy)))
+        assert len(values) == len(epoch) == len(dataset) == len(metric)
+        data = {'value': values, 'metric': metric, 'dataset': dataset, 'epochs': epoch}
         df = pd.DataFrame(data)
-        max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
-        min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
         print(df)
-        print(df.shape)
-        line_styles = ['-', '--']
-        palette = {'training': 'black', 'validation': 'red'}
-        plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
-        plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
-        axes = plot.axes.flatten()
-        axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
-        axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
-        axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
-        for idx, ax in enumerate(axes):
-            ax.set_title(axes_title[idx])
-            ax.set_ylabel(axes_y_labels[idx])
-            ax.set_xlabel(axes_x_labels[idx])
-            ax.lines[0].set_color('black')
-            ax.lines[0].set_linestyle('-')
-            ax.lines[1].set_color('red')
-            ax.lines[1].set_linestyle('-')
-            if idx in [4,5,6,7]:
-                ax.set_ylim(min_loss,max_loss)
-            if idx in [0,1,2,3]:
-                ax.set_ylim(0,100)
-            print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
-        plot.add_legend()
-        plt.savefig(os.path.join(args.lc_dir, 'learning_curves.png'), dpi=300)
+        # max_loss = max(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        # min_loss = min(df.loc[df['metric'] == 'loss', 'value'].tolist())
+        # print(df)
+        # print(df.shape)
+        # line_styles = ['-', '--']
+        # palette = {'training': 'black', 'validation': 'red'}
+        # plot = sns.FacetGrid(df, row='metric', col='batch_size', sharey=False)
+        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
+        # axes = plot.axes.flatten()
+        # axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
+        # axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
+        # axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
+        # for idx, ax in enumerate(axes):
+        #     ax.set_title(axes_title[idx])
+        #     ax.set_ylabel(axes_y_labels[idx])
+        #     ax.set_xlabel(axes_x_labels[idx])
+        #     ax.lines[0].set_color('black')
+        #     ax.lines[0].set_linestyle('-')
+        #     ax.lines[1].set_color('red')
+        #     ax.lines[1].set_linestyle('-')
+        #     if idx in [4,5,6,7]:
+        #         ax.set_ylim(min_loss,max_loss)
+        #     if idx in [0,1,2,3]:
+        #         ax.set_ylim(0,100)
+        #     print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+        # plot.add_legend()
+        # plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
 
     # if args.embeddings is not None:
-
 
     # if args.testing_sum_dir:
     #     # create learning curves
