@@ -703,23 +703,23 @@ if __name__ == "__main__":
         plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
         plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='dataset', palette=palette)
         axes = plot.axes.flatten()
-        # axes_title = ['batch size: 32','batch size: 64', 'batch size: 128', 'batch size: 256', '', '', '', '']
-        # axes_y_labels = ['Accuracy', '', '', '', 'Loss', '', '', '',]
-        # axes_x_labels = ['', '', '', '', 'Epoch', 'Epoch', 'Epoch', 'Epoch']
-        # for idx, ax in enumerate(axes):
-        #     ax.set_title(axes_title[idx])
-        #     ax.set_ylabel(axes_y_labels[idx])
-        #     ax.set_xlabel(axes_x_labels[idx])
-        #     ax.lines[0].set_color('black')
-        #     ax.lines[0].set_linestyle('-')
-        #     ax.lines[1].set_color('red')
-        #     ax.lines[1].set_linestyle('-')
-        #     if idx in [4,5,6,7]:
-        #         ax.set_ylim(min_loss,max_loss)
-        #     if idx in [0,1,2,3]:
-        #         ax.set_ylim(0,100)
-        #     print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
-        # plot.add_legend()
+        axes_title = ['','']
+        axes_y_labels = ['Accuracy', 'Loss']
+        axes_x_labels = ['Epoch', 'Epoch']
+        for idx, ax in enumerate(axes):
+            ax.set_title(axes_title[idx])
+            ax.set_ylabel(axes_y_labels[idx])
+            ax.set_xlabel(axes_x_labels[idx])
+            ax.lines[0].set_color('black')
+            ax.lines[0].set_linestyle('-')
+            ax.lines[1].set_color('red')
+            ax.lines[1].set_linestyle('-')
+            if idx in [4,5,6,7]:
+                ax.set_ylim(min_loss,max_loss)
+            if idx in [0,1,2,3]:
+                ax.set_ylim(0,100)
+            print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
+        plot.add_legend()
         plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
 
     # if args.embeddings is not None:
