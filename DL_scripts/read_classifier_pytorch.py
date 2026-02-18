@@ -184,6 +184,7 @@ if __name__ == "__main__":
     parser.add_argument('--resume', help='resume training', action='store_true')
     parser.add_argument('--learning_curves', help='create learning curves', action='store_true')
     parser.add_argument('--label', type=int, help='label of interest')
+    parser.add_argument('--patience', type=int, help='patience number for early stopping')
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
@@ -282,7 +283,7 @@ if __name__ == "__main__":
                 epoch_train_acc += train_accuracy
                 if (train_batch+1) % 100 == 0:
                     print(f'epoch: {epoch+1}\tbatch: {train_batch+1}\ttraining loss: {round(epoch_train_loss/(train_batch+1),3)}\ttraining accuracy: {round(epoch_train_acc/(train_batch+1),3)*100}')
-                train_logs_file.write(f'{epoch+1}\t{train_batch+1}\t{round(epoch_train_loss/(train_batch+1),3)}\t{round(epoch_train_acc/(train_batch+1),3)*100}\n')
+                train_logs_file.write(f'{epoch+1}\t{train_batch+1}\t{round(epoch_train_loss/(train_batch+1),3)}\t{round(epoch_train_acc/(train_batch+1),3)*100}\t{optimizer.param_groups[0]['lr']}\n')
 
             epoch_val_loss = 0.0
             epoch_val_acc = 0.0
@@ -292,11 +293,11 @@ if __name__ == "__main__":
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
             epoch_val_acc = round(epoch_val_acc/(val_batch+1),3)
-            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\n')
+            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\n')
 
             # check validation loss at the end of epoch
             print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}')
-            if patience == 10:
+            if patience == args.patience:
                 lr = optimizer.param_groups[0]['lr']
                 if lr == args.learning_rate:
                     optimizer.param_groups[0]['lr'] = 0.000002
