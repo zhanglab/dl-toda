@@ -297,7 +297,6 @@ if __name__ == "__main__":
             val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\t{wait}\n')
 
             # check validation loss at the end of epoch
-            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
             # if patience == args.patience:
             # if wait >= patience:
             #     lr = optimizer.param_groups[0]['lr']
@@ -315,6 +314,9 @@ if __name__ == "__main__":
                 wait = 0
                 min_epoch = epoch
                 found_min = True
+                # save model
+                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
             else:
                 wait += 1
                 if wait >= patience:
@@ -328,6 +330,8 @@ if __name__ == "__main__":
                         print(f"Early stopping at epoch {epoch+1}")
                         stop_training = True
                 # patience += 1
+                        
+            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
             
             # save model
             if stop_training or (epoch+1) == args.num_epochs:
@@ -341,12 +345,6 @@ if __name__ == "__main__":
                     model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
                     torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
                 break
-            
-            # save model every 10 epochs
-            if (epoch+1) % 10 == 0:
-                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
-                torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
-
 
         train_logs_file.close()
         val_logs_file.close()
