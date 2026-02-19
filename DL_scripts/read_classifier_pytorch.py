@@ -758,6 +758,7 @@ if __name__ == "__main__":
         labels = []
         epochs = []
         for i in range(len(metrics_file)):
+            print(i)
             epoch = int(metrics_file[i].split('/')[-2].split('-')[-1])
             print(epoch)
             metrics_df =  pd.read_csv(metrics_file[i], sep='\t', header=None)
