@@ -761,9 +761,11 @@ if __name__ == "__main__":
             epoch = int(metrics_file[i].split('/')[-2].split('-')[-1])
             print(epoch)
             metrics_df =  pd.read_csv(metrics_file[i], sep='\t', header=None)
-            values += metrics_df.iloc[:, 3].tolist()
-            metrics += metrics_df.iloc[:, 2].tolist()
-            labels += metrics_df.iloc[:, 1].tolist()
+            metrics_df.columns = ['label','metric','value']
+            print(metrics_df)
+            values += metrics_df['value'].tolist()
+            metrics += metrics_df['metric'].tolist()
+            labels += metrics_df['label'].tolist()
             epochs += metrics_df.shape[0]*[epoch]
         
         data = {'value': values, 'metric': metrics, 'label':labels, 'epoch': epochs}
@@ -800,8 +802,10 @@ if __name__ == "__main__":
         epochs = []
         for i in range(len(summary_file)):
             epoch = int(summary_file[i].split('/')[-2].split('-')[-1])
+            print(epoch)
             summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
-            values += [summary_df.iloc[:, 2].tolist()[0]]
+            summary_df.columns = ['metric','value']
+            values += [summary_df['value'].tolist()[0]]
             epochs += [epoch]
         data = {'value': values, 'epoch': epochs}
         df = pd.DataFrame(data)
