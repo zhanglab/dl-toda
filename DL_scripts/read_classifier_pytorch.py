@@ -267,7 +267,8 @@ if __name__ == "__main__":
 
         # define variables for early stopping
         best_val_accuracy = np.Inf
-        patience = 0
+        patience = args.patience
+        wait = 0
         best_model = None
         best_loss = np.Inf
         stop_training = False
@@ -293,44 +294,59 @@ if __name__ == "__main__":
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
             epoch_val_acc = round(epoch_val_acc/(val_batch+1),3)
-            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\n')
+            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\t{wait}\n')
 
             # check validation loss at the end of epoch
-            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}')
-            if patience == args.patience:
-                lr = optimizer.param_groups[0]['lr']
-                if lr == args.learning_rate:
-                    optimizer.param_groups[0]['lr'] = 0.000002
-                    patience = 0
-                else:
-                    stop_training = True
+            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
+            # if patience == args.patience:
+            # if wait >= patience:
+            #     lr = optimizer.param_groups[0]['lr']
+            #     if (lr == args.learning_rate) and (args.learning_rate != 0.000002):
+            #         optimizer.param_groups[0]['lr'] = 0.000002
+            #         # patience = 0
+            #     else:
+            #         stop_training = True
+            # else:
+            if epoch_val_loss < best_loss:
+                best_loss = epoch_val_loss
+                best_val_accuracy = epoch_val_acc
+                best_model = model.state_dict()
+                # patience = 0 # Reset wait counter
+                wait = 0
+                min_epoch = epoch
+                found_min = True
             else:
-                if epoch_val_loss < best_loss:
-                    best_loss = epoch_val_loss
-                    best_val_accuracy = epoch_val_acc
-                    best_model = model.state_dict()
-                    patience = 0 # Reset wait counter
-                    min_epoch = epoch
-                    found_min = True
-                else:
-                    patience += 1
+                wait += 1
+                if wait >= patience:
+                    # lower learning rate
+                    lr = optimizer.param_groups[0]['lr']
+                    if (lr == args.learning_rate) and (args.learning_rate != 0.000002):
+                        optimizer.param_groups[0]['lr'] = 0.000002
+                        wait = 0
+                        # patience = 0
+                    else:
+                        print(f"Early stopping at epoch {epoch+1}")
+                        stop_training = True
+                # patience += 1
             
-            # save model every 100 epochs
-            if (epoch+1) % 100 == 0:
-                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
-                torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
-
             # save model
             if stop_training or (epoch+1) == args.num_epochs:
                 if found_min:
-                    torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}-best.pth'))
+                    # save best model
+                    torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{min_epoch}-best.pth'))
                     model.load_state_dict(best_model)
-                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}-best'))
-                    
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{min_epoch}-best'))
                 else:
+                    # save model if training has reached the max number of epochs 
                     model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
                     torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
                 break
+            
+            # save model every 10 epochs
+            if (epoch+1) % 10 == 0:
+                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
+
 
         train_logs_file.close()
         val_logs_file.close()
