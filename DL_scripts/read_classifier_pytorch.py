@@ -675,8 +675,10 @@ if __name__ == "__main__":
         # get input data
         training_file = os.path.join(args.lc_dir, 'logs/training.tsv')
         validation_file = os.path.join(args.lc_dir, 'logs/validation.tsv')
-        best_epoch = int(glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0].split('-')[-1])
+        best_epoch = glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0]
         print(best_epoch)
+        print(best_epoch.split('-')[-1]))
+        sys.exit(1)
         # batch_size = []
         # values = []
         # metric = []
