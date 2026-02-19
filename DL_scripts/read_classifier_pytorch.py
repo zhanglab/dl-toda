@@ -740,7 +740,7 @@ if __name__ == "__main__":
             if idx == 1:
                 ax.set_ylim(min_loss,max_loss)
             print(idx, ax.get_title(), ax.get_ylabel(), ax.get_xlabel(), ax.get_ylim())
-        plot.add_legend()
+        plot.add_legend(loc='lower center')
         plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
 
     if args.testing_dir is not None:
@@ -790,7 +790,7 @@ if __name__ == "__main__":
                 ax.set_ylim(0,1)
             if idx == 1:
                 ax.set_ylim(0,1)
-        plot.add_legend()
+        plot.add_legend(loc='lower center')
         plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'metrics.png'), dpi=300)
 
         # plot accuracy
@@ -821,7 +821,7 @@ if __name__ == "__main__":
             # add vertical line to define best checkpoint
             ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
             ax.set_ylim(0,1)
-        plot.add_legend()
+        plot.add_legend(loc='lower center')
         plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'accuracy.png'), dpi=300)
 
     
