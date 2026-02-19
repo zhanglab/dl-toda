@@ -759,8 +759,9 @@ if __name__ == "__main__":
         epochs = []
         for i in range(len(metrics_file)):
             print(i, metrics_file[i])
+            print(metrics_file[i].split('/')[-2].split('-'))
             if len(metrics_file[i].split('/')[-2].split('-')) > 1:
-                epoch = int(metrics_file[i].split('/')[-2].split('-')[-2])
+                epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
             else:
                 epoch = int(metrics_file[i].split('/')[-2])
             print(epoch)
@@ -806,7 +807,7 @@ if __name__ == "__main__":
         epochs = []
         for i in range(len(summary_file)):
             if len(metrics_file[i].split('/')[-2].split('-')) > 1:
-                epoch = int(metrics_file[i].split('/')[-2].split('-')[-2])
+                epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
             else:
                 epoch = int(metrics_file[i].split('/')[-2])
             summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
