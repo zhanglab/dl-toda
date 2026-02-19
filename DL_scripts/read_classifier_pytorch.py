@@ -710,7 +710,7 @@ if __name__ == "__main__":
         values = train_accuracy + val_accuracy + train_loss + val_loss
         metric = ['accuracy']*(len(train_accuracy)+len(val_accuracy)) + ['loss']*(len(train_loss)+len(val_loss))
         dataset = ['training']*len(train_accuracy) + ['validation']*len(val_accuracy) + ['training']*len(train_loss) + ['validation']*len(val_loss)
-        epoch = 4*list(1, range(len(train_accuracy))+1, 1)
+        epoch = 4*list(range(1,len(train_accuracy)+1,1))
         assert len(values) == len(epoch) == len(dataset) == len(metric)
         data = {'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epoch}
         df = pd.DataFrame(data)
