@@ -749,7 +749,7 @@ if __name__ == "__main__":
         metrics_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/metrics.tsv')))
         summary_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/summary.tsv')))
         assert len(metrics_file) == len(summary_file)
-        best_epoch = glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0]
+        best_epoch = glob.glob(os.path.join(args.testing_dir, 'model/*-best'))[0]
         best_epoch = int(best_epoch.split('-')[-2])
         print('best epoch', best_epoch)
         # create plots for precision and recall
