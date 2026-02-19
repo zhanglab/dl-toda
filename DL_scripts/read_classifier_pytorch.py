@@ -759,7 +759,7 @@ if __name__ == "__main__":
         epochs = []
         for i in range(len(metrics_file)):
             print(i, metrics_file[i])
-            epoch = int(metrics_file[i].split('/')[-2].split('-')[-1])
+            epoch = int(metrics_file[i].split('/')[-2].split('-')[-2])
             print(epoch)
             metrics_df =  pd.read_csv(metrics_file[i], sep='\t', header=None)
             metrics_df.columns = ['label','metric','value']
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         values = []
         epochs = []
         for i in range(len(summary_file)):
-            epoch = int(summary_file[i].split('/')[-2].split('-')[-1])
+            epoch = int(summary_file[i].split('/')[-2].split('-')[-2])
             print(epoch)
             summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
             summary_df.columns = ['metric','value']
