@@ -676,8 +676,8 @@ if __name__ == "__main__":
         training_file = os.path.join(args.lc_dir, 'logs/training.tsv')
         validation_file = os.path.join(args.lc_dir, 'logs/validation.tsv')
         best_epoch = glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0]
-        best_epoch = best_epoch.split('-')[-2]
-        print(best_epoch)
+        best_epoch = int(best_epoch.split('-')[-2])
+        print('best epoch', best_epoch)
         # batch_size = []
         # values = []
         # metric = []
@@ -710,7 +710,7 @@ if __name__ == "__main__":
         values = train_accuracy + val_accuracy + train_loss + val_loss
         metric = ['accuracy']*(len(train_accuracy)+len(val_accuracy)) + ['loss']*(len(train_loss)+len(val_loss))
         dataset = ['training']*len(train_accuracy) + ['validation']*len(val_accuracy) + ['training']*len(train_loss) + ['validation']*len(val_loss)
-        epoch = 4*list(range(len(train_accuracy)))
+        epoch = 4*list(1, range(len(train_accuracy))+1, 1)
         assert len(values) == len(epoch) == len(dataset) == len(metric)
         data = {'value': values, 'metric': metric, 'dataset': dataset, 'epoch': epoch}
         df = pd.DataFrame(data)
@@ -749,8 +749,9 @@ if __name__ == "__main__":
         metrics_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/metrics.tsv')))
         summary_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/summary.tsv')))
         assert len(metrics_file) == len(summary_file)
-        best_epoch = int(glob.glob(os.path.join(args._dir, 'model/*-best'))[0].split('-')[-1])
-        print(best_epoch)
+        best_epoch = glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0]
+        best_epoch = int(best_epoch.split('-')[-2])
+        print('best epoch', best_epoch)
         # create plots for precision and recall
         values = []
         metrics = []
