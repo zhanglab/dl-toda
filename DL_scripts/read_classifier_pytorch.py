@@ -313,7 +313,7 @@ if __name__ == "__main__":
                 best_model = model.state_dict()
                 # patience = 0 # Reset wait counter
                 wait = 0
-                min_epoch = epoch
+                min_epoch = epoch + 1
                 found_min = True
             else:
                 wait += 1
@@ -676,7 +676,7 @@ if __name__ == "__main__":
         training_file = os.path.join(args.lc_dir, 'logs/training.tsv')
         validation_file = os.path.join(args.lc_dir, 'logs/validation.tsv')
         best_epoch = glob.glob(os.path.join(args.lc_dir, 'model/*-best'))[0]
-        best_epoch = int(best_epoch.split('-')[-2])
+        best_epoch = int(best_epoch.split('-')[-2]) + 1
         print('best epoch', best_epoch)
         # batch_size = []
         # values = []
@@ -750,7 +750,7 @@ if __name__ == "__main__":
         summary_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/summary.tsv')))
         assert len(metrics_file) == len(summary_file)
         best_epoch = glob.glob(os.path.join(args.testing_dir, 'model/*-best'))[0]
-        best_epoch = int(best_epoch.split('-')[-2])
+        best_epoch = int(best_epoch.split('-')[-2]) + 1
         print('best epoch', best_epoch)
         # create plots for precision and recall
         values = []
