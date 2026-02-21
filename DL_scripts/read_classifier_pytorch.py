@@ -434,8 +434,8 @@ if __name__ == "__main__":
                 incorrect_seq = {}
                 genome = test_genome
                 annot_info = test_annot_info
-                # if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
-                #     os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
+                if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
+                    os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
 
             # get embeddings
             # embeddings shape: (batch_size, 512, 768)
