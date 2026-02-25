@@ -559,8 +559,10 @@ if __name__ == "__main__":
             grouped_sequences_batch_idx = [batch_seq_idx[i:i+chunk_size] for i in range(0, len(batch_seq_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
+            print('start attention conversion', datetime.datetime.now())
             attentions = list(outputs.attentions)
             attentions = [i.tolist() for i in attentions]
+            print('end attention conversion', datetime.datetime.now())
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
                 processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
