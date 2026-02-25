@@ -547,6 +547,10 @@ if __name__ == "__main__":
         print(f'# sequences: {len(sequences_info)}\n{sequences_info[:5]}')
         
         prev_batch_size = 0
+        # genome = ''
+        # label = ''
+        # annot_info = {}
+        # outfile = open(os.path.join(args.output_dir, f'interpretability_info.tsv'), 'w')
         for batch, inputs in enumerate(dataloader, 0):
             _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
             print(f'batch size: {len(batch_predictions)}')
@@ -569,7 +573,131 @@ if __name__ == "__main__":
                 for p in processes:
                     p.start()
                 for p in processes:
-                    p.join()
+                    p.join()   
+            if batch == 0:
+                break    
+            # test_label = sequences[batch][0]
+            # test_genome = sequences[batch][1]
+            # # get annotations of testing genome
+            # if test_genome != genome:
+            #     input_dir = os.getcwd()
+            #     if not os.path.exists(args.annotations_dir):
+            #         os.makedirs(args.annotations_dir)
+            #     test_annot_info, _ = GetAnnotInfo(test_genome, input_dir, args.annotations_dir, args.output_dir)
+            #     correct_genes = defaultdict(list)
+            #     incorrect_genes = defaultdict(list)
+            #     correct_seq = {}
+            #     incorrect_seq = {}
+            #     genome = test_genome
+            #     annot_info = test_annot_info
+            #     if not os.path.exists(os.path.join(args.output_dir, f'label_{test_label}')):
+            #         os.makedirs(os.path.join(args.output_dir, f'label_{test_label}'))
+
+            # # get embeddings
+            # # embeddings shape: (batch_size, 512, 768)
+            # # hidden_states is a list of tensors, one for each layer and one for the initial embeddings.
+            # # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
+            # # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
+            # # verify DNA sequence
+            # input_ids, _, _, _, _ = inputs
+            # batch_seq = ''
+            # i = 1
+            # while i < len(input_ids):
+            #     if input_ids[i] not in [3, 0]:
+            #         if input_ids[i] == 1:
+            #             u_idx = i
+            #             while u_idx < len(input_ids):
+            #                 if input_ids[u_idx] == 1:
+            #                     u_idx += 1
+            #                 else:
+            #                     batch_seq += dict_tokens[input_ids[u_idx]]
+            #                     break
+            #             i = u_idx
+            #         else:
+            #             if i == 1:
+            #                 batch_seq += dict_tokens[input_ids[i]]
+            #             else:
+            #                 batch_seq += dict_tokens[input_ids[i]][-1]
+            #     i += 1
+            # # update original sequence if presence of unknown character
+            # seq_updated = ''
+            # i = 0
+            # while i < len(sequences[seq_idx][2]):
+            #     if sequences[seq_idx][2][i] in ['A','T','C','G']:
+            #         seq_updated += sequences[seq_idx][2][i]
+            #     i += 1
+            # assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[seq_idx][2]}'
+            # result = 'I' if batch_ground_truth[batch_seq_idx] != batch_predictions[batch_seq_idx] else 'C'
+            # outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[batch_seq_idx]}\t{batch_predictions[batch_seq_idx]}\t{result}\t{probs[batch_seq_idx][batch_predictions[batch_seq_idx]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
+
+            # # get embeddings from ['CLS']
+            # # embeddings = outputs.hidden_states[-1].tolist()
+            # # write embeddings to file
+            # outfile.write(f'\t{embeddings[batch_seq_idx][0][0]}')
+            # for i in range(1, len(embeddings[batch_seq_idx][0]), 1):
+            #     outfile.write(f' {embeddings[batch_seq_idx][0][i]}')
+    
+            # # get attentions
+            # # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
+            # # attentions = list(outputs.attentions)
+            # # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
+            # # len(attentions) --> 12 attention layers
+            # # attentions[-1].size() --> torch.Size([1, 12, 512, 512])
+            # # attentions[-1][0].size() --> torch.Size([12, 512, 512]) --> 12 attention heads
+            # # attentions[-1][0][-1].size() --> torch.Size([512, 512]) --> last attention head
+            # # iterate over the scores of the 12 attention layers
+            # for i in range(len(attentions)):
+            #     # get last attention head ([-1]) of ith attention layer ([i])
+            #     # attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
+            #     attentions_scores = attentions[i][batch_seq_idx][-1]
+            #     df = pd.DataFrame(attentions_scores)
+            #     # get list of tokens
+            #     tokens = [dict_tokens[j] for j in input_ids]
+            #     df.columns = tokens
+            #     # remove rows ['PAD'], ['CLS'] and ['SEP']
+            #     idx_to_rm = [idx for idx in range(len(tokens)) if tokens[idx] in ['[PAD]', '[CLS]', '[SEP]']]
+            #     df = df.drop(idx_to_rm, axis='index')
+            #     # remove columns ['PAD'], ['CLS'] and ['SEP']
+            #     if '[PAD]' in tokens:
+            #         df = df.drop('[PAD]', axis='columns')
+            #     df = df.drop('[CLS]', axis='columns')
+            #     df = df.drop('[SEP]', axis='columns')
+            #     # get list of kmers in the sequence
+            #     df_kmers = df.columns.tolist()
+            #     # rename index to kmers
+            #     df.index = df_kmers
+            #     # save attentions dataframe to file
+            #     df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{seq_idx}_{i}.tsv'), sep='\t', index=False)
+            # # get gene associated with DNA sequence
+            # seq_start = sequences[seq_idx][3]
+            # seq_end = sequences[seq_idx][4]
+            # list_tokens = line.rstrip().split('\t')[1].split(' ')
+            # seq = list_tokens[0]
+            # for i in range(len(list_tokens)):
+            #     seq += list_tokens[i][-1]
+            # gene_id, gene_info = GetGenes(annot_info, seq_start, seq_end)
+            # gene_info_up = [seq_start, seq_end] + gene_info
+            
+            # if result == 'C':
+            #     correct_genes[gene_id].append(gene_info_up)
+            #     correct_seq[seq_idx] = [seq_start, seq_end]
+            # elif result == 'I':
+            #     incorrect_genes[gene_id].append(gene_info_up)
+            #     incorrect_seq[seq_idx] = [seq_start, seq_end]
+
+            # outfile.write(f'\t{gene_id}')
+            # if len(gene_info) > 0:
+            #     for i in range(len(gene_info)):
+            #         outfile.write(f'\t{gene_info[i]}')
+            #     if gene_info[0] == 'protein_coding':
+            #         outfile.write('\n')
+            #     else:
+            #         outfile.write('\tNA\tNA\n')
+            # else:
+            #     for i in range(7):
+            #         outfile.write('\tNA')
+            #     outfile.write('\n')
+
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
@@ -582,7 +710,7 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
-        sys.exit(1)
+        
 
 
     if args.mode == "testing":
