@@ -76,13 +76,13 @@ from vis_scripts.testing_utils import *
 #     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
-def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
+def SummarizeResults(args, process, batch_num, sequences_idx, batch_idx, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
     batch_input_ids, _, _, _, _ = inputs
     batch_input_ids = batch_input_ids.tolist()
     genome = ''
     label = ''
     annot_info = {}
-    outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
+    outfile = open(os.path.join(args.output_dir, f'interpretability_info_{batch_num}_{process}.tsv'), 'w')
     for b in range(len(sequences_idx)):
         seq_idx = sequences_idx[b]
         batch_seq_idx = batch_idx[b]
@@ -565,12 +565,11 @@ if __name__ == "__main__":
             print('end attention conversion', datetime.datetime.now())
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, i, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
                 for p in processes:
                     p.start()
                 for p in processes:
                     p.join()
-            sys.exit(1)
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
@@ -583,6 +582,7 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+        sys.exit(1)
 
 
     if args.mode == "testing":
