@@ -76,7 +76,7 @@ from vis_scripts.testing_utils import *
 #     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
-def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, outputs):
+def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, outputs, dict_tokens):
     genome = ''
     label = ''
     annot_info = {}
@@ -557,9 +557,10 @@ if __name__ == "__main__":
             print(f'chunk_size: {chunk_size}')
             grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
+            print(outputs)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, outputs)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, outputs, dict_tokens)) for i in range(args.num_processes)]
                 for p in processes:
                     p.start()
                 for p in processes:
