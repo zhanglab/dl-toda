@@ -76,14 +76,11 @@ from vis_scripts.testing_utils import *
 #     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
-def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, outputs, dict_tokens):
+def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
     genome = ''
     label = ''
     annot_info = {}
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
-    print(sequences[:5])
-    print('OUTPUTS')
-    print(outputs)
     for seq_idx in batch:
         print(seq_idx)
         test_label = sequences[seq_idx][0]
@@ -142,7 +139,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
 
         # get embeddings from ['CLS']
-        embeddings = outputs.hidden_states[-1].tolist()
+        # embeddings = outputs.hidden_states[-1].tolist()
         # write embeddings to file
         outfile.write(f'\t{embeddings[0][0][0]}')
         for i in range(1, len(embeddings[0][0]), 1):
@@ -150,7 +147,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
     
         # get attentions
         # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
-        attentions = list(outputs.attentions)
+        # attentions = list(outputs.attentions)
         # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
         # len(attentions) --> 12 attention layers
         # attentions[-1].size() --> torch.Size([1, 12, 512, 512])
@@ -559,10 +556,16 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             print(type(outputs))
             print(type(batch_predictions))
+            embeddings = outputs.hidden_states[-1].tolist()
+            print(type(embeddings))
+            print(len(embeddings))
+            attentions = list(outputs.attentions)
+            print(type(attentions))
+            print(len(attentions))
             sys.exit(1)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, outputs, dict_tokens)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
                 for p in processes:
                     p.start()
                 for p in processes:
