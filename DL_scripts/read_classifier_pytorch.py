@@ -77,6 +77,7 @@ from vis_scripts.testing_utils import *
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
 def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
+    batch_input_ids, _, _, _, _ = inputs
     genome = ''
     label = ''
     annot_info = {}
@@ -107,10 +108,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
         # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
         # verify DNA sequence
-        input_ids, _, _, _, _ = inputs
-        input_ids = input_ids.tolist()[b]
-        print('INPUT_IDS')
-        print(input_ids)
+        input_ids = batch_input_ids.tolist()[b]
         batch_seq = ''
         i = 1
         while i < len(input_ids):
@@ -559,15 +557,14 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
-            input_ids, _, _, _, _ = inputs
-            print(len(input_ids))
-            # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
-            #     # create list of Process objects
-            #     processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
-            #     for p in processes:
-            #         p.start()
-            #     for p in processes:
-            #         p.join()
+
+            with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
+                # create list of Process objects
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+                for p in processes:
+                    p.start()
+                for p in processes:
+                    p.join()
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
