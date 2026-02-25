@@ -558,14 +558,14 @@ if __name__ == "__main__":
             attentions = list(outputs.attentions)
             for i in range(12):
                 print(len(attentions[i]))
-            sys.exit(1)
-            with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
-                # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
-                for p in processes:
-                    p.start()
-                for p in processes:
-                    p.join()
+            # sys.exit(1)
+            # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
+            #     # create list of Process objects
+            #     processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+            #     for p in processes:
+            #         p.start()
+            #     for p in processes:
+            #         p.join()
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
