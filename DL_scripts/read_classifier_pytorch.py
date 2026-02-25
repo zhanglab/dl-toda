@@ -577,8 +577,8 @@ if __name__ == "__main__":
             #         p.join()   
             # if batch == 0:
             #     break    
-            test_label = sequences[batch][0]
-            test_genome = sequences[batch][1]
+            test_label = sequences_info[batch][0]
+            test_genome = sequences_info[batch][1]
             # get annotations of testing genome
             if test_genome != genome:
                 input_dir = os.getcwd()
@@ -624,13 +624,13 @@ if __name__ == "__main__":
             # update original sequence if presence of unknown character
             seq_updated = ''
             i = 0
-            while i < len(sequences[batch][2]):
-                if sequences[batch][2][i] in ['A','T','C','G']:
-                    seq_updated += sequences[batch][2][i]
+            while i < len(sequences_info[batch][2]):
+                if sequences_info[batch][2][i] in ['A','T','C','G']:
+                    seq_updated += sequences_info[batch][2][i]
                 i += 1
-            assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[batch][2]}'
+            assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences_info[batch][2]}'
             result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
-            outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[batch][2])}\t{sequences[batch][2]}')
+            outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences_info[batch][2])}\t{sequences_info[batch][2]}')
 
             # get embeddings from ['CLS']
             embeddings = outputs.hidden_states[-1].tolist()
@@ -670,8 +670,8 @@ if __name__ == "__main__":
                 # save attentions dataframe to file
                 df.to_csv(os.path.join(args.output_dir, f'label_{test_label}', f'{test_genome}_attentions_{batch}_{i}.tsv'), sep='\t', index=False)
             # get gene associated with DNA sequence
-            seq_start = sequences[batch][3]
-            seq_end = sequences[batch][4]
+            seq_start = sequences_info[batch][3]
+            seq_end = sequences_info[batch][4]
             list_tokens = line.rstrip().split('\t')[1].split(' ')
             seq = list_tokens[0]
             for i in range(len(list_tokens)):
