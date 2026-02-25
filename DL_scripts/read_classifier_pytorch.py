@@ -158,7 +158,7 @@ def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, input
         # attentions[-1][0][-1].size() --> torch.Size([512, 512]) --> last attention head
         # iterate over the scores of the 12 attention layers
         for i in range(len(attentions)):
-            # get last attention head 
+            # get last attention head ([-1]) of ith attention layer ([i])
             attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
             df = pd.DataFrame(attentions_scores)
             # get list of tokens
@@ -561,7 +561,7 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
-            print(attentions)
+            print(type(attentions[0]))
             sys.exit(1)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
