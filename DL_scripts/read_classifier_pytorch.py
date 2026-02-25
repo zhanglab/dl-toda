@@ -83,7 +83,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
     for b in range(len(batch)):
         seq_idx = batch[b]
-        print(seq_idx)
+        print(seq_idx, b)
         test_label = sequences[seq_idx][0]
         test_genome = sequences[seq_idx][1]
         # get annotations of testing genome
@@ -109,6 +109,8 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # verify DNA sequence
         input_ids, _, _, _, _ = inputs
         input_ids = input_ids.tolist()[b]
+        print('INPUT_IDS')
+        print(input_ids)
         batch_seq = ''
         i = 1
         while i < len(input_ids):
