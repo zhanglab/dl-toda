@@ -76,17 +76,17 @@ from vis_scripts.testing_utils import *
 #     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
-def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
+def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
     batch_input_ids, _, _, _, _ = inputs
     batch_input_ids = batch_input_ids.tolist()
-    print('batch_input_ids', len(batch_input_ids))
     genome = ''
     label = ''
     annot_info = {}
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
-    for b in range(len(batch)):
-        seq_idx = batch[b]
-        print(seq_idx, b)
+    for b in range(len(sequences_idx)):
+        seq_idx = sequences_idx[b]
+        batch_seq_idx = batch_idx[b]
+        print(seq_idx, batch_seq_idx, b)
         test_label = sequences[seq_idx][0]
         test_genome = sequences[seq_idx][1]
         # get annotations of testing genome
@@ -110,7 +110,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
         # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
         # verify DNA sequence
-        input_ids = batch_input_ids[b]
+        input_ids = batch_input_ids[batch_seq_idx]
         batch_seq = ''
         i = 1
         while i < len(input_ids):
@@ -138,15 +138,15 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
                 seq_updated += sequences[seq_idx][2][i]
             i += 1
         assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[seq_idx][2]}'
-        result = 'I' if batch_ground_truth[b] != batch_predictions[b] else 'C'
-        outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[b]}\t{batch_predictions[b]}\t{result}\t{probs[b][batch_predictions[b]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
+        result = 'I' if batch_ground_truth[batch_seq_idx] != batch_predictions[batch_seq_idx] else 'C'
+        outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[batch_seq_idx]}\t{batch_predictions[batch_seq_idx]}\t{result}\t{probs[batch_seq_idx][batch_predictions[batch_seq_idx]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
 
         # get embeddings from ['CLS']
         # embeddings = outputs.hidden_states[-1].tolist()
         # write embeddings to file
-        outfile.write(f'\t{embeddings[b][0][0]}')
-        for i in range(1, len(embeddings[b][0]), 1):
-            outfile.write(f' {embeddings[b][0][i]}')
+        outfile.write(f'\t{embeddings[batch_seq_idx][0][0]}')
+        for i in range(1, len(embeddings[batch_seq_idx][0]), 1):
+            outfile.write(f' {embeddings[batch_seq_idx][0][i]}')
     
         # get attentions
         # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
@@ -159,7 +159,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # iterate over the scores of the 12 attention layers
         for i in range(len(attentions)):
             # get last attention head 
-            attentions_scores = attentions[i][b][-1].tolist()
+            attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
             df = pd.DataFrame(attentions_scores)
             # get list of tokens
             tokens = [dict_tokens[j] for j in input_ids]
@@ -555,14 +555,16 @@ if __name__ == "__main__":
             print(sequences_idx)
             chunk_size = math.ceil(len(sequences_idx)/args.num_processes)
             print(f'chunk_size: {chunk_size}')
-            grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
+            grouped_sequences_idx = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
+            batch_seq_idx = list(range(len(batch_predictions)))
+            grouped_sequences_batch_idx = [batch_seq_idx[i:i+chunk_size] for i in range(0, len(batch_seq_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
 
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
                 for p in processes:
                     p.start()
                 for p in processes:
