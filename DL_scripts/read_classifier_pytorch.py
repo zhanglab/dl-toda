@@ -77,6 +77,8 @@ from sklearn.manifold import TSNE
 #     plt.savefig(os.path.join(args.output_dir,'testing', 'tsne_emb_transformed.png'), dpi=300, bbox_inches='tight')
 
 # def SummarizeResults(args):
+    # test_label = sequences[batch][0]
+    # test_genome = sequences[batch][1]
     # # get annotations of testing genome
     # if test_genome != genome:
     #     input_dir = os.getcwd()
@@ -539,13 +541,17 @@ if __name__ == "__main__":
         # genome = ''
         # label = ''
         # annot_info = {}
+        prev_batch_size = 0
         for batch, inputs in enumerate(dataloader, 0):
             _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
             print(f'batch size: {len(batch_predictions)}')
             print(f'batch: {batch}')
-            # chunk_size = math.ceil(len(batch_predictions)/args.num_processes)
+            chunk_size = math.ceil(len(batch_predictions)/args.num_processes)
+            print(f'chunk_size: {chunk_size}')
+            sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+(len(batch_predictions)-1),1)]
+            print(sequences_idx)
             # grouped_sequences = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
-
+            # prev_batch_size = len(batch_predictions)
             # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             #     sequences = manager.dict()
             #     # create list of Process objects
@@ -555,12 +561,6 @@ if __name__ == "__main__":
             #     for p in processes:
             #         p.join()
 
-
-            # test_label = sequences[batch][0]
-            # test_genome = sequences[batch][1]
-            
-
-        
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
         #     CircosPlot(correct_seq, incorrect_seq, correct_genes, incorrect_genes, train_fasta, test_fasta, test_genome_id, output_dir, args.num_processes)
