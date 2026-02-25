@@ -570,6 +570,7 @@ if __name__ == "__main__":
                     p.start()
                 for p in processes:
                     p.join()
+            sys.exit(1)
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
