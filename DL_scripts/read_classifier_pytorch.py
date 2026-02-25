@@ -21,8 +21,8 @@ from transformers import BertForSequenceClassification, BertConfig
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
-# sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-# from vis_scripts.testing_utils import *
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+from vis_scripts.testing_utils import *
 
 
 # def ProcessEmbeddings(args, embeddings):
