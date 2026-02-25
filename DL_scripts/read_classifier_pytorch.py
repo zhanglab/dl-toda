@@ -557,7 +557,9 @@ if __name__ == "__main__":
             print(f'chunk_size: {chunk_size}')
             grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
-            print(outputs)
+            print(type(outputs))
+            print(type(batch_predictions))
+            sys.exit(1)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
                 processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, outputs, dict_tokens)) for i in range(args.num_processes)]
