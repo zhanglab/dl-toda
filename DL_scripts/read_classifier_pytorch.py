@@ -86,7 +86,6 @@ def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, input
     for b in range(len(sequences_idx)):
         seq_idx = sequences_idx[b]
         batch_seq_idx = batch_idx[b]
-        print(seq_idx, batch_seq_idx, b)
         test_label = sequences[seq_idx][0]
         test_genome = sequences[seq_idx][1]
         # get annotations of testing genome
@@ -161,7 +160,6 @@ def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, input
             # get last attention head ([-1]) of ith attention layer ([i])
             # attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
             attentions_scores = attentions[i][batch_seq_idx][-1]
-            print('attention scores', len(attentions_scores), len(input_ids))
             df = pd.DataFrame(attentions_scores)
             # get list of tokens
             tokens = [dict_tokens[j] for j in input_ids]
@@ -556,7 +554,6 @@ if __name__ == "__main__":
             sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+len(batch_predictions),1)]
             print(sequences_idx)
             chunk_size = math.ceil(len(sequences_idx)/args.num_processes)
-            print(f'chunk_size: {chunk_size}')
             grouped_sequences_idx = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             batch_seq_idx = list(range(len(batch_predictions)))
             grouped_sequences_batch_idx = [batch_seq_idx[i:i+chunk_size] for i in range(0, len(batch_seq_idx), chunk_size)]
