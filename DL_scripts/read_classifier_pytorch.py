@@ -560,10 +560,8 @@ if __name__ == "__main__":
             grouped_sequences_batch_idx = [batch_seq_idx[i:i+chunk_size] for i in range(0, len(batch_seq_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
-            print(embeddings[0])
-            print(type(embeddings[0]))
             attentions = list(outputs.attentions)
-            attentions = [list(i) for i in attentions]
+            attentions = [i.tolist() for i in attentions]
             # print(attentions[0])
             print(type(attentions[0]))
             sys.exit(1)
