@@ -108,7 +108,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
         # verify DNA sequence
         input_ids, _, _, _, _ = inputs
-        input_ids = input_ids.tolist()[0]
+        input_ids = input_ids.tolist()[b]
         batch_seq = ''
         i = 1
         while i < len(input_ids):
