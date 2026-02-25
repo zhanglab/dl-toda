@@ -641,7 +641,7 @@ if __name__ == "__main__":
     
             # get attentions
             # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
-            # attentions = list(outputs.attentions)
+            attentions = list(outputs.attentions)
             # get attention scores of the last attention head in the last attention layer for the sequence investigated, shape is (max_position_embeddings, max_position_embeddings)
             # len(attentions) --> 12 attention layers
             # attentions[-1].size() --> torch.Size([1, 12, 512, 512])
