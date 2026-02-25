@@ -81,7 +81,8 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
     label = ''
     annot_info = {}
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
-    for seq_idx in batch:
+    for b in range(len(batch)):
+        seq_idx = batch[b]
         print(seq_idx)
         test_label = sequences[seq_idx][0]
         test_genome = sequences[seq_idx][1]
@@ -141,9 +142,9 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # get embeddings from ['CLS']
         # embeddings = outputs.hidden_states[-1].tolist()
         # write embeddings to file
-        outfile.write(f'\t{embeddings[0][0][0]}')
-        for i in range(1, len(embeddings[0][0]), 1):
-            outfile.write(f' {embeddings[0][0][i]}')
+        outfile.write(f'\t{embeddings[b][0][0]}')
+        for i in range(1, len(embeddings[b][0]), 1):
+            outfile.write(f' {embeddings[b][0][i]}')
     
         # get attentions
         # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
@@ -156,7 +157,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # iterate over the scores of the 12 attention layers
         for i in range(len(attentions)):
             # get last attention head 
-            attentions_scores = attentions[i][0][-1].tolist()
+            attentions_scores = attentions[i][b][-1].tolist()
             df = pd.DataFrame(attentions_scores)
             # get list of tokens
             tokens = [dict_tokens[j] for j in input_ids]
@@ -556,16 +557,13 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
-            for i in range(12):
-                print(len(attentions[i]))
-            # sys.exit(1)
-            # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
-            #     # create list of Process objects
-            #     processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
-            #     for p in processes:
-            #         p.start()
-            #     for p in processes:
-            #         p.join()
+            with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
+                # create list of Process objects
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+                for p in processes:
+                    p.start()
+                for p in processes:
+                    p.join()
 
         # # visualize incorrect and correct classifications on circos plot 
         # if args.genome:
