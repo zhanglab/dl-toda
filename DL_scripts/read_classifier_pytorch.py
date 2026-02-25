@@ -132,12 +132,12 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         seq_updated = ''
         i = 0
         while i < len(sequences[seq_idx][2]):
-            if sequences[idx][2][i] in ['A','T','C','G']:
+            if sequences[seq_idx][2][i] in ['A','T','C','G']:
                 seq_updated += sequences[seq_idx][2][i]
             i += 1
-        assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[idx][2]}'
-        result = 'I' if batch_ground_truth[0] != batch_predictions[0] else 'C'
-        outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[0]}\t{batch_predictions[0]}\t{result}\t{probs[0][batch_predictions[0]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
+        assert batch_seq == seq_updated, f'not the same sequence: {batch_seq}\t{seq_updated}\t{sequences[seq_idx][2]}'
+        result = 'I' if batch_ground_truth[b] != batch_predictions[b] else 'C'
+        outfile.write(f'{test_label}\t{test_genome}\t{batch_ground_truth[b]}\t{batch_predictions[b]}\t{result}\t{probs[b][batch_predictions[b]]}\t{len(sequences[seq_idx][2])}\t{sequences[seq_idx][2]}')
 
         # get embeddings from ['CLS']
         # embeddings = outputs.hidden_states[-1].tolist()
