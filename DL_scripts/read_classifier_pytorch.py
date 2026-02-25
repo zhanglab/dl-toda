@@ -559,6 +559,7 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
+            input_ids, _, _, _, _ = inputs
             print(len(input_ids))
             # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             #     # create list of Process objects
