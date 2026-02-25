@@ -601,7 +601,9 @@ if __name__ == "__main__":
             # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
             # verify DNA sequence
             input_ids, _, _, _, _ = inputs
-            input_ids = input_ids.tolist()[batch]
+            input_ids = input_ids.tolist()
+            print('input_ids', input_ids)
+            sys.exit(1)
             batch_seq = ''
             i = 1
             while i < len(input_ids):
