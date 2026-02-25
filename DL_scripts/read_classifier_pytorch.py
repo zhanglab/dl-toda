@@ -82,6 +82,8 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
     annot_info = {}
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
     print(sequences[:5])
+    print('OUTPUTS')
+    print(outputs)
     for seq_idx in batch:
         print(seq_idx)
         test_label = sequences[seq_idx][0]
