@@ -78,6 +78,8 @@ from vis_scripts.testing_utils import *
 
 def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens):
     batch_input_ids, _, _, _, _ = inputs
+    batch_input_ids = batch_input_ids.tolist()
+    print('batch_input_ids', len(batch_input_ids))
     genome = ''
     label = ''
     annot_info = {}
@@ -108,7 +110,7 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
         # The last element in the list contains the final layer's hidden states (the contextualized embeddings)
         # if batch in seq_selected and probs[0][batch_predictions[0]] >= args.threshold:
         # verify DNA sequence
-        input_ids = batch_input_ids.tolist()[b]
+        input_ids = batch_input_ids[b]
         batch_seq = ''
         i = 1
         while i < len(input_ids):
