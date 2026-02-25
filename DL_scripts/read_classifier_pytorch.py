@@ -554,14 +554,10 @@ if __name__ == "__main__":
             print(f'chunk_size: {chunk_size}')
             grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
-            print(type(outputs))
-            print(type(batch_predictions))
             embeddings = outputs.hidden_states[-1].tolist()
-            print(type(embeddings))
-            print(len(embeddings))
             attentions = list(outputs.attentions)
-            print(type(attentions))
-            print(len(attentions))
+            for i in range(12):
+                print(len(attentions[i]))
             sys.exit(1)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
