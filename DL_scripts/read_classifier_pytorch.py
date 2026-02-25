@@ -81,7 +81,9 @@ def SummarizeResults(args, batch_num, batch, sequences, inputs, batch_prediction
     label = ''
     annot_info = {}
     outfile = open(os.path.join(args.output_dir, f'interpretability_info_batch_{batch_num}.tsv'), 'w')
+    print(sequences[:5])
     for seq_idx in batch:
+        print(seq_idx)
         test_label = sequences[seq_idx][0]
         test_genome = sequences[seq_idx][1]
         # get annotations of testing genome
@@ -530,7 +532,7 @@ if __name__ == "__main__":
                 dict_tokens[idx] = line.rstrip()
         
         # load DNA sequences
-        sequences = []
+        sequences_info = []
         with open(args.tsv_file, 'r') as f:
             for idx, line in enumerate(f):
                 label = line.rstrip().split('\t')[0]
@@ -539,8 +541,8 @@ if __name__ == "__main__":
                 seq = list_tokens[0]
                 for i in range(1, len(list_tokens), 1):
                     seq += list_tokens[i][-1]
-                sequences.append([label, genome_id, seq, int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
-        print(f'# sequences: {len(sequences)}\n{sequences[:5]}')
+                sequences_info.append([label, genome_id, seq, int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
+        print(f'# sequences: {len(sequences_info)}\n{sequences_info[:5]}')
         
         prev_batch_size = 0
         for batch, inputs in enumerate(dataloader, 0):
@@ -554,9 +556,8 @@ if __name__ == "__main__":
             grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
-                sequences = manager.dict()
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences, inputs, batch_predictions, batch_ground_truth, probs, outputs)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, outputs)) for i in range(args.num_processes)]
                 for p in processes:
                     p.start()
                 for p in processes:
