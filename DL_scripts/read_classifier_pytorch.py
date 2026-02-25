@@ -546,11 +546,11 @@ if __name__ == "__main__":
             _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
             print(f'batch size: {len(batch_predictions)}')
             print(f'batch: {batch}')
-            chunk_size = math.ceil(len(batch_predictions)/args.num_processes)
-            print(f'chunk_size: {chunk_size}')
-            sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+(len(batch_predictions)-1),1)]
+            sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+len(batch_predictions),1)]
             print(sequences_idx)
-            # grouped_sequences = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
+            chunk_size = math.ceil(len(sequences_idx)/args.num_processes)
+            print(f'chunk_size: {chunk_size}')
+            grouped_sequences = [sequences_idx[i:i+chunk_size] for i in range(0, len(sequences_idx), chunk_size)]
             prev_batch_size = len(batch_predictions)
             # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             #     sequences = manager.dict()
