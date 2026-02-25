@@ -159,7 +159,9 @@ def SummarizeResults(args, batch_num, sequences_idx, batch_idx, sequences, input
         # iterate over the scores of the 12 attention layers
         for i in range(len(attentions)):
             # get last attention head ([-1]) of ith attention layer ([i])
-            attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
+            # attentions_scores = attentions[i][batch_seq_idx][-1].tolist()
+            attentions_scores = attentions[i][batch_seq_idx][-1]
+            print('attention scores', len(attentions_scores), len(input_ids))
             df = pd.DataFrame(attentions_scores)
             # get list of tokens
             tokens = [dict_tokens[j] for j in input_ids]
