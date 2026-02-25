@@ -561,7 +561,8 @@ if __name__ == "__main__":
             prev_batch_size = len(batch_predictions)
             embeddings = outputs.hidden_states[-1].tolist()
             attentions = list(outputs.attentions)
-
+            print(attentions)
+            sys.exit(1)
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
                 processes = [mp.Process(target=SummarizeResults, args=(args, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
