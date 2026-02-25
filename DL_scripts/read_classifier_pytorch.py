@@ -551,7 +551,7 @@ if __name__ == "__main__":
             sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+(len(batch_predictions)-1),1)]
             print(sequences_idx)
             # grouped_sequences = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
-            # prev_batch_size = len(batch_predictions)
+            prev_batch_size = len(batch_predictions)
             # with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
             #     sequences = manager.dict()
             #     # create list of Process objects
