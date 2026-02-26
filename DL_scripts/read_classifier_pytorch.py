@@ -570,7 +570,7 @@ if __name__ == "__main__":
             print('end attention conversion', datetime.datetime.now())
             with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
                 # create list of Process objects
-                processes = [mp.Process(target=SummarizeResults, args=(args, i, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(args.num_processes)]
+                processes = [mp.Process(target=SummarizeResults, args=(args, i, batch, grouped_sequences_idx[i], grouped_sequences_batch_idx[i], sequences_info, inputs, batch_predictions, batch_ground_truth, probs, embeddings, attentions, dict_tokens)) for i in range(len(grouped_sequences_idx))]
                 for p in processes:
                     p.start()
                 for p in processes:
