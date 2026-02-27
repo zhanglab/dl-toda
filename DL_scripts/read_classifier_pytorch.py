@@ -928,6 +928,7 @@ if __name__ == "__main__":
         
         data = {'value': values, 'metric': metrics, 'label':labels}
         df = pd.DataFrame(data)
+        print(df)
         df['label'].replace(0, 'label 0', inplace=True)
         df['label'].replace(1, 'label 1', inplace=True)
         print(df)
