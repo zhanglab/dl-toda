@@ -925,7 +925,9 @@ if __name__ == "__main__":
             summary_df.columns = ['metric','value']
             values += [summary_df['value'].tolist()[0]]
             metrics += ['accuracy']
-        
+        print(values)
+        print(metrics)
+        print(labels)
         data = {'value': values, 'metric': metrics, 'label':labels}
         df = pd.DataFrame(data)
         print(df)
