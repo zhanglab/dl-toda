@@ -313,6 +313,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_tsv_file', type=str, help='input file containing labels and reads from training dataset')
     parser.add_argument('--val_tsv_file', type=str, help='input file containing labels and reads from validation dataset')
     parser.add_argument('--tsv_file', type=str, help='path to file with dataset')
+    parser.add_argument('--labels', type=str, help='path to file with labels')
     parser.add_argument('--genome', help='do testing at the genome level', action='store_true')
     parser.add_argument('--resume', help='resume training', action='store_true')
     parser.add_argument('--learning_curves', help='create learning curves', action='store_true')
@@ -900,98 +901,190 @@ if __name__ == "__main__":
         plot.add_legend(loc='lower center')
         plt.savefig(os.path.join(args.lc_dir, 'logs', 'learning_curves.png'), dpi=300)
 
+
+    # create plots of accuracy,precision and recall for multiple models
     if args.testing_dir is not None:
-        # get input data
-        metrics_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/metrics.tsv')))
-        summary_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/summary.tsv')))
-        assert len(metrics_file) == len(summary_file)
-        best_epoch = glob.glob(os.path.join(args.testing_dir, 'model/*-best'))[0]
-        best_epoch = int(best_epoch.split('-')[-2]) + 1
-        print('best epoch', best_epoch)
-        # create plots for precision and recall
+        with open(args.labels, 'r') as f:
+            labels = [line.rstrip() for line in f.readlines()]  
+        # load data
         values = []
         metrics = []
         labels = []
-        epochs = []
-        for i in range(len(metrics_file)):
-            print(i, metrics_file[i])
-            print(metrics_file[i].split('/')[-2].split('-'))
-            if len(metrics_file[i].split('/')[-2].split('-')) > 1:
-                epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
-            else:
-                epoch = int(metrics_file[i].split('/')[-2])
-            print(epoch)
-            metrics_df =  pd.read_csv(metrics_file[i], sep='\t', header=None)
+        for l in labels:
+            # get precision and recall for labels 0 and 1
+            metrics_file = os.path.join(args.testing_dir, f'label_{l}/torch/k4/species_dataset_1_patience_10/testing/dataset/metrics.tsv')
+            metrics_df =  pd.read_csv(metrics_file, sep='\t', header=None)
             metrics_df.columns = ['label','metric','value']
             print(metrics_df)
             values += metrics_df['value'].tolist()
             metrics += metrics_df['metric'].tolist()
             labels += metrics_df['label'].tolist()
-            epochs += metrics_df.shape[0]*[epoch]
+            # get accuracy
+            summary_file = os.path.join(args.testing_dir, f'label_{l}/torch/k4/species_dataset_1_patience_10/testing/dataset/summary.tsv')
+            summary_df =  pd.read_csv(summary_file, sep='\t', header=None)
+            summary_df.columns = ['metric','value']
+            values += [summary_df['value'].tolist()[0]]
+            metrics += ['accuracy']
         
-        data = {'value': values, 'metric': metrics, 'label':labels, 'epoch': epochs}
+        data = {'value': values, 'metric': metrics, 'label':labels}
         df = pd.DataFrame(data)
         df['label'].replace(0, 'label 0', inplace=True)
         df['label'].replace(1, 'label 1', inplace=True)
         print(df)
-        palette = {'label 0': 'orange', 'label 1': 'pink'}
-        plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
-        plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='label', palette=palette)
-        axes = plot.axes.flatten()
-        axes_title = ['','']
-        axes_y_labels = ['Precision', 'Recall']
-        axes_x_labels = ['Epoch', 'Epoch']
-        for idx, ax in enumerate(axes):
-            ax.set_title(axes_title[idx])
-            ax.set_ylabel(axes_y_labels[idx])
-            ax.set_xlabel(axes_x_labels[idx])
-            # ax.lines[0].set_color('black')
-            # ax.lines[0].set_linestyle('-')
-            # ax.lines[1].set_color('red')
-            # ax.lines[1].set_linestyle('-')
-            # add vertical line to define best checkpoint
-            ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
-            if idx == 0:
-                ax.set_ylim(0,1)
-            if idx == 1:
-                ax.set_ylim(0,1)
-        plot.add_legend(loc='lower center')
-        plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'metrics.png'), dpi=300)
+        # palette = {'label 0': 'orange', 'label 1': 'pink'}
+        # plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
+        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='label', palette=palette)
+        # axes = plot.axes.flatten()
+        # axes_title = ['','']
+        # axes_y_labels = ['Precision', 'Recall']
+        # axes_x_labels = ['Epoch', 'Epoch']
+        # for idx, ax in enumerate(axes):
+        #     ax.set_title(axes_title[idx])
+        #     ax.set_ylabel(axes_y_labels[idx])
+        #     ax.set_xlabel(axes_x_labels[idx])
+        #     # ax.lines[0].set_color('black')
+        #     # ax.lines[0].set_linestyle('-')
+        #     # ax.lines[1].set_color('red')
+        #     # ax.lines[1].set_linestyle('-')
+        #     # add vertical line to define best checkpoint
+        #     ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
+        #     if idx == 0:
+        #         ax.set_ylim(0,1)
+        #     if idx == 1:
+        #         ax.set_ylim(0,1)
+        # plot.add_legend(loc='lower center')
+        # plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'metrics.png'), dpi=300)
 
-        # plot accuracy
-        values = []
-        epochs = []
-        for i in range(len(summary_file)):
-            if len(metrics_file[i].split('/')[-2].split('-')) > 1:
-                epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
-            else:
-                epoch = int(metrics_file[i].split('/')[-2])
-            summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
-            summary_df.columns = ['metric','value']
-            values += [summary_df['value'].tolist()[0]]
-            epochs += [epoch]
-        data = {'value': values, 'epoch': epochs}
-        df = pd.DataFrame(data)
-        print(df)
-        plot = sns.FacetGrid(df, row=None, col=None, sharey=False)
-        plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, palette=palette)
-        axes = plot.axes.flatten()
-        axes_title = ['','']
-        axes_y_labels = ['Accuracy']
-        axes_x_labels = ['Epoch']
-        for idx, ax in enumerate(axes):
-            ax.set_title(axes_title[idx])
-            ax.set_ylabel(axes_y_labels[idx])
-            ax.set_xlabel(axes_x_labels[idx])
-            # ax.lines[0].set_color('black')
-            # ax.lines[0].set_linestyle('-')
-            # ax.lines[1].set_color('red')
-            # ax.lines[1].set_linestyle('-')
-            # add vertical line to define best checkpoint
-            ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
-            ax.set_ylim(0,1)
-        plot.add_legend(loc='lower center')
-        plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'accuracy.png'), dpi=300)
+        # # plot accuracy
+        # values = []
+        # epochs = []
+        # for i in range(len(summary_file)):
+        #     if len(metrics_file[i].split('/')[-2].split('-')) > 1:
+        #         epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
+        #     else:
+        #         epoch = int(metrics_file[i].split('/')[-2])
+        #     summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
+        #     summary_df.columns = ['metric','value']
+        #     values += [summary_df['value'].tolist()[0]]
+        #     epochs += [epoch]
+        # data = {'value': values, 'epoch': epochs}
+        # df = pd.DataFrame(data)
+        # print(df)
+        # plot = sns.FacetGrid(df, row=None, col=None, sharey=False)
+        # plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, palette=palette)
+        # axes = plot.axes.flatten()
+        # axes_title = ['','']
+        # axes_y_labels = ['Accuracy']
+        # axes_x_labels = ['Epoch']
+        # for idx, ax in enumerate(axes):
+        #     ax.set_title(axes_title[idx])
+        #     ax.set_ylabel(axes_y_labels[idx])
+        #     ax.set_xlabel(axes_x_labels[idx])
+        #     # ax.lines[0].set_color('black')
+        #     # ax.lines[0].set_linestyle('-')
+        #     # ax.lines[1].set_color('red')
+        #     # ax.lines[1].set_linestyle('-')
+        #     # add vertical line to define best checkpoint
+        #     ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
+        #     ax.set_ylim(0,1)
+        # plot.add_legend(loc='lower center')
+        # plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'accuracy.png'), dpi=300)
+
+
+
+    # # create plots for one model tested across multiple checkpoints
+    # if args.testing_dir is not None:
+    #     # get input data
+    #     metrics_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/metrics.tsv')))
+    #     summary_file = sorted(glob.glob(os.path.join(args.testing_dir, 'testing/dataset/*/summary.tsv')))
+    #     assert len(metrics_file) == len(summary_file)
+    #     best_epoch = glob.glob(os.path.join(args.testing_dir, 'model/*-best'))[0]
+    #     best_epoch = int(best_epoch.split('-')[-2]) + 1
+    #     print('best epoch', best_epoch)
+    #     # create plots for precision and recall
+    #     values = []
+    #     metrics = []
+    #     labels = []
+    #     epochs = []
+    #     for i in range(len(metrics_file)):
+    #         print(i, metrics_file[i])
+    #         print(metrics_file[i].split('/')[-2].split('-'))
+    #         if len(metrics_file[i].split('/')[-2].split('-')) > 1:
+    #             epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
+    #         else:
+    #             epoch = int(metrics_file[i].split('/')[-2])
+    #         print(epoch)
+    #         metrics_df =  pd.read_csv(metrics_file[i], sep='\t', header=None)
+    #         metrics_df.columns = ['label','metric','value']
+    #         print(metrics_df)
+    #         values += metrics_df['value'].tolist()
+    #         metrics += metrics_df['metric'].tolist()
+    #         labels += metrics_df['label'].tolist()
+    #         epochs += metrics_df.shape[0]*[epoch]
+        
+    #     data = {'value': values, 'metric': metrics, 'label':labels, 'epoch': epochs}
+    #     df = pd.DataFrame(data)
+    #     df['label'].replace(0, 'label 0', inplace=True)
+    #     df['label'].replace(1, 'label 1', inplace=True)
+    #     print(df)
+    #     palette = {'label 0': 'orange', 'label 1': 'pink'}
+    #     plot = sns.FacetGrid(df, row=None, col='metric', sharey=False)
+    #     plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, hue='label', palette=palette)
+    #     axes = plot.axes.flatten()
+    #     axes_title = ['','']
+    #     axes_y_labels = ['Precision', 'Recall']
+    #     axes_x_labels = ['Epoch', 'Epoch']
+    #     for idx, ax in enumerate(axes):
+    #         ax.set_title(axes_title[idx])
+    #         ax.set_ylabel(axes_y_labels[idx])
+    #         ax.set_xlabel(axes_x_labels[idx])
+    #         # ax.lines[0].set_color('black')
+    #         # ax.lines[0].set_linestyle('-')
+    #         # ax.lines[1].set_color('red')
+    #         # ax.lines[1].set_linestyle('-')
+    #         # add vertical line to define best checkpoint
+    #         ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
+    #         if idx == 0:
+    #             ax.set_ylim(0,1)
+    #         if idx == 1:
+    #             ax.set_ylim(0,1)
+    #     plot.add_legend(loc='lower center')
+    #     plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'metrics.png'), dpi=300)
+
+    #     # plot accuracy
+    #     values = []
+    #     epochs = []
+    #     for i in range(len(summary_file)):
+    #         if len(metrics_file[i].split('/')[-2].split('-')) > 1:
+    #             epoch = int(metrics_file[i].split('/')[-2].split('-')[0])
+    #         else:
+    #             epoch = int(metrics_file[i].split('/')[-2])
+    #         summary_df =  pd.read_csv(summary_file[i], sep='\t', header=None)
+    #         summary_df.columns = ['metric','value']
+    #         values += [summary_df['value'].tolist()[0]]
+    #         epochs += [epoch]
+    #     data = {'value': values, 'epoch': epochs}
+    #     df = pd.DataFrame(data)
+    #     print(df)
+    #     plot = sns.FacetGrid(df, row=None, col=None, sharey=False)
+    #     plot.map_dataframe(sns.lineplot, x='epoch', y='value', data=data, palette=palette)
+    #     axes = plot.axes.flatten()
+    #     axes_title = ['','']
+    #     axes_y_labels = ['Accuracy']
+    #     axes_x_labels = ['Epoch']
+    #     for idx, ax in enumerate(axes):
+    #         ax.set_title(axes_title[idx])
+    #         ax.set_ylabel(axes_y_labels[idx])
+    #         ax.set_xlabel(axes_x_labels[idx])
+    #         # ax.lines[0].set_color('black')
+    #         # ax.lines[0].set_linestyle('-')
+    #         # ax.lines[1].set_color('red')
+    #         # ax.lines[1].set_linestyle('-')
+    #         # add vertical line to define best checkpoint
+    #         ax.axvline(x=best_epoch, color='blue', linestyle='--', linewidth=2)
+    #         ax.set_ylim(0,1)
+    #     plot.add_legend(loc='lower center')
+    #     plt.savefig(os.path.join(args.testing_dir, 'testing/dataset', 'accuracy.png'), dpi=300)
 
     
     # if args.testing_sum_dir:
