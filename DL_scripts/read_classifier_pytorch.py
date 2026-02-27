@@ -912,11 +912,12 @@ if __name__ == "__main__":
         metrics = []
         labels = []
         for l in list_labels:
+            print(l)
             # get precision and recall for labels 0 and 1
             metrics_file = os.path.join(args.testing_dir, f'label_{l}/torch/k4/species_dataset_1_patience_10/testing/dataset/metrics.tsv')
             metrics_df =  pd.read_csv(metrics_file, sep='\t', header=None)
             metrics_df.columns = ['label','metric','value']
-            print(metrics_df)
+            # print(metrics_df)
             values += metrics_df['value'].tolist()
             metrics += metrics_df['metric'].tolist()
             labels += metrics_df['label'].tolist()
@@ -924,7 +925,7 @@ if __name__ == "__main__":
             summary_file = os.path.join(args.testing_dir, f'label_{l}/torch/k4/species_dataset_1_patience_10/testing/dataset/summary.tsv')
             summary_df =  pd.read_csv(summary_file, sep='\t', header=None)
             summary_df.columns = ['metric','value']
-            print(summary_df)
+            # print(summary_df)
             values += [summary_df['value'].tolist()[0]]
             metrics += ['accuracy']
         print(values)
