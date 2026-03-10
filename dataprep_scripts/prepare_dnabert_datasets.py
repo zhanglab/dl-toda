@@ -127,7 +127,7 @@ def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_
     train_data = sequences[:train_size]
     val_data = sequences[-val_size:]
 
-    out_f.write(f'{label}\t{train_size}\t{val_size}\n')
+    out_f.write(f'{train_size}\t{val_size}\n')
     return train_data, val_data
 
 def GetGenomeCov(data, train_genome_size, label, out_f, datatype): 
@@ -291,7 +291,6 @@ def main():
                         GetGenomeCov(val_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
                         all_train_data += train_data
                         all_val_data += val_data
-                    print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels, num)
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
                     pos_label_seq = AddPctIdentity(dict_pident, sequences[args.pos_label])
@@ -305,7 +304,6 @@ def main():
 
                 random.shuffle(all_val_data)
                 random.shuffle(all_train_data)
-                print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels)
 
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                     out_f.write(''.join(all_train_data))
