@@ -195,7 +195,7 @@ def main():
     # create BLAST database for target genome (genome of positive label)
     output_dir = os.path.join(args.output_dir, 'blast', pos_train_genome)
     if not os.path.isdir(output_dir):
-		os.makedirs(output_dir)
+        os.makedirs(output_dir)
     result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
     
     with mp.Manager() as manager: 
