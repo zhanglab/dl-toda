@@ -46,11 +46,10 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 
 
 def RunBlast(query, label, output_dir):
-    blast_outdir = os.path.join(output_dir, label)
-    if not os.path.isdir(blast_outdir):
-        os.makedirs(blast_outdir)
+    if not os.path.isdir(os.path.join(output_dir, label)):
+        os.makedirs(os.path.join(output_dir, label))
     # compare target genome with genome of negative label (query)
-    result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{blast_outdir}/blastn.out', \
+    result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{output_dir}/{label}/blastn.out', \
         '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
 
 def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
@@ -191,14 +190,14 @@ def main():
     print(grouped_neg_labels)
     print(grouped_fasta)
     # create BLAST database for target genome (genome of positive label)
-    output_dir = os.path.join(args.output_dir, 'blast', pos_train_genome)
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-    result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+    blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
+    if not os.path.isdir(blastoutdir):
+        os.makedirs(blastoutdir)
+    result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
     
     with mp.Manager() as manager: 
         # blast genomes
-        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_neg_labels[i], output_dir)) for i in range(len(grouped_neg_labels))]
+        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_neg_labels[i], blastoutdir)) for i in range(len(grouped_neg_labels))]
         for p in processes:
             p.start() 
         for p in processes:
@@ -263,7 +262,7 @@ def main():
                     num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                     for i in range(len(labels_other)):
                         # get results from alignment with train genome of positive label
-                        dict_pident = GetMatchRegions(args, os.path.join(output_dir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
                         seq = sequences[labels_other[i]]
                         random.shuffle(seq)
                         num_seq = num_seq_per_sp.pop()
