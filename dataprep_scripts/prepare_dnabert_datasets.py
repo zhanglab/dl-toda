@@ -44,7 +44,7 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
     # print(seq_size[0])
     # print(sequences[0].rstrip().split('\t')[1].split(' '))
     # print(len(sequences[0].rstrip().split('\t')[1].split(' ')))
-    print(f'{statistics.median(seq_size)}\t{min(seq_size)}\t{max(seq_size)}\t{statistics.mean(seq_size)}')
+    # print(f'{statistics.median(seq_size)}\t{min(seq_size)}\t{max(seq_size)}\t{statistics.mean(seq_size)}')
     random.shuffle(sequences)
     out_f.write(f'{label}\t')
     if args.multiclass:
@@ -79,11 +79,11 @@ def GetGenomeCov(data, train_genome_size):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
         for j in range(start, end, 1):
-            print(start, end, j)
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
-    print(sum([1 for v in data_cov.values() if v != 0]), train_genome_size, len(data_cov))
-    return pct_genome_covered
+    coverage = sum(data_cov.values())/train_genome_size
+    # print(sum([1 for v in data_cov.values() if v != 0]), train_genome_size, len(data_cov))
+    return pct_genome_covered, coverage
 
 
 def get_genome_size(fasta):
@@ -245,10 +245,10 @@ def main():
                     print('split sequences between train and val datasets for label 1')
                     get_train_val_data(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
-                    train_pct_genome_covered = GetGenomeCov(all_train_data, train_genome_size)
-                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\n')
-                    val_pct_genome_covered = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\n')
+                    train_pct_genome_covered, train_cov = GetGenomeCov(all_train_data, train_genome_size)
+                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of train genome\t{train_cov}\n')
+                    val_pct_genome_covered, val_cov = GetGenomeCov(all_val_data, train_genome_size)
+                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of val genome\t{val_cov}\n')
                     print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
