@@ -31,8 +31,9 @@ def AddPctIdentity(dict_pident, sequences):
             else:
                 list_pident.append(0)
         print(len(list_pident), sequences[i].split('\t')[-1], end-start+1)
-        avg_pident = sum(list_pident)/len(list_pident)
-        up_sequences.append(sequences[i].rstrip() + f'{avg_pident}\n')
+        print(list_pident)
+        avg_pident = sum(list_pident)/len(list_pident)*100
+        up_sequences.append(sequences[i].rstrip() + f'\t{avg_pident}\n')
     print(len(up_sequences))
     return up_sequences
 
