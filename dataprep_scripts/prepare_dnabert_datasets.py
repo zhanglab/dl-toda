@@ -131,8 +131,11 @@ def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_
     return train_data, val_data
 
 def GetGenomeCov(data, train_genome_size, label, out_f, datatype): 
+    print(train_genome_size)
     data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
+    print(len(data_cov))
     for i in range(len(data)):
+        print(data[i])
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
         for j in range(start, end, 1):
