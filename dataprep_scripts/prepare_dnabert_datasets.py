@@ -143,7 +143,7 @@ def GetGenomeCov(data, train_genome_size, label, out_f, datatype):
 
 def GetGenomeSize(list_fasta, list_labels):
     sizes = {}
-    for i in range(len(list_genomes)):
+    for i in range(len(list_labels)):
         seq = ''
         with open(list_fasta[i], 'r') as f:
             for line in f:
