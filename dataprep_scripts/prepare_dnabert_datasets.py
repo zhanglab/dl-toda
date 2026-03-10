@@ -132,13 +132,10 @@ def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_
     return train_data, val_data
 
 def GetGenomeCov(data, train_genome_size, label, out_f, datatype): 
-    print(train_genome_size)
     data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
-    print(len(data_cov))
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
-        print(data[i], start, end)
         for j in range(start, end, 1):
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
@@ -208,6 +205,9 @@ def main():
     grouped_fasta = [neg_train_fasta[i:i+chunk_size] for i in range(0, len(neg_train_fasta), chunk_size)]
     print(grouped_neg_labels)
     print(grouped_fasta)
+    print(grouped_labels)
+    print(grouped_sam_data)
+    print(grouped_cut_data)
     # create BLAST database for target genome (genome of positive label)
     blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
     if not os.path.isdir(blastoutdir):
