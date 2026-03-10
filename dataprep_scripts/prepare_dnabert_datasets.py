@@ -274,7 +274,7 @@ def main():
                     labels_other = [l for l in labels if l != args.pos_label]
                     print(f'get sequences from label 0\t# species: {len(labels_other)}')
                     num_sp_labels = len(labels_other)
-                    num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
+                    num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)] if num_sp_labels > 1 else [num]
                     for i in range(len(labels_other)):
                         # get results from alignment with train genome of positive label
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
@@ -288,7 +288,7 @@ def main():
                         GetGenomeCov(val_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
                         all_train_data += train_data
                         all_val_data += val_data
-                    print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels)
+                    print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels, num)
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
                     pos_label_seq = AddPctIdentity(dict_pident, sequences[args.pos_label])
@@ -302,6 +302,7 @@ def main():
 
                 random.shuffle(all_val_data)
                 random.shuffle(all_train_data)
+                print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels)
 
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                     out_f.write(''.join(all_train_data))
