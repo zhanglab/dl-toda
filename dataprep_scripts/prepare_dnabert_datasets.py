@@ -133,30 +133,21 @@ def main():
     labels = args.neg_label + [args.pos_label]
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
-    # sam_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_sam_data]
-    # cut_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_cut_data] 
+    
     assert len(input_sam_data) == len(input_cut_data), f"Missing {args.dataset} dnabert data"
-    # if cut_labels != sam_labels:
-    #     raise Exception(f"Missing {args.dataset} dnabert data for label {set(sam_labels).difference(cut_labels)}")
-    # else:
-    #     labels = sam_labels
 
-    # labels = ['36', '40']
-    # input_sam_data = sorted(glob.glob(f"{args.input_dir}/*/{args.dataset}_data_label_36/pretraining/data_sam_k{args.kmer}_cleaned.tsv"))
-    # input_cut_data = sorted(glob.glob(f"{args.input_dir}/*/{args.dataset}_data_label_36/pretraining/data_cut_k{args.kmer}_cleaned.tsv"))
-
-    # input_sam_data += glob.glob(f"{args.input_dir}/*/{args.dataset}_data_label_0/pretraining/data_sam_k{args.kmer}_cleaned.tsv")
-    # input_cut_data += glob.glob(f"{args.input_dir}/*/{args.dataset}_data_label_0/pretraining/data_cut_k{args.kmer}_cleaned.tsv")
-
-    chunk_size = math.ceil(len(labels)/args.num_processes)
+    chunk_size = math.ceil(len(labels)/args.num_processes) if len(labels) > args.num_processes else 1
     grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-
+    print(chunk_size)
+    print(grouped_labels)
+    print(grouped_sam_data)
+    print(grouped_cut_data)
     with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
         sequences = manager.dict()
         # create list of Process objects
-        processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(args.num_processes)]
+        processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
         for p in processes:
             p.start() # start the processes
         for p in processes:
