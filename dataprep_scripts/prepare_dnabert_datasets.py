@@ -20,16 +20,16 @@ ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 	# align_coords = []
-	dict_pident = {}
-	with open(input_file, 'r') as f:
-		for count, line in enumerate(f, 1):
-			sstart = int(line.rstrip().split(',')[2])
-			send = int(line.rstrip().split(',')[3])
-			qstart = int(line.rstrip().split(',')[4])
-			qend = int(line.rstrip().split(',')[5])
-			pident = float(line.rstrip().split(',')[8])
-			qseq = line.rstrip().split(',')[9]
-			sseq = line.rstrip().split(',')[10]
+    dict_pident = {}
+    with open(input_file, 'r') as f:
+        for count, line in enumerate(f, 1):
+            sstart = int(line.rstrip().split(',')[2])
+            send = int(line.rstrip().split(',')[3])
+            qstart = int(line.rstrip().split(',')[4])
+            qend = int(line.rstrip().split(',')[5])
+            pident = float(line.rstrip().split(',')[8])
+            qseq = line.rstrip().split(',')[9]
+            sseq = line.rstrip().split(',')[10]
             if key == 'neg':
                 for i in range(qstart, qend+1, 1):
                     dict_pident[i] = pident
