@@ -288,8 +288,7 @@ def main():
                         GetGenomeCov(val_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
                         all_train_data += train_data
                         all_val_data += val_data
-                    print(f'# sequences: {len(other_labels_seq)}')
-                    
+                    print(len(all_train_data), len(all_val_data), num_seq_per_sp, num_sp_labels)
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
                     pos_label_seq = AddPctIdentity(dict_pident, sequences[args.pos_label])
