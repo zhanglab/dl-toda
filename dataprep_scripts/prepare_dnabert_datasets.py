@@ -70,6 +70,7 @@ def RunBlast(list_queries, list_labels, output_dir):
 
 def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
     for i in range(len(labels)):
+        print(input_sam_data[i], input_cut_data[i], labels[i])
         with open(input_sam_data[i], 'r') as in_f:
             sequences[labels[i]] = [f'{labels[i]}\t' + s for s in in_f.readlines()]
         with open(input_cut_data[i], 'r') as in_f:
