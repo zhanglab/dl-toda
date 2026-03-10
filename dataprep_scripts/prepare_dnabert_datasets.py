@@ -12,7 +12,47 @@ from Bio import SeqIO
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
 
-def get_sequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
+MIN_IDENTITY = 70
+TICKS_INTERVAL = 500000
+blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
+makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
+ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
+
+def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
+	# align_coords = []
+	dict_pident = {}
+	with open(input_file, 'r') as f:
+		for count, line in enumerate(f, 1):
+			sstart = int(line.rstrip().split(',')[2])
+			send = int(line.rstrip().split(',')[3])
+			qstart = int(line.rstrip().split(',')[4])
+			qend = int(line.rstrip().split(',')[5])
+			pident = float(line.rstrip().split(',')[8])
+			qseq = line.rstrip().split(',')[9]
+			sseq = line.rstrip().split(',')[10]
+            if key == 'neg':
+                for i in range(qstart, qend+1, 1):
+                    dict_pident[i] = pident
+            elif key == 'pos':
+                for i in range(sstart, send+1, 1):
+                    dict_pident[i] = pident
+
+			# if pident >= identity_thr:
+            # align_coords.append([qstart, qend, pident])
+
+	# return align_coords, query_pident
+    return dict_pident
+
+
+def RunBlast(query, genome, output_dir):
+    blast_outdir = os.path.join(output_dir, label)
+    if not os.path.isdir(blast_outdir):
+		os.makedirs(blast_outdir)
+    # compare target genome with genome of negative label (query)
+    result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{blast_outdir}/blastn.out', \
+        '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
+
+def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
     for i in range(len(labels)):
         with open(input_sam_data[i], 'r') as in_f:
             sequences[labels[i]] = [f'{labels[i]}\t' + s for s in in_f.readlines()]
@@ -20,7 +60,7 @@ def get_sequences(input_sam_data, input_cut_data, labels, sequences, bert_step, 
             sequences[labels[i]] += [f'{labels[i]}\t' + s for s in in_f.readlines()]
 
 
-def get_number_sequences(sequences, genome_size, min_coverage):
+def GetNumberSequences(sequences, genome_size, min_coverage):
     # get number of sequences to have at least 1x coverage for training 
     sum_bases = 0
     num_seqs = 0
@@ -39,7 +79,7 @@ def get_number_sequences(sequences, genome_size, min_coverage):
 
     return train_size, val_size, sum_bases
 
-def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, label=None, train_genomes_df=None, label_train_size=None, label_val_size=None):
+def GetTrainValData(args, sequences, all_train_data, all_val_data, out_f, label=None, train_genomes_df=None, label_train_size=None, label_val_size=None):
     seq_size = [len(s.rstrip().split('\t')[1].split(' ')) for s in sequences]
     # print(seq_size[0])
     # print(sequences[0].rstrip().split('\t')[1].split(' '))
@@ -62,7 +102,7 @@ def get_train_val_data(args, sequences, all_train_data, all_val_data, out_f, lab
         if args.bert_step == 'pretraining':
             fasta = train_genomes_df[train_genomes_df[0]==int(label)][2].tolist()[0]
             genome_size = get_genome_size(fasta)
-            train_size, val_size, sum_bases = get_number_sequences(sequences, genome_size, args.min_coverage)
+            train_size, val_size, sum_bases = GetNumberSequences(sequences, genome_size, args.min_coverage)
             out_f.write(f'{sum_bases/genome_size}\t')
         else:
             train_size = round(0.7*len(sequences))
@@ -86,13 +126,16 @@ def GetGenomeCov(data, train_genome_size):
     return pct_genome_covered, coverage
 
 
-def get_genome_size(fasta):
-    seq = ''
-    with open(fasta, 'r') as f:
-        for line in f:
-            if line[0] != '>':
-                seq += line.rstrip()
-    return len(seq)
+def GetGenomeSize(list_fasta, list_genomes):
+    sizes = {}
+    for i in range(len(list_genomes)):
+        seq = ''
+        with open(list_fasta[i], 'r') as f:
+            for line in f:
+                if line[0] != '>':
+                    seq += line.rstrip()
+        sizes[list_genomes[i]] = len(seq)
+    return sizes
 
 
 def main():
@@ -117,17 +160,20 @@ def main():
 
     # if args.bert_step == 'pretraining' or args.multiclass:
     if args.dataset == 'train':
-        # get size of training genomes
+        # get training genomes
         train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
         train_genomes_df.columns = ['label','genome','fasta']
-        print(train_genomes_df)
-        # get size of training genome
-        train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
-        print(train_fasta)
-        for seq_record in SeqIO.parse(train_fasta, "fasta"):
-            print('genome size', len(seq_record.seq))
-        train_genome_size = get_genome_size(train_fasta)
-        print('genome size', train_genome_size)
+        # get size of training genomes
+        pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+        pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
+        neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
+        neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
+        print(neg_train_fasta)
+        print(neg_train_genomes)
+        print(args.neg_label)
+        sys.exit(1)
+        genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], neg_train_genomes+[pos_train_genome])
+        print(genomes_size)
 
     
     labels = args.neg_label + [args.pos_label]
@@ -140,15 +186,32 @@ def main():
     grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-
-    with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
+    grouped_neg_labels = [args.neg_label[i:i+chunk_size] for i in range(0, len(args.neg_label), chunk_size)]
+    grouped_genomes = [neg_train_genomes[i:i+chunk_size] for i in range(0, len(neg_train_genomes), chunk_size)]
+    grouped_fasta = [neg_train_fasta[i:i+chunk_size] for i in range(0, len(neg_train_fasta), chunk_size)]
+    print(grouped_neg_labels)
+    print(grouped_genomes)
+    print(grouped_fasta)
+    # create BLAST database for target genome (genome of positive label)
+    output_dir = os.path.join(args.output_dir, 'blast', pos_train_genome)
+    if not os.path.isdir(output_dir):
+		os.makedirs(output_dir)
+    result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{output_dir}/blastdb'])
+    
+    with mp.Manager() as manager: 
+        # blast genomes
+        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_genomes[i], grouped_neg_labels[i], output_dir)) for i in range(len(grouped_neg_labels))]
+        for p in processes:
+            p.start() 
+        for p in processes:
+            p.join() 
+        # get sequences
         sequences = manager.dict()
-        # create list of Process objects
-        processes = [mp.Process(target=get_sequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
+        processes = [mp.Process(target=GetSequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
         for p in processes:
-            p.start() # start the processes
+            p.start() 
         for p in processes:
-            p.join() # join the processes, program will hang and wait until all the processes are done
+            p.join() 
 
         if args.bert_step == 'pretraining' or args.multiclass:
             # args.min_coverage == 1.5 for pre-training
@@ -163,7 +226,7 @@ def main():
                 largest_genome_size = max(genomes_size.values())
                 print(f'largest genome size: {largest_genome_size}\tlabel: {largest_genome_label}')
 
-                label_train_size, label_val_size, _ = get_number_sequences(sequences[str(largest_genome_label)], largest_genome_size, args.min_coverage)
+                label_train_size, label_val_size, _ = GetNumberSequences(sequences[str(largest_genome_label)], largest_genome_size, args.min_coverage)
 
                 print(f'largest genome train size: {label_train_size}\tlargest genome val size: {label_val_size}')
 
@@ -171,7 +234,7 @@ def main():
             all_val_data = []
             with open(os.path.join(args.output_dir, f'data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for l in labels:
-                    get_train_val_data(args, sequences[l], all_train_data, all_val_data, out_f, label=l, train_genomes_df=train_genomes_df, label_train_size=label_train_size, label_val_size=label_val_size)
+                    GetTrainValData(args, sequences[l], all_train_data, all_val_data, out_f, label=l, train_genomes_df=train_genomes_df, label_train_size=label_train_size, label_val_size=label_val_size)
                 out_f.write(f'total\t{len(all_train_data)}\t{len(all_val_data)}')
 
             random.shuffle(all_val_data)
@@ -188,66 +251,42 @@ def main():
             # genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             # genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
             if args.dataset == 'train':
-                # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-                # train_genomes_df.columns = ['label','genome','fasta']
-                # # get training genome of target label
-                # target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.pos_label), 'genome'].tolist()[0]
-                # print(target_genome)
-                # # get genus of target label
-                # target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
-                # # get labels with same genus
-                # labels_same_genus = []
-                # train_genomes = train_genomes_df['genome'].tolist()
-                # train_labels = train_genomes_df['label'].tolist()
-                # for i in range(len(train_genomes)):
-                #     if train_genomes[i]!= target_genome and train_genomes[i] in genome_to_tax:
-                #         if target_genus in genome_to_tax[train_genomes[i]].split(';')[-2].split('__')[1]:
-                #             labels_same_genus.append(str(train_labels[i]))
-                # print(labels_same_genus, len(labels_same_genus))
                 # calculate the number of sequences to sample
                 num = len(sequences[args.pos_label])
-                # num_genus_labels = len(labels_same_genus)
-                # num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
-                                
                 # get sequences
                 other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
-                    # # at the genus level
-                    # for i in range(len(labels_same_genus)):
-                    #     num_seq = num_seq_per_genus.pop()
-                    #     seq = sequences[labels_same_genus[i]]
-                    #     random.shuffle(seq)
-                    #     # other_labels_seq += sequences[labels_same_genus[i]][:num_seq]
-                    #     other_labels_seq += seq[:num_seq]
-                    # print(f'# sequences: {len(other_labels_seq)}')
-                    
                     # for other species
-                    # if num != len(sequences[args.pos_label]):
-                    # labels_other = [l for l in labels if l not in labels_same_genus and l != args.pos_label]
                     labels_other = [l for l in labels if l != args.pos_label]
                     print(f'get sequences from label 0\t# species: {len(labels_other)}')
                     num_sp_labels = len(labels_other)
                     num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                     for i in range(len(labels_other)):
+                        # get results from alignment with train genome of positive label
+                        dict_pident = GetMatchRegions(args, os.path.join(output_dir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
                         seq = sequences[labels_other[i]]
                         random.shuffle(seq)
                         num_seq = num_seq_per_sp.pop()
-                        other_labels_seq += seq[:num_seq]
-                        # other_labels_seq += sequences[labels_other[i]][:num_seq]
+                        label_seq = seq[:num_seq]
+                        print(label_seq[0])
+                        sys.exit(1)
+                        other_labels_seq += label_seq
                     print(f'# sequences: {len(other_labels_seq)}')
                     
+                    
                     # split sequences between train and val datasets
+                    # update sequences with average percentage identity with negative genome
                     print('split sequences between train and val datasets for label 1')
-                    get_train_val_data(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
+                    GetTrainValData(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
                     train_pct_genome_covered, train_cov = GetGenomeCov(all_train_data, train_genome_size)
-                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of train genome in train dataset\t{train_cov}\n')
+                    out_f.write(f'% positive train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of positive train genome in train dataset\t{train_cov}\n')
                     val_pct_genome_covered, val_cov = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of train genome in val dataset\t{val_cov}\n')
+                    out_f.write(f'% positive train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of positive train genome in val dataset\t{val_cov}\n')
                     print('split sequences between train and val datasets for label 0')
-                    get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
+                    GetTrainValData(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
 
                 random.shuffle(all_val_data)
