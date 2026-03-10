@@ -30,9 +30,9 @@ def AddPctIdentity(dict_pident, sequences):
                 list_pident.append(dict_pident[j])
             else:
                 list_pident.append(0)
-        print(len(list_pident), sequences[i].split('\t')[-1], end-start+1)
+        print(len(list_pident), sequences[i].rstrip().split('\t')[-1], end-start+1)
         print(list_pident)
-        avg_pident = sum(list_pident)/len(list_pident)*100
+        avg_pident = sum(list_pident)/len(list_pident)
         up_sequences.append(sequences[i].rstrip() + f'\t{avg_pident}\n')
     print(len(up_sequences))
     return up_sequences
@@ -296,8 +296,10 @@ def main():
                     
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
+                    pos_label_seq = AddPctIdentity(dict_pident, sequences[args.pos_label])
+                    print(pos_label_seq[0])
                     print('split sequences between train and val datasets for label 1')
-                    GetTrainValData(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
+                    GetTrainValData(args, pos_label_seq, all_train_data, all_val_data, out_f, label=args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
                     train_pct_genome_covered, train_cov = GetGenomeCov(all_train_data, train_genome_size)
                     out_f.write(f'% positive train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of positive train genome in train dataset\t{train_cov}\n')
