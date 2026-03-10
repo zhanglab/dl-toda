@@ -107,7 +107,8 @@ def main():
     parser.add_argument('--min_coverage', type=float, help='minimun coverage of training genome', default=1.5)
     parser.add_argument('--multiclass', action='store_true', default=False)
     parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
-    parser.add_argument('--target_label', type=str, help='positive class for binary classifiers')
+    parser.add_argument('--pos_label', type=str, help='labels of species acting as the positive class for a binary classifier')
+    parser.add_argument('--neg_label', type=str, nargs='+', help='labels of species acting as the negative class for a binary classifier')
     args = parser.parse_args()
     print(args)
 
@@ -121,23 +122,24 @@ def main():
         train_genomes_df.columns = ['label','genome','fasta']
         print(train_genomes_df)
         # get size of training genome
-        train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.target_label)]['fasta'].tolist()[0]
+        train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
         print(train_fasta)
         for seq_record in SeqIO.parse(train_fasta, "fasta"):
             print('genome size', len(seq_record.seq))
         train_genome_size = get_genome_size(train_fasta)
         print('genome size', train_genome_size)
 
-    input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
-    input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1]]
-    sam_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_sam_data]
-    cut_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_cut_data]
-    print(len(input_sam_data), len(input_cut_data))
     
-    if cut_labels != sam_labels:
-        raise Exception(f"Missing {args.dataset} dnabert data for label {set(sam_labels).difference(cut_labels)}")
-    else:
-        labels = sam_labels
+    labels = args.neg_label + [args.pos_label]
+    input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
+    input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
+    # sam_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_sam_data]
+    # cut_labels = [i.rstrip().split('/')[-3].split('_')[3] for i in input_cut_data] 
+    assert len(input_sam_data) == len(input_cut_data), f"Missing {args.dataset} dnabert data"
+    # if cut_labels != sam_labels:
+    #     raise Exception(f"Missing {args.dataset} dnabert data for label {set(sam_labels).difference(cut_labels)}")
+    # else:
+    #     labels = sam_labels
 
     # labels = ['36', '40']
     # input_sam_data = sorted(glob.glob(f"{args.input_dir}/*/{args.dataset}_data_label_36/pretraining/data_sam_k{args.kmer}_cleaned.tsv"))
@@ -201,7 +203,7 @@ def main():
                 # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
                 # train_genomes_df.columns = ['label','genome','fasta']
                 # # get training genome of target label
-                # target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.target_label), 'genome'].tolist()[0]
+                # target_genome = train_genomes_df.loc[train_genomes_df['label'] == int(args.pos_label), 'genome'].tolist()[0]
                 # print(target_genome)
                 # # get genus of target label
                 # target_genus = genome_to_tax[target_genome].split(';')[-2].split('__')[1]
@@ -215,7 +217,7 @@ def main():
                 #             labels_same_genus.append(str(train_labels[i]))
                 # print(labels_same_genus, len(labels_same_genus))
                 # calculate the number of sequences to sample
-                num = len(sequences[args.target_label])
+                num = len(sequences[args.pos_label])
                 # num_genus_labels = len(labels_same_genus)
                 # num_seq_per_genus = [num // num_genus_labels + (1 if x < num % num_genus_labels else 0) for x in range (num_genus_labels)]
                                 
@@ -223,7 +225,7 @@ def main():
                 other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
-                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
+                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                     # # at the genus level
                     # for i in range(len(labels_same_genus)):
                     #     num_seq = num_seq_per_genus.pop()
@@ -234,9 +236,9 @@ def main():
                     # print(f'# sequences: {len(other_labels_seq)}')
                     
                     # for other species
-                    # if num != len(sequences[args.target_label]):
-                    # labels_other = [l for l in labels if l not in labels_same_genus and l != args.target_label]
-                    labels_other = [l for l in labels if l != args.target_label]
+                    # if num != len(sequences[args.pos_label]):
+                    # labels_other = [l for l in labels if l not in labels_same_genus and l != args.pos_label]
+                    labels_other = [l for l in labels if l != args.pos_label]
                     print(f'# other labels: {len(labels_other)}')
                     num_sp_labels = len(labels_other)
                     num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
@@ -250,7 +252,7 @@ def main():
                     
                     # split sequences between train and val datasets
                     print('split sequences between train and val datasets for label 1')
-                    get_train_val_data(args, sequences[args.target_label], all_train_data, all_val_data, out_f, label=args.target_label)
+                    get_train_val_data(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
                     train_pct_genome_covered = GetGenomeCov(all_train_data, train_genome_size)
                     out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\n')
@@ -263,24 +265,24 @@ def main():
                 random.shuffle(all_val_data)
                 random.shuffle(all_train_data)
 
-                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
+                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                     out_f.write(''.join(all_train_data))
 
-                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
+                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
                     out_f.write(''.join(all_val_data))
 
             elif args.dataset == 'test':
                 # only for finetuning
-                out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_test_data_info_k{args.kmer}.tsv'), 'w')
-                labels_other = [l for l in labels if l != args.target_label]
+                out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
+                labels_other = [l for l in labels if l != args.pos_label]
                 print(f'# other labels: {len(labels_other)}')
                 num_sp_labels = len(labels_other)
-                num = len(sequences[args.target_label])
+                num = len(sequences[args.pos_label])
                 num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                 print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
-                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.target_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
+                with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                     for i in range(len(labels)):
-                        if labels[i] == args.target_label:
+                        if labels[i] == args.pos_label:
                             out_f.write(''.join(sequences[labels[i]]))
                             out_info.write(f'{labels[i]}\t{len(sequences[labels[i]])}\n')
                         else:
