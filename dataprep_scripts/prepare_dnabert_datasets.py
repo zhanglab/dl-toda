@@ -140,10 +140,7 @@ def main():
     grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-    print(chunk_size)
-    print(grouped_labels)
-    print(grouped_sam_data)
-    print(grouped_cut_data)
+
     with mp.Manager() as manager: # create manager object to allow processes to manipulate python data structures
         sequences = manager.dict()
         # create list of Process objects
@@ -230,7 +227,7 @@ def main():
                     # if num != len(sequences[args.pos_label]):
                     # labels_other = [l for l in labels if l not in labels_same_genus and l != args.pos_label]
                     labels_other = [l for l in labels if l != args.pos_label]
-                    print(f'# other labels: {len(labels_other)}')
+                    print(f'get sequences from label 0\t# species: {len(labels_other)}')
                     num_sp_labels = len(labels_other)
                     num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                     for i in range(len(labels_other)):
@@ -246,9 +243,9 @@ def main():
                     get_train_val_data(args, sequences[args.pos_label], all_train_data, all_val_data, out_f, label=args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
                     train_pct_genome_covered, train_cov = GetGenomeCov(all_train_data, train_genome_size)
-                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of train genome\t{train_cov}\n')
+                    out_f.write(f'% train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of train genome in train dataset\t{train_cov}\n')
                     val_pct_genome_covered, val_cov = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of val genome\t{val_cov}\n')
+                    out_f.write(f'% train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of train genome in val dataset\t{val_cov}\n')
                     print('split sequences between train and val datasets for label 0')
                     get_train_val_data(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
                     
