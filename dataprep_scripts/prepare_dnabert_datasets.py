@@ -8,6 +8,7 @@ import argparse
 import pandas as pd
 import statistics
 from Bio import SeqIO
+import subprocess
 # sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
