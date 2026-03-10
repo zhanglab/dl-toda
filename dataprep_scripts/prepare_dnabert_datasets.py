@@ -171,7 +171,6 @@ def main():
         print(neg_train_fasta)
         print(neg_train_genomes)
         print(args.neg_label)
-        sys.exit(1)
         genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], neg_train_genomes+[pos_train_genome])
         print(genomes_size)
 
