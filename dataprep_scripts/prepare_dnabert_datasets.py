@@ -45,14 +45,14 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
     return dict_pident
 
 
-def RunBlast(query, label, output_dir):
+def RunBlast(list_queries, list_labels, output_dir):
     print('RUN BLAST')
-    if not os.path.isdir(os.path.join(output_dir, label)):
-        os.makedirs(os.path.join(output_dir, label))
-    # compare target genome with genome of negative label (query)
-    result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{output_dir}/{label}/blastn.out', \
-        '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
-    print(result)
+    for i in range(len(list_labels)):
+        if not os.path.isdir(os.path.join(output_dir, list_labels[i])):
+            os.makedirs(os.path.join(output_dir, list_labels[i]))
+        # compare target genome with genome of negative label (query)
+        result = subprocess.run([blastn_exec, '-query', f'{list_queries[i]}', '-db', f'{output_dir}/blastdb', '-out', f'{output_dir}/{list_labels[i]}/blastn.out', \
+            '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
 
 def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
     for i in range(len(labels)):
