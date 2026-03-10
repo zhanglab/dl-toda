@@ -45,7 +45,7 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
     return dict_pident
 
 
-def RunBlast(query, genome, output_dir):
+def RunBlast(query, label, output_dir):
     blast_outdir = os.path.join(output_dir, label)
     if not os.path.isdir(blast_outdir):
         os.makedirs(blast_outdir)
@@ -187,10 +187,8 @@ def main():
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
     grouped_neg_labels = [args.neg_label[i:i+chunk_size] for i in range(0, len(args.neg_label), chunk_size)]
-    grouped_genomes = [neg_train_genomes[i:i+chunk_size] for i in range(0, len(neg_train_genomes), chunk_size)]
     grouped_fasta = [neg_train_fasta[i:i+chunk_size] for i in range(0, len(neg_train_fasta), chunk_size)]
     print(grouped_neg_labels)
-    print(grouped_genomes)
     print(grouped_fasta)
     # create BLAST database for target genome (genome of positive label)
     output_dir = os.path.join(args.output_dir, 'blast', pos_train_genome)
@@ -200,7 +198,7 @@ def main():
     
     with mp.Manager() as manager: 
         # blast genomes
-        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_genomes[i], grouped_neg_labels[i], output_dir)) for i in range(len(grouped_neg_labels))]
+        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_neg_labels[i], output_dir)) for i in range(len(grouped_neg_labels))]
         for p in processes:
             p.start() 
         for p in processes:
