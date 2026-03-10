@@ -96,7 +96,7 @@ def GetNumberSequences(sequences, genome_size, min_coverage):
     return train_size, val_size, sum_bases
 
 def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_train_size=None, label_val_size=None):
-    seq_size = [len(s.rstrip().split('\t')[1].split(' ')) for s in sequences]
+    # seq_size = [len(s.rstrip().split('\t')[1].split(' ')) for s in sequences]
     # print(seq_size[0])
     # print(sequences[0].rstrip().split('\t')[1].split(' '))
     # print(len(sequences[0].rstrip().split('\t')[1].split(' ')))
@@ -274,7 +274,7 @@ def main():
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                     # for other species
                     labels_other = [l for l in labels if l != args.pos_label]
-                    print(f'get sequences from label 0\t# species: {len(labels_other)}')
+                    print(f'get sequences from label 0\t# species: {len(labels_other)}\t{labels_other}')
                     num_sp_labels = len(labels_other)
                     if num_sp_labels > 1:
                         num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
