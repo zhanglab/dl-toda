@@ -47,7 +47,7 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 def RunBlast(query, genome, output_dir):
     blast_outdir = os.path.join(output_dir, label)
     if not os.path.isdir(blast_outdir):
-		os.makedirs(blast_outdir)
+        os.makedirs(blast_outdir)
     # compare target genome with genome of negative label (query)
     result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{blast_outdir}/blastn.out', \
         '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
