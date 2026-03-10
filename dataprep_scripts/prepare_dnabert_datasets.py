@@ -274,7 +274,10 @@ def main():
                     labels_other = [l for l in labels if l != args.pos_label]
                     print(f'get sequences from label 0\t# species: {len(labels_other)}')
                     num_sp_labels = len(labels_other)
-                    num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)] if num_sp_labels > 1 else [num]
+                    if num_sp_labels > 1:
+                        num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
+                    else:
+                        num_seq_per_sp = [num]
                     for i in range(len(labels_other)):
                         # get results from alignment with train genome of positive label
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
