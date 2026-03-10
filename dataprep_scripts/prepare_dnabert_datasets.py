@@ -19,6 +19,18 @@ blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
+def AddPctIdentity(dict_pident, sequences):
+    up_sequences = []
+    for i in range(len(sequences)):
+        start = int(sequences[i].split('\t')[2])
+        end = int(sequences[i].split('\t')[3])
+        list_pident = [dict_pident[i] for i in range(start, end+1, 1)]
+        print(len(list_pident), sequences[i].split('\t')[-1])
+        avg_pident = sum(list_pident)/len(list_pident)
+        up_sequences.append(sequences[i].rstrip() + f'{avg_pident}\n')
+    print(len(up_sequences))
+    return up_sequences
+
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 	# align_coords = []
     dict_pident = {}
@@ -271,10 +283,10 @@ def main():
                         num_seq = num_seq_per_sp.pop()
                         label_seq = seq[:num_seq]
                         print(label_seq[0])
-                        sys.exit(1)
+                        label_seq = AddPctIdentity(dict_pident, label_seq)
+                        print(label_seq[0])
                         other_labels_seq += label_seq
                     print(f'# sequences: {len(other_labels_seq)}')
-                    
                     
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
