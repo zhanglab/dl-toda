@@ -46,11 +46,13 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 
 
 def RunBlast(query, label, output_dir):
+    print('RUN BLAST')
     if not os.path.isdir(os.path.join(output_dir, label)):
         os.makedirs(os.path.join(output_dir, label))
     # compare target genome with genome of negative label (query)
     result = subprocess.run([blastn_exec, '-query', f'{query}', '-db', f'{output_dir}/blastdb', '-out', f'{output_dir}/{label}/blastn.out', \
         '-outfmt', "17", '-max_target_seqs', '1', '-num_threads', '1'])
+    print(result)
 
 def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
     for i in range(len(labels)):
@@ -202,6 +204,7 @@ def main():
             p.start() 
         for p in processes:
             p.join() 
+        
         # get sequences
         sequences = manager.dict()
         processes = [mp.Process(target=GetSequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
