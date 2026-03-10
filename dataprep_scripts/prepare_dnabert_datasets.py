@@ -139,7 +139,7 @@ def GetGenomeCov(data, train_genome_size, label, out_f, datatype):
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
     coverage = sum(data_cov.values())/train_genome_size
-    out_f.write(f'{datatype}\t{label}\t{train_pct_genome_covered}\t{train_cov}\n')
+    out_f.write(f'{datatype}\t{label}\t{pct_genome_covered}\t{coverage}\n')
 
 def GetGenomeSize(list_fasta, list_labels):
     sizes = {}
