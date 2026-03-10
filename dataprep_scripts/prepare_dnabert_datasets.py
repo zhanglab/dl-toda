@@ -30,11 +30,8 @@ def AddPctIdentity(dict_pident, sequences):
                 list_pident.append(dict_pident[j])
             else:
                 list_pident.append(0)
-        print(len(list_pident), sequences[i].rstrip().split('\t')[-1], end-start+1)
-        print(list_pident)
         avg_pident = sum(list_pident)/len(list_pident)
         up_sequences.append(sequences[i].rstrip() + f'\t{avg_pident}\n')
-    print(len(up_sequences))
     return up_sequences
 
 def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
@@ -61,7 +58,6 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
 
 	# return align_coords, query_pident
     return dict_pident
-
 
 def RunBlast(list_queries, list_labels, output_dir):
     for i in range(len(list_labels)):
@@ -99,7 +95,7 @@ def GetNumberSequences(sequences, genome_size, min_coverage):
 
     return train_size, val_size, sum_bases
 
-def GetTrainValData(args, sequences, all_train_data, all_val_data, out_f, label=None, train_genomes_df=None, label_train_size=None, label_val_size=None):
+def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_train_size=None, label_val_size=None):
     seq_size = [len(s.rstrip().split('\t')[1].split(' ')) for s in sequences]
     # print(seq_size[0])
     # print(sequences[0].rstrip().split('\t')[1].split(' '))
@@ -128,12 +124,13 @@ def GetTrainValData(args, sequences, all_train_data, all_val_data, out_f, label=
             train_size = round(0.7*len(sequences))
             val_size = len(sequences) - train_size
 
-    all_train_data += sequences[:train_size]
-    all_val_data += sequences[-val_size:]
+    train_data = sequences[:train_size]
+    val_data = sequences[-val_size:]
 
-    out_f.write(f'{train_size}\t{val_size}\n')
+    out_f.write(f'{label}\t{train_size}\t{val_size}\n')
+    return train_data, val_data
 
-def GetGenomeCov(data, train_genome_size): 
+def GetGenomeCov(data, train_genome_size, label, out_f, datatype): 
     data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
@@ -142,11 +139,9 @@ def GetGenomeCov(data, train_genome_size):
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
     coverage = sum(data_cov.values())/train_genome_size
-    # print(sum([1 for v in data_cov.values() if v != 0]), train_genome_size, len(data_cov))
-    return pct_genome_covered, coverage
+    out_f.write(f'{datatype}\t{label}\t{train_pct_genome_covered}\t{train_cov}\n')
 
-
-def GetGenomeSize(list_fasta, list_genomes):
+def GetGenomeSize(list_fasta, list_labels):
     sizes = {}
     for i in range(len(list_genomes)):
         seq = ''
@@ -154,7 +149,7 @@ def GetGenomeSize(list_fasta, list_genomes):
             for line in f:
                 if line[0] != '>':
                     seq += line.rstrip()
-        sizes[list_genomes[i]] = len(seq)
+        sizes[list_labels[i]] = len(seq)
     return sizes
 
 
@@ -191,7 +186,7 @@ def main():
         print(neg_train_fasta)
         print(neg_train_genomes)
         print(args.neg_label)
-        genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], neg_train_genomes+[pos_train_genome])
+        genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
         print(genomes_size)
 
     
@@ -272,7 +267,6 @@ def main():
                 # calculate the number of sequences to sample
                 num = len(sequences[args.pos_label])
                 # get sequences
-                other_labels_seq = []
                 all_train_data = []
                 all_val_data = []
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
@@ -288,26 +282,24 @@ def main():
                         random.shuffle(seq)
                         num_seq = num_seq_per_sp.pop()
                         label_seq = seq[:num_seq]
-                        print(label_seq[0])
                         label_seq = AddPctIdentity(dict_pident, label_seq)
-                        print(label_seq[0])
-                        other_labels_seq += label_seq
+                        train_data, val_data = GetTrainValData(args, label_seq, out_f, labels_other[i])
+                        GetGenomeCov(train_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'train')
+                        GetGenomeCov(val_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
+                        all_train_data += train_data
+                        all_val_data += val_data
                     print(f'# sequences: {len(other_labels_seq)}')
                     
                     # split sequences between train and val datasets
                     # update sequences with average percentage identity with negative genome
                     pos_label_seq = AddPctIdentity(dict_pident, sequences[args.pos_label])
-                    print(pos_label_seq[0])
                     print('split sequences between train and val datasets for label 1')
-                    GetTrainValData(args, pos_label_seq, all_train_data, all_val_data, out_f, label=args.pos_label)
+                    train_data, val_data = GetTrainValData(args, pos_label_seq, out_f, args.pos_label)
                     # calculate percentage of training genome covered in train and val datasets
-                    train_pct_genome_covered, train_cov = GetGenomeCov(all_train_data, train_genome_size)
-                    out_f.write(f'% positive train genome covered in train dataset\t{train_pct_genome_covered}\ncoverage of positive train genome in train dataset\t{train_cov}\n')
-                    val_pct_genome_covered, val_cov = GetGenomeCov(all_val_data, train_genome_size)
-                    out_f.write(f'% positive train genome covered in val dataset\t{val_pct_genome_covered}\ncoverage of positive train genome in val dataset\t{val_cov}\n')
-                    print('split sequences between train and val datasets for label 0')
-                    GetTrainValData(args, other_labels_seq, all_train_data, all_val_data, out_f, label='other labels')
-                    
+                    GetGenomeCov(train_data, genomes_size[args.pos_label], args.pos_label, out_f, 'train')
+                    GetGenomeCov(val_data, genomes_size[args.pos_label], args.pos_label, out_f, 'val')
+                    all_train_data += train_data
+                    all_val_data += val_data
 
                 random.shuffle(all_val_data)
                 random.shuffle(all_train_data)
