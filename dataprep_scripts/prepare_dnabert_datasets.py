@@ -354,35 +354,35 @@ def main():
             for p in processes:
                 p.join()
 
-        # only for finetuning
-        out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
-        # get average percentage identity with train positive genome
-        pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.pos_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
-        # get average percentage identity with train negative genome
-        neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label[0], 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
-        # update positive sequences with average percentage identity with positive and negative train genomes
-        pos_label_seq = AddPctIdentity(pos_dict_pident, sequences[args.pos_label])
-        pos_label_seq = AddPctIdentity(neg_dict_pident, pos_label_seq)
-        # get coverage of positive testing genome
-        GetGenomeCov(pos_label_seq, genomes_size[args.pos_label], args.pos_label, out_info, 'test')
-        # get sequences from negative label
-        labels_other = [l for l in labels if l != args.pos_label]
-        print(f'# negative labels: {len(labels_other)}')
-        num_sp_labels = len(labels_other)
-        num = len(pos_label_seq)
-        num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
-        print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
-        with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
-            for i in range(len(labels)):
-                if labels[i] == args.pos_label:
-                    # out_f.write(''.join(sequences[labels[i]]))
-                    out_f.write(''.join(pos_label_seq))
-                    out_info.write(f'{labels[i]}\t{len(sequences[labels[i]])}\n')
-                else:
-                    num_seq = num_seq_per_sp.pop()
-                    l_sequences = sequences[labels[i]][:num_seq]
-                    out_f.write(''.join(l_sequences))
-                    out_info.write(f'{labels[i]}\t{len(l_sequences)}\n')
+            # only for finetuning
+            out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
+            # get average percentage identity with train positive genome
+            pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.pos_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+            # get average percentage identity with train negative genome
+            neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label[0], 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+            # update positive sequences with average percentage identity with positive and negative train genomes
+            pos_label_seq = AddPctIdentity(pos_dict_pident, sequences[args.pos_label])
+            pos_label_seq = AddPctIdentity(neg_dict_pident, pos_label_seq)
+            # get coverage of positive testing genome
+            GetGenomeCov(pos_label_seq, genomes_size[args.pos_label], args.pos_label, out_info, 'test')
+            # get sequences from negative label
+            labels_other = [l for l in labels if l != args.pos_label]
+            print(f'# negative labels: {len(labels_other)}')
+            num_sp_labels = len(labels_other)
+            num = len(pos_label_seq)
+            num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
+            print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
+            with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
+                for i in range(len(labels)):
+                    if labels[i] == args.pos_label:
+                        # out_f.write(''.join(sequences[labels[i]]))
+                        out_f.write(''.join(pos_label_seq))
+                        out_info.write(f'{labels[i]}\t{len(sequences[labels[i]])}\n')
+                    else:
+                        num_seq = num_seq_per_sp.pop()
+                        l_sequences = sequences[labels[i]][:num_seq]
+                        out_f.write(''.join(l_sequences))
+                        out_info.write(f'{labels[i]}\t{len(l_sequences)}\n')
 
 
 if __name__ == "__main__":
