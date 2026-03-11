@@ -323,8 +323,6 @@ def main():
         print(neg_test_fasta)
         print(neg_test_genomes)
         print(args.neg_label)
-        test_genomes_size = GetGenomeSize(neg_test_fasta+[pos_test_fasta], args.neg_label+[args.pos_label])
-        print(test_genomes_size)
         
         # create BLAST database for testing genomes
         blastoutdir = os.path.join(args.output_dir, 'blast', pos_test_genome)
@@ -338,9 +336,12 @@ def main():
         if len(neg_test_fasta) == 0:
             chunk_size = 1
             grouped_labels = [[args.pos_label]]
+            test_genomes_size = GetGenomeSize([pos_test_fasta], [args.pos_label])
         else:
             chunk_size = math.ceil(len(labels)/args.num_processes) if len(labels) > args.num_processes else 1
             grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
+            test_genomes_size = GetGenomeSize(neg_test_fasta+[pos_test_fasta], args.neg_label+[args.pos_label])
+        print(test_genomes_size)
         grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
         grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
         print(chunk_size)
