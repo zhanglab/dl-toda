@@ -185,11 +185,7 @@ def main():
     pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
     neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
     neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
-    print(neg_train_fasta)
-    print(neg_train_genomes)
-    print(args.neg_label)
-    genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
-    print(genomes_size)
+    train_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
 
     labels = sorted(args.neg_label + [args.pos_label])
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
@@ -288,8 +284,8 @@ def main():
                 label_seq = seq[:num_seq]
                 label_seq = AddPctIdentity(dict_pident, label_seq)
                 train_data, val_data = GetTrainValData(args, label_seq, out_f, labels_other[i])
-                GetGenomeCov(train_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'train')
-                GetGenomeCov(val_data, genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
+                GetGenomeCov(train_data, train_genomes_size[labels_other[i]], labels_other[i], out_f, 'train')
+                GetGenomeCov(val_data, train_genomes_size[labels_other[i]], labels_other[i], out_f, 'val')
                 all_train_data += train_data
                 all_val_data += val_data
             # split sequences between train and val datasets
@@ -298,8 +294,8 @@ def main():
             print('split sequences between train and val datasets for label 1')
             train_data, val_data = GetTrainValData(args, pos_label_seq, out_f, args.pos_label)
             # calculate percentage of training genome covered in train and val datasets
-            GetGenomeCov(train_data, genomes_size[args.pos_label], args.pos_label, out_f, 'train')
-            GetGenomeCov(val_data, genomes_size[args.pos_label], args.pos_label, out_f, 'val')
+            GetGenomeCov(train_data, train_genomes_size[args.pos_label], args.pos_label, out_f, 'train')
+            GetGenomeCov(val_data, train_genomes_size[args.pos_label], args.pos_label, out_f, 'val')
             all_train_data += train_data
             all_val_data += val_data
 
@@ -321,11 +317,14 @@ def main():
         pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
         neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
         neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
-        print(neg_train_fasta)
-        print(neg_train_genomes)
+        print(pos_test_fasta)
+        print(pos_test_genomes)
+        print(args.pos_label)
+        print(neg_test_fasta)
+        print(neg_test_genomes)
         print(args.neg_label)
-        genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
-        print(genomes_size)
+        test_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
+        print(test_genomes_size)
         
         # create BLAST database for testing genomes
         blastoutdir = os.path.join(args.output_dir, 'blast', pos_test_genome)
@@ -366,7 +365,7 @@ def main():
             pos_label_seq = AddPctIdentity(pos_dict_pident, sequences[args.pos_label])
             pos_label_seq = AddPctIdentity(neg_dict_pident, pos_label_seq)
             # get coverage of positive testing genome
-            GetGenomeCov(pos_label_seq, genomes_size[args.pos_label], args.pos_label, out_info, 'test')
+            GetGenomeCov(pos_label_seq, test_genomes_size[args.pos_label], args.pos_label, out_info, 'test')
             # get sequences from negative label
             labels_other = [l for l in labels if l != args.pos_label]
             print(f'# negative labels: {len(labels_other)}')
