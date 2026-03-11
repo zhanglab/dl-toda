@@ -318,7 +318,7 @@ def main():
         neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
         neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
         print(pos_test_fasta)
-        print(pos_test_genomes)
+        print(pos_test_genome)
         print(args.pos_label)
         print(neg_test_fasta)
         print(neg_test_genomes)
