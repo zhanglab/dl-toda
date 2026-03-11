@@ -214,7 +214,10 @@ def main():
     grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-    
+    print(chunk_size)
+    print(grouped_labels)
+    print(grouped_sam_data)
+    print(grouped_cut_data)
     if args.dataset == 'train':
         # create BLAST database for training genome (genome of positive label)
         blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
