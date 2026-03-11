@@ -136,8 +136,6 @@ def GetGenomeCov(data, genome_size, label, out_f, datatype):
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
-        print(data[i])
-        print(start)
         for j in range(start, end, 1):
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/genome_size)*100
@@ -337,6 +335,7 @@ def main():
             chunk_size = 1
             grouped_labels = [[args.pos_label]]
             test_genomes_size = GetGenomeSize([pos_test_fasta], [args.pos_label])
+            labels = [args.pos_label]
         else:
             chunk_size = math.ceil(len(labels)/args.num_processes) if len(labels) > args.num_processes else 1
             grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
