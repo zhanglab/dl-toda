@@ -136,6 +136,8 @@ def GetGenomeCov(data, genome_size, label, out_f, datatype):
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
+        print(data[i])
+        print(start)
         for j in range(start, end, 1):
             data_cov[j] += 1
     pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/genome_size)*100
