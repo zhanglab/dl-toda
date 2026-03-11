@@ -323,7 +323,7 @@ def main():
         print(neg_test_fasta)
         print(neg_test_genomes)
         print(args.neg_label)
-        test_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
+        test_genomes_size = GetGenomeSize(neg_test_fasta+[pos_test_fasta], args.neg_label+[args.pos_label])
         print(test_genomes_size)
         
         # create BLAST database for testing genomes
