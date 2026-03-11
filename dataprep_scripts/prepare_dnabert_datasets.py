@@ -46,10 +46,10 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
             pident = float(line.rstrip().split(',')[8])
             qseq = line.rstrip().split(',')[9]
             sseq = line.rstrip().split(',')[10]
-            if key == 'neg':
+            if key == 'query':
                 for i in range(qstart, qend+1, 1):
                     dict_pident[i] = pident
-            elif key == 'pos':
+            elif key == 'subject':
                 for i in range(sstart, send+1, 1):
                     dict_pident[i] = pident
 
@@ -131,15 +131,15 @@ def GetTrainValData(args, sequences, out_f, label, train_genomes_df=None, label_
     out_f.write(f'{train_size}\t{val_size}\n')
     return train_data, val_data
 
-def GetGenomeCov(data, train_genome_size, label, out_f, datatype): 
-    data_cov = {i: 0 for i in range(0, train_genome_size, 1)}
+def GetGenomeCov(data, genome_size, label, out_f, datatype): 
+    data_cov = {i: 0 for i in range(0, genome_size, 1)}
     for i in range(len(data)):
         start = int(data[i].split('\t')[2])
         end = int(data[i].split('\t')[3])
         for j in range(start, end, 1):
             data_cov[j] += 1
-    pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/train_genome_size)*100
-    coverage = sum(data_cov.values())/train_genome_size
+    pct_genome_covered = (sum([1 for v in data_cov.values() if v != 0])/genome_size)*100
+    coverage = sum(data_cov.values())/genome_size
     out_f.write(f'{datatype}\t{label}\t{pct_genome_covered}\t{coverage}\n')
 
 def GetGenomeSize(list_fasta, list_labels):
@@ -160,6 +160,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output file')
     # parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
     parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
+    parser.add_argument('--test_genomes_info', type=str, help='path to test_genomes.tsv file')
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'])
     parser.add_argument('--kmer', type=int, help='length of kmers')
@@ -173,24 +174,36 @@ def main():
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+    
+    # get training genomes
+    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    train_genomes_df.columns = ['label','genome','fasta']
+    # get size of training genomes
+    pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+    pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
+    neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
+    neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
+    print(neg_train_fasta)
+    print(neg_train_genomes)
+    print(args.neg_label)
+    genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
+    print(genomes_size)
 
-    # if args.bert_step == 'pretraining' or args.multiclass:
-    if args.dataset == 'train':
-        # get training genomes
-        train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-        train_genomes_df.columns = ['label','genome','fasta']
+    if args.dataset == 'test':
+        # get testing genomes
+        test_genomes_df = pd.read_csv(args.test_genomes_info, header=None, sep="\t")
+        test_genomes_df.columns = ['label','genome','fasta']
         # get size of training genomes
-        pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
-        neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
-        neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
+        pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+        pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
+        neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
+        neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
         print(neg_train_fasta)
         print(neg_train_genomes)
         print(args.neg_label)
         genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
         print(genomes_size)
 
-    
     labels = sorted(args.neg_label + [args.pos_label])
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
@@ -201,27 +214,33 @@ def main():
     grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
     grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
     grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-    grouped_neg_labels = [args.neg_label[i:i+chunk_size] for i in range(0, len(args.neg_label), chunk_size)]
-    grouped_fasta = [neg_train_fasta[i:i+chunk_size] for i in range(0, len(neg_train_fasta), chunk_size)]
-    print(grouped_neg_labels)
-    print(grouped_fasta)
-    print(grouped_labels)
-    print(grouped_sam_data)
-    print(grouped_cut_data)
-    # create BLAST database for target genome (genome of positive label)
-    blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
-    if not os.path.isdir(blastoutdir):
-        os.makedirs(blastoutdir)
-    result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
     
-    with mp.Manager() as manager: 
-        # blast genomes
-        processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_neg_labels[i], blastoutdir)) for i in range(len(grouped_neg_labels))]
-        for p in processes:
-            p.start() 
-        for p in processes:
-            p.join() 
-        
+    if args.dataset == 'train':
+        # create BLAST database for training genome (genome of positive label)
+        blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
+        if not os.path.isdir(blastoutdir):
+            os.makedirs(blastoutdir)
+        result = subprocess.run([makeblastdb_exec, '-in', f'{pos_train_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
+        # BLAST genomes
+        grouped_neg_labels = [args.neg_label[i:i+chunk_size] for i in range(0, len(args.neg_label), chunk_size)]
+        grouped_fasta = [neg_train_fasta[i:i+chunk_size] for i in range(0, len(neg_train_fasta), chunk_size)]
+        with mp.Manager() as manager: 
+            processes = [mp.Process(target=RunBlast, args=(grouped_fasta[i], grouped_neg_labels[i], blastoutdir)) for i in range(len(grouped_neg_labels))]
+            for p in processes:
+                p.start() 
+            for p in processes:
+                p.join() 
+    
+    if args.dataset == 'test':
+        # create BLAST database for testing genomes
+        blastoutdir = os.path.join(args.output_dir, 'blast', pos_test_genome)
+        if not os.path.isdir(blastoutdir):
+            os.makedirs(blastoutdir)
+        result = subprocess.run([makeblastdb_exec, '-in', f'{pos_test_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
+        # BLAST genomes
+        RunBlast(neg_train_fasta + [pos_train_fasta], labels, blastoutdir)
+    
+    with mp.Manager() as manager:
         # get sequences
         sequences = manager.dict()
         processes = [mp.Process(target=GetSequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
@@ -284,7 +303,7 @@ def main():
                         num_seq_per_sp = [num]
                     for i in range(len(labels_other)):
                         # get results from alignment with train genome of positive label
-                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='neg')
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels_other[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
                         seq = sequences[labels_other[i]]
                         random.shuffle(seq)
                         num_seq = num_seq_per_sp.pop()
@@ -318,16 +337,27 @@ def main():
             elif args.dataset == 'test':
                 # only for finetuning
                 out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
+                # get average percentage identity with train positive genome
+                pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.pos_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+                # get average percentage identity with train negative genome
+                neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label[0], 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+                # update positive sequences with average percentage identity with positive and negative train genomes
+                pos_label_seq = AddPctIdentity(pos_dict_pident, sequences[args.pos_label])
+                pos_label_seq = AddPctIdentity(neg_dict_pident, pos_label_seq)
+                # get coverage of positive testing genome
+                GetGenomeCov(pos_label_seq, genomes_size[args.pos_label], args.pos_label, out_info, 'test')
+                # get sequences from negative label
                 labels_other = [l for l in labels if l != args.pos_label]
-                print(f'# other labels: {len(labels_other)}')
+                print(f'# negative labels: {len(labels_other)}')
                 num_sp_labels = len(labels_other)
-                num = len(sequences[args.pos_label])
+                num = len(pos_label_seq)
                 num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
                 print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
                 with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                     for i in range(len(labels)):
                         if labels[i] == args.pos_label:
-                            out_f.write(''.join(sequences[labels[i]]))
+                            # out_f.write(''.join(sequences[labels[i]]))
+                            out_f.write(''.join(pos_label_seq))
                             out_info.write(f'{labels[i]}\t{len(sequences[labels[i]])}\n')
                         else:
                             num_seq = num_seq_per_sp.pop()
