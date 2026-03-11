@@ -334,7 +334,7 @@ def main():
         RunBlast(neg_train_fasta + [pos_train_fasta], labels, blastoutdir)
 
         # Get sequences
-        if len(neg_fasta) == 0:
+        if len(neg_test_fasta) == 0:
             chunk_size = 1
             grouped_labels = [[args.pos_label]]
         else:
