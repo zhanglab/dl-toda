@@ -42,11 +42,11 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
     # remove header, plasmids and \n and write sequence to file
     fasta_file = glob.glob(os.path.join(args.ncbi_db, f'{genome_id}/ncbi_dataset/data/{genome_id}/*.fna'))
     assert len(fasta_file) > 0, f'fasta file for {genome_id} not downloaded'
-    sequence = []
+    sequence = ''
     for record in SeqIO.parse(fasta_file[0], "fasta"):
         # remove phages and plasmids
         if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
-            sequence.append(str(record.seq))
+            sequence += str(record.seq.rstrip())
     print('genome size', len(sequence))
     # run dnabert prep functions
     if sampling_rate != 1.0:
