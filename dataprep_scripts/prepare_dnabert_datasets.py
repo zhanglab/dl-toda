@@ -12,7 +12,7 @@ import subprocess
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 dnabert_exec = '/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template/'
 sys.path.append(dnabert_exec)
-from dnabert_exec.process_pretrain_data import cut_no_overlap, sampling, get_kmer_sentence
+from process_pretrain_data import cut_no_overlap, sampling, get_kmer_sentence
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
 
