@@ -21,6 +21,7 @@ from transformers import BertForSequenceClassification, BertConfig
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
+from sklearn.calibration import calibration_curve
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.testing_utils import *
 
@@ -768,7 +769,9 @@ if __name__ == "__main__":
             ground_truth += batch_ground_truth
             predictions += batch_predictions
             confidence_scores += probs
-
+            print(probs)
+            print(confidence_scores)
+            break
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
         # get number of FP, FN, TP, TN
@@ -818,6 +821,26 @@ if __name__ == "__main__":
         
         test_metrics.close()
         test_sum.close()
+
+        # Measure overconfidence
+        # Create calibration curve (manually)
+        # Create bins of confidence scores for 0%-10%, 10%-20%, .., 90%-100%
+        n_bins = 10
+        bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
+        bin_ids = np.digitize(confidence_scores, bin_edges[1:-1])
+        print('bin_edges', bin_edges)
+        print('bin_ids', bin_ids)
+        # Compute values for x-axis = average predicted probability per bin
+        # Compute values for y-axis = fraction of true positives in each bin
+        mean_prob = []
+        mean_tp = []
+        # for b in range(n_bins):
+
+        # calibration curve with sklearn
+        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform')
+        print('prob_true', prob_true)
+        print('prob_pred', prob_pred)
+
 
         end = datetime.datetime.now()
         total_time = end - start
