@@ -769,9 +769,6 @@ if __name__ == "__main__":
             ground_truth += batch_ground_truth
             predictions += batch_predictions
             confidence_scores += probs
-            print(probs)
-            print(confidence_scores)
-            break
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
         # get number of FP, FN, TP, TN
@@ -837,9 +834,13 @@ if __name__ == "__main__":
         # for b in range(n_bins):
 
         # calibration curve with sklearn
-        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform')
+        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform', pos_label=1, n_bins=10)
+        # prob_true = proportion of samples in each bin whose class is the positive class
+        # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
         print('prob_pred', prob_pred)
+        plt.plot(prob_pred, prob_true, marker='o')
+        plt.savefig(os.path.join(args.output_dir, 'calibration_curve_sklearn.png'), dpi=300)
 
 
         end = datetime.datetime.now()
