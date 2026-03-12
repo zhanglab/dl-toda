@@ -82,25 +82,25 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
             new_file_seq.write(f'{new_line}\t{starts[i]}\t{ends[i]}\t{len(new_line)}\n')
         print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
         print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
-        else:
-            cuts = cut_no_overlap(length=line_length, kmer=args.kmer)
-            start = 0
-            seq_length = []
-            vector_length = []
-            for cut in cuts:
-                new_line = line[start:start+cut]
-                sentence = get_kmer_sentence(new_line, kvalue=args.kmer)
-                # sentence = get_kmer_sentence(new_line, kmer=args.kmer)
-                vector_length.append(len(sentence.split(" ")))
-                seq_length.append(len(new_line))
-                end = start + cut
-                assert end <= line_length, f'{end} > {line_length}'
-                # new_file.write(sentence + "\n")
-                new_file.write(f'{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
-                new_file_seq.write(f'{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
-                start += cut
-            print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
-            print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+    else:
+        cuts = cut_no_overlap(length=line_length, kmer=args.kmer)
+        start = 0
+        seq_length = []
+        vector_length = []
+        for cut in cuts:
+            new_line = line[start:start+cut]
+            sentence = get_kmer_sentence(new_line, kvalue=args.kmer)
+            # sentence = get_kmer_sentence(new_line, kmer=args.kmer)
+            vector_length.append(len(sentence.split(" ")))
+            seq_length.append(len(new_line))
+            end = start + cut
+            assert end <= line_length, f'{end} > {line_length}'
+            # new_file.write(sentence + "\n")
+            new_file.write(f'{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
+            new_file_seq.write(f'{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
+            start += cut
+        print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+        print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
 
 
 def AddPctIdentity(dict_pident, sequences):
