@@ -56,6 +56,9 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
         new_file_path = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_cut_k" + str(args.kmer))
         new_file_path_seq = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_cut_seq_k" + str(args.kmer))
     
+    if not os.path.exists(os.path.join(args.output_dir, 'dna_sequences', genome_id)):
+        os.makedirs(os.path.join(args.output_dir, 'dna_sequences', genome_id))
+
     if not os.path.exists(new_file_path):
         new_file = open(new_file_path, "w")
         new_file_seq = open(new_file_path_seq, "w")
