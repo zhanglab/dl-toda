@@ -59,10 +59,9 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
     if not os.path.exists(os.path.join(args.output_dir, 'dna_sequences', genome_id)):
         os.makedirs(os.path.join(args.output_dir, 'dna_sequences', genome_id))
 
-    if not os.path.exists(new_file_path):
-        new_file = open(new_file_path, "w")
-        new_file_seq = open(new_file_path_seq, "w")
-    
+    new_file = open(new_file_path, "w")
+    new_file_seq = open(new_file_path_seq, "w")
+
     genome_length = len(sequence)
     if sampling_rate != 1.0:
         starts, ends = sampling(length=genome_length, kmer=args.kmer, sampling_rate=sampling_rate)
@@ -420,8 +419,8 @@ def main():
         for g in neg_test_genomes:
             DownloadGenome(args, g)
             # Get DNA sequences
-            PrepareDNASeq(args, genome_id, 0.5)
-            PrepareDNASeq(args, genome_id, 1.0)
+            PrepareDNASeq(args, g, 0.5)
+            PrepareDNASeq(args, g, 1.0)
         
         sys.exit(1)
         
