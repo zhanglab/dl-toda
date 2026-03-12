@@ -24,7 +24,7 @@ ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
 
 def DownloadGenome(args, genome_id):
-	if f'{args.genome_id}' not in os.listdir(args.ncbi_db):
+	if f'{genome_id}' not in os.listdir(args.ncbi_db):
 		output_dir = os.path.join(args.ncbi_db, f'{genome_id}')
 		os.makedirs(output_dir)
 		os.chdir(output_dir)
