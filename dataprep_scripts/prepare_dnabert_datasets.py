@@ -9,6 +9,7 @@ import pandas as pd
 import statistics
 from Bio import SeqIO
 import subprocess
+import zipfile
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 dnabert_exec = '/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template/'
 sys.path.append(dnabert_exec)
