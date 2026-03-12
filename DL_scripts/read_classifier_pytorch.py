@@ -834,7 +834,7 @@ if __name__ == "__main__":
         # for b in range(n_bins):
 
         # calibration curve with sklearn
-        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform', pos_label=1, n_bins=10)
+        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform', pos_label=1)
         # prob_true = proportion of samples in each bin whose class is the positive class
         # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
