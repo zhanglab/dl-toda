@@ -43,7 +43,7 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
     fasta_file = glob.glob(os.path.join(args.ncbi_db, f'{genome_id}/ncbi_dataset/data/{genome_id}/*.fna'))
     assert len(fasta_file) > 0, f'fasta file for {genome_id} not downloaded'
     sequence = []
-    for record in SeqIO.parse(fasta_file, "fasta"):
+    for record in SeqIO.parse(fasta_file[0], "fasta"):
         # remove phages and plasmids
         if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
             sequence.append(str(record.seq))
