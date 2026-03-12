@@ -9,7 +9,10 @@ import pandas as pd
 import statistics
 from Bio import SeqIO
 import subprocess
-# sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+dnabert_exec = '/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template/'
+sys.path.append(dnabert_exec)
+from dnabert_exec.process_pretrain_data import cut_no_overlap, sampling, get_kmer_sentence
 # from dataprep_scripts.select_genomes import get_gtdb_info
 # from select_genomes import get_gtdb_info
 
@@ -18,6 +21,87 @@ TICKS_INTERVAL = 500000
 blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
+
+
+def DownloadGenome(args, genome_id):
+	if f'{args.genome_id}' not in os.listdir(args.ncbi_db):
+		output_dir = os.path.join(args.ncbi_db, f'{genome_id}')
+		os.makedirs(output_dir)
+		os.chdir(output_dir)
+		# download feature table in gtf if not present
+		result = subprocess.run([ncbi_datasets_exec, 'download', 'genome', 'accession', f'{genome_id}', '--include', 'genome,protein'])
+		# unzip output folder
+		with zipfile.ZipFile('ncbi_dataset.zip', 'r') as zip_ref:
+			zip_ref.extractall(os.getcwd())
+		os.chdir(args.input_dir)
+	else:
+		print(f'{genome_id}\tdownload already done')
+
+def PrepareDNASeq(args, genome_id, sampling_rate):
+    # remove header and \n and write sequence to file
+    fasta_file = glob.glob(os.path.join(args.ncbi_db, f'{genome_id}/ncbi_dataset/data/{genome_id}/*.fna'))
+    assert len(fasta_file) > 0, f'fasta file for {genome_id} not downloaded'
+    sequence = ''
+    with open(fasta_file[0], 'r') as f:
+        for line in f:
+            if line[0] != '>':
+                sequence += line.rstrip()
+    
+    # run dnabert prep functions
+    if sampling_rate != 1.0:
+        new_file_path = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_sam_k" + str(args.kmer))
+        new_file_path_seq = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_sam_seq_k" + str(args.kmer)) 
+    else:
+        new_file_path = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_cut_k" + str(args.kmer))
+        new_file_path_seq = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_cut_seq_k" + str(args.kmer))
+    
+    if not os.path.exists(new_file_path):
+        new_file = open(new_file_path, "w")
+        new_file_seq = open(new_file_path_seq, "w")
+    
+    seq_length = len(sequence)
+    if sampling_rate != 1.0:
+        starts, ends = sampling(length=seq_length, kmer=args.kmer, sampling_rate=sampling_rate)
+        # sample sequences of same length
+        #starts, ends = sampling_fix(length=line_length, kmer=args.kmer, sampling_rate=args.sampling_rate)
+        seq_length = []
+        vector_length = []
+        for i in range(len(starts)):
+            #assert ends[i] <= line_length, f'# seq:{i}\tstart:{starts[i]}\tend:{ends[i]}\tgenome size:{line_length}'
+            new_line = sequence[starts[i]:ends[i]]
+            sentence = get_kmer_sentence(new_line, kvalue=args.kmer)
+            if ends[i] > line_length:
+                print('end position above genome size!!!!', len(new_line), starts[i], ends[i], ends[i]-starts[i])
+                print(sentence)
+                sys.exit(1)
+            # sentence = get_kmer_sentence(new_line, kmer=args.kmer)
+            vector_length.append(len(sentence.split(" ")))
+            seq_length.append(len(new_line))
+            # new_file.write(sentence + "\n")
+            new_file.write(f'{sentence}\t{starts[i]}\t{ends[i]}\t{len(sentence.split(" "))}\n')
+            new_file_seq.write(f'{new_line}\t{starts[i]}\t{ends[i]}\t{len(new_line)}\n')
+        print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+        print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+        else:
+            cuts = cut_no_overlap(length=line_length, kmer=args.kmer)
+            start = 0
+            seq_length = []
+            vector_length = []
+            for cut in cuts:
+                new_line = line[start:start+cut]
+                sentence = get_kmer_sentence(new_line, kvalue=args.kmer)
+                # sentence = get_kmer_sentence(new_line, kmer=args.kmer)
+                vector_length.append(len(sentence.split(" ")))
+                seq_length.append(len(new_line))
+                end = start + cut
+                assert end <= line_length, f'{end} > {line_length}'
+                # new_file.write(sentence + "\n")
+                new_file.write(f'{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
+                new_file_seq.write(f'{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
+                start += cut
+            print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
+            print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
+
 
 def AddPctIdentity(dict_pident, sequences):
     up_sequences = []
@@ -312,8 +396,8 @@ def main():
         test_genomes_df.columns = ['label','genome','fasta']
         # get size of testing genomes
         pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
-        neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
+        # pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
+        # neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
         neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
         print(pos_test_fasta)
         print(pos_test_genome)
@@ -321,6 +405,18 @@ def main():
         print(neg_test_fasta)
         print(neg_test_genomes)
         print(args.neg_label)
+
+        # Download genomes
+        DownloadGenome(args, pos_test_genome)
+        PrepareDNASeq(args, pos_test_genome, 0.5)
+        PrepareDNASeq(args, pos_test_genome, 1.0)
+        for g in neg_test_genomes:
+            DownloadGenome(args, g)
+            # Get DNA sequences
+            PrepareDNASeq(args, genome_id, 0.5)
+            PrepareDNASeq(args, genome_id, 1.0)
+        
+        sys.exit(1)
         
         # create BLAST database for testing genomes
         blastoutdir = os.path.join(args.output_dir, 'blast', pos_test_genome)
