@@ -825,8 +825,8 @@ if __name__ == "__main__":
         n_bins = 10
         bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
         bin_ids = np.digitize(confidence_scores, bin_edges[1:-1])
-        print('bin_edges', bin_edges)
-        print('bin_ids', bin_ids)
+        print('bin_edges', bin_edges, len(bin_edges))
+        print('bin_ids', bin_ids, len(bin_ids))
         # Compute values for x-axis = average predicted probability per bin
         # Compute values for y-axis = fraction of true positives in each bin
         mean_prob = []
@@ -834,7 +834,9 @@ if __name__ == "__main__":
         # for b in range(n_bins):
 
         # calibration curve with sklearn
-        prob_true, prob_pred = calibration_curve(ground_truth, confidence_scores, n_bins=10, strategy='uniform', pos_label=1)
+        true_cs = [i[1] for i in confidence_scores]
+        print(true_cs[:10], confidence_scores[:10])
+        prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=10, strategy='uniform', pos_label=1)
         # prob_true = proportion of samples in each bin whose class is the positive class
         # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
