@@ -92,7 +92,7 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
         seq_length = []
         vector_length = []
         for cut in cuts:
-            new_line = line[start:start+cut]
+            new_line = sequence[start:start+cut]
             sentence = get_kmer_sentence(new_line, kvalue=args.kmer)
             # sentence = get_kmer_sentence(new_line, kmer=args.kmer)
             vector_length.append(len(sentence.split(" ")))
