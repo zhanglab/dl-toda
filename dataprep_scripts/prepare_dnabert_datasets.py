@@ -38,15 +38,15 @@ def DownloadGenome(args, genome_id):
 		print(f'{genome_id}\tdownload already done')
 
 def PrepareDNASeq(args, genome_id, sampling_rate):
-    # remove header and \n and write sequence to file
+    # remove header, plasmids and \n and write sequence to file
     fasta_file = glob.glob(os.path.join(args.ncbi_db, f'{genome_id}/ncbi_dataset/data/{genome_id}/*.fna'))
     assert len(fasta_file) > 0, f'fasta file for {genome_id} not downloaded'
-    sequence = ''
-    with open(fasta_file[0], 'r') as f:
-        for line in f:
-            if line[0] != '>':
-                sequence += line.rstrip()
-    
+    sequence = []
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        # remove phages and plasmids
+        if 'plasmid' not in record.description and 'Plasmid' not in record.description and 'phage' not in record.description:
+            sequence.append(str(record.seq))
+    print('genome size', len(sequence))
     # run dnabert prep functions
     if sampling_rate != 1.0:
         new_file_path = os.path.join(args.output_dir, 'dna_sequences', genome_id, f"data_sam_k" + str(args.kmer))
@@ -242,6 +242,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, help='path to input directory')
     parser.add_argument('--output_dir', type=str, help='path to output file')
+    parser.add_argument('--ncbi_db', type=str, help='path to ncbi database built with datasets')
     # parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
     parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
     parser.add_argument('--test_genomes_info', type=str, help='path to test_genomes.tsv file')
@@ -261,7 +262,8 @@ def main():
     
     # get training genomes
     train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    train_genomes_df.columns = ['label','genome','fasta']
+    train_genomes_df.columns  = ['label','genome','fasta']
+    # train_genomes_df.columns = ['label','genome']
     # get size of training genomes
     pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
     pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
@@ -393,16 +395,17 @@ def main():
     elif args.dataset == 'test':
         # get testing genomes
         test_genomes_df = pd.read_csv(args.test_genomes_info, header=None, sep="\t")
-        test_genomes_df.columns = ['label','genome','fasta']
+        test_genomes_df.columns = ['label','genome']
+        # test_genomes_df.columns = ['label','genome','fasta']
         # get size of testing genomes
         pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
         # pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
         # neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
         neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
-        print(pos_test_fasta)
+        # print(pos_test_fasta)
         print(pos_test_genome)
         print(args.pos_label)
-        print(neg_test_fasta)
+        # print(neg_test_fasta)
         print(neg_test_genomes)
         print(args.neg_label)
 
@@ -437,8 +440,8 @@ def main():
             grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
             test_genomes_size = GetGenomeSize(neg_test_fasta+[pos_test_fasta], args.neg_label+[args.pos_label])
         print(test_genomes_size)
-        grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
-        grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
+        # grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
+        # grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
         print(chunk_size)
         print(grouped_labels)
         print(grouped_sam_data)
