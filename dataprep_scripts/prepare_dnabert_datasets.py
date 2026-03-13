@@ -38,7 +38,7 @@ def DownloadGenome(args, genome_id):
 	else:
 		print(f'{genome_id}\tdownload already done')
 
-def PrepareDNASeq(args, genome_id, sampling_rate):
+def PrepareDNASeq(args, genome_id, label, sampling_rate):
     # remove header, plasmids and \n and write sequence to file
     fasta_file = glob.glob(os.path.join(args.ncbi_db, f'{genome_id}/ncbi_dataset/data/{genome_id}/*.fna'))
     assert len(fasta_file) > 0, f'fasta file for {genome_id} not downloaded'
@@ -63,6 +63,8 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
     new_file_seq = open(new_file_path_seq, "w")
 
     genome_length = len(sequence)
+    vectors = []
+    sequences = []
     if sampling_rate != 1.0:
         starts, ends = sampling(length=genome_length, kmer=args.kmer, sampling_rate=sampling_rate)
         # sample sequences of same length
@@ -81,8 +83,10 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
             vector_length.append(len(sentence.split(" ")))
             seq_length.append(len(new_line))
             # new_file.write(sentence + "\n")
-            new_file.write(f'{sentence}\t{starts[i]}\t{ends[i]}\t{len(sentence.split(" "))}\n')
-            new_file_seq.write(f'{new_line}\t{starts[i]}\t{ends[i]}\t{len(new_line)}\n')
+            new_file.write(f'{label}\t{sentence}\t{starts[i]}\t{ends[i]}\t{len(sentence.split(" "))}\n')
+            new_file_seq.write(f'{label}\t{new_line}\t{starts[i]}\t{ends[i]}\t{len(new_line)}\n')
+            vectors.append(f'{label}\t{sentence}\t{starts[i]}\t{ends[i]}\t{len(sentence.split(" "))}\n')
+            sequences.append(f'{label}\t{new_line}\t{starts[i]}\t{ends[i]}\t{len(new_line)}\n')
         print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
         print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
     else:
@@ -99,12 +103,14 @@ def PrepareDNASeq(args, genome_id, sampling_rate):
             end = start + cut
             assert end <= genome_length, f'{end} > {genome_length}'
             # new_file.write(sentence + "\n")
-            new_file.write(f'{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
-            new_file_seq.write(f'{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
+            new_file.write(f'{label}\t{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
+            new_file_seq.write(f'{label}\t{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
+            vectors.append(f'{label}\t{sentence}\t{start}\t{start+cut}\t{len(sentence.split(" "))}\n')
+            sequences.append(f'{label}\t{new_line}\t{start}\t{start+cut}\t{len(new_line)}\n')
             start += cut
         print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
         print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
-
+    return vectors, genome_length
 
 def AddPctIdentity(dict_pident, sequences):
     up_sequences = []
@@ -155,13 +161,20 @@ def RunBlast(list_queries, list_labels, output_dir):
 			 '-outfmt', "10 delim=, qseqid sseqid sstart send qstart qend qlen evalue pident qseq sseq sstrand", \
 			 '-max_target_seqs', '5', '-num_threads', '1'])
 
-def GetSequences(input_sam_data, input_cut_data, labels, sequences, bert_step, kmer):
-    for i in range(len(labels)):
-        print(input_sam_data[i], input_cut_data[i], labels[i])
-        with open(input_sam_data[i], 'r') as in_f:
-            sequences[labels[i]] = [f'{labels[i]}\t' + s for s in in_f.readlines()]
-        with open(input_cut_data[i], 'r') as in_f:
-            sequences[labels[i]] += [f'{labels[i]}\t' + s for s in in_f.readlines()]
+def GetSequences(args, genomes, labels, genomes_size, sequences):
+    for i in range(len(genomes)):
+        DownloadGenome(args, genomes[i])
+        sam_vectors, size = PrepareDNASeq(args, genomes[i], 0.5)
+        cut_vectors, _ = PrepareDNASeq(args, genomes[i], 1.0)
+        genomes_size[genomes[i]] = size
+        sequences[labels[i]] = sam_vectors + cut_vectors
+    
+    # for i in range(len(labels)):
+    #     print(input_sam_data[i], input_cut_data[i], labels[i])
+    #     with open(input_sam_data[i], 'r') as in_f:
+    #         sequences[labels[i]] = [f'{labels[i]}\t' + s for s in in_f.readlines()]
+    #     with open(input_cut_data[i], 'r') as in_f:
+    #         sequences[labels[i]] += [f'{labels[i]}\t' + s for s in in_f.readlines()]
 
 
 def GetNumberSequences(sequences, genome_size, min_coverage):
@@ -275,6 +288,7 @@ def main():
     train_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
 
     labels = sorted(args.neg_label + [args.pos_label])
+    print('labels', labels)
     input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
     input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
         
@@ -399,63 +413,31 @@ def main():
         # get testing genomes
         test_genomes_df = pd.read_csv(args.test_genomes_info, header=None, sep="\t")
         test_genomes_df.columns = ['label','genome']
-        # test_genomes_df.columns = ['label','genome','fasta']
         # get size of testing genomes
         pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        # pos_test_fasta = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
-        # neg_test_fasta = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
-        neg_test_genomes = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
-        # print(pos_test_fasta)
-        print(pos_test_genome)
-        print(args.pos_label)
-        # print(neg_test_fasta)
-        print(neg_test_genomes)
-        print(args.neg_label)
-
-        # Download genomes
-        DownloadGenome(args, pos_test_genome)
-        PrepareDNASeq(args, pos_test_genome, 0.5)
-        PrepareDNASeq(args, pos_test_genome, 1.0)
-        for g in neg_test_genomes:
-            DownloadGenome(args, g)
-            # Get DNA sequences
-            PrepareDNASeq(args, g, 0.5)
-            PrepareDNASeq(args, g, 1.0)
-        
-        sys.exit(1)
-        
-        # create BLAST database for testing genomes
-        blastoutdir = os.path.join(args.output_dir, 'blast', pos_test_genome)
-        if not os.path.isdir(blastoutdir):
-            os.makedirs(blastoutdir)
-        result = subprocess.run([makeblastdb_exec, '-in', f'{pos_test_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
-        # BLAST genomes
-        RunBlast(neg_train_fasta + [pos_train_fasta], labels, blastoutdir)
-
+        neg_test_genome = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()[0]
         # Get sequences
-        if len(neg_test_fasta) == 0:
-            chunk_size = 1
-            grouped_labels = [[args.pos_label]]
-            test_genomes_size = GetGenomeSize([pos_test_fasta], [args.pos_label])
-            labels = [args.pos_label]
-        else:
-            chunk_size = math.ceil(len(labels)/args.num_processes) if len(labels) > args.num_processes else 1
-            grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
-            test_genomes_size = GetGenomeSize(neg_test_fasta+[pos_test_fasta], args.neg_label+[args.pos_label])
-        print(test_genomes_size)
-        # grouped_sam_data = [input_sam_data[i:i+chunk_size] for i in range(0, len(input_sam_data), chunk_size)]
-        # grouped_cut_data = [input_cut_data[i:i+chunk_size] for i in range(0, len(input_cut_data), chunk_size)]
-        print(chunk_size)
-        print(grouped_labels)
-        print(grouped_sam_data)
-        print(grouped_cut_data)
+        chunk_size = 1
+        grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
+        grouped_labels = [[neg_test_genome],[pos_test_genome]]
         with mp.Manager() as manager:
             sequences = manager.dict()
-            processes = [mp.Process(target=GetSequences, args=(grouped_sam_data[i], grouped_cut_data[i], grouped_labels[i], sequences, args.bert_step, args.kmer)) for i in range(len(grouped_labels))]
+            genomes_size = manager.dict()
+            processes = [mp.Process(target=GetSequences, args=(args, grouped_labels[i], grouped_genomes[i], genomes_size, sequences)) for i in range(len(grouped_genomes))]
             for p in processes:
-                p.start() 
+                p.start()
             for p in processes:
                 p.join()
+            
+            # create BLAST database for testing genomes
+            for g in [pos_test_genome, neg_test_genome]:
+                fasta = glob.glob(os.path.join(args.ncbi_db, f'{g}/ncbi_dataset/data/{g}/*.fna'))[0]
+                blastoutdir = os.path.join(args.output_dir, 'blast', g)
+                if not os.path.isdir(blastoutdir):
+                    os.makedirs(blastoutdir)
+                result = subprocess.run([makeblastdb_exec, '-in', f'{fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
+                # BLAST genomes
+                RunBlast(neg_train_fasta + [pos_train_fasta], labels, blastoutdir)
 
             # only for finetuning
             out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
