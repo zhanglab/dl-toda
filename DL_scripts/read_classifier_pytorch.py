@@ -781,13 +781,13 @@ if __name__ == "__main__":
         TP = []
         for i in range(len(predictions)):
             if ground_truth[i] == 1 and predictions[i] == 1:
-                TP.append(confidence_scores[i])
+                TP.append(confidence_scores[i][1])
             elif ground_truth[i] == 1 and predictions[i] == 0:
-                FN.append(confidence_scores[i])
+                FN.append(confidence_scores[i][0])
             elif ground_truth[i] == 0 and predictions[i] == 0:
-                TN.append(confidence_scores[i])
+                TN.append(confidence_scores[i][0])
             elif ground_truth[i] == 0 and predictions[i] == 1:
-                FP.append(confidence_scores[i])
+                FP.append(confidence_scores[i][1])
         accuracy = round((len(TP)+len(TN))/(len(TP)+len(TN)+len(FN)+len(FP)),3)
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
