@@ -835,13 +835,16 @@ if __name__ == "__main__":
 
         # calibration curve with sklearn
         true_cs = [i[1] for i in confidence_scores]
-        print(true_cs[:10], confidence_scores[:10])
         prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=10, strategy='uniform', pos_label=1)
         # prob_true = proportion of samples in each bin whose class is the positive class
         # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
         print('prob_pred', prob_pred)
-        plt.plot(prob_pred, prob_true, marker='o')
+        plt.plot(prob_pred, prob_true, marker='.')
+        plt.plot([0, 1], [0, 1], linestyle = '--', label = 'Ideally Calibrated')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Average Predicted Probability in each bin')
+        plt.ylabel('Ratio of positives')
         plt.savefig(os.path.join(args.output_dir, 'calibration_curve_sklearn.png'), dpi=300)
 
 
