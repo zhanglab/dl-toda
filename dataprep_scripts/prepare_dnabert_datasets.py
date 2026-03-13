@@ -294,7 +294,7 @@ def main():
     # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
     # neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
     labels = [args.neg_label, args.pos_label]
-    print('labels', labels)[]
+    print('labels', labels)
 
         # if args.bert_step == 'pretraining' or args.multiclass:
         #     # args.min_coverage == 1.5 for pre-training
