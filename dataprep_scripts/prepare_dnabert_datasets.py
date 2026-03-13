@@ -165,6 +165,8 @@ def GetMatchRegions(args, input_file, identity_thr=MIN_IDENTITY, key=None):
     return dict_pident
 
 def RunBlast(list_queries, list_labels, output_dir):
+    print(list_queries)
+    print(list_labels)
     for i in range(len(list_labels)):
         if not os.path.isdir(os.path.join(output_dir, list_labels[i])):
             os.makedirs(os.path.join(output_dir, list_labels[i]))
