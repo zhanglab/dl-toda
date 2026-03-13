@@ -818,15 +818,25 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of confidence scores per group
+        print('TP-CS', min(TP), max(TP), statistics.mean(TP))
+        print('TN-CS', min(TN), max(TN), statistics.mean(TN))
+        print('FP-CS', min(FP), max(FP), statistics.mean(FP))
+        print('FN-CS', min(FN), max(FN), statistics.mean(FN))
         print('prepare cs plot')
         sns.histplot(FP, color='pink', label = 'FP')
         sns.histplot(TP, color='skyblue', label = 'TP')
-        sns.histplot(FN, color='orange', label = 'FN')
-        sns.histplot(TN, color='purple', label = 'TN')
         leg = plt.legend(loc = 'upper left')
         plt.xlabel('Confidence score')
         plt.ylabel('Frequency')
-        plt.savefig(os.path.join(args.output_dir, 'confidence_scores.png'), dpi=300)
+        plt.title('Positive class')
+        plt.savefig(os.path.join(args.output_dir, 'confidence_scores_pos.png'), dpi=300)
+        sns.histplot(FN, color='pink', label = 'FN')
+        sns.histplot(TN, color='skyblue', label = 'TN')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Confidence score')
+        plt.ylabel('Frequency')
+        plt.title('Negative class')
+        plt.savefig(os.path.join(args.output_dir, 'confidence_scores_neg.png'), dpi=300)
         # Measure overconfidence
         # calibration curve with sklearn
         n_bins = 10
