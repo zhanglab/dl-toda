@@ -22,6 +22,35 @@ blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
+def SelectGenomes(args):
+    # load gtdb info
+    genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
+    idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
+    idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
+    pos_train_genomes = []
+    pos_test_genomes = []
+    for idx in idx_pos_species:
+        if ncbi_genome_representation[idx] == 'full':
+            if ncbi_genome_category[idx] == 'derived from single cell':
+                pos_train_genomes.append(idx)
+            else:
+                pos_test_genomes.append(idx)
+    neg_train_genomes = []
+    neg_test_genomes = []
+    for idx in idx_neg_species:
+        if ncbi_genome_representation[idx] == 'full':
+            if ncbi_genome_category[idx] == 'derived from single cell':
+                neg_train_genomes.append(idx)
+            else:
+                neg_test_genomes.append(idx)
+    assert len(pos_train_genomes) >= 2 and len(neg_train_genomes) >= 2, f'# genomes for {args.pos_species}: {len(pos_train_genomes)}\t# genomes for {args.neg_species}: {len(neg_train_genomes)}'
+    with open(os.path.join(args.output_dir, 'train_genomes.tsv'), 'w') as g:
+        random.shuffle(len(pos_train_genomes))
+        random.shuffle(len(neg_train_genomes))
+        f.write(f'{args.pos_species}\t{genomes[pos_train_genomes[0]][3:]}\t{genomes[pos_train_genomes[0]]}\t{ncbi_genome_category[pos_train_genomes[0]]}\t{ncbi_genome_representation[pos_train_genomes[0]]}\t{gtdb_rep_genome[pos_train_genomes[0]]}\t{gtdb_taxonomy[pos_train_genomes[0]]}\n')
+        f.write(f'{args.neg_species}\t{genomes[neg_train_genomes[0]][3:]}\t{genomes[neg_train_genomes[0]]}\t{ncbi_genome_category[neg_train_genomes[0]]}\t{ncbi_genome_representation[neg_train_genomes[0]]}\t{gtdb_rep_genome[neg_train_genomes[0]]}\t{gtdb_taxonomy[neg_train_genomes[0]]}\n')
+
+
 def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
     blastoutdir = os.path.join(args.output_dir, 'blast', genome)
     # get average percentage identity with train positive genome
@@ -278,27 +307,6 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     
-    # load gtdb info
-    genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
-    idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
-    idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
-    print(len(idx_pos_species), len(idx_neg_species))
-    print(set(ncbi_genome_representation))
-    print(set(ncbi_genome_category))
-    train_genomes = []
-    test_genomes = []
-    for idx in idx_pos_species:
-        if ncbi_genome_representation[idx] == 'full':
-            if ncbi_genome_category[idx] == 'derived from single cell':
-                train_genomes.append(genomes[idx])
-            else:
-                test_genomes.append(genomes[idx])
-    print(train_genomes)
-    print(test_genomes)
-
-    # select genomes for training and testing
-
-    sys.exit(1)
     # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
     # train_genomes_df.columns = ['label','genome']
     # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
@@ -344,6 +352,11 @@ def main():
             # genomes, _, _, _, _, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
             # genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
     if args.dataset == 'train':
+        # SelectGenomes(args)
+        train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+        train_genomes_df.columns = ['label','genome']
+        pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+        neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
         genomes = [neg_train_genome, pos_train_genome]
         # Get sequences
         chunk_size = 1
