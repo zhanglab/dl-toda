@@ -771,51 +771,61 @@ if __name__ == "__main__":
             confidence_scores += probs
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
-        # get number of FP, FN, TP, TN
-        FP = 0
-        FN = 0
-        TN = 0
-        TP = 0
+        
         assert len(predictions) == len(ground_truth) == num_test_reads, f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
 
+        # get number of FP, FN, TP, TN
+        FP = []
+        FN = []
+        TN = []
+        TP = []
         for i in range(len(predictions)):
             if ground_truth[i] == 1 and predictions[i] == 1:
-                TP += 1
+                TP.append(probs[i])
             elif ground_truth[i] == 1 and predictions[i] == 0:
-                FN += 1
+                FN.append(probs[i])
             elif ground_truth[i] == 0 and predictions[i] == 0:
-                TN += 1
+                TN.append(probs[i])
             elif ground_truth[i] == 0 and predictions[i] == 1:
-                FP += 1
+                FP.append(probs[i])
         accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
-        test_sum.write(f'TP\t{TP}\nFN\t{FN}\nTN\t{TN}\nFP\t{FP}\n')
+        test_sum.write(f'TP\t{len(TP)}\nFN\t{len(FN)}\nTN\t{len(TN)}\nFP\t{len(FP)}\n')
         
         try:
-            pos_precision = round(TP/(TP+FP),3)
+            pos_precision = round(len(TP)/(len(TP)+len(FP)),3)
         except ZeroDivisionError:
             pos_precision = 0
         test_metrics.write(f'1\tprecision\t{pos_precision}\n')
 
         try:
-            neg_precision = round(TN/(TN+FN),3)
+            neg_precision = round(len(TN)/(len(TN)+len(FN)),3)
         except ZeroDivisionError:
             neg_precision = 0
         test_metrics.write(f'0\tprecision\t{neg_precision}\n')
 
         try:
-            pos_recall = round(TP/(TP+FN),3)
+            pos_recall = round(len(TP)/(len(TP)+len(FN)),3)
         except ZeroDivisionError:
             pos_recall = 0
         test_metrics.write(f'1\trecall\t{pos_recall}\n')
 
         try:
-            neg_recall = round(TN/(TN+FP),3)
+            neg_recall = round(len(TN)/(len(TN)+len(FP)),3)
         except ZeroDivisionError:
             neg_recall = 0
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
+        # plot distribution of confidence scores per group
+        sns.histplot(FP, color='pink', label = 'FP')
+        sns.histplot(TP, color='skyblue', label = 'TP')
+        sns.histplot(FN, color='orange', label = 'FN')
+        sns.histplot(TN, color='purple', label = 'TN')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Confidence score')
+        plt.ylabel('Frequency')
+        plt.savefig(os.path.join(args.output_dir, 'confidence_scores.png'), dpi=300)
         # Measure overconfidence
         # calibration curve with sklearn
         n_bins = 10
