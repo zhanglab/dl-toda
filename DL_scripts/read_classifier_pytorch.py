@@ -788,7 +788,7 @@ if __name__ == "__main__":
                 TN.append(confidence_scores[i])
             elif ground_truth[i] == 0 and predictions[i] == 1:
                 FP.append(confidence_scores[i])
-        accuracy = round((TP+TN)/(TP+TN+FN+FP),3)
+        accuracy = round((len(TP)+len(TN))/(len(TP)+len(TN)+len(FN)+len(FP)),3)
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
         test_sum.write(f'TP\t{len(TP)}\nFN\t{len(FN)}\nTN\t{len(TN)}\nFP\t{len(FP)}\n')
