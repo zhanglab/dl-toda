@@ -361,8 +361,8 @@ def main():
                     label_seq = label_seq[:num_seq]
                     label_seq = AddPctIdentity(dict_pident, label_seq)
                     train_data, val_data = GetTrainValData(args, label_seq, out_f, labels[i])
-                    GetGenomeCov(train_data, train_genomes_size[labels[i]], labels[i], out_f, 'train')
-                    GetGenomeCov(val_data, train_genomes_size[labels[i]], labels[i], out_f, 'val')
+                    GetGenomeCov(train_data, genomes_size[labels[i]], labels[i], out_f, 'train')
+                    GetGenomeCov(val_data, genomes_size[labels[i]], labels[i], out_f, 'val')
                     all_train_data += train_data
                     all_val_data += val_data
             random.shuffle(all_val_data)
