@@ -338,7 +338,7 @@ def main():
                 p.join()
             # create BLAST database for training genome of label 1
             fasta = glob.glob(os.path.join(args.ncbi_db, f'{pos_train_genome}/ncbi_dataset/data/{pos_train_genome}/*.fna'))[0]
-            blastoutdir = os.path.join(args.output_dir, 'blast', g)
+            blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
             if not os.path.isdir(blastoutdir):
                 os.makedirs(blastoutdir)
             result = subprocess.run([makeblastdb_exec, '-in', f'{fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
