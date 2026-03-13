@@ -468,14 +468,13 @@ def main():
             # num_sp_labels = len(labels_other)
             print(len(sequences[args.pos_label]))
             print(len(sequences[args.neg_label]))
-            num_seq = min([len(sequences[args.pos_label]), len(sequences[args.neg_label])])
+            # num_seq = min([len(sequences[args.pos_label]), len(sequences[args.neg_label])])
             print(f'min num seq: {num_seq}\tpos:{len(sequences[args.pos_label])}\tneg:{len(sequences[args.neg_label])}')
             # num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
             # print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
             with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
-                    label_seq = sequences[labels[i]][:num_seq]
-                    print(labels[i], len(label_seq))
+                    label_seq = sequences[labels[i]]
                     label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes[i], genomes_size, out_info)
                     out_f.write(''.join(label_seq))
                     out_info.write(f'{labels[i]}\t{len(label_seq)}\n')
