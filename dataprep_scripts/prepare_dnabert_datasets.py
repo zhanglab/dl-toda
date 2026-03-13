@@ -459,7 +459,7 @@ def main():
             # labels_other = [l for l in labels if l != args.pos_label]
             # print(f'# negative labels: {len(labels_other)}')
             # num_sp_labels = len(labels_other)
-            num_seq = len(pos_label_seq)
+            num_seq = len(sequences[labels[i]])
             # num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
             # print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
             with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
