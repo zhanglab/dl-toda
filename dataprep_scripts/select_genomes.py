@@ -10,11 +10,12 @@ def get_gtdb_info(gtdb_info):
         gtdb_df = pd.read_csv(gtdb_info, delimiter='\t', usecols=['accession', 'gtdb_genome_representative', 'gtdb_taxonomy', 'ncbi_genome_category', 'ncbi_assembly_level', 'ncbi_genome_representation'], compression="gzip")
     else:
         gtdb_df = pd.read_csv(gtdb_info, delimiter='\t', usecols=['accession', 'gtdb_genome_representative', 'gtdb_taxonomy', 'ncbi_genome_category', 'ncbi_assembly_level', 'ncbi_genome_representation'])
-    genomes = [i[3:] for i in gtdb_df['accession'].tolist()]
+    # genomes = [i[3:] for i in gtdb_df['accession'].tolist()]
+    genomes = gtdb_df['accession'].tolist()
     ncbi_assembly_level = gtdb_df['ncbi_assembly_level'].tolist()
     ncbi_genome_category = gtdb_df['ncbi_genome_category'].tolist()
     ncbi_genome_representation = gtdb_df['ncbi_genome_representation'].tolist()
-    gtdb_rep_genome = [i[3:] for i in gtdb_df['gtdb_genome_representative'].tolist()]
+    gtdb_rep_genome = gtdb_df['gtdb_genome_representative'].tolist()
     gtdb_taxonomy = gtdb_df['gtdb_taxonomy'].tolist()
 
     return genomes, ncbi_assembly_level, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy
