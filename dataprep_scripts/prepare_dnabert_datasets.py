@@ -14,7 +14,6 @@ sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:
 dnabert_exec = '/work/pi_yingzhang_uri_edu/ccres/tools/DNABERT/examples/data_process_template/'
 sys.path.append(dnabert_exec)
 from process_pretrain_data import cut_no_overlap, sampling, get_kmer_sentence
-from dataprep_scripts.select_genomes import get_gtdb_info
 from select_genomes import get_gtdb_info
 
 MIN_IDENTITY = 70
@@ -269,6 +268,8 @@ def main():
     parser.add_argument('--min_coverage', type=float, help='minimun coverage of training genome', default=1.5)
     parser.add_argument('--multiclass', action='store_true', default=False)
     parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
+    parser.add_argument('--pos_species', type=str, help='species acting as the positive class for a binary classifier')
+    parser.add_argument('--neg_species', type=str, help='species acting as the negative class for a binary classifier')
     parser.add_argument('--pos_label', type=str, help='labels of species acting as the positive class for a binary classifier')
     parser.add_argument('--neg_label', type=str, help='labels of species acting as the negative class for a binary classifier')
     args = parser.parse_args()
@@ -277,13 +278,23 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     
-    # get training genomes
-    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    train_genomes_df.columns = ['label','genome']
-    pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-    neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
+    # load gtdb info
+    genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(gtdb_info)
+    idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
+    idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
+    print(set(ncbi_genome_representation))
+    # for idx in idx_pos_species:
+    #     if ncbi_genome_representation[idx] == 'full':
+    #         if ncbi_genome_category[idx] == 'single cell'
+    # select genomes for training and testing
+
+    sys.exit(1)
+    # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    # train_genomes_df.columns = ['label','genome']
+    # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+    # neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
     labels = [args.neg_label, args.pos_label]
-    print('labels', labels)
+    print('labels', labels)[]
 
         # if args.bert_step == 'pretraining' or args.multiclass:
         #     # args.min_coverage == 1.5 for pre-training
