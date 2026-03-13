@@ -419,7 +419,9 @@ def main():
         # Get sequences
         chunk_size = 1
         grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
-        grouped_labels = [[neg_test_genome],[pos_test_genome]]
+        grouped_genomes = [[neg_test_genome],[pos_test_genome]]
+        print(grouped_labels)
+        print(grouped_genomes)
         with mp.Manager() as manager:
             sequences = manager.dict()
             genomes_size = manager.dict()
