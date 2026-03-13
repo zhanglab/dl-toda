@@ -366,11 +366,12 @@ def main():
                     all_val_data += val_data
             random.shuffle(all_val_data)
             random.shuffle(all_train_data)
-
-            with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
+            if not os.path.isdir(os.path.join(args.output_dir, 'train_dataset')):
+                os.makedirs(os.path.join(args.output_dir, 'train_dataset'))
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                 out_f.write(''.join(all_train_data))
 
-            with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
                 out_f.write(''.join(all_val_data))
 
     elif args.dataset == 'test':
