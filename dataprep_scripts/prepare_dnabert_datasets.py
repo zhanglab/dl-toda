@@ -455,7 +455,7 @@ def main():
                     os.makedirs(blastoutdir)
                 result = subprocess.run([makeblastdb_exec, '-in', f'{fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
                 # BLAST genomes
-                RunBlast(neg_train_fasta + [pos_train_fasta], labels, blastoutdir)
+                RunBlast([neg_train_fasta + pos_train_fasta], labels, blastoutdir)
 
             # only for finetuning
             out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
