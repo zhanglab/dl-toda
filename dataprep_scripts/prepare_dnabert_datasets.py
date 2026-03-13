@@ -281,7 +281,8 @@ def main():
     parser.add_argument('--multiclass', action='store_true', default=False)
     parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
     parser.add_argument('--pos_label', type=str, help='labels of species acting as the positive class for a binary classifier')
-    parser.add_argument('--neg_label', type=str, nargs='+', help='labels of species acting as the negative class for a binary classifier')
+    parser.add_argument('--neg_label', type=str, help='labels of species acting as the negative class for a binary classifier')
+    # parser.add_argument('--neg_label', type=str, nargs='+', help='labels of species acting as the negative class for a binary classifier')
     args = parser.parse_args()
     print(args)
 
@@ -295,16 +296,18 @@ def main():
     # get size of training genomes
     pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
     pos_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['fasta'].tolist()[0]
-    neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
-    neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
-    train_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
-
-    labels = sorted(args.neg_label + [args.pos_label])
+    neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
+    neg_train_fasta = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['fasta'].tolist()[0]
+    # neg_train_fasta = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['fasta'].tolist()
+    # neg_train_genomes = train_genomes_df[train_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()
+    # train_genomes_size = GetGenomeSize(neg_train_fasta+[pos_train_fasta], args.neg_label+[args.pos_label])
+    train_genomes_size = GetGenomeSize([neg_train_fasta, pos_train_fasta], [args.neg_label, args.pos_label])
+    labels = [args.neg_label, args.pos_label]
     print('labels', labels)
-    input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
-    input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
+    # input_sam_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_sam_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
+    # input_cut_data = [i for i in sorted(glob.glob(f"{args.input_dir}/{args.dataset}_data_label_*/k{args.kmer}/data_cut_*_k{args.kmer}")) if 'seq' not in i.rstrip().split('/')[-1] and i.rstrip().split('/')[-3].split('_')[3] in labels]
         
-    assert len(input_sam_data) == len(input_cut_data), f"Missing {args.dataset} dnabert data"
+    # assert len(input_sam_data) == len(input_cut_data), f"Missing {args.dataset} dnabert data"
     
         # if args.bert_step == 'pretraining' or args.multiclass:
         #     # args.min_coverage == 1.5 for pre-training
@@ -427,7 +430,7 @@ def main():
         test_genomes_df.columns = ['label','genome']
         # get size of testing genomes
         pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        neg_test_genome = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()[0]
+        neg_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
         genomes = [neg_test_genome, pos_test_genome]
         # Get sequences
         chunk_size = 1
