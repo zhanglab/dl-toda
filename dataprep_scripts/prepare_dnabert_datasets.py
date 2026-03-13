@@ -282,11 +282,20 @@ def main():
     genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
     idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
     idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
+    print(len(idx_pos_species), len(idx_neg_species))
     print(set(ncbi_genome_representation))
     print(set(ncbi_genome_category))
-    # for idx in idx_pos_species:
-    #     if ncbi_genome_representation[idx] == 'full':
-    #         if ncbi_genome_category[idx] == 'single cell'
+    train_genomes = []
+    test_genomes = []
+    for idx in idx_pos_species:
+        if ncbi_genome_representation[idx] == 'full':
+            if ncbi_genome_category[idx] == 'derived from single cell':
+                train_genomes.append(genomes[idx])
+            else:
+                test_genomes.append(genomes[idx])
+    print(train_genomes)
+    print(test_genomes)
+
     # select genomes for training and testing
 
     sys.exit(1)
