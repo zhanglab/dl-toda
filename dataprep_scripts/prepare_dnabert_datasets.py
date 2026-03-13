@@ -283,6 +283,7 @@ def main():
     idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
     idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
     print(set(ncbi_genome_representation))
+    print(set(ncbi_genome_category))
     # for idx in idx_pos_species:
     #     if ncbi_genome_representation[idx] == 'full':
     #         if ncbi_genome_category[idx] == 'single cell'
