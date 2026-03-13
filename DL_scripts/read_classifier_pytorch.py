@@ -816,37 +816,33 @@ if __name__ == "__main__":
             neg_recall = 0
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
-        test_metrics.close()
-        test_sum.close()
-
         # Measure overconfidence
-        # Create calibration curve (manually)
-        # Create bins of confidence scores for 0%-10%, 10%-20%, .., 90%-100%
-        n_bins = 10
-        bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
-        bin_ids = np.digitize(confidence_scores, bin_edges[1:-1])
-        print('bin_edges', bin_edges, len(bin_edges))
-        print('bin_ids', bin_ids, len(bin_ids))
-        # Compute values for x-axis = average predicted probability per bin
-        # Compute values for y-axis = fraction of true positives in each bin
-        mean_prob = []
-        mean_tp = []
-        # for b in range(n_bins):
-
         # calibration curve with sklearn
+        n_bins = 10
         true_cs = [i[1] for i in confidence_scores]
-        prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=10, strategy='uniform', pos_label=1)
+        prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=n_bins, strategy='uniform', pos_label=1)
         # prob_true = proportion of samples in each bin whose class is the positive class
         # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
         print('prob_pred', prob_pred)
+        # expected calibration error
+        bin_counts = np.histogram(true_cs, bins=n_bins, range=(0, 1))[0]
+        bin_weights = bin_counts / len(true_cs)
+        nonzero = bin_counts > 0
+        print(bin_counts)
+        print(bin_weights)
+        print(nonzero)
+        ece = np.sum(np.abs(prob_true[nonzero] - prob_pred[nonzero]) * bin_weights[nonzero])
+        test_sum.write(f'ECE\t{ece}')    
         plt.plot(prob_pred, prob_true, marker='.', label = 'BERT')
         plt.plot([0, 1], [0, 1], linestyle = '--', label = 'Ideally Calibrated')
         leg = plt.legend(loc = 'upper left')
         plt.xlabel('Average Predicted Probability in each bin')
         plt.ylabel('Ratio of positives')
         plt.savefig(os.path.join(args.output_dir, 'calibration_curve_sklearn.png'), dpi=300)
-
+        
+        test_metrics.close()
+        test_sum.close()
 
         end = datetime.datetime.now()
         total_time = end - start
