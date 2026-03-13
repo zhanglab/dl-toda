@@ -425,7 +425,7 @@ def main():
         with mp.Manager() as manager:
             sequences = manager.dict()
             genomes_size = manager.dict()
-            processes = [mp.Process(target=GetSequences, args=(args, grouped_labels[i], grouped_genomes[i], genomes_size, sequences)) for i in range(len(grouped_genomes))]
+            processes = [mp.Process(target=GetSequences, args=(args, grouped_genomes[i], grouped_labels[i], genomes_size, sequences)) for i in range(len(grouped_genomes))]
             for p in processes:
                 p.start()
             for p in processes:
