@@ -840,7 +840,7 @@ if __name__ == "__main__":
         # prob_pred = mean predicted probability for the positive class in each bin.
         print('prob_true', prob_true)
         print('prob_pred', prob_pred)
-        plt.plot(prob_pred, prob_true, marker='.')
+        plt.plot(prob_pred, prob_true, marker='.', label = 'BERT')
         plt.plot([0, 1], [0, 1], linestyle = '--', label = 'Ideally Calibrated')
         leg = plt.legend(loc = 'upper left')
         plt.xlabel('Average Predicted Probability in each bin')
