@@ -350,7 +350,7 @@ def main():
             # get sequences
             all_train_data = []
             all_val_data = []
-            with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     if labels[i] != args.pos_label:
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
