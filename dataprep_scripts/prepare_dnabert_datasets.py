@@ -33,7 +33,7 @@ def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
     label_seq = AddPctIdentity(pos_dict_pident, label_seq)
     label_seq = AddPctIdentity(neg_dict_pident, label_seq)
     # get coverage of testing genome
-    GetGenomeCov(label_seq, genomes_size[label], label, out_info, 'test')
+    GetGenomeCov(label_seq, genomes_size[genome], label, out_info, 'test')
     return label_seq
 
 def DownloadGenome(args, genome_id):
