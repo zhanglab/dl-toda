@@ -355,7 +355,7 @@ def main():
                     if labels[i] != args.pos_label:
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
                     else:
-                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
                     label_seq = sequences[labels[i]]
                     random.shuffle(label_seq)
                     label_seq = label_seq[:num_seq]
