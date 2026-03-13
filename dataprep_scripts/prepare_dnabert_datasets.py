@@ -164,8 +164,8 @@ def RunBlast(list_queries, list_labels, output_dir):
 def GetSequences(args, genomes, labels, genomes_size, sequences):
     for i in range(len(genomes)):
         DownloadGenome(args, genomes[i])
-        sam_vectors, size = PrepareDNASeq(args, genomes[i], 0.5)
-        cut_vectors, _ = PrepareDNASeq(args, genomes[i], 1.0)
+        sam_vectors, size = PrepareDNASeq(args, genomes[i], labels[i], 0.5)
+        cut_vectors, _ = PrepareDNASeq(args, genomes[i], labels[i], 1.0)
         genomes_size[genomes[i]] = size
         sequences[labels[i]] = sam_vectors + cut_vectors
     
