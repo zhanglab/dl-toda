@@ -384,6 +384,9 @@ def main():
             # get sequences
             all_train_data = []
             all_val_data = []
+            if not os.path.isdir(os.path.join(args.output_dir, 'train_dataset')):
+                os.makedirs(os.path.join(args.output_dir, 'train_dataset'))
+                
             with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     if labels[i] != args.pos_label:
@@ -401,8 +404,7 @@ def main():
                     all_val_data += val_data
             random.shuffle(all_val_data)
             random.shuffle(all_train_data)
-            if not os.path.isdir(os.path.join(args.output_dir, 'train_dataset')):
-                os.makedirs(os.path.join(args.output_dir, 'train_dataset'))
+            
             with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                 out_f.write(''.join(all_train_data))
 
