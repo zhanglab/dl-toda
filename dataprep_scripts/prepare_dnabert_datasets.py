@@ -258,7 +258,7 @@ def main():
     parser.add_argument('--input_dir', type=str, help='path to input directory')
     parser.add_argument('--output_dir', type=str, help='path to output file')
     parser.add_argument('--ncbi_db', type=str, help='path to ncbi database built with datasets')
-    parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r220.tsv file')
+    parser.add_argument('--gtdb_info', type=str, help='path to bac120_metadata_r226.tsv.gz file')
     parser.add_argument('--train_genomes_info', type=str, help='path to train_genomes.tsv file')
     parser.add_argument('--test_genomes_info', type=str, help='path to test_genomes.tsv file')
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
@@ -279,7 +279,7 @@ def main():
         os.makedirs(args.output_dir)
     
     # load gtdb info
-    genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(gtdb_info)
+    genomes, _, ncbi_genome_category, ncbi_genome_representation, gtdb_rep_genome, gtdb_taxonomy = get_gtdb_info(args.gtdb_info)
     idx_pos_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.pos_species]
     idx_neg_species = [i for i in range(len(gtdb_taxonomy)) if gtdb_taxonomy[i].split(';')[-1].split('__')[1] == args.neg_species]
     print(set(ncbi_genome_representation))
