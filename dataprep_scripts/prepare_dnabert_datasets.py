@@ -23,11 +23,12 @@ blastn_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/blastn"
 makeblastdb_exec = "/modules/uri_apps/software/BLAST+/2.15.0-gompi-2023a/bin/makeblastdb"
 ncbi_datasets_exec = "/work/pi_yingzhang_uri_edu/ccres/tools/datasets"
 
-def AddAlignmentsInfo(args, label_seq, label, genomes_size, out_info):
+def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
+    blastoutdir = os.path.join(args.output_dir, 'blast', genome)
     # get average percentage identity with train positive genome
     pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.pos_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
     # get average percentage identity with train negative genome
-    neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label[0], 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+    neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
     # update sequences with average percentage identity with positive and negative train genomes
     label_seq = AddPctIdentity(pos_dict_pident, label_seq)
     label_seq = AddPctIdentity(neg_dict_pident, label_seq)
@@ -427,6 +428,7 @@ def main():
         # get size of testing genomes
         pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
         neg_test_genome = test_genomes_df[test_genomes_df['label'].isin([int(i) for i in args.neg_label])]['genome'].tolist()[0]
+        genomes = [neg_test_genome, pos_test_genome]
         # Get sequences
         chunk_size = 1
         grouped_labels = [labels[i:i+chunk_size] for i in range(0, len(labels), chunk_size)]
@@ -443,7 +445,7 @@ def main():
                 p.join()
             print(genomes_size)
             # create BLAST database for testing genomes
-            for g in [pos_test_genome, neg_test_genome]:
+            for g in genomes:
                 fasta = glob.glob(os.path.join(args.ncbi_db, f'{g}/ncbi_dataset/data/{g}/*.fna'))[0]
                 blastoutdir = os.path.join(args.output_dir, 'blast', g)
                 if not os.path.isdir(blastoutdir):
@@ -459,16 +461,15 @@ def main():
             # labels_other = [l for l in labels if l != args.pos_label]
             # print(f'# negative labels: {len(labels_other)}')
             # num_sp_labels = len(labels_other)
-            num_seq = len(sequences[args.pos_label])
+            num_seq = min(len(sequences[args.pos_label]), len(sequences[args.neg_label]))
+            print(f'min num seq: {num_seq}\tpos:{len(sequences[args.pos_label])}\tneg:{len(sequences[args.neg_label])}')
             # num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
             # print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
             with open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
-                    if labels[i] != args.pos_label:
-                        label_seq = sequences[labels[i]][:num_seq]
-                    else:
-                        label_seq = sequences[labels[i]]
-                    label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes_size, out_info)
+                    label_seq = sequences[labels[i]][:num_seq]
+                    print(labels[i], len(label_seq))
+                    label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes[i], genomes_size, out_info)
                     out_f.write(''.join(label_seq))
                     out_info.write(f'{labels[i]}\t{len(label_seq)}\n')
 
