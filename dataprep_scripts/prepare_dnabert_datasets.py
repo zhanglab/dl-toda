@@ -265,7 +265,7 @@ def main():
     parser.add_argument('--dataset', type=str, help='type of dataset to prepare', choices=['train', 'test'])
     parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'])
     parser.add_argument('--kmer', type=int, help='length of kmers')
-    parser.add_argument('--rounds', type=int, help='number of times to sample DNA sequences from genomes')
+    parser.add_argument('--rounds', type=int, help='number of times to sample DNA sequences from genomes', default=1)
     parser.add_argument('--min_coverage', type=float, help='minimun coverage of training genome', default=1.5)
     parser.add_argument('--multiclass', action='store_true', default=False)
     parser.add_argument('--num_processes', type=int, help='number of processes to run in parallel')
