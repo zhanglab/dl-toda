@@ -337,13 +337,14 @@ def main():
             for p in processes:
                 p.join()
             # create BLAST database for training genome of label 1
-            fasta = glob.glob(os.path.join(args.ncbi_db, f'{pos_train_genome}/ncbi_dataset/data/{pos_train_genome}/*.fna'))[0]
+            pos_fasta = glob.glob(os.path.join(args.ncbi_db, f'{pos_train_genome}/ncbi_dataset/data/{pos_train_genome}/*.fna'))[0]
             blastoutdir = os.path.join(args.output_dir, 'blast', pos_train_genome)
             if not os.path.isdir(blastoutdir):
                 os.makedirs(blastoutdir)
-            result = subprocess.run([makeblastdb_exec, '-in', f'{fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
+            result = subprocess.run([makeblastdb_exec, '-in', f'{pos_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
             # BLAST training genomes
-            RunBlast([neg_train_fasta], [args.neg_label], blastoutdir)
+            neg_fasta = glob.glob(os.path.join(args.ncbi_db, f'{neg_train_genome}/ncbi_dataset/data/{neg_train_genome}/*.fna'))[0]
+            RunBlast([neg_fasta], [args.neg_label], blastoutdir)
             # calculate the number of sequences to sample per label
             num_seq = min([len(sequences[args.pos_label]), len(sequences[args.neg_label])])
             # get sequences
