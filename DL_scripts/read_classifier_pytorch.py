@@ -830,6 +830,7 @@ if __name__ == "__main__":
         plt.ylabel('Frequency')
         plt.title('Positive class')
         plt.savefig(os.path.join(args.output_dir, 'confidence_scores_pos.png'), dpi=300)
+        plt.clf()
         sns.histplot(FN, color='pink', label = 'FN')
         sns.histplot(TN, color='skyblue', label = 'TN')
         leg = plt.legend(loc = 'upper left')
