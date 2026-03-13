@@ -818,6 +818,7 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of confidence scores per group
+        print('prepare cs plot')
         sns.histplot(FP, color='pink', label = 'FP')
         sns.histplot(TP, color='skyblue', label = 'TP')
         sns.histplot(FN, color='orange', label = 'FN')
