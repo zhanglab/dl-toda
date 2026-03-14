@@ -457,7 +457,7 @@ def main():
                 RunBlast([neg_train_fasta, pos_train_fasta], labels, blastoutdir)
 
             # only for finetuning
-            out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_test_data_info_k{args.kmer}.tsv'), 'w')
+            out_info = open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_test_data_info_k{args.kmer}.tsv'), 'w')
             
             # # get sequences from negative label
             # labels_other = [l for l in labels if l != args.pos_label]
@@ -474,7 +474,7 @@ def main():
                     label_seq = sequences[labels[i]]
                     label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes[i], genomes_size, out_info)
                     out_f.write(''.join(label_seq))
-                    out_info.write(f'{labels[i]}\t{genomes[i]}\t{len(label_seq)}\n')
+                    out_info.write(f'{labels[i]}\t{genomes[i]}\t{genomes_size[genomes[i]]}\t{len(label_seq)}\n')
             out_info.close()
 
 
