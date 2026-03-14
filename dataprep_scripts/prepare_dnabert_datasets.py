@@ -364,10 +364,10 @@ def main():
             # genome_to_tax = dict(zip(genomes, gtdb_taxonomy))
     if args.dataset == 'train':
         # SelectGenomes(args)
-        train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-        train_genomes_df.columns = ['label','genome']
-        pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
+        # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+        # train_genomes_df.columns = ['label','genome']
+        # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+        # neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
         genomes = [neg_train_genome, pos_train_genome]
         # Get sequences
         chunk_size = 1
@@ -389,16 +389,16 @@ def main():
             result = subprocess.run([makeblastdb_exec, '-in', f'{pos_fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
             # BLAST training genomes
             neg_fasta = glob.glob(os.path.join(args.ncbi_db, f'{neg_train_genome}/ncbi_dataset/data/{neg_train_genome}/*.fna'))[0]
-            RunBlast([neg_fasta], [args.neg_label], blastoutdir)
+            RunBlast([neg_fasta], [0], blastoutdir)
             # calculate the number of sequences to sample per label
-            num_seq = min([len(sequences[args.pos_label]), len(sequences[args.neg_label])])
+            num_seq = min([len(sequences[0]), len(sequences[1])])
             # get sequences
             all_train_data = []
             all_val_data = []
             if not os.path.isdir(os.path.join(args.output_dir, 'train_dataset')):
                 os.makedirs(os.path.join(args.output_dir, 'train_dataset'))
 
-            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     if labels[i] == 0:
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '0', 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
@@ -416,10 +416,10 @@ def main():
             random.shuffle(all_val_data)
             random.shuffle(all_train_data)
             
-            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_train_data_k{args.kmer}.tsv'), 'w') as out_f:
                 out_f.write(''.join(all_train_data))
 
-            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_val_data_k{args.kmer}.tsv'), 'w') as out_f:
                 out_f.write(''.join(all_val_data))
 
     elif args.dataset == 'test':
