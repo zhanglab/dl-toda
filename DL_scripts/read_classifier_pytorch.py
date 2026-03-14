@@ -775,8 +775,8 @@ if __name__ == "__main__":
             predictions += batch_predictions
             confidence_scores += probs
             _, _, _, _, _, pct_id_pos_genome, pct_id_neg_genome = inputs
-            all_pct_id_pos_genome += pct_id_pos_genome
-            all_pct_id_neg_genome += pct_id_neg_genome
+            all_pct_id_pos_genome += pct_id_pos_genome.tolist()
+            all_pct_id_neg_genome += pct_id_neg_genome.tolist()
             
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
