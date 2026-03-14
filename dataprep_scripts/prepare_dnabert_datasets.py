@@ -44,12 +44,12 @@ def SelectGenomes(args):
             else:
                 neg_test_genomes.append(idx)
     assert len(pos_train_genomes) >= 2 and len(neg_train_genomes) >= 2, f'# genomes for {args.pos_species}: {len(pos_train_genomes)}\t# genomes for {args.neg_species}: {len(neg_train_genomes)}'
-    # with open(os.path.join(args.output_dir, 'train_genomes.tsv'), 'w') as g:
+    # with open(os.path.join(args.output_dir, 'train_genomes.tsv'), 'w') as f:
     #     random.shuffle(pos_train_genomes)
     #     random.shuffle(neg_train_genomes)
     #     f.write(f'{args.pos_species}\t{genomes[pos_train_genomes[0]][3:]}\t{genomes[pos_train_genomes[0]]}\t{ncbi_genome_category[pos_train_genomes[0]]}\t{ncbi_genome_representation[pos_train_genomes[0]]}\t{gtdb_rep_genome[pos_train_genomes[0]]}\t{gtdb_taxonomy[pos_train_genomes[0]]}\n')
     #     f.write(f'{args.neg_species}\t{genomes[neg_train_genomes[0]][3:]}\t{genomes[neg_train_genomes[0]]}\t{ncbi_genome_category[neg_train_genomes[0]]}\t{ncbi_genome_representation[neg_train_genomes[0]]}\t{gtdb_rep_genome[neg_train_genomes[0]]}\t{gtdb_taxonomy[neg_train_genomes[0]]}\n')
-    with open(os.path.join(args.output_dir, 'test_genomes.tsv'), 'w') as g:
+    with open(os.path.join(args.output_dir, 'test_genomes.tsv'), 'w') as f:
         random.shuffle(pos_test_genomes)
         random.shuffle(neg_test_genomes)
         f.write(f'{args.pos_species}\t{genomes[pos_test_genomes[0]][3:]}\t{genomes[pos_test_genomes[0]]}\t{ncbi_genome_category[pos_test_genomes[0]]}\t{ncbi_genome_representation[pos_test_genomes[0]]}\t{gtdb_rep_genome[pos_test_genomes[0]]}\t{gtdb_taxonomy[pos_test_genomes[0]]}\n')
