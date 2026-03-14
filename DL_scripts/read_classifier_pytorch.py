@@ -838,6 +838,7 @@ if __name__ == "__main__":
         plt.ylabel('Frequency')
         plt.title('Negative class')
         plt.savefig(os.path.join(args.output_dir, 'confidence_scores_neg.png'), dpi=300)
+        plt.clf()
         # Measure overconfidence
         # calibration curve with sklearn
         n_bins = 10
