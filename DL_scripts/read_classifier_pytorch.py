@@ -305,7 +305,8 @@ class TaxClassDataset(Dataset):
         elif self.mode == 'interpretability':
             tokens = self.data.iloc[idx,2].split(' ')
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
-        label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
+        # label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
+        label = torch.tensor(self.data.iloc[idx,0])
         return input_ids, attention_mask, position_ids, token_type_ids, label
 
 
