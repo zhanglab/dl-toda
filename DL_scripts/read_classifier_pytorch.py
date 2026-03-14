@@ -843,8 +843,8 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of percent identity with positive training genome
-        print('Positive', len(TP_pct_pos), len(FN_pct_pos), len(TN_pct_pos), len(FP_pct_pos))
-        print('Negative', len(TP_pct_neg), len(FN_pct_neg), len(TN_pct_neg), len(FP_pct_neg))
+        print('Positive', len(TP_pct_p), len(FN_pct_p), len(TN_pct_p), len(FP_pct_p))
+        print('Negative', len(TP_pct_n), len(FN_pct_n), len(TN_pct_n), len(FP_pct_n))
         values_p = TP_pct_p + FN_pct_p + TN_pct_p + FP_pct_p
         values_n = TP_pct_n + FN_pct_n + TN_pct_n + FP_pct_n
         groups_p = ['TP']*len(TP_pct_p)+['FN']*len(FN_pct_p)+['TN']*len(TN_pct_p)+['FP']*len(FP_pct_p)
