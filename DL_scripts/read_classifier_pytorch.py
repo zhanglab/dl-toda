@@ -854,6 +854,7 @@ if __name__ == "__main__":
         df = pd.DataFrame(data)
         plot = sns.FacetGrid(df, row='group', col='genome', sharey=False)
         plot.map_dataframe(sns.histplot, data=data)
+        plt.savefig(os.path.join(args.output_dir, 'pct_identity.png'), dpi=300)
         plt.clf()
         # plot distribution of confidence scores per group
         if len(TP_cs) > 0:
