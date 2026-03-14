@@ -307,7 +307,9 @@ class TaxClassDataset(Dataset):
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
         # label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         label = torch.tensor(self.data.iloc[idx,0])
-        return input_ids, attention_mask, position_ids, token_type_ids, label
+        pct_id_pos_genome = self.data.iloc[idx,5]
+        pct_id_neg_genome = self.data.iloc[idx,6]
+        return input_ids, attention_mask, position_ids, token_type_ids, label, pct_id_pos_genome, pct_id_neg_genome
 
 
 if __name__ == "__main__":
@@ -757,6 +759,8 @@ if __name__ == "__main__":
         ground_truth = []
         predictions = []
         confidence_scores = []
+        all_pct_id_pos_genome = []
+        all_pct_id_neg_genome = []
         # # randomly select sequences for analysis of embeddings 
         # seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
         # print(f'# sequences: {len(seq_selected)}')
@@ -770,63 +774,98 @@ if __name__ == "__main__":
             ground_truth += batch_ground_truth
             predictions += batch_predictions
             confidence_scores += probs
+            _, _, _, _, _, pct_id_pos_genome, pct_id_neg_genome = inputs
+            all_pct_id_pos_genome += pct_id_pos_genome
+            all_pct_id_neg_genome += pct_id_neg_genome
+            
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
         
         assert len(predictions) == len(ground_truth) == num_test_reads, f'problem with vectors: predictions: {len(predictions)}\tground truth: {len(ground_truth)}'
 
         # get number of FP, FN, TP, TN
-        FP = []
-        FN = []
-        TN = []
-        TP = []
+        FP_cs = []
+        FN_cs = []
+        TN_cs = []
+        TP_cs = []
+        FP_pct_pos = []
+        FN_pct_pos = []
+        TN_pct_pos = []
+        TP_pct_pos = []
+        FP_pct_neg = []
+        FN_pct_neg = []
+        TN_pct_neg = []
+        TP_pct_neg = []
         for i in range(len(predictions)):
             if ground_truth[i] == 1 and predictions[i] == 1:
-                TP.append(confidence_scores[i][1])
+                TP_cs.append(confidence_scores[i][1])
+                TP_pct_pos.append(all_pct_id_pos_genome[i])
+                TP_pct_neg.append(all_pct_id_neg_genome[i])
             elif ground_truth[i] == 1 and predictions[i] == 0:
-                FN.append(confidence_scores[i][0])
+                FN_cs.append(confidence_scores[i][0])
+                FN_pct_pos.append(all_pct_id_pos_genome[i])
+                FN_pct_neg.append(all_pct_id_neg_genome[i])
             elif ground_truth[i] == 0 and predictions[i] == 0:
-                TN.append(confidence_scores[i][0])
+                TN_cs.append(confidence_scores[i][0])
+                TN_pct_pos.append(all_pct_id_pos_genome[i])
+                TN_pct_neg.append(all_pct_id_neg_genome[i])
             elif ground_truth[i] == 0 and predictions[i] == 1:
-                FP.append(confidence_scores[i][1])
-        accuracy = round((len(TP)+len(TN))/(len(TP)+len(TN)+len(FN)+len(FP)),3)
+                FP_cs.append(confidence_scores[i][1])
+                FP_pct_pos.append(all_pct_id_pos_genome[i])
+                FP_pct_neg.append(all_pct_id_neg_genome[i])
+        accuracy = round((len(TP_cs)+len(TN_cs))/(len(TP_cs)+len(TN_cs)+len(FN_cs)+len(FP_cs)),3)
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
-        test_sum.write(f'TP\t{len(TP)}\nFN\t{len(FN)}\nTN\t{len(TN)}\nFP\t{len(FP)}\n')
+        test_sum.write(f'TP\t{len(TP_cs)}\nFN\t{len(FN_cs)}\nTN\t{len(TN_cs)}\nFP\t{len(FP_cs)}\n')
         
         try:
-            pos_precision = round(len(TP)/(len(TP)+len(FP)),3)
+            pos_precision = round(len(TP_cs)/(len(TP_cs)+len(FP_cs)),3)
         except ZeroDivisionError:
             pos_precision = 0
         test_metrics.write(f'1\tprecision\t{pos_precision}\n')
 
         try:
-            neg_precision = round(len(TN)/(len(TN)+len(FN)),3)
+            neg_precision = round(len(TN_cs)/(len(TN_cs)+len(FN_cs)),3)
         except ZeroDivisionError:
             neg_precision = 0
         test_metrics.write(f'0\tprecision\t{neg_precision}\n')
 
         try:
-            pos_recall = round(len(TP)/(len(TP)+len(FN)),3)
+            pos_recall = round(len(TP_cs)/(len(TP_cs)+len(FN_cs)),3)
         except ZeroDivisionError:
             pos_recall = 0
         test_metrics.write(f'1\trecall\t{pos_recall}\n')
 
         try:
-            neg_recall = round(len(TN)/(len(TN)+len(FP)),3)
+            neg_recall = round(len(TN_cs)/(len(TN_cs)+len(FP_cs)),3)
         except ZeroDivisionError:
             neg_recall = 0
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
+        # plot distribution of percent identity with positive training genome
+        values_positive = TP_pct_pos + FN_pct_pos + TN_pct_pos + FP_pct_pos
+        values_negative = TP_pct_neg + FN_pct_neg + TN_pct_neg + FP_pct_neg
+        data = {'value': values_positive + values_negative, 
+            'label': ['TP']*len(TP_pct_pos)+['FN']*len(FN_pct_pos)+['TN']*len(TN_pct_pos)+['FP']*len(FP_pct_pos)+['TP']*len(TP_pct_neg)+['FN']*len(FN_pct_neg)+['TN']*len(TN_pct_neg)+['FP']*len(FP_pct_neg),
+            'genome': ['Positive']*len(values_positive)+['Negative']*len(values_negative)}
+        df = pd.DataFrame(data)
+        print(df)
+        print(df.shape)
+        sns.boxplot(x='label', y='value', hue="genome", data=data)
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('')
+        plt.ylabel('Percent identity with training genome')
+        plt.savefig(os.path.join(args.output_dir, 'pct_identity.png'), dpi=300)
+        plt.clf()
         # plot distribution of confidence scores per group
-        if len(TP) > 0:
-            print('TP-CS', min(TP), max(TP), statistics.mean(TP))
-        if len(TN) > 0:
-            print('TN-CS', min(TN), max(TN), statistics.mean(TN))
-        if len(FP) > 0:
-            print('FP-CS', min(FP), max(FP), statistics.mean(FP))
-        if len(FN) > 0:
-            print('FN-CS', min(FN), max(FN), statistics.mean(FN))
+        if len(TP_cs) > 0:
+            print('TP-CS', min(TP_cs), max(TP_cs), statistics.mean(TP_cs))
+        if len(TN_cs) > 0:
+            print('TN-CS', min(TN_cs), max(TN_cs), statistics.mean(TN_cs))
+        if len(FP_cs) > 0:
+            print('FP-CS', min(FP_cs), max(FP_cs), statistics.mean(FP_cs))
+        if len(FN_cs) > 0:
+            print('FN-CS', min(FN_cs), max(FN_cs), statistics.mean(FN_cs))
         print('prepare cs plot')
         sns.histplot(FP, color='pink', label = 'FP')
         sns.histplot(TP, color='skyblue', label = 'TP')
