@@ -850,7 +850,7 @@ if __name__ == "__main__":
         groups_p = ['TP']*len(TP_pct_p)+['FN']*len(FN_pct_p)+['TN']*len(TN_pct_p)+['FP']*len(FP_pct_p)
         groups_n = ['TP']*len(TP_pct_n)+['FN']*len(FN_pct_n)+['TN']*len(TN_pct_n)+['FP']*len(FP_pct_n)
         genomes_value = ['Positive']*len(values_p) + ['Negative']*len(values_n)
-        data = {'value': values_p + values_n, 'group': groups_p + groups_n, 'genome': genomes_values}
+        data = {'value': values_p + values_n, 'group': groups_p + groups_n, 'genome': genomes_value}
         df = pd.DataFrame(data)
         plot = sns.FacetGrid(df, row='group', col='genome', sharey=False)
         plot.map_dataframe(sns.histplot, data=data)
