@@ -231,8 +231,11 @@ def train_step(inputs, model, optimizer, device):
 
     return train_loss.item(), train_accuracy
 
-def test_step(inputs, model, device):
-    input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
+def test_step(inputs, model, device, data):
+    if data == 'val':
+        input_ids, attention_mask, position_ids, token_type_ids, label = inputs
+    elif data == 'test':
+        input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
     input_ids = input_ids.to(device)
     attention_mask = attention_mask.to(device)
     position_ids = position_ids.to(device)
@@ -434,7 +437,7 @@ if __name__ == "__main__":
             epoch_val_loss = 0.0
             epoch_val_acc = 0.0
             for val_batch, inputs in enumerate(val_dataloader, 0):
-                val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device)
+                val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, 'val')
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
@@ -564,7 +567,7 @@ if __name__ == "__main__":
         annot_info = {}
         outfile = open(os.path.join(args.output_dir, f'interpretability_info.tsv'), 'w')
         for batch, inputs in enumerate(dataloader, 0):
-            _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device)
+            _, _, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device, 'test')
             print(f'batch size: {len(batch_predictions)}')
             print(f'batch: {batch}')
             # sequences_idx = [i for i in range(batch*prev_batch_size,(batch*prev_batch_size)+len(batch_predictions),1)]
