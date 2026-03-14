@@ -818,10 +818,14 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of confidence scores per group
-        print('TP-CS', min(TP), max(TP), statistics.mean(TP))
-        print('TN-CS', min(TN), max(TN), statistics.mean(TN))
-        print('FP-CS', min(FP), max(FP), statistics.mean(FP))
-        print('FN-CS', min(FN), max(FN), statistics.mean(FN))
+        if len(TP) > 0:
+            print('TP-CS', min(TP), max(TP), statistics.mean(TP))
+        if len(TN) > 0:
+            print('TN-CS', min(TN), max(TN), statistics.mean(TN))
+        if len(FP) > 0:
+            print('FP-CS', min(FP), max(FP), statistics.mean(FP))
+        if len(FN) > 0:
+            print('FN-CS', min(FN), max(FN), statistics.mean(FN))
         print('prepare cs plot')
         sns.histplot(FP, color='pink', label = 'FP')
         sns.histplot(TP, color='skyblue', label = 'TP')
