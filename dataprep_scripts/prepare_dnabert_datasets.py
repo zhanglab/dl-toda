@@ -44,11 +44,16 @@ def SelectGenomes(args):
             else:
                 neg_test_genomes.append(idx)
     assert len(pos_train_genomes) >= 2 and len(neg_train_genomes) >= 2, f'# genomes for {args.pos_species}: {len(pos_train_genomes)}\t# genomes for {args.neg_species}: {len(neg_train_genomes)}'
-    with open(os.path.join(args.output_dir, 'train_genomes.tsv'), 'w') as g:
-        random.shuffle(len(pos_train_genomes))
-        random.shuffle(len(neg_train_genomes))
-        f.write(f'{args.pos_species}\t{genomes[pos_train_genomes[0]][3:]}\t{genomes[pos_train_genomes[0]]}\t{ncbi_genome_category[pos_train_genomes[0]]}\t{ncbi_genome_representation[pos_train_genomes[0]]}\t{gtdb_rep_genome[pos_train_genomes[0]]}\t{gtdb_taxonomy[pos_train_genomes[0]]}\n')
-        f.write(f'{args.neg_species}\t{genomes[neg_train_genomes[0]][3:]}\t{genomes[neg_train_genomes[0]]}\t{ncbi_genome_category[neg_train_genomes[0]]}\t{ncbi_genome_representation[neg_train_genomes[0]]}\t{gtdb_rep_genome[neg_train_genomes[0]]}\t{gtdb_taxonomy[neg_train_genomes[0]]}\n')
+    # with open(os.path.join(args.output_dir, 'train_genomes.tsv'), 'w') as g:
+    #     random.shuffle(len(pos_train_genomes))
+    #     random.shuffle(len(neg_train_genomes))
+    #     f.write(f'{args.pos_species}\t{genomes[pos_train_genomes[0]][3:]}\t{genomes[pos_train_genomes[0]]}\t{ncbi_genome_category[pos_train_genomes[0]]}\t{ncbi_genome_representation[pos_train_genomes[0]]}\t{gtdb_rep_genome[pos_train_genomes[0]]}\t{gtdb_taxonomy[pos_train_genomes[0]]}\n')
+    #     f.write(f'{args.neg_species}\t{genomes[neg_train_genomes[0]][3:]}\t{genomes[neg_train_genomes[0]]}\t{ncbi_genome_category[neg_train_genomes[0]]}\t{ncbi_genome_representation[neg_train_genomes[0]]}\t{gtdb_rep_genome[neg_train_genomes[0]]}\t{gtdb_taxonomy[neg_train_genomes[0]]}\n')
+    with open(os.path.join(args.output_dir, 'test_genomes.tsv'), 'w') as g:
+        random.shuffle(len(pos_test_genomes))
+        random.shuffle(len(neg_test_genomes))
+        f.write(f'{args.pos_species}\t{genomes[pos_test_genomes[0]][3:]}\t{genomes[pos_test_genomes[0]]}\t{ncbi_genome_category[pos_test_genomes[0]]}\t{ncbi_genome_representation[pos_test_genomes[0]]}\t{gtdb_rep_genome[pos_test_genomes[0]]}\t{gtdb_taxonomy[pos_test_genomes[0]]}\n')
+        f.write(f'{args.neg_species}\t{genomes[neg_test_genomes[0]][3:]}\t{genomes[neg_test_genomes[0]]}\t{ncbi_genome_category[neg_test_genomes[0]]}\t{ncbi_genome_representation[neg_test_genomes[0]]}\t{gtdb_rep_genome[neg_test_genomes[0]]}\t{gtdb_taxonomy[neg_test_genomes[0]]}\n')
 
 
 def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
@@ -386,7 +391,7 @@ def main():
             all_val_data = []
             if not os.path.isdir(os.path.join(args.output_dir, 'train_dataset')):
                 os.makedirs(os.path.join(args.output_dir, 'train_dataset'))
-                
+
             with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     if labels[i] != args.pos_label:
@@ -412,6 +417,8 @@ def main():
                 out_f.write(''.join(all_val_data))
 
     elif args.dataset == 'test':
+        SelectGenomes(args)
+        sys.exit(1)
         # get testing genomes
         test_genomes_df = pd.read_csv(args.test_genomes_info, header=None, sep="\t")
         test_genomes_df.columns = ['label','genome']
