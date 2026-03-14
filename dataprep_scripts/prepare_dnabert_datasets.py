@@ -454,10 +454,7 @@ def main():
                 # BLAST genomes
                 pos_train_fasta = glob.glob(os.path.join(args.ncbi_db, f'{pos_train_genome}/ncbi_dataset/data/{pos_train_genome}/*.fna'))[0]
                 neg_train_fasta = glob.glob(os.path.join(args.ncbi_db, f'{neg_train_genome}/ncbi_dataset/data/{neg_train_genome}/*.fna'))[0]
-                RunBlast([neg_train_fasta, pos_train_fasta], labels, blastoutdir)
-
-            # only for finetuning
-            out_info = open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_test_data_info_k{args.kmer}.tsv'), 'w')
+                RunBlast([neg_train_fasta, pos_train_fasta], labels, blastoutdir)            
             
             # # get sequences from negative label
             # labels_other = [l for l in labels if l != args.pos_label]
@@ -469,6 +466,7 @@ def main():
             # print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
             if not os.path.isdir(os.path.join(args.output_dir, 'test_dataset')):
                 os.makedirs(os.path.join(args.output_dir, 'test_dataset'))
+            out_info = open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_test_data_info_k{args.kmer}.tsv'), 'w')
             with open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     label_seq = sequences[labels[i]]
