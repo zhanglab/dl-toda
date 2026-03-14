@@ -300,17 +300,21 @@ class TaxClassDataset(Dataset):
         return list(self.data.shape)[0]
 
     def __getitem__(self, idx):
-        if self.mode == 'testing' or self.mode == 'training':
-            tokens = self.data.iloc[idx,1].split(' ')
-        elif self.mode == 'interpretability':
-            tokens = self.data.iloc[idx,2].split(' ')
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
         # label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         label = torch.tensor(self.data.iloc[idx,0])
-        pct_id_pos_genome = torch.tensor(self.data.iloc[idx,5])
-        pct_id_neg_genome = torch.tensor(self.data.iloc[idx,6])
-        return input_ids, attention_mask, position_ids, token_type_ids, label, pct_id_pos_genome, pct_id_neg_genome
-
+        if self.mode == 'testing':
+            tokens = self.data.iloc[idx,1].split(' ')
+            pct_id_pos_genome = torch.tensor(self.data.iloc[idx,5])
+            pct_id_neg_genome = torch.tensor(self.data.iloc[idx,6])
+            return input_ids, attention_mask, position_ids, token_type_ids, label, pct_id_pos_genome, pct_id_neg_genome
+        elif self.mode == 'interpretability':
+            tokens = self.data.iloc[idx,2].split(' ')
+            return input_ids, attention_mask, position_ids, token_type_ids, label
+        elif self.mode == 'training':
+            tokens = self.data.iloc[idx,1].split(' ')
+            return input_ids, attention_mask, position_ids, token_type_ids, label
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
