@@ -60,9 +60,9 @@ def SelectGenomes(args):
 def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
     blastoutdir = os.path.join(args.output_dir, 'blast', genome)
     # get average percentage identity with train positive genome
-    pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.pos_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+    pos_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, f'{label}', 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
     # get average percentage identity with train negative genome
-    neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
+    neg_dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, f'{label}', 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')
     # update sequences with average percentage identity with positive and negative train genomes
     label_seq = AddPctIdentity(pos_dict_pident, label_seq)
     label_seq = AddPctIdentity(neg_dict_pident, label_seq)
@@ -396,10 +396,10 @@ def main():
 
             with open(os.path.join(args.output_dir, f'train_dataset/{args.bert_step}_l{args.pos_label}_train_data_info_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
-                    if labels[i] != args.pos_label:
-                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, labels[i], 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
+                    if labels[i] == 0:
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '0', 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
                     else:
-                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, args.neg_label, 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '1', 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
                     label_seq = sequences[labels[i]]
                     random.shuffle(label_seq)
                     label_seq = label_seq[:num_seq]
@@ -453,7 +453,7 @@ def main():
                 RunBlast([neg_train_fasta, pos_train_fasta], labels, blastoutdir)
 
             # only for finetuning
-            out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_l{args.pos_label}_test_data_info_k{args.kmer}.tsv'), 'w')
+            out_info = open(os.path.join(args.output_dir, f'{args.bert_step}_test_data_info_k{args.kmer}.tsv'), 'w')
             
             # # get sequences from negative label
             # labels_other = [l for l in labels if l != args.pos_label]
@@ -465,7 +465,7 @@ def main():
             # print(num, num_sp_labels, len(num_seq_per_sp), num_seq_per_sp[:3])
             if not os.path.isdir(os.path.join(args.output_dir, 'test_dataset')):
                 os.makedirs(os.path.join(args.output_dir, 'test_dataset'))
-            with open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_l{args.pos_label}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
+            with open(os.path.join(args.output_dir, f'test_dataset/{args.bert_step}_test_data_k{args.kmer}.tsv'), 'w') as out_f:
                 for i in range(len(labels)):
                     label_seq = sequences[labels[i]]
                     label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes[i], genomes_size, out_info)
