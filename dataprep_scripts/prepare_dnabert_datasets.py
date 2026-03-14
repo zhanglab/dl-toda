@@ -448,6 +448,8 @@ def main():
                     os.makedirs(blastoutdir)
                 result = subprocess.run([makeblastdb_exec, '-in', f'{fasta}', '-input_type', 'fasta', '-dbtype', 'nucl', '-out', f'{blastoutdir}/blastdb'])
                 # BLAST genomes
+                pos_train_fasta = glob.glob(os.path.join(args.ncbi_db, f'{pos_train_genome}/ncbi_dataset/data/{pos_train_genome}/*.fna'))[0]
+                neg_train_fasta = glob.glob(os.path.join(args.ncbi_db, f'{neg_train_genome}/ncbi_dataset/data/{neg_train_genome}/*.fna'))[0]
                 RunBlast([neg_train_fasta, pos_train_fasta], labels, blastoutdir)
 
             # only for finetuning
