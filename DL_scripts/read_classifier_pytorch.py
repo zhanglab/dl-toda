@@ -843,19 +843,37 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of percent identity with positive training genome
-        values_positive = TP_pct_pos + FN_pct_pos + TN_pct_pos + FP_pct_pos
-        values_negative = TP_pct_neg + FN_pct_neg + TN_pct_neg + FP_pct_neg
-        data = {'value': values_positive + values_negative, 
-            'label': ['TP']*len(TP_pct_pos)+['FN']*len(FN_pct_pos)+['TN']*len(TN_pct_pos)+['FP']*len(FP_pct_pos)+['TP']*len(TP_pct_neg)+['FN']*len(FN_pct_neg)+['TN']*len(TN_pct_neg)+['FP']*len(FP_pct_neg),
-            'genome': ['Positive']*len(values_positive)+['Negative']*len(values_negative)}
-        df = pd.DataFrame(data)
-        print(df)
-        print(df.shape)
-        sns.boxplot(x='label', y='value', hue="genome", data=data)
+        sns.histplot(TP_pct_pos, color='orange', label='positive')
+        sns.histplot(TP_pct_neg, color='purple', label='negative')
         leg = plt.legend(loc = 'upper left')
-        plt.xlabel('')
-        plt.ylabel('Percent identity with training genome')
-        plt.savefig(os.path.join(args.output_dir, 'pct_identity.png'), dpi=300)
+        plt.xlabel('Percent identity with training genome')
+        plt.ylabel('Frequency')
+        plt.title('True Positive')
+        plt.savefig(os.path.join(args.output_dir, 'TP_pct_identity.png'), dpi=300)
+        plt.clf()
+        sns.histplot(FN_pct_pos, color='orange', label='positive')
+        sns.histplot(FN_pct_neg, color='purple', label='negative')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Percent identity with training genome')
+        plt.ylabel('Frequency')
+        plt.title('False Negative')
+        plt.savefig(os.path.join(args.output_dir, 'FN_pct_identity.png'), dpi=300)
+        plt.clf()
+        sns.histplot(TN_pct_pos, color='orange', label='positive')
+        sns.histplot(TN_pct_neg, color='purple', label='negative')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Percent identity with training genome')
+        plt.ylabel('Frequency')
+        plt.title('True Negative')
+        plt.savefig(os.path.join(args.output_dir, 'TN_pct_identity.png'), dpi=300)
+        plt.clf()
+        sns.histplot(FP_pct_pos, color='orange', label='positive')
+        sns.histplot(FP_pct_neg, color='purple', label='negative')
+        leg = plt.legend(loc = 'upper left')
+        plt.xlabel('Percent identity with training genome')
+        plt.ylabel('Frequency')
+        plt.title('False Positive')
+        plt.savefig(os.path.join(args.output_dir, 'FP_pct_identity.png'), dpi=300)
         plt.clf()
         # plot distribution of confidence scores per group
         if len(TP_cs) > 0:
