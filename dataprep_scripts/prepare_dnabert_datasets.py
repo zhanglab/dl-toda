@@ -53,8 +53,8 @@ def SelectGenomes(args):
     with open(os.path.join(args.output_dir, 'test_genomes.tsv'), 'w') as f:
         random.shuffle(pos_test_genomes)
         random.shuffle(neg_test_genomes)
-        f.write(f'{args.pos_species}\t{genomes[pos_test_genomes[0]][3:]}\t{genomes[pos_test_genomes[0]]}\t{ncbi_genome_category[pos_test_genomes[0]]}\t{ncbi_genome_representation[pos_test_genomes[0]]}\t{gtdb_rep_genome[pos_test_genomes[0]]}\t{gtdb_taxonomy[pos_test_genomes[0]]}\n')
-        f.write(f'{args.neg_species}\t{genomes[neg_test_genomes[0]][3:]}\t{genomes[neg_test_genomes[0]]}\t{ncbi_genome_category[neg_test_genomes[0]]}\t{ncbi_genome_representation[neg_test_genomes[0]]}\t{gtdb_rep_genome[neg_test_genomes[0]]}\t{gtdb_taxonomy[neg_test_genomes[0]]}\n')
+        f.write(f'{args.pos_species}\t{genomes[pos_test_genomes[0]][3:]}\t{genomes[pos_test_genomes[0]]}\t{ncbi_genome_category[pos_test_genomes[0]]}\t{ncbi_genome_representation[pos_test_genomes[0]]}\t{gtdb_taxonomy[pos_test_genomes[0]]}\n')
+        f.write(f'{args.neg_species}\t{genomes[neg_test_genomes[0]][3:]}\t{genomes[neg_test_genomes[0]]}\t{ncbi_genome_category[neg_test_genomes[0]]}\t{ncbi_genome_representation[neg_test_genomes[0]]}\t{gtdb_taxonomy[neg_test_genomes[0]]}\n')
 
 
 def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
@@ -317,7 +317,8 @@ def main():
     # train_genomes_df.columns = ['label','genome']
     # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
     # neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
-    labels = [args.neg_label, args.pos_label]
+    # labels = [args.neg_label, args.pos_label]
+    labels = [0, 1]
     print('labels', labels)
 
         # if args.bert_step == 'pretraining' or args.multiclass:
@@ -419,13 +420,12 @@ def main():
 
     elif args.dataset == 'test':
         SelectGenomes(args)
-        sys.exit(1)
         # get testing genomes
-        test_genomes_df = pd.read_csv(args.test_genomes_info, header=None, sep="\t")
-        test_genomes_df.columns = ['label','genome']
+        test_genomes_df = pd.read_csv(os.path.join(args.output_dir, 'test_genomes.tsv'), header=None, sep="\t")
+        test_genomes_df.columns = ['species','genome','genome_w_db','ncbi_category','ncbi_representation','taxonomy']
         # get size of testing genomes
-        pos_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-        neg_test_genome = test_genomes_df[test_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
+        pos_test_genome = test_genomes_df[test_genomes_df['species'] == args.pos_species]['genome'].tolist()[0]
+        neg_test_genome = test_genomes_df[test_genomes_df['species'] == args.neg_species]['genome'].tolist()[0]
         genomes = [neg_test_genome, pos_test_genome]
         # Get sequences
         chunk_size = 1
