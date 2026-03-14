@@ -843,6 +843,8 @@ if __name__ == "__main__":
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
         
         # plot distribution of percent identity with positive training genome
+        print('Positive', len(TP_pct_pos), len(FN_pct_pos), len(TN_pct_pos), len(FP_pct_pos))
+        print('Negative', len(TP_pct_neg), len(FN_pct_neg), len(TN_pct_neg), len(FP_pct_neg))
         sns.histplot(TP_pct_pos, color='orange', label='positive')
         sns.histplot(TP_pct_neg, color='purple', label='negative')
         leg = plt.legend(loc = 'upper left')
