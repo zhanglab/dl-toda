@@ -313,10 +313,10 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     
-    # train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
-    # train_genomes_df.columns = ['label','genome']
-    # pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
-    # neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
+    train_genomes_df = pd.read_csv(args.train_genomes_info, header=None, sep="\t")
+    train_genomes_df.columns = ['label','genome']
+    pos_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.pos_label)]['genome'].tolist()[0]
+    neg_train_genome = train_genomes_df[train_genomes_df['label'] == int(args.neg_label)]['genome'].tolist()[0]
     # labels = [args.neg_label, args.pos_label]
     labels = [0, 1]
     print('labels', labels)
