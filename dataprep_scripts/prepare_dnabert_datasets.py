@@ -68,7 +68,9 @@ def AddAlignmentsInfo(args, label_seq, label, genome, genomes_size, out_info):
     label_seq = AddPctIdentity(neg_dict_pident, label_seq)
     # get coverage of testing genome
     GetGenomeCov(label_seq, genomes_size[genome], label, out_info, 'test')
-    return label_seq
+    # add genome accession ID
+    up_label_seq = [label_seq[i].rstrip() + f'\t{genome}\n' for i in range(len(label_seq))]
+    return up_label_seq
 
 def DownloadGenome(args, genome_id):
 	if f'{genome_id}' not in os.listdir(args.ncbi_db):
@@ -155,6 +157,8 @@ def PrepareDNASeq(args, genome_id, label, sampling_rate):
             print(min(seq_length), max(seq_length), statistics.mean(seq_length), statistics.median(seq_length))
             print(min(vector_length), max(vector_length), statistics.mean(vector_length), statistics.median(vector_length))
         j += 1
+    new_file.close()
+    new_file_seq.close()
     return vectors, genome_length
 
 def AddPctIdentity(dict_pident, sequences):
@@ -470,7 +474,8 @@ def main():
                     label_seq = sequences[labels[i]]
                     label_seq = AddAlignmentsInfo(args, label_seq, labels[i], genomes[i], genomes_size, out_info)
                     out_f.write(''.join(label_seq))
-                    out_info.write(f'{labels[i]}\t{len(label_seq)}\n')
+                    out_info.write(f'{labels[i]}\t{genomes[i]}\t{len(label_seq)}\n')
+            out_info.close()
 
 
 if __name__ == "__main__":
