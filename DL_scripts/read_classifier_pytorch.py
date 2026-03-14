@@ -307,8 +307,8 @@ class TaxClassDataset(Dataset):
         input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
         # label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         label = torch.tensor(self.data.iloc[idx,0])
-        pct_id_pos_genome = self.data.iloc[idx,5]
-        pct_id_neg_genome = self.data.iloc[idx,6]
+        pct_id_pos_genome = torch.tensor(self.data.iloc[idx,5])
+        pct_id_neg_genome = torch.tensor(self.data.iloc[idx,6])
         return input_ids, attention_mask, position_ids, token_type_ids, label, pct_id_pos_genome, pct_id_neg_genome
 
 
