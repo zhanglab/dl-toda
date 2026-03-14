@@ -459,8 +459,6 @@ def main():
             # labels_other = [l for l in labels if l != args.pos_label]
             # print(f'# negative labels: {len(labels_other)}')
             # num_sp_labels = len(labels_other)
-            print(len(sequences[args.pos_label]))
-            print(len(sequences[args.neg_label]))
             # num_seq = min([len(sequences[args.pos_label]), len(sequences[args.neg_label])])
             # print(f'min num seq: {num_seq}\tpos:{len(sequences[args.pos_label])}\tneg:{len(sequences[args.neg_label])}')
             # num_seq_per_sp = [num // num_sp_labels + (1 if x < num % num_sp_labels else 0) for x in range (num_sp_labels)]
