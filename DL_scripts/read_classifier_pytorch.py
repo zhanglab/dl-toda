@@ -211,7 +211,7 @@ def SummarizeResults(args, process, batch_num, sequences_idx, batch_idx, sequenc
 
 
 def train_step(inputs, model, optimizer, device):
-    input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
+    input_ids, attention_mask, position_ids, token_type_ids, label = inputs
     input_ids = input_ids.to(device)
     attention_mask = attention_mask.to(device)
     position_ids = position_ids.to(device)
