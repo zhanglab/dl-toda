@@ -403,7 +403,7 @@ def main():
                     if labels[i] == 0:
                         dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '0', 'blastn.out'), identity_thr=MIN_IDENTITY, key='query')
                     else:
-                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '1', 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
+                        dict_pident = GetMatchRegions(args, os.path.join(blastoutdir, '0', 'blastn.out'), identity_thr=MIN_IDENTITY, key='subject')   
                     label_seq = sequences[labels[i]]
                     random.shuffle(label_seq)
                     label_seq = label_seq[:num_seq]
