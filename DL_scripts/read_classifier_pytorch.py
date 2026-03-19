@@ -244,6 +244,8 @@ def test_step(inputs, model, device, data):
     label = label.to(device)
     outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
     test_loss = outputs.loss
+    print(label)
+    print(outputs)
     _, predictions = torch.max(outputs.logits, dim=1)
     probs = nn.functional.softmax(outputs.logits, dim=1)
     label = torch.flatten(label)
