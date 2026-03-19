@@ -235,7 +235,8 @@ def test_step(inputs, model, device, data):
     if data == 'val':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs
     elif data == 'test':
-        input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
+        # input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
+        input_ids, attention_mask, position_ids, token_type_ids, label
     input_ids = input_ids.to(device)
     attention_mask = attention_mask.to(device)
     position_ids = position_ids.to(device)
