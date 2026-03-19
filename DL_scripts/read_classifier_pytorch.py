@@ -761,7 +761,7 @@ if __name__ == "__main__":
                 seq = list_tokens[0]
                 for i in range(1, len(list_tokens), 1):
                     seq += list_tokens[i][-1]
-                test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3])])
+                test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
 
         epoch_test_loss = 0.0
         epoch_test_acc = 0.0
@@ -783,9 +783,9 @@ if __name__ == "__main__":
             ground_truth += batch_ground_truth
             predictions += batch_predictions
             confidence_scores += probs
-            _, _, _, _, _, pct_id_p_genome, pct_id_n_genome = inputs
-            all_pct_id_p_genome += pct_id_p_genome.tolist()
-            all_pct_id_n_genome += pct_id_n_genome.tolist()
+            # _, _, _, _, _, pct_id_p_genome, pct_id_n_genome = inputs
+            # all_pct_id_p_genome += pct_id_p_genome.tolist()
+            # all_pct_id_n_genome += pct_id_n_genome.tolist()
             
         # update testing loss
         epoch_test_loss = round(epoch_test_loss/(batch+1),3)
@@ -797,31 +797,37 @@ if __name__ == "__main__":
         FN_cs = []
         TN_cs = []
         TP_cs = []
-        FP_pct_p = []
-        FN_pct_p = []
-        TN_pct_p = []
-        TP_pct_p = []
-        FP_pct_n = []
-        FN_pct_n = []
-        TN_pct_n = []
-        TP_pct_n = []
-        for i in range(len(predictions)):
-            if ground_truth[i] == 1 and predictions[i] == 1:
-                TP_cs.append(confidence_scores[i][1])
-                TP_pct_p.append(all_pct_id_p_genome[i])
-                TP_pct_n.append(all_pct_id_n_genome[i])
-            elif ground_truth[i] == 1 and predictions[i] == 0:
-                FN_cs.append(confidence_scores[i][0])
-                FN_pct_p.append(all_pct_id_p_genome[i])
-                FN_pct_n.append(all_pct_id_n_genome[i])
-            elif ground_truth[i] == 0 and predictions[i] == 0:
-                TN_cs.append(confidence_scores[i][0])
-                TN_pct_p.append(all_pct_id_p_genome[i])
-                TN_pct_n.append(all_pct_id_n_genome[i])
-            elif ground_truth[i] == 0 and predictions[i] == 1:
-                FP_cs.append(confidence_scores[i][1])
-                FP_pct_p.append(all_pct_id_p_genome[i])
-                FP_pct_n.append(all_pct_id_n_genome[i])
+        # FP_pct_p = []
+        # FN_pct_p = []
+        # TN_pct_p = []
+        # TP_pct_p = []
+        # FP_pct_n = []
+        # FN_pct_n = []
+        # TN_pct_n = []
+        # TP_pct_n = []
+        with open(os.path.join(args.output_dir, 'cs_length.tsv'), 'w') as f:
+            for i in range(len(predictions)):
+                f.write(f'{test_sequences[i][3]}\t')
+                if ground_truth[i] == 1 and predictions[i] == 1:
+                    TP_cs.append(confidence_scores[i][1])
+                    f.write(f'{confidence_scores[i][1]}\tTP\n')
+                    # TP_pct_p.append(all_pct_id_p_genome[i])
+                    # TP_pct_n.append(all_pct_id_n_genome[i])
+                elif ground_truth[i] == 1 and predictions[i] == 0:
+                    FN_cs.append(confidence_scores[i][0])
+                    f.write(f'{confidence_scores[i][0]}\tFN\n')
+                    # FN_pct_p.append(all_pct_id_p_genome[i])
+                    # FN_pct_n.append(all_pct_id_n_genome[i])
+                elif ground_truth[i] == 0 and predictions[i] == 0:
+                    TN_cs.append(confidence_scores[i][0])
+                    f.write(f'{confidence_scores[i][0]}\tTN\n')
+                    # TN_pct_p.append(all_pct_id_p_genome[i])
+                    # TN_pct_n.append(all_pct_id_n_genome[i])
+                elif ground_truth[i] == 0 and predictions[i] == 1:
+                    FP_cs.append(confidence_scores[i][1])
+                    f.write(f'{confidence_scores[i][1]}\tFP\n')
+                    # FP_pct_p.append(all_pct_id_p_genome[i])
+                    # FP_pct_n.append(all_pct_id_n_genome[i])
         accuracy = round((len(TP_cs)+len(TN_cs))/(len(TP_cs)+len(TN_cs)+len(FN_cs)+len(FP_cs)),3)
         print(accuracy, epoch_test_acc)
         test_sum.write(f'accuracy\t{accuracy}\nloss\t{epoch_test_loss}\n#examples\t{len(predictions)}\n')
@@ -850,71 +856,74 @@ if __name__ == "__main__":
         except ZeroDivisionError:
             neg_recall = 0
         test_metrics.write(f'0\trecall\t{neg_recall}\n')
+
         
-        # plot distribution of percent identity with positive training genome
-        print('Positive', len(TP_pct_p), len(FN_pct_p), len(TN_pct_p), len(FP_pct_p))
-        print('Negative', len(TP_pct_n), len(FN_pct_n), len(TN_pct_n), len(FP_pct_n))
-        values_p = TP_pct_p + FN_pct_p + TN_pct_p + FP_pct_p
-        values_n = TP_pct_n + FN_pct_n + TN_pct_n + FP_pct_n
-        groups_p = ['TP']*len(TP_pct_p)+['FN']*len(FN_pct_p)+['TN']*len(TN_pct_p)+['FP']*len(FP_pct_p)
-        groups_n = ['TP']*len(TP_pct_n)+['FN']*len(FN_pct_n)+['TN']*len(TN_pct_n)+['FP']*len(FP_pct_n)
-        genomes_value = ['Positive']*len(values_p) + ['Negative']*len(values_n)
-        data = {'value': values_p + values_n, 'group': groups_p + groups_n, 'genome': genomes_value}
-        df = pd.DataFrame(data)
-        plot = sns.FacetGrid(df, row='group', col='genome', sharey=False)
-        plot.map_dataframe(sns.histplot, data=data)
-        plt.savefig(os.path.join(args.output_dir, 'pct_identity.png'), dpi=300)
-        plt.clf()
-        # plot distribution of confidence scores per group
-        if len(TP_cs) > 0:
-            print('TP-CS', min(TP_cs), max(TP_cs), statistics.mean(TP_cs))
-        if len(TN_cs) > 0:
-            print('TN-CS', min(TN_cs), max(TN_cs), statistics.mean(TN_cs))
-        if len(FP_cs) > 0:
-            print('FP-CS', min(FP_cs), max(FP_cs), statistics.mean(FP_cs))
-        if len(FN_cs) > 0:
-            print('FN-CS', min(FN_cs), max(FN_cs), statistics.mean(FN_cs))
-        print('prepare cs plot')
-        sns.histplot(FP_cs, color='pink', label = 'FP')
-        sns.histplot(TP_cs, color='skyblue', label = 'TP')
-        leg = plt.legend(loc = 'upper left')
-        plt.xlabel('Confidence score')
-        plt.ylabel('Frequency')
-        plt.title('Positive class')
-        plt.savefig(os.path.join(args.output_dir, 'confidence_scores_pos.png'), dpi=300)
-        plt.clf()
-        sns.histplot(FN_cs, color='pink', label = 'FN')
-        sns.histplot(TN_cs, color='skyblue', label = 'TN')
-        leg = plt.legend(loc = 'upper left')
-        plt.xlabel('Confidence score')
-        plt.ylabel('Frequency')
-        plt.title('Negative class')
-        plt.savefig(os.path.join(args.output_dir, 'confidence_scores_neg.png'), dpi=300)
-        plt.clf()
-        # Measure overconfidence
-        # calibration curve with sklearn
-        n_bins = 10
-        true_cs = [i[1] for i in confidence_scores]
-        prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=n_bins, strategy='uniform', pos_label=1)
-        # prob_true = proportion of samples in each bin whose class is the positive class
-        # prob_pred = mean predicted probability for the positive class in each bin.
-        print('prob_true', prob_true)
-        print('prob_pred', prob_pred)
-        # expected calibration error
-        bin_counts = np.histogram(true_cs, bins=n_bins, range=(0, 1))[0]
-        bin_weights = bin_counts / len(true_cs)
-        nonzero = bin_counts > 0
-        print(bin_counts)
-        print(bin_weights)
-        print(nonzero)
-        ece = np.sum(np.abs(prob_true[nonzero] - prob_pred[nonzero]) * bin_weights[nonzero])
-        test_sum.write(f'ECE\t{ece}')    
-        plt.plot(prob_pred, prob_true, marker='.', label = 'BERT')
-        plt.plot([0, 1], [0, 1], linestyle = '--', label = 'Ideally Calibrated')
-        leg = plt.legend(loc = 'upper left')
-        plt.xlabel('Average Predicted Probability in each bin')
-        plt.ylabel('Ratio of positives')
-        plt.savefig(os.path.join(args.output_dir, 'calibration_curve_sklearn.png'), dpi=300)
+
+        
+        # # plot distribution of percent identity with positive training genome
+        # print('Positive', len(TP_pct_p), len(FN_pct_p), len(TN_pct_p), len(FP_pct_p))
+        # print('Negative', len(TP_pct_n), len(FN_pct_n), len(TN_pct_n), len(FP_pct_n))
+        # values_p = TP_pct_p + FN_pct_p + TN_pct_p + FP_pct_p
+        # values_n = TP_pct_n + FN_pct_n + TN_pct_n + FP_pct_n
+        # groups_p = ['TP']*len(TP_pct_p)+['FN']*len(FN_pct_p)+['TN']*len(TN_pct_p)+['FP']*len(FP_pct_p)
+        # groups_n = ['TP']*len(TP_pct_n)+['FN']*len(FN_pct_n)+['TN']*len(TN_pct_n)+['FP']*len(FP_pct_n)
+        # genomes_value = ['Positive']*len(values_p) + ['Negative']*len(values_n)
+        # data = {'value': values_p + values_n, 'group': groups_p + groups_n, 'genome': genomes_value}
+        # df = pd.DataFrame(data)
+        # plot = sns.FacetGrid(df, row='group', col='genome', sharey=False)
+        # plot.map_dataframe(sns.histplot, data=data)
+        # plt.savefig(os.path.join(args.output_dir, 'pct_identity.png'), dpi=300)
+        # plt.clf()
+        # # plot distribution of confidence scores per group
+        # if len(TP_cs) > 0:
+        #     print('TP-CS', min(TP_cs), max(TP_cs), statistics.mean(TP_cs))
+        # if len(TN_cs) > 0:
+        #     print('TN-CS', min(TN_cs), max(TN_cs), statistics.mean(TN_cs))
+        # if len(FP_cs) > 0:
+        #     print('FP-CS', min(FP_cs), max(FP_cs), statistics.mean(FP_cs))
+        # if len(FN_cs) > 0:
+        #     print('FN-CS', min(FN_cs), max(FN_cs), statistics.mean(FN_cs))
+        # print('prepare cs plot')
+        # sns.histplot(FP_cs, color='pink', label = 'FP')
+        # sns.histplot(TP_cs, color='skyblue', label = 'TP')
+        # leg = plt.legend(loc = 'upper left')
+        # plt.xlabel('Confidence score')
+        # plt.ylabel('Frequency')
+        # plt.title('Positive class')
+        # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_pos.png'), dpi=300)
+        # plt.clf()
+        # sns.histplot(FN_cs, color='pink', label = 'FN')
+        # sns.histplot(TN_cs, color='skyblue', label = 'TN')
+        # leg = plt.legend(loc = 'upper left')
+        # plt.xlabel('Confidence score')
+        # plt.ylabel('Frequency')
+        # plt.title('Negative class')
+        # plt.savefig(os.path.join(args.output_dir, 'confidence_scores_neg.png'), dpi=300)
+        # plt.clf()
+        # # Measure overconfidence
+        # # calibration curve with sklearn
+        # n_bins = 10
+        # true_cs = [i[1] for i in confidence_scores]
+        # prob_true, prob_pred = calibration_curve(ground_truth, true_cs, n_bins=n_bins, strategy='uniform', pos_label=1)
+        # # prob_true = proportion of samples in each bin whose class is the positive class
+        # # prob_pred = mean predicted probability for the positive class in each bin.
+        # print('prob_true', prob_true)
+        # print('prob_pred', prob_pred)
+        # # expected calibration error
+        # bin_counts = np.histogram(true_cs, bins=n_bins, range=(0, 1))[0]
+        # bin_weights = bin_counts / len(true_cs)
+        # nonzero = bin_counts > 0
+        # print(bin_counts)
+        # print(bin_weights)
+        # print(nonzero)
+        # ece = np.sum(np.abs(prob_true[nonzero] - prob_pred[nonzero]) * bin_weights[nonzero])
+        # test_sum.write(f'ECE\t{ece}')    
+        # plt.plot(prob_pred, prob_true, marker='.', label = 'BERT')
+        # plt.plot([0, 1], [0, 1], linestyle = '--', label = 'Ideally Calibrated')
+        # leg = plt.legend(loc = 'upper left')
+        # plt.xlabel('Average Predicted Probability in each bin')
+        # plt.ylabel('Ratio of positives')
+        # plt.savefig(os.path.join(args.output_dir, 'calibration_curve_sklearn.png'), dpi=300)
         
         test_metrics.close()
         test_sum.close()
