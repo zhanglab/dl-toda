@@ -244,8 +244,6 @@ def test_step(inputs, model, device, data):
     label = label.to(device)
     outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
     test_loss = outputs.loss
-    print(label)
-    print(outputs)
     _, predictions = torch.max(outputs.logits, dim=1)
     probs = nn.functional.softmax(outputs.logits, dim=1)
     label = torch.flatten(label)
@@ -772,8 +770,8 @@ if __name__ == "__main__":
         ground_truth = []
         predictions = []
         confidence_scores = []
-        all_pct_id_p_genome = []
-        all_pct_id_n_genome = []
+        # all_pct_id_p_genome = []
+        # all_pct_id_n_genome = []
         # # randomly select sequences for analysis of embeddings 
         # seq_selected = random.sample(range(0, len(test_sequences) + 1), args.sample_size)
         # print(f'# sequences: {len(seq_selected)}')
@@ -781,6 +779,12 @@ if __name__ == "__main__":
         # incorrect_sequence_embeddings = []
         
         for batch, inputs in enumerate(test_dataloader, 0):
+            input_ids, attention_mask, position_ids, token_type_ids, label = inputs
+            print(input_ids)
+            print(attention_mask)
+            print(position_ids)
+            print(token_type_ids)
+            print(label)
             test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device, 'test')
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
