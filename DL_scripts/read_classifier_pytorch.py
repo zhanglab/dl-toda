@@ -304,8 +304,8 @@ class TaxClassDataset(Dataset):
         return list(self.data.shape)[0]
 
     def __getitem__(self, idx):
-        # label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
-        label = torch.tensor(self.data.iloc[idx,0])
+        label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
+        # label = torch.tensor(self.data.iloc[idx,0])
         if self.mode == 'testing':
             tokens = self.data.iloc[idx,1].split(' ')
             input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
@@ -780,11 +780,6 @@ if __name__ == "__main__":
         
         for batch, inputs in enumerate(test_dataloader, 0):
             input_ids, attention_mask, position_ids, token_type_ids, label = inputs
-            print(input_ids)
-            print(attention_mask)
-            print(position_ids)
-            print(token_type_ids)
-            print(label)
             test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device, 'test')
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
