@@ -16,6 +16,7 @@ import multiprocessing as mp
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from models import AlexNet
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertForSequenceClassification, BertConfig
 from sklearn.decomposition import PCA
@@ -24,6 +25,7 @@ from sklearn.manifold import TSNE
 from sklearn.calibration import calibration_curve
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from vis_scripts.testing_utils import *
+
 
 
 # def ProcessEmbeddings(args, embeddings):
@@ -334,11 +336,12 @@ if __name__ == "__main__":
     parser.add_argument('--learning_curves', help='create learning curves', action='store_true')
     parser.add_argument('--label', type=int, help='label of interest')
     parser.add_argument('--patience', type=int, help='patience number for early stopping')
-    parser.add_argument('--bert_config_file', type=str, help='path to bert config file containing parameters')
+    parser.add_argument('--config_file', type=str, help='path to config file containing parameters')
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
     parser.add_argument('--kmer', type=str, help='kmer value')
     parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
+    parser.add_argument('--model_type', type=str, help='type of model', choices=['cnn','bert'])
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
     parser.add_argument('--sample_size', type=int, help='number of DNA sequences to sample from the test set for embeddings analysis', default=100)
@@ -350,7 +353,7 @@ if __name__ == "__main__":
     parser.add_argument('--lc_dir', type=str, help='input directory for creating learning curves')
     parser.add_argument('--testing_dir', type=str, help='input directory for summarizing testing results')
     parser.add_argument('--annotations_dir', type=str, help='path to directory to store annotations downloaded from NCBI')
-    parser
+    parser.add_argument('--epoch_to_resume', type=int, help='epoch to resume from for cnn model')
     args = parser.parse_args()
 
     start = datetime.datetime.now()
@@ -377,18 +380,30 @@ if __name__ == "__main__":
         train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
         val_dataloader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
         
-        # load parameters for BERT
-        with open(args.bert_config_file, "r") as f:
+        # load parameters
+        with open(args.config_file, "r") as f:
             config_dict = json.load(f)
         print(config_dict)
-        # create BERT config object and model
-        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
-        if args.resume:
-            model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
-        else:
-            model = BertForSequenceClassification(config=bert_config)
-        model.to(device)
-
+        if args.model_type == 'bert':
+            # create BERT config object and model
+            bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+            if args.resume:
+                model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+            else:
+                model = BertForSequenceClassification(config=bert_config)
+            model.to(device)
+        elif args.model_type == 'cnn':
+            if args.resume:
+                # load model in SavedModel format
+                #model = tf.keras.models.load_model(args.model)
+                # load model saved with checkpoints
+                model = AlexNet(args, config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
+                checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+                checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+            else:
+                model = AlexNet(args, config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"], args.output_dir)
+            model.to(device)
+            
         embeddings = model.bert.embeddings.word_embeddings.weight
         data = []
         with open(args.tokens_file, 'r') as f:
