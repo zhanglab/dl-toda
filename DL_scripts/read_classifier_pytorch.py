@@ -428,7 +428,7 @@ if __name__ == "__main__":
                 checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
                 checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
             else:
-                model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"], args.output_dir)
+                model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
             model.to(device)
 
         embeddings = model.bert.embeddings.word_embeddings.weight
