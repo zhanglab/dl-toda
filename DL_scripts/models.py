@@ -17,24 +17,24 @@ class AlexNet(nn.Module):
         
         # Convolutional layers
         self.features = nn.Sequential(
-            nn.Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4), padding='same'),
+            nn.Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4), padding=5),
             nn.BatchNorm2d(96, eps=1e-2, momentum=0.01), # momentum: TF=0.99 (1 - PyTorch momentum)
             nn.ReLu(),
             
-            nn.Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding='same'),
+            nn.Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding=2),
             nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
             
-            nn.Conv2d(256, 384, kernel_size=(3, 3), stride=(1, 1), padding='same'),
+            nn.Conv2d(256, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
             nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
             nn.ReLU(),
             
-            nn.Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding='same'),
+            nn.Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
             nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
             nn.ReLU(),
             
-            nn.Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding='same'),
+            nn.Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=1),
             nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
