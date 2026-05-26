@@ -222,11 +222,19 @@ def train_step(inputs, model, optimizer, device, model_type):
         label = label.to(device)
         # set the gradients of tensord to 0
         optimizer.zero_grad()
-        # forward + backward + optimize
+        # forward
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
     elif model_type == 'cnn':
-        
+        input_ids, label = inputs
+        input_ids = input_ids.to(device)
+        label = label.to(device)
+        # set the gradients of tensord to 0
+        optimizer.zero_grad()
+        # forward
+        outputs = model(input_ids=input_ids, labels=label)
+
     train_loss = outputs.loss
+    # backward + optimize
     train_loss.backward()
     optimizer.step()
 
@@ -260,10 +268,11 @@ def test_step(inputs, model, device, data, model_type):
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
-    def __init__(self, tsv_file, tokens_file, label, mode):
+    def __init__(self, tsv_file, tokens_file, label, mode, model_type):
         self.data = pd.read_csv(tsv_file, sep='\t', header=None)
         self.tokens_dict = self.get_tokens_id(tokens_file)
         self.label = label
+        self.model_type = model_type
         self.max_position_embedding = 512
         self.mode = mode
 
@@ -279,7 +288,7 @@ class TaxClassDataset(Dataset):
             label = [0]
         return label
     
-    def prepare_input(self, tokens):
+    def prepare_bert_input(self, tokens):
         # adjust the list of tokens according to the max size allowed (max position embedding minus special tokens CLS and SEP)
         if len(tokens) > self.max_position_embedding - 2:
             tokens = tokens[:self.max_position_embedding - 2]
@@ -304,6 +313,25 @@ class TaxClassDataset(Dataset):
         position_ids = torch.tensor(list(range(self.max_position_embedding)))
         token_type_ids = torch.tensor([0] * self.max_position_embedding)
         return torch.tensor(input_ids), torch.tensor(attention_mask), position_ids, token_type_ids
+    
+    def prepare_cnn_input(self, tokens):
+        # adjust the list of tokens according to the max size allowed (max position embedding minus special tokens CLS and SEP)
+        if len(tokens) > self.max_position_embedding - 2:
+            tokens = tokens[:self.max_position_embedding - 2]
+        
+        # replace tokens by their id
+        for i in range(len(tokens)):
+            if tokens[i] in self.tokens_dict:
+                input_ids.append(self.tokens_dict[tokens[i]])
+            else:
+                input_ids.append(self.tokens_dict['[UNK]'])
+
+        # pad vector if necessary
+        if len(input_ids) < self.max_position_embedding:
+            num_padded_values = self.max_position_embedding - len(input_ids)
+            input_ids = input_ids + [self.tokens_dict['[PAD]']] * num_padded_values
+
+        return torch.tensor(input_ids)
 
     def __len__(self):
         return list(self.data.shape)[0]
@@ -311,21 +339,17 @@ class TaxClassDataset(Dataset):
     def __getitem__(self, idx):
         label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         # label = torch.tensor(self.data.iloc[idx,0])
-        if self.mode == 'testing':
-            tokens = self.data.iloc[idx,1].split(' ')
-            input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
-            # pct_id_pos_genome = torch.tensor(self.data.iloc[idx,5])
-            # pct_id_neg_genome = torch.tensor(self.data.iloc[idx,6])
-            # return input_ids, attention_mask, position_ids, token_type_ids, label, pct_id_pos_genome, pct_id_neg_genome
-            return input_ids, attention_mask, position_ids, token_type_ids, label
+        if self.mode in ['testing','training']:
+            tokens = self.data.iloc[idx,1].split(' ') 
         elif self.mode == 'interpretability':
             tokens = self.data.iloc[idx,2].split(' ')
-            input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
+        
+        if self.model_type == 'bert':
+            input_ids, attention_mask, position_ids, token_type_ids = self.prepare_bert_input(tokens)
             return input_ids, attention_mask, position_ids, token_type_ids, label
-        elif self.mode == 'training':
-            tokens = self.data.iloc[idx,1].split(' ')
-            input_ids, attention_mask, position_ids, token_type_ids = self.prepare_input(tokens)
-            return input_ids, attention_mask, position_ids, token_type_ids, label
+        elif self.model_type == 'cnn':
+            input_ids = self.prepare_cnn_input(tokens)
+            return input_ids, label
         
 
 if __name__ == "__main__":
