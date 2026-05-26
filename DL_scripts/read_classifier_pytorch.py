@@ -439,7 +439,8 @@ if __name__ == "__main__":
                 model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
             model.to(device)
             embeddings = model.embedding.weight.detach().cpu().numpy()
-            loss_fn = nn.CrossEntropyLoss()
+            # loss_fn = nn.CrossEntropyLoss()
+            loss_fn = nn.BCEWithLogitsLoss()
         
         data = []
         with open(args.tokens_file, 'r') as f:
