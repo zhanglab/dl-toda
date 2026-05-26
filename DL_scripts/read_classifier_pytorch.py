@@ -244,25 +244,26 @@ def train_step(inputs, model, optimizer, device, model_type):
 
     return train_loss.item(), train_accuracy
 
-def test_step(inputs, model, device, data, model_type):
-    if data == 'val':
-        input_ids, attention_mask, position_ids, token_type_ids, label = inputs
-    elif data == 'test':
-        # input_ids, attention_mask, position_ids, token_type_ids, label, _, _ = inputs
-        input_ids, attention_mask, position_ids, token_type_ids, label = inputs
-    input_ids = input_ids.to(device)
-    attention_mask = attention_mask.to(device)
-    position_ids = position_ids.to(device)
-    token_type_ids = token_type_ids.to(device)
-    label = label.to(device)
-    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
+def test_step(inputs, model, device, model_type):
+    if model_type == 'bert':
+        input_ids, attention_mask, position_ids, token_type_ids, label = inputs   
+         input_ids = input_ids.to(device)
+        label = label.to(device)
+        attention_mask = attention_mask.to(device)
+        position_ids = position_ids.to(device)
+        token_type_ids = token_type_ids.to(device)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
+    elif model_type == 'cnn':
+        input_ids, label = inputs
+        input_ids = input_ids.to(device)
+        label = label.to(device)
+        outputs = model(input_ids=input_ids, labels=label)
     test_loss = outputs.loss
     _, predictions = torch.max(outputs.logits, dim=1)
     probs = nn.functional.softmax(outputs.logits, dim=1)
     label = torch.flatten(label)
     correct = (predictions == label).sum().item()
     test_accuracy = correct/args.batch_size
-
 
     return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), outputs
 
@@ -473,7 +474,7 @@ if __name__ == "__main__":
             epoch_train_loss = 0.0
             epoch_train_acc = 0.0
             for train_batch, inputs in enumerate(train_dataloader, 0):
-                train_loss, train_accuracy = train_step(inputs, model, optimizer, device)
+                train_loss, train_accuracy = train_step(inputs, model, optimizer, device, args.model_type)
                 epoch_train_loss += train_loss
                 epoch_train_acc += train_accuracy
                 if (train_batch+1) % 100 == 0:
@@ -483,7 +484,7 @@ if __name__ == "__main__":
             epoch_val_loss = 0.0
             epoch_val_acc = 0.0
             for val_batch, inputs in enumerate(val_dataloader, 0):
-                val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, 'val')
+                val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, 'val')
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
