@@ -247,7 +247,7 @@ def train_step(inputs, model, optimizer, device, model_type):
 def test_step(inputs, model, device, model_type):
     if model_type == 'bert':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs   
-         input_ids = input_ids.to(device)
+        input_ids = input_ids.to(device)
         label = label.to(device)
         attention_mask = attention_mask.to(device)
         position_ids = position_ids.to(device)
