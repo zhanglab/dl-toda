@@ -212,7 +212,7 @@ def SummarizeResults(args, process, batch_num, sequences_idx, batch_idx, sequenc
             outfile.write('\n')
 
 
-def train_step(inputs, model, optimizer, device, model_type, batch_size, loss=loss):
+def train_step(inputs, model, optimizer, device, model_type, batch_size, loss_fn=loss):
     if model_type == 'bert':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs
         input_ids = input_ids.to(device)
@@ -238,7 +238,7 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss=lo
         optimizer.zero_grad()
         # forward
         outputs = model(input_ids)
-        train_loss = loss(outputs, label)
+        train_loss = loss_fn(outputs, label)
         _, predictions = torch.max(outputs, dim=1)
         
     correct = (predictions == torch.flatten(label)).sum().item()
@@ -246,7 +246,7 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss=lo
 
     return train_loss, train_accuracy
 
-def test_step(inputs, model, device, model_type, batch_size, loss=loss):
+def test_step(inputs, model, device, model_type, batch_size, loss_fn=loss):
     if model_type == 'bert':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs   
         input_ids = input_ids.to(device)
@@ -262,7 +262,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss=loss):
         input_ids = input_ids.to(device)
         label = label.to(device)
         logits = model(input_ids)
-        test_loss = loss(logits, label)
+        test_loss = loss_fn(logits, label)
     
     _, predictions = torch.max(logits, dim=1)
     probs = nn.functional.softmax(logits, dim=1)
