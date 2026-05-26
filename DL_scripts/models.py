@@ -5,13 +5,13 @@ import os
 class AlexNet(nn.Module):
     def __init__(self, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
         super(AlexNet, self).__init__()
-        self.VECTOR_SIZE = VECTOR_SIZE
+        # self.VECTOR_SIZE = VECTOR_SIZE
         
         # Embedding layer
         self.embedding = nn.Embedding(
-            num_embeddings=VOCAB_SIZE + 2, # PyTorch typically pads at VOCAB_SIZE + 1, so size is vocab+2
+            num_embeddings=VOCAB_SIZE,
             embedding_dim=EMBEDDING_SIZE,
-            padding_idx=None # PyTorch mask is handled via packing/padding sequences, no mask_zero arg
+            padding_idx=0 # padding do not contribute to the gradient
         )
         nn.init.kaiming_normal_(self.embedding.weight)
         
