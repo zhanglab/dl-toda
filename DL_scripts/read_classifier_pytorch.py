@@ -419,6 +419,13 @@ if __name__ == "__main__":
             else:
                 model = BertForSequenceClassification(config=bert_config)
             model.to(device)
+            embeddings = model.bert.embeddings.word_embeddings.weight
+            data = []
+            with open(args.tokens_file, 'r') as f:
+                for idx, line in enumerate(f.readlines()):
+                    token_embeddings = embeddings[idx].tolist()
+                    token_embeddings.insert(0,line.rstrip())
+                    data.append(token_embeddings)
         elif args.model_type == 'cnn':
             if args.resume:
                 # load model in SavedModel format
@@ -430,14 +437,9 @@ if __name__ == "__main__":
             else:
                 model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
             model.to(device)
-
-        embeddings = model.bert.embeddings.word_embeddings.weight
-        data = []
-        with open(args.tokens_file, 'r') as f:
-            for idx, line in enumerate(f.readlines()):
-                token_embeddings = embeddings[idx].tolist()
-                token_embeddings.insert(0,line.rstrip())
-                data.append(token_embeddings)
+        
+        embeddings = model.embedding.weight.detach().cpu().numpy()
+        print('EMBEDDINGS', embeddings)
 
         with open(os.path.join(args.output_dir, 'token_embeddings_initial.csv'), mode='w', newline='') as csvfile:
             writer = csv.writer(csvfile)
