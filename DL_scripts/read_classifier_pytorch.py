@@ -238,6 +238,9 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss_fn
         # forward
         outputs = model(input_ids)
         train_loss = loss_fn(outputs, label.squeeze())
+        # backward + optimize
+        train_loss.backward()
+        optimizer.step()
         _, predictions = torch.max(outputs, dim=1)
         
     correct = (predictions == torch.flatten(label)).sum().item()
