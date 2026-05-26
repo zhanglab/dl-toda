@@ -586,6 +586,12 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_summary.tsv'), 'w') as f:
             f.write(f'Runtime\t{days}:{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+            f.write(f'Patience\t{args.patience}\n')
+            f.write(f'Batch size\t{args.batch_size}\n')
+            f.write(f'Vocab\t{args.tokens_file}\n')
+            f.write(f'Train tsv file\t{args.train_tsv_file}\n')
+            f.write(f'Val tsv file\t{args.val_tsv_file}\n')
+            f.write(f'Config file\t{args.config_file}\n')
 
 
     if args.mode == "interpretability":
