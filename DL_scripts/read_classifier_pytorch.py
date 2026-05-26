@@ -320,6 +320,7 @@ class TaxClassDataset(Dataset):
             tokens = tokens[:self.max_position_embedding - 2]
         
         # replace tokens by their id
+        input_ids = []
         for i in range(len(tokens)):
             if tokens[i] in self.tokens_dict:
                 input_ids.append(self.tokens_dict[tokens[i]])
