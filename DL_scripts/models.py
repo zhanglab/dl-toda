@@ -19,7 +19,7 @@ class AlexNet(nn.Module):
         self.features = nn.Sequential(
             nn.Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4), padding=5),
             nn.BatchNorm2d(96, eps=1e-2, momentum=0.01), # momentum: TF=0.99 (1 - PyTorch momentum)
-            nn.ReLu(),
+            nn.ReLU(),
             
             nn.Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding=2),
             nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
