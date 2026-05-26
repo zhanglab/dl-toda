@@ -496,13 +496,7 @@ if __name__ == "__main__":
                 if args.model_type == 'bert':
                     val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
                 elif args.model_type == 'cnn':
-                    val_loss, val_accuracy, pred, labels, probs, logits = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
-                    print('loss', val_loss)
-                    print('accuracy', val_accuracy)
-                    print('predictions', pred)
-                    print('ground truth', labels)
-                    print('probabilities', probs)
-                    print('logits', logits)
+                    val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
@@ -544,7 +538,8 @@ if __name__ == "__main__":
             
             # save best model obtained so far
             if found_min and stop_training == False:
-                model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                if args.model_type == 'bert':
+                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
                 torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
 
             if stop_training or (epoch+1) == args.num_epochs:
@@ -552,10 +547,12 @@ if __name__ == "__main__":
                     # save best model
                     torch.save(best_model, os.path.join(args.output_dir, 'model', f'model-epoch-{min_epoch}-best.pth'))
                     model.load_state_dict(best_model)
-                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{min_epoch}-best'))
+                    if args.model_type == 'bert':
+                        model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{min_epoch}-best'))
                 else:
-                    # save model if training has reached the max number of epochs 
-                    model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
+                    if args.model_type == 'bert':
+                        # save model if training has reached the max number of epochs 
+                        model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
                     torch.save(model.state_dict(), os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}.pth'))
                 break
 
