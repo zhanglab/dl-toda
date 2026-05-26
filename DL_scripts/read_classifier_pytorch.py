@@ -231,7 +231,7 @@ def train_step(inputs, model, optimizer, device, model_type):
         # set the gradients of tensord to 0
         optimizer.zero_grad()
         # forward
-        outputs = model(input_ids=input_ids, labels=label)
+        outputs = model(input_ids)
 
     train_loss = outputs.loss
     # backward + optimize
@@ -257,7 +257,7 @@ def test_step(inputs, model, device, model_type):
         input_ids, label = inputs
         input_ids = input_ids.to(device)
         label = label.to(device)
-        outputs = model(input_ids=input_ids, labels=label)
+        outputs = model(input_ids)
     test_loss = outputs.loss
     _, predictions = torch.max(outputs.logits, dim=1)
     probs = nn.functional.softmax(outputs.logits, dim=1)
