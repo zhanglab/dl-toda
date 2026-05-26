@@ -497,7 +497,7 @@ if __name__ == "__main__":
                 if args.model_type == 'bert':
                     val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
                 elif args.model_type == 'cnn':
-                    val_loss, val_accuracy, pred, labels, probs, logits = test_step(inputs, model, device, args.model_type, args.batch_size, loss)
+                    val_loss, val_accuracy, pred, labels, probs, logits = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
                     print('loss', val_loss)
                     print('accuracy', val_accuracy)
                     print('predictions', pred)
@@ -541,10 +541,8 @@ if __name__ == "__main__":
                         print(f"Early stopping at epoch {epoch+1}")
                         stop_training = True
                 # patience += 1
-                        
             print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
             
-
             # save best model obtained so far
             if found_min and stop_training == False:
                 model.save_pretrained(os.path.join(args.output_dir, 'model', f'model-epoch-{epoch+1}'))
