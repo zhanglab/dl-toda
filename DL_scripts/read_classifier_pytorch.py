@@ -212,17 +212,20 @@ def SummarizeResults(args, process, batch_num, sequences_idx, batch_idx, sequenc
             outfile.write('\n')
 
 
-def train_step(inputs, model, optimizer, device):
-    input_ids, attention_mask, position_ids, token_type_ids, label = inputs
-    input_ids = input_ids.to(device)
-    attention_mask = attention_mask.to(device)
-    position_ids = position_ids.to(device)
-    token_type_ids = token_type_ids.to(device)
-    label = label.to(device)
-    # set the gradients of tensord to 0
-    optimizer.zero_grad()
-    # forward + backward + optimize
-    outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
+def train_step(inputs, model, optimizer, device, model_type):
+    if model_type == 'bert':
+        input_ids, attention_mask, position_ids, token_type_ids, label = inputs
+        input_ids = input_ids.to(device)
+        attention_mask = attention_mask.to(device)
+        position_ids = position_ids.to(device)
+        token_type_ids = token_type_ids.to(device)
+        label = label.to(device)
+        # set the gradients of tensord to 0
+        optimizer.zero_grad()
+        # forward + backward + optimize
+        outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
+    elif model_type == 'cnn':
+        
     train_loss = outputs.loss
     train_loss.backward()
     optimizer.step()
@@ -233,7 +236,7 @@ def train_step(inputs, model, optimizer, device):
 
     return train_loss.item(), train_accuracy
 
-def test_step(inputs, model, device, data):
+def test_step(inputs, model, device, data, model_type):
     if data == 'val':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs
     elif data == 'test':
@@ -397,13 +400,13 @@ if __name__ == "__main__":
                 # load model in SavedModel format
                 #model = tf.keras.models.load_model(args.model)
                 # load model saved with checkpoints
-                model = AlexNet(args, config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
+                model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
                 checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
                 checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
             else:
-                model = AlexNet(args, config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"], args.output_dir)
+                model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"], args.output_dir)
             model.to(device)
-            
+
         embeddings = model.bert.embeddings.word_embeddings.weight
         data = []
         with open(args.tokens_file, 'r') as f:
