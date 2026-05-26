@@ -212,7 +212,7 @@ def SummarizeResults(args, process, batch_num, sequences_idx, batch_idx, sequenc
             outfile.write('\n')
 
 
-def train_step(inputs, model, optimizer, device, model_type):
+def train_step(inputs, model, optimizer, device, model_type, batch_size, loss=loss):
     if model_type == 'bert':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs
         input_ids = input_ids.to(device)
@@ -224,6 +224,12 @@ def train_step(inputs, model, optimizer, device, model_type):
         optimizer.zero_grad()
         # forward
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label)
+        train_loss = outputs.loss
+        # backward + optimize
+        train_loss.backward()
+        optimizer.step()
+        train_loss = train_loss.item()
+        _, predictions = torch.max(outputs.logits, dim=1)
     elif model_type == 'cnn':
         input_ids, label = inputs
         input_ids = input_ids.to(device)
@@ -232,19 +238,15 @@ def train_step(inputs, model, optimizer, device, model_type):
         optimizer.zero_grad()
         # forward
         outputs = model(input_ids)
-
-    train_loss = outputs.loss
-    # backward + optimize
-    train_loss.backward()
-    optimizer.step()
-
-    _, predictions = torch.max(outputs.logits, dim=1)
+        train_loss = loss(outputs, label)
+        _, predictions = torch.max(outputs, dim=1)
+        
     correct = (predictions == torch.flatten(label)).sum().item()
-    train_accuracy = correct/args.batch_size
+    train_accuracy = correct/batch_size
 
-    return train_loss.item(), train_accuracy
+    return train_loss, train_accuracy
 
-def test_step(inputs, model, device, model_type):
+def test_step(inputs, model, device, model_type, batch_size, loss=loss):
     if model_type == 'bert':
         input_ids, attention_mask, position_ids, token_type_ids, label = inputs   
         input_ids = input_ids.to(device)
@@ -253,19 +255,22 @@ def test_step(inputs, model, device, model_type):
         position_ids = position_ids.to(device)
         token_type_ids = token_type_ids.to(device)
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
+        logits = outputs.logits
+        test_loss = outputs.loss.item()
     elif model_type == 'cnn':
         input_ids, label = inputs
         input_ids = input_ids.to(device)
         label = label.to(device)
-        outputs = model(input_ids)
-    test_loss = outputs.loss
-    _, predictions = torch.max(outputs.logits, dim=1)
-    probs = nn.functional.softmax(outputs.logits, dim=1)
+        logits = model(input_ids)
+        test_loss = loss(logits, label)
+    
+    _, predictions = torch.max(logits, dim=1)
+    probs = nn.functional.softmax(logits, dim=1)
     label = torch.flatten(label)
     correct = (predictions == label).sum().item()
-    test_accuracy = correct/args.batch_size
+    test_accuracy = correct/batch_size
 
-    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), outputs
+    return test_loss, test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), logits
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
@@ -434,6 +439,7 @@ if __name__ == "__main__":
                 model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
             model.to(device)
             embeddings = model.embedding.weight.detach().cpu().numpy()
+            loss_fn = nn.CrossEntropyLoss()
         
         data = []
         with open(args.tokens_file, 'r') as f:
@@ -471,10 +477,14 @@ if __name__ == "__main__":
         min_epoch = 0
 
         for epoch in range(args.num_epochs):
+            print('EPOCH', epoch)
             epoch_train_loss = 0.0
             epoch_train_acc = 0.0
             for train_batch, inputs in enumerate(train_dataloader, 0):
-                train_loss, train_accuracy = train_step(inputs, model, optimizer, device, args.model_type)
+                if args.model_type == 'bert':
+                    train_loss, train_accuracy = train_step(inputs, model, optimizer, device, args.model_type, args.batch_size)
+                elif args.model_type == 'cnn':
+                    train_loss, train_accuracy = train_step(inputs, model, optimizer, device, args.model_type, args.batch_size, loss_fn)
                 epoch_train_loss += train_loss
                 epoch_train_acc += train_accuracy
                 if (train_batch+1) % 100 == 0:
@@ -484,7 +494,16 @@ if __name__ == "__main__":
             epoch_val_loss = 0.0
             epoch_val_acc = 0.0
             for val_batch, inputs in enumerate(val_dataloader, 0):
-                val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, 'val')
+                if args.model_type == 'bert':
+                    val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
+                elif args.model_type == 'cnn':
+                    val_loss, val_accuracy, pred, labels, probs, logits = test_step(inputs, model, device, args.model_type, args.batch_size, loss)
+                    print('loss', val_loss)
+                    print('accuracy', val_accuracy)
+                    print('predictions', pred)
+                    print('ground truth', labels)
+                    print('probabilities', probs)
+                    print('logits', logits)
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
