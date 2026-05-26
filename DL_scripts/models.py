@@ -1,97 +1,179 @@
 import torch
 import torch.nn as nn
-import os
+import torch.nn.functional as F
 
-class AlexNet(nn.Module):
+class AlexNetText(nn.Module):
     def __init__(self, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
-        super(AlexNet, self).__init__()
-        # self.VECTOR_SIZE = VECTOR_SIZE
-        
-        # Embedding layer
-        self.embedding = nn.Embedding(
-            num_embeddings=VOCAB_SIZE,
-            embedding_dim=EMBEDDING_SIZE,
-            padding_idx=0 # padding do not contribute to the gradient
-        )
-        nn.init.kaiming_normal_(self.embedding.weight)
-        
-        # Convolutional layers
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4), padding=5),
-            nn.BatchNorm2d(96, eps=1e-2, momentum=0.01), # momentum: TF=0.99 (1 - PyTorch momentum)
-            nn.ReLU(),
-            
-            nn.Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding=2),
-            nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
-            
-            nn.Conv2d(256, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
-            nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            
-            nn.Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
-            nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            
-            nn.Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=1),
-            nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        )
-        
-        # Dynamically calculate the flattened feature size
-        self._flattened_size = self._get_conv_output((1, VECTOR_SIZE, EMBEDDING_SIZE))
-        
-        # Dense layers
-        self.classifier = nn.Sequential(
-            nn.Linear(self._flattened_size, 4096),
-            nn.BatchNorm1d(4096, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            nn.Dropout(DROPOUT_RATE),
-            
-            nn.Linear(4096, 1000),
-            nn.BatchNorm1d(1000, eps=1e-2, momentum=0.01),
-            nn.ReLU(),
-            nn.Dropout(DROPOUT_RATE),
-            
-            nn.Linear(1000, NUM_CLASSES),
-            nn.BatchNorm1d(NUM_CLASSES, eps=1e-2, momentum=0.01),
-            nn.Softmax(dim=1)
-        )
-        
-        # Initialize weights using HeNormal (kaiming_normal_ in PyTorch)
-        self._initialize_weights()
+        super(AlexNetText, self).__init__()
 
-    def _get_conv_output(self, shape):
-        # Helper to calculate the exact dimensions after conv/pooling operations
-        batch_size = 1
-        input_dummy = torch.rand(batch_size, *shape)
-        output_dummy = self.features(input_dummy)
-        return output_dummy.data.view(batch_size, -1).size(1)
+        # Embedding
+        self.embedding = nn.Embedding(
+            num_embeddings=VOCAB_SIZE + 1,
+            embedding_dim=EMBEDDING_SIZE,
+            padding_idx=0
+        )
+
+        # Conv layers
+        self.conv1 = nn.Conv2d(1, 96, kernel_size=11, stride=4, padding=5)
+        self.bn1 = nn.BatchNorm2d(96, momentum=0.01)
+
+        self.conv2 = nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2)
+        self.bn2 = nn.BatchNorm2d(256, momentum=0.01)
+
+        self.conv3 = nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(384, momentum=0.01)
+
+        self.conv4 = nn.Conv2d(384, 384, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(384, momentum=0.01)
+
+        self.conv5 = nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1)
+        self.bn5 = nn.BatchNorm2d(256, momentum=0.01)
+
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+
+        # Fully connected
+        self.fc1 = nn.Linear(256 * (VECTOR_SIZE // 4) * (EMBEDDING_SIZE // 4), 4096)
+        self.bn_fc1 = nn.BatchNorm1d(4096, momentum=0.01)
+
+        self.fc2 = nn.Linear(4096, 1000)
+        self.bn_fc2 = nn.BatchNorm1d(1000, momentum=0.01)
+
+        self.fc3 = nn.Linear(1000, NUM_CLASSES)
+        self.bn_fc3 = nn.BatchNorm1d(NUM_CLASSES, momentum=0.01)
+
+        self.dropout = nn.Dropout(DROPOUT_RATE)
+
+        # He initialization (Kaiming)
+        self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            if isinstance(m, (nn.Conv2d, nn.Linear)):
                 nn.init.kaiming_normal_(m.weight)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        # x shape expected: (batch_size, sequence_length)
-        x = self.embedding(x)
+        # x shape: (batch_size, VECTOR_SIZE)
+        x = self.embedding(x)  # (B, V, E)
+        x = x.unsqueeze(1)     # (B, 1, V, E)
+
+        x = F.relu(self.bn1(self.conv1(x)))
+
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.pool(x)
+
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = self.pool(x)
+
+        x = torch.flatten(x, start_dim=1)
+
+        x = F.relu(self.bn_fc1(self.fc1(x)))
+        x = self.dropout(x)
+
+        x = F.relu(self.bn_fc2(self.fc2(x)))
+        x = self.dropout(x)
+
+        x = self.bn_fc3(self.fc3(x))
+
+        return F.softmax(x, dim=1)
+# import torch
+# import torch.nn as nn
+# import os
+
+# class AlexNet(nn.Module):
+#     def __init__(self, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
+#         super(AlexNet, self).__init__()
+#         # self.VECTOR_SIZE = VECTOR_SIZE
         
-        # Reshape to (batch_size, channels=1, height, width) for 2D Convolutions
-        # PyTorch Conv2d expects channel-first format (N, C, H, W)
-        x = x.unsqueeze(1) 
+#         # Embedding layer
+#         self.embedding = nn.Embedding(
+#             num_embeddings=VOCAB_SIZE,
+#             embedding_dim=EMBEDDING_SIZE,
+#             padding_idx=0 # padding do not contribute to the gradient
+#         )
+#         nn.init.kaiming_normal_(self.embedding.weight)
         
-        x = self.features(x)
+#         # Convolutional layers
+#         self.features = nn.Sequential(
+#             nn.Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4), padding=5),
+#             nn.BatchNorm2d(96, eps=1e-2, momentum=0.01), # momentum: TF=0.99 (1 - PyTorch momentum)
+#             nn.ReLU(),
+            
+#             nn.Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding=2),
+#             nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+#             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
+            
+#             nn.Conv2d(256, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
+#             nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+            
+#             nn.Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=1),
+#             nn.BatchNorm2d(384, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+            
+#             nn.Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=1),
+#             nn.BatchNorm2d(256, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+#             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+#         )
         
-        # Flatten for Dense layers
-        x = x.view(x.size(0), -1) 
+#         # Dynamically calculate the flattened feature size
+#         self._flattened_size = self._get_conv_output((1, VECTOR_SIZE, EMBEDDING_SIZE))
         
-        output = self.classifier(x)
-        return output
+#         # Dense layers
+#         self.classifier = nn.Sequential(
+#             nn.Linear(self._flattened_size, 4096),
+#             nn.BatchNorm1d(4096, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+#             nn.Dropout(DROPOUT_RATE),
+            
+#             nn.Linear(4096, 1000),
+#             nn.BatchNorm1d(1000, eps=1e-2, momentum=0.01),
+#             nn.ReLU(),
+#             nn.Dropout(DROPOUT_RATE),
+            
+#             nn.Linear(1000, NUM_CLASSES),
+#             nn.BatchNorm1d(NUM_CLASSES, eps=1e-2, momentum=0.01),
+#             nn.Softmax(dim=1)
+#         )
+        
+#         # Initialize weights using HeNormal (kaiming_normal_ in PyTorch)
+#         self._initialize_weights()
+
+#     def _get_conv_output(self, shape):
+#         # Helper to calculate the exact dimensions after conv/pooling operations
+#         batch_size = 1
+#         input_dummy = torch.rand(batch_size, *shape)
+#         output_dummy = self.features(input_dummy)
+#         return output_dummy.data.view(batch_size, -1).size(1)
+
+#     def _initialize_weights(self):
+#         for m in self.modules():
+#             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+#                 nn.init.kaiming_normal_(m.weight)
+#                 if m.bias is not None:
+#                     nn.init.constant_(m.bias, 0)
+
+#     def forward(self, x):
+#         # x shape expected: (batch_size, sequence_length)
+#         x = self.embedding(x)
+        
+#         # Reshape to (batch_size, channels=1, height, width) for 2D Convolutions
+#         # PyTorch Conv2d expects channel-first format (N, C, H, W)
+#         x = x.unsqueeze(1) 
+        
+#         x = self.features(x)
+        
+#         # Flatten for Dense layers
+#         x = x.view(x.size(0), -1) 
+        
+#         output = self.classifier(x)
+#         return output
 
 
 
