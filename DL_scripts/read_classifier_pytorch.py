@@ -439,6 +439,7 @@ if __name__ == "__main__":
             model.to(device)
             embeddings = model.embedding.weight.detach().cpu().numpy()
             loss_fn = nn.CrossEntropyLoss()
+            print(model)
         
         data = []
         with open(args.tokens_file, 'r') as f:
@@ -497,13 +498,13 @@ if __name__ == "__main__":
                     val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
                 elif args.model_type == 'cnn':
                     val_loss, val_accuracy, pred, labels, probs, logits, input_ids = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
-                    print('loss', val_loss)
-                    print('accuracy', val_accuracy)
-                    print('pred', pred)
-                    print('label', labels)
-                    print('prob', probs)
-                    print('logits', logits)
-                    print('input_ids', input_ids)
+                    # print('loss', val_loss)
+                    # print('accuracy', val_accuracy)
+                    # print('pred', pred)
+                    # print('label', labels)
+                    # print('prob', probs)
+                    # print('logits', logits)
+                    # print('input_ids', input_ids)
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
