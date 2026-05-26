@@ -228,7 +228,6 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss_fn
         # backward + optimize
         train_loss.backward()
         optimizer.step()
-        train_loss = train_loss.item()
         _, predictions = torch.max(outputs.logits, dim=1)
     elif model_type == 'cnn':
         input_ids, label = inputs
@@ -244,7 +243,7 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss_fn
     correct = (predictions == torch.flatten(label)).sum().item()
     train_accuracy = correct/batch_size
 
-    return train_loss, train_accuracy
+    return train_loss.item(), train_accuracy
 
 def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
     if model_type == 'bert':
@@ -256,7 +255,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
         token_type_ids = token_type_ids.to(device)
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=label, output_hidden_states=True, output_attentions=True)
         logits = outputs.logits
-        test_loss = outputs.loss.item()
+        test_loss = outputs.loss
     elif model_type == 'cnn':
         input_ids, label = inputs
         input_ids = input_ids.to(device)
@@ -270,7 +269,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
     correct = (predictions == label).sum().item()
     test_accuracy = correct/batch_size
 
-    return test_loss, test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), logits
+    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), logits
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
