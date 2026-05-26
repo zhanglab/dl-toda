@@ -238,7 +238,7 @@ def train_step(inputs, model, optimizer, device, model_type, batch_size, loss_fn
         optimizer.zero_grad()
         # forward
         outputs = model(input_ids)
-        train_loss = loss_fn(outputs, label)
+        train_loss = loss_fn(outputs, label.squeeze())
         _, predictions = torch.max(outputs, dim=1)
         
     correct = (predictions == torch.flatten(label)).sum().item()
@@ -262,7 +262,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
         input_ids = input_ids.to(device)
         label = label.to(device)
         logits = model(input_ids)
-        test_loss = loss_fn(logits, label)
+        test_loss = loss_fn(logits, label.squeeze())
     
     _, predictions = torch.max(logits, dim=1)
     probs = nn.functional.softmax(logits, dim=1)
@@ -439,8 +439,7 @@ if __name__ == "__main__":
                 model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
             model.to(device)
             embeddings = model.embedding.weight.detach().cpu().numpy()
-            # loss_fn = nn.CrossEntropyLoss()
-            loss_fn = nn.BCEWithLogitsLoss()
+            loss_fn = nn.CrossEntropyLoss()
         
         data = []
         with open(args.tokens_file, 'r') as f:
