@@ -564,8 +564,11 @@ if __name__ == "__main__":
         hours, seconds = divmod(total_time.seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
         days = total_time.days
-
-        embeddings = model.bert.embeddings.word_embeddings.weight
+        
+        if args.model_type == 'bert':
+            embeddings = model.bert.embeddings.word_embeddings.weight
+        elif args.model_type == 'cnn':
+            embeddings = model.embedding.weight.detach().cpu().numpy()
         data = []
         with open(args.tokens_file, 'r') as f:
             for idx, line in enumerate(f.readlines()):
