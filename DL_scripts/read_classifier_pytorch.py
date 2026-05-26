@@ -269,7 +269,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
     correct = (predictions == label).sum().item()
     test_accuracy = correct/batch_size
 
-    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), logits
+    return test_loss.item(), test_accuracy, predictions.tolist(), label.tolist(), probs.tolist(), logits, input_ids
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
@@ -496,7 +496,14 @@ if __name__ == "__main__":
                 if args.model_type == 'bert':
                     val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
                 elif args.model_type == 'cnn':
-                    val_loss, val_accuracy, _, _, _, _ = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
+                    val_loss, val_accuracy, pred, labels, probs, logits, input_ids = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
+                    print('loss', val_loss)
+                    print('accuracy', val_accuracy)
+                    print('pred', pred)
+                    print('label', labels)
+                    print('prob', probs)
+                    print('logits', logits)
+                    print('input_ids', input_ids)
                 epoch_val_loss += val_loss
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
