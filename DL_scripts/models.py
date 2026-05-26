@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class AlexNetText(nn.Module):
+class AlexNet(nn.Module):
     def __init__(self, VECTOR_SIZE, EMBEDDING_SIZE, NUM_CLASSES, VOCAB_SIZE, DROPOUT_RATE):
-        super(AlexNetText, self).__init__()
+        super(AlexNet, self).__init__()
 
         # Embedding
         self.embedding = nn.Embedding(
