@@ -402,8 +402,8 @@ if __name__ == "__main__":
             os.makedirs(os.path.join(args.output_dir, 'model'))
 
         # prepare input data
-        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label, args.mode)
-        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label, args.mode)
+        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
+        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
         train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
         val_dataloader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
         
