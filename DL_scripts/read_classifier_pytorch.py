@@ -886,10 +886,11 @@ if __name__ == "__main__":
         
         for batch, inputs in enumerate(test_dataloader, 0):
             if args.model_type == 'bert':
+                # input_ids, attention_mask, position_ids, token_type_ids, label = inputs
                 test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
             elif args.model_type == 'cnn':
+                # input_ids, label = inputs
                 test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
-            input_ids, attention_mask, position_ids, token_type_ids, label = inputs
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
             ground_truth += batch_ground_truth
