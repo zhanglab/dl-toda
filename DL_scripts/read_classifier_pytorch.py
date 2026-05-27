@@ -1045,6 +1045,10 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.output_dir, f'{args.mode}_runtime.tsv'), 'w') as f:
             f.write(f'Runtime\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\n')
+            f.write(f'Batch size\t{args.batch_size}\n')
+            f.write(f'Vocab\t{args.tokens_file}\n')
+            f.write(f'Tes tsv file\t{args.tsv_file}\n')
+            f.write(f'Config file\t{args.config_file}\n')
 
     if args.lc_dir is not None:
         # create learning curves
