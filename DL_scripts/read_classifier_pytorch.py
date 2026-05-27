@@ -390,7 +390,8 @@ if __name__ == "__main__":
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
     parser.add_argument('--kmer', type=str, help='kmer value')
-    parser.add_argument('--model', type=str, help='path to model save with Hugging Face function save_pretrained()')
+    parser.add_argument('--model_hug', type=str, help='path to model save with Hugging Face function save_pretrained()')
+    parser.add_argument('--model_pth', type=str, help='path to model saved with Pytorch')
     parser.add_argument('--model_type', type=str, help='type of model', choices=['cnn','bert'])
     parser.add_argument('--batch_size', type=int, help='batch size', default=32)
     parser.add_argument('--num_epochs', type=int, help='number of epochs', default=1)
@@ -403,7 +404,7 @@ if __name__ == "__main__":
     parser.add_argument('--lc_dir', type=str, help='input directory for creating learning curves')
     parser.add_argument('--testing_dir', type=str, help='input directory for summarizing testing results')
     parser.add_argument('--annotations_dir', type=str, help='path to directory to store annotations downloaded from NCBI')
-    parser.add_argument('--epoch_to_resume', type=int, help='epoch to resume from for cnn model')
+    # parser.add_argument('--epoch_to_resume', type=int, help='epoch to resume from for cnn model')
     args = parser.parse_args()
 
     start = datetime.datetime.now()
@@ -438,7 +439,7 @@ if __name__ == "__main__":
             # create BERT config object and model
             bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
             if args.resume:
-                model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+                model = BertForSequenceClassification.from_pretrained(args.model_hug, config=bert_config)
             else:
                 model = BertForSequenceClassification(config=bert_config)
             model.to(device)
@@ -841,8 +842,10 @@ if __name__ == "__main__":
             #model = tf.keras.models.load_model(args.model)
             # load model saved with checkpoints
             model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
-            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
-            checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+            state_dict = torch.load(args.model_pth, weights_only=True)
+            model.load_state_dict(state_dict)
+            # checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+            # checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
             model.to(device)
             loss_fn = nn.CrossEntropyLoss()
 
@@ -883,7 +886,7 @@ if __name__ == "__main__":
         # incorrect_sequence_embeddings = []
         
         for batch, inputs in enumerate(test_dataloader, 0):
-             if args.model_type == 'bert':
+            if args.model_type == 'bert':
                 test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
             elif args.model_type == 'cnn':
                 test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
