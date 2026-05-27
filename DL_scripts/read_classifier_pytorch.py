@@ -276,7 +276,7 @@ def test_step(inputs, model, device, model_type, batch_size, loss_fn=None):
 
 # class to prepare the input data for training and testing   
 class TaxClassDataset(Dataset):
-    def __init__(self, tsv_file, tokens_file, label, mode, model_type):
+    def __init__(self, tsv_file, tokens_file, label, mode, model_type, k_value):
         self.data = pd.read_csv(tsv_file, sep='\t', header=None)
         self.tokens_dict = self.get_tokens_id(tokens_file)
         self.label = label
@@ -284,6 +284,7 @@ class TaxClassDataset(Dataset):
         self.max_position_embedding = 512
         self.mode = mode
         self.data_type = data_type
+        self.k_value = k_value
 
     def get_tokens_id(self, tokens_file):
         with open(tokens_file, 'r') as f:
@@ -343,6 +344,13 @@ class TaxClassDataset(Dataset):
 
         return torch.tensor(input_ids)
 
+    def tokenization(self, sequence):
+        list_kmers = []
+        for i in range(0, len(sequence)-k_value+1, 1):
+            kmer = sequence[i:i + k_value]
+            list_kmers.append(kmer)
+        return list_kmers
+    
     def __len__(self):
         return list(self.data.shape)[0]
 
@@ -354,10 +362,10 @@ class TaxClassDataset(Dataset):
         elif self.mode == 'interpretability':
             sequence = self.data.iloc[idx,2]
         if len(sequence.split(' ')) > 1:
-                tokens = sequence.split(' ')
+            tokens = sequence.split(' ')
         else:
             # tokenize sequence
-            tokens = 
+            tokens = self.tokenization(sequence)
         
         if self.model_type == 'bert':
             input_ids, attention_mask, position_ids, token_type_ids = self.prepare_bert_input(tokens)
@@ -417,8 +425,8 @@ if __name__ == "__main__":
             os.makedirs(os.path.join(args.output_dir, 'model'))
 
         # prepare input data
-        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
-        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
+        train_data = TaxClassDataset(args.train_tsv_file, args.tokens_file, args.label, args.mode, args.model_type, args.kmer)
+        val_data = TaxClassDataset(args.val_tsv_file, args.tokens_file, args.label, args.mode, args.model_type, args.kmer)
         train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
         val_dataloader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
         
@@ -806,18 +814,37 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
         # prepare input data
-        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
+        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode, args.model_type, args.kmer)
         test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
         
-        # load parameters for BERT
-        with open(args.bert_config_file, "r") as f:
+        # # load parameters for BERT
+        # with open(args.bert_config_file, "r") as f:
+        #     config_dict = json.load(f)
+        # print(config_dict)
+        
+        # # create BERT config object and model
+        # bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+        # model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+        # model.to(device)
+
+        # load parameters
+        with open(args.config_file, "r") as f:
             config_dict = json.load(f)
         print(config_dict)
-        
-        # create BERT config object and model
-        bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
-        model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
-        model.to(device)
+        if args.model_type == 'bert':
+            # create BERT config object and model
+            bert_config = BertConfig(vocab_size=config_dict["vocab_size"])
+            model = BertForSequenceClassification.from_pretrained(args.model, config=bert_config)
+            model.to(device)
+        elif args.model_type == 'cnn':
+            # load model in SavedModel format
+            #model = tf.keras.models.load_model(args.model)
+            # load model saved with checkpoints
+            model = AlexNet(config_dict["vector_size"], config_dict["embedding_size"], config_dict["num_classes"], config_dict["vocab_size"], config_dict["dropout_rate"])
+            checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
+            checkpoint.restore(os.path.join(args.ckpt, f'ckpt-{args.epoch_to_resume}')).expect_partial()
+            model.to(device)
+            loss_fn = nn.CrossEntropyLoss()
 
         start = datetime.datetime.now()
 
@@ -832,7 +859,7 @@ if __name__ == "__main__":
             for idx, line in enumerate(f):
                 dict_tokens[idx] = line.rstrip()
         
-        # # load DNA sequences
+        # # load sequences
         # test_sequences = []
         # with open(args.tsv_file, 'r') as f:
         #     for idx, line in enumerate(f):
@@ -856,8 +883,11 @@ if __name__ == "__main__":
         # incorrect_sequence_embeddings = []
         
         for batch, inputs in enumerate(test_dataloader, 0):
+             if args.model_type == 'bert':
+                test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size)
+            elif args.model_type == 'cnn':
+                test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, _ = test_step(inputs, model, device, args.model_type, args.batch_size, loss_fn)
             input_ids, attention_mask, position_ids, token_type_ids, label = inputs
-            test_loss, test_accuracy, batch_predictions, batch_ground_truth, probs, outputs = test_step(inputs, model, device, 'test')
             epoch_test_loss += test_loss
             epoch_test_acc += test_accuracy
             ground_truth += batch_ground_truth
