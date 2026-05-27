@@ -283,7 +283,6 @@ class TaxClassDataset(Dataset):
         self.model_type = model_type
         self.max_position_embedding = 512
         self.mode = mode
-        self.data_type = data_type
         self.k_value = k_value
 
     def get_tokens_id(self, tokens_file):
