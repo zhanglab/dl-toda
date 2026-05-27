@@ -345,8 +345,8 @@ class TaxClassDataset(Dataset):
 
     def tokenization(self, sequence):
         list_kmers = []
-        for i in range(0, len(sequence)-k_value+1, 1):
-            kmer = sequence[i:i + k_value]
+        for i in range(0, len(sequence)-self.k_value+1, 1):
+            kmer = sequence[i:i + self.k_value]
             list_kmers.append(kmer)
         return list_kmers
     
