@@ -861,15 +861,17 @@ if __name__ == "__main__":
             for idx, line in enumerate(f):
                 dict_tokens[idx] = line.rstrip()
         
-        # # load sequences
-        # test_sequences = []
-        # with open(args.tsv_file, 'r') as f:
-        #     for idx, line in enumerate(f):
-        #         list_tokens = line.rstrip().split('\t')[1].split(' ')
-        #         seq = list_tokens[0]
-        #         for i in range(1, len(list_tokens), 1):
-        #             seq += list_tokens[i][-1]
-        #         test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
+        # load sequences
+        test_sequences = []
+        with open(args.tsv_file, 'r') as f:
+            for idx, line in enumerate(f):
+                seq = line.rstrip().split('\t')[1]
+                test_sequences.append(len(seq))
+                # list_tokens = line.rstrip().split('\t')[1].split(' ')
+                # seq = list_tokens[0]
+                # for i in range(1, len(list_tokens), 1):
+                    # seq += list_tokens[i][-1]
+                # test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
 
         epoch_test_loss = 0.0
         epoch_test_acc = 0.0
@@ -920,7 +922,8 @@ if __name__ == "__main__":
         # TP_pct_n = []
         with open(os.path.join(args.output_dir, 'cs_length.tsv'), 'w') as f:
             for i in range(len(predictions)):
-                f.write(f'{test_sequences[i][3]}\t')
+                # f.write(f'{test_sequences[i][3]}\t')
+                f.write(f'{test_sequences[i]}\t')
                 if ground_truth[i] == 1 and predictions[i] == 1:
                     TP_cs.append(confidence_scores[i][1])
                     f.write(f'{confidence_scores[i][1]}\tTP\n')
