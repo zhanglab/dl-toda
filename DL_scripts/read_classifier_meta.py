@@ -62,12 +62,10 @@ def dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_fill, 
                                  initial_fill=initial_fill,
                                  stick_to_shard=stick_to_shard,
                                  features={
-                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "label": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     "read": tfrec.VarLenFeature([], tfrec.int64, 0)})
     # retrieve reads and labels and copy them to the gpus
     reads = inputs["read"].gpu()
-    labels = inputs["label"].gpu()
-    return reads, labels
+    return reads
 
 # define the DALI pipeline for BERT 
 @pipeline_def
@@ -84,17 +82,15 @@ def bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_f
                                      "input_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "attention_mask": tfrec.VarLenFeature([], tfrec.int64, 0),
                                      "position_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0),
-                                     "labels": tfrec.FixedLenFeature([1], tfrec.int64, -1)})
+                                     "token_type_ids": tfrec.VarLenFeature([], tfrec.int64, 0)})
     
     # retrieve data and copy it to the gpus
     input_ids = inputs["input_ids"].gpu()
     attention_mask = inputs["attention_mask"].gpu()
     token_type_ids = inputs["token_type_ids"].gpu()
     position_ids = inputs["position_ids"].gpu()
-    labels = inputs["labels"].gpu()
 
-    return (input_ids, attention_mask, position_ids, token_type_ids, labels)
+    return (input_ids, attention_mask, position_ids, token_type_ids)
 
 
 class DALIPreprocessor(object):
@@ -113,49 +109,46 @@ class DALIPreprocessor(object):
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64, tf.int64, tf.int64), device_id=device_id)
         else:
             self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
                                       training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
    
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
-                output_shapes=((batch_size, vector_size), (batch_size)),
-                batch_size=batch_size, output_dtypes=(tf.int64, tf.int64), device_id=device_id)
+                output_shapes=((batch_size, vector_size)),
+                batch_size=batch_size, output_dtypes=(tf.int64), device_id=device_id)
 
     def get_device_dataset(self):
         return self.dalidataset
 
 
-def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder):
+def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
 
-    def load_tfrecords_with_reads(proto_example):
+    def load_tfrecords(proto_example):
         data_description = {
-            'read': tf.io.VarLenFeature(tf.int64),
-            'label': tf.io.FixedLenFeature([1], tf.int64)
+            'read': tf.io.VarLenFeature(tf.int64)
         }
         # load one example
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=data_description)
         read = parsed_example['read']
-        label = tf.cast(parsed_example['label'], tf.int64)
         read = tf.sparse.to_dense(read)
-        return read, label
+        return read
 
-    def load_tfrecords_for_finetuning(proto_example):
+    def load_tfrecords_for_bert(proto_example):
         name_to_features = {
           "input_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "attention_mask": tf.io.FixedLenFeature([args.vector_size], tf.int64),
           "position_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64),
-          "labels": tf.io.FixedLenFeature([1], tf.int64)
+          "token_type_ids": tf.io.FixedLenFeature([args.vector_size], tf.int64)
         }
         parsed_example = tf.io.parse_single_example(serialized=proto_example, features=name_to_features)
 
-        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask'], "labels": parsed_example['labels']}
+        return {"input_ids": parsed_example['input_ids'], "position_ids": parsed_example['position_ids'], "token_type_ids": parsed_example['token_type_ids'], "attention_mask": parsed_example['attention_mask']}
 
     """ Return data in TFRecords """
-    fn_load_data = {'reads': load_tfrecords_with_reads, 'finetuning': load_tfrecords_for_finetuning}
+    fn_load_data = load_tfrecords_for_bert if args.model_type == 'BERT' else load_tfrecords
 
     dataset = tf.data.TFRecordDataset([filenames])
 
@@ -163,7 +156,7 @@ def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder)
         dataset = dataset.repeat()
         dataset = dataset.shuffle(buffer_size=10000)
 
-    dataset = dataset.map(map_func=fn_load_data[args.datatype])
+    dataset = dataset.map(map_func=fn_load_data)
     dataset = dataset.batch(args.batch_size, drop_remainder=drop_remainder)
 
 
@@ -178,40 +171,21 @@ def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder)
     # dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
-
-# @tf.function
-# def testing_step(data_type, reads, labels, model, loss=None, test_loss=None, test_accuracy=None, target_label=None):
-#     print('inside testing_step')
-#     probs = model(reads, training=False)
-#     if data_type == 'test':
-#         test_accuracy.update_state(labels, probs)
-#         loss_value = loss(labels, probs)
-#         test_loss.update_state(loss_value)
-#     pred_labels = tf.math.argmax(probs, axis=1)
-#     pred_probs = tf.reduce_max(probs, axis=1)
-#     if target_label:
-#         label_prob = tf.gather(probs, target_label, axis=1)
-#     return probs, pred_labels, pred_probs
-#     # return pred_labels, pred_probs, label_prob
-
 @tf.function
-# def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
-def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
+def testing_step(model_type, data, model, nvidia_dali=False):
     training = False
 
     if model_type == 'BERT':
         if nvidia_dali:
-            input_ids, attention_mask, position_ids, token_type_ids, labels = data
+            input_ids, attention_mask, position_ids, token_type_ids = data
         else:
             input_ids = data["input_ids"]
             attention_mask = data["attention_mask"]
             token_type_ids = data["token_type_ids"]
             position_ids = data["position_ids"]
-            labels = data["labels"]
 
-    if bert_step in ['finetuning', 'regular']:
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
+        # outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
         # logits = model(**data).logits
@@ -221,16 +195,10 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
         # labels = data["labels"]
         logits = outputs.logits
         probs = tf.nn.softmax(logits, axis=-1)
-        loss_value = loss(labels, probs)
     else:
-        reads, labels = data
+        reads = data
         probs = model(reads, training=training)
     
-    # if data_type == 'sim':
-    test_accuracy.update_state(labels, probs)
-    loss_value = loss(labels, probs)
-    test_loss.update_state(loss_value)
-
     # get predicted labels and confidence scores
     pred_labels = tf.math.argmax(probs, axis=1)
     if tf.shape(probs)[1] == 2:
@@ -238,10 +206,7 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
     else:
         pred_probs = tf.reduce_max(probs, axis=1)
 
-    # if target_label:
-    #     label_prob = tf.gather(probs, target_label, axis=1)
-
-    return pred_labels, pred_probs, labels
+    return pred_labels, pred_probs
 
 
 def main():
@@ -250,28 +215,24 @@ def main():
     parser.add_argument('--tfrecords', type=str, help='path to tfrecords', required=True)
     parser.add_argument('--output_dir', type=str, help='directory to store results', default=os.getcwd())
     parser.add_argument('--init_lr', type=float, help='initial learning rate', default=0.0001)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning', 'regular'], required=('BERT' in sys.argv))
     parser.add_argument('--batch_size', type=int, help='batch size per gpu', default=8192)
     parser.add_argument('--DNA_model', action='store_true', default=False)
     parser.add_argument('--n_rows', type=int, default=50)
     parser.add_argument('--n_cols', type=int, default=5)
-    parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
-    parser.add_argument('--nvidia_dali', action='store_true', default=False, required=('val_idx_files' in sys.argv and 'train_idx_files' in sys.argv))
+    parser.add_argument('--nvidia_dali', action='store_true', default=False)
     parser.add_argument('--k_value', type=int, help='length of kmer strings', default=12)
-    parser.add_argument('--target_label', type=int, help='output prediction scores of target label')
     parser.add_argument('--embedding_size', type=int, help='size of embedding vectors', default=60)
     parser.add_argument('--dropout_rate', type=float, help='dropout rate to apply to layers', default=0.7)
     parser.add_argument('--vector_size', type=int, help='size of input vectors')
     parser.add_argument('--vocab', help="Path to the vocabulary file", required=('AlexNet' in sys.argv))
     parser.add_argument('--model_type', type=str, help='type of model', choices=['DNA_1', 'DNA_2', 'AlexNet', 'VGG16', 'VDCNN', 'LSTM', 'BERT'])
     parser.add_argument('--bert_config_file', type=str, help='path to bert config file', required=('BERT' in sys.argv))
-    parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format or in the new keras format (provide filename as well)')
+    parser.add_argument('--model', type=str, help='path to directory containing model in SavedModel format')
     parser.add_argument('--class_mapping', type=str, help='path to json file containing dictionary mapping taxa to labels', default=os.path.join(dl_toda_dir, 'data', 'species_labels.json'))
     parser.add_argument('--ckpt', type=str, help='path to checkpoint file (only add the prefix)')
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
-    # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
     args = parser.parse_args()
 
     # Initialize Horovod
@@ -334,14 +295,10 @@ def main():
             checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
             checkpoint.restore(args.ckpt).expect_partial()
 
-    # define metrics
-    loss = tf.losses.SparseCategoricalCrossentropy()
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
-    test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
-
     # get list of testing tfrecords, number of reads per tfrecords and reads id for metagenomic data
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
+    read_ids_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_ids.tsv')))
 
     if args.nvidia_dali:
         # get nvidia dali indexes
@@ -353,14 +310,14 @@ def main():
     if hvd.rank() != hvd.size() - 1:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
 
         if args.nvidia_dali:
             gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
     else:
         gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
         gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
+        gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
 
         if args.nvidia_dali:
             gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
@@ -378,39 +335,28 @@ def main():
 
         # compute number of steps required to iterate over entire test set
         test_steps = math.ceil(num_reads/(args.batch_size))
-
+        print(f'# test steps: {test_steps}')
         # load data
         if args.nvidia_dali:
             nvidia_dali = True
             test_preprocessor = DALIPreprocessor(args.model_type, test_files[i], test_idx_files[i], args.batch_size, args.vector_size, args.initial_fill, deterministic=False, training=False)
-
             test_input = test_preprocessor.get_device_dataset()
         else:
             nvidia_dali=False
-            if args.model_type == 'BERT':
-                if args.bert_step in ['finetuning', 'regular']:
-                    args.datatype = 'finetuning'
-                else:
-                    args.datatype = 'pretraining'
-                    args.num_masked = int(args.masked_lm_prob * (args.vector_size-1)) # without NSP task
-            else:
-                args.datatype = 'reads'
-            test_input = build_dataset_sim(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
+            test_input = build_dataset(args, test_files[i], num_labels, is_training=False, drop_remainder=False)
+            print('dataset prepared')
 
         # create empty arrays to store the predicted and true values, the confidence scores and the probability distributions
         # all_predictions = tf.zeros([args.batch_size, NUM_CLASSES], dtype=tf.dtypes.float32, name=None)
         all_pred_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
-        all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+
         for batch, data in enumerate(test_input.take(test_steps), 1):
-            # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
-            # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
-            # batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-            batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
+            # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model)
+            batch_pred_sp, batch_prob_sp = testing_step(args.model_type, data, model)
 
             if batch == 1:
-                all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
                 all_prob_sp = [batch_prob_sp]
                 # all_prob_labels = [batch_label_prob]
@@ -419,47 +365,40 @@ def main():
                 # all_predictions = tf.concat([all_predictions, batch_predictions], 0)
                 all_pred_sp = tf.concat([all_pred_sp, [batch_pred_sp]], 1)
                 all_prob_sp = tf.concat([all_prob_sp, [batch_prob_sp]], 1)
-                all_labels = tf.concat([all_labels, [labels]], 1)
                 # all_prob_labels = tf.concat([all_prob_labels, [batch_label_prob]], 1)
+            
 
         # get list of true species, predicted species and predicted probabilities
         # all_predictions = all_predictions.numpy()
         all_pred_sp = all_pred_sp[0].numpy()
         all_prob_sp = all_prob_sp[0].numpy()
-        all_labels = all_labels[0].numpy()
         # all_prob_labels = all_prob_labels[0].numpy()
-        print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
+        print(all_prob_sp)
+        print(all_pred_sp)
+        print(all_pred_sp.shape)
+        print(f'before adjusting: {len(all_pred_sp)}\t{len(all_prob_sp)}\n')
 
 
         # adjust the list of predicted species and read ids if necessary
-        if len(all_labels) > num_reads:
+        if len(all_prob_sp) > num_reads:
             num_extra_reads = (test_steps*args.batch_size) - num_reads
             # all_predictions = all_predictions[:-num_extra_reads]
             all_pred_sp = all_pred_sp[:-num_extra_reads]
             all_prob_sp = all_prob_sp[:-num_extra_reads]
-            all_labels = all_labels[:-num_extra_reads]
-            print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\t{len(all_labels)}\n')
-            print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
+            print(f'number of reads: {num_extra_reads}\t{num_reads}\t{len(all_pred_sp)}\t{len(all_prob_sp)}\n')
+            print(all_pred_sp[0], all_prob_sp[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
 
+        # get dictionary mapping read ids to labels
+        with open(os.path.join(args.tfrecords, read_ids_files[i]), 'r') as f:
+            content = f.readlines()
+            dict_read_ids = {content[j].rstrip().split('\t')[1]: '@' + content[j].rstrip().split('\t')[0] for j in range(len(content))}
         # write results to file
-        out_filename = os.path.join(args.output_dir, 'testing-results.tsv')
-        # out_filename = os.path.join(args.output_dir, f'{test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
-        with open(out_filename, 'w') as out_f:
+        with open(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-out.tsv'), 'w') as out_f:
             for j in range(num_reads):
-                if nvidia_dali:
-                    out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                else:
-                    out_f.write(f'{all_labels[j][0]}\t{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
-                # out_f.write(f'{all_labels[j]}\t{all_pred_sp[j]}\t{all_prob_sp[j]}\t{all_prob_labels[j]}\n')
-                # if len(all_prob_sp[j]) == num_labels:
-                    # out_f.write(f'{all_prob_sp[j][0]}\t{all_prob_sp[j][1]}\n')
-                # else:
-                # out_f.write(f'{all_prob_sp[j][all_pred_sp[j]]}\n')
-        # if args.save_probs:
-        #     # save predictions and labels to file
-        #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-prob-out.npy'), all_predictions)
-        #     np.save(os.path.join(args.output_dir, f'{gpu_test_files[i].split("/")[-1].split(".")[0]}-labels-out.npy'), all_labels)
+                out_f.write(f'{all_pred_sp[j]}\t{all_prob_sp[j][all_pred_sp[j]]}\n')
+
+
         end_time = time.time()
         # elapsed_time = np.append(elapsed_time, end_time - start_time)
         elapsed_time.append(end_time - start_time)
@@ -471,7 +410,6 @@ def main():
 
     with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
         outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
-        outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
             outfile.write(f'{args.ckpt}')
         outfile.write(f'\t{hours}:{minutes}:{seconds}:{total_time.microseconds}\t')

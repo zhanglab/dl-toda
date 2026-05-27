@@ -2,10 +2,86 @@ import os
 import sys
 import gzip
 import math
+import numpy as np
 import multiprocessing as mp
 from collections import defaultdict
 sys.path.append('/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
 from dataprep_scripts.ncbi_tax_utils import get_ncbi_taxonomy
+from dataprep_scripts.utils import load_fq_file
+
+
+def parse_bert_output(args, data, process, results):
+    """ Bert output contains the probability distributions for each example (one example per line)
+    """
+    # get ground truth labels from fastq file
+    reads = load_fq_file(args.fq_file, 4)
+    if args.mapping_file:
+        # update labels based on mapping
+        labels = [args.labels_mapping[i.split('\n')[0].split('|')[1]] for i in reads]
+    else:
+        labels = [i.split('\n')[0].split('|')[1] for i in reads]
+    print(labels[:10])
+
+    d_correct = defaultdict(int)
+    d_incorrect = defaultdict(int)
+
+    process_results = []
+    for i, line in enumerate(data, 0):
+        probs = [float(v) for v in line.rstrip().split('\t')]
+        true_taxonomy = args.dl_toda_tax[labels[i]]
+        # get highest probability
+        confidence_score = np.amax(probs)
+        pred_label = str(np.argmax(probs))
+        # update predicted label to label in dl-toda
+        if pred_label == '1':
+            pred_label = args.positive_class
+        pred_taxonomy = args.dl_toda_tax[pred_label]
+        # print(f'probs: {probs}\ntrue_label: {labels[i]}\ntrue_taxonomy: {true_taxonomy}\nconfidence_score: {confidence_score}\npred_label: {str(np.argmax(probs))}\npred_taxonomy: {pred_taxonomy}')
+        if args.false_positives:
+            if labels[i] != args.positive_class and pred_label == args.positive_class:
+                process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        elif args.confusion_matrix:
+            process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+        if pred_label == labels[i]:
+            d_correct[labels[i]] += 1
+        else:
+            d_incorrect[pred_label] += 1
+
+    print(d_correct)
+    print(d_incorrect)
+    n_c_reads = 0
+    n_i_reads = 0
+    for k, v in d_correct.items():
+        n_c_reads += v
+    for k, v in d_incorrect.items():
+        n_i_reads += v
+    print(n_c_reads + n_i_reads)
+    print(n_c_reads/(n_c_reads + n_i_reads))
+
+
+    results[process] = process_results
+
+
+def parse_bertax_output(args, data, process, results):
+    """ Bertax output is provided at the genus, phylum and superkingdom levels
+        Reads assigned to the Viruses or Eukaryota are considered as unclassified
+        All other reads are considered classified regardless of confidence scores
+    """
+
+    process_results = []
+    for line in data:
+        line = line.rstrip().split('\t')
+        read = line[0]
+        # get ground truth
+        true_taxonomy = args.dl_toda_tax[read.split('|')[1]]
+        confidence_score = int(line[6][:-1]) / 100
+        if line[1] == 'Bacteria' and line[5] != 'unknown':
+            pred_taxonomy = f';{line[5]};;;;'
+        else:
+            pred_taxonomy = f';unclassified;;;;'
+        process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
+
+    results[process] = process_results
 
 
 def parse_kraken_output(args, data, process, results):
@@ -19,7 +95,7 @@ def parse_kraken_output(args, data, process, results):
                 taxid_index = line[2].find('taxid')
                 taxid = line[2][taxid_index+6:-1]
                 # get ncbi taxonomy
-                _, pred_taxonomy, _= get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
+                _, pred_taxonomy, _ = get_ncbi_taxonomy(taxid, args.d_nodes, args.d_names)
                 process_results.append(f'{read}\t{";".join(pred_taxonomy[args.ranks[args.rank]+1:])}\n')
         else:
             if args.dataset == 'cami':
@@ -55,7 +131,10 @@ def parse_dl_toda_output(args, data, process, results):
             pred_sp = line.rstrip().split('\t')[2]
             confidence_score = float(line.rstrip().split('\t')[3])
             true_taxonomy = 'na'
-        pred_taxonomy = args.dl_toda_tax[pred_sp]
+        if confidence_score > args.cutoff:
+            pred_taxonomy = args.dl_toda_tax[pred_sp]
+        else:
+            pred_taxonomy = ";".join(["unclassified"]*6)
         process_results.append([pred_taxonomy, true_taxonomy, confidence_score])
     results[process] = process_results
 
@@ -99,8 +178,8 @@ def parse_centrifuge_output(args, data, process, results):
         elif taxid == '0' and args.dataset == 'meta':
             num_unclassified += 1
             process_results.append(f'{read}\t{";".join(["unclassified"] * 6)}\n')
-    print(read_count)
-    print(num_unclassified)
+    # print(read_count)
+    # print(num_unclassified)
     results[process] = process_results
 
 # def convert_diamond_output(args, data, process, d_nodes, d_names, results):
@@ -167,6 +246,8 @@ def load_cami_data(args):
 def load_tool_output(args):
     in_f = open(args.input, 'r')
     content = in_f.readlines()
+    if args.tool == 'bertax':
+        content = content[1:]
     if args.tool == "centrifuge":
         # parse output of centrifuge to only take the first hit for each read
         content = content[1:]
@@ -191,7 +272,8 @@ def load_tool_output(args):
         content = parsed_content
 
     # get length of sub-arrays
-    chunk_size = math.ceil(len(content)/args.processes)
+    # chunk_size = math.ceil(len(content)/mp.cpu_count())
+    chunk_size = math.ceil(len(content)/args.num_proc)
     data = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
     num_reads = [len(i) for i in data]
 

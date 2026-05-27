@@ -23,6 +23,7 @@ from VDCNN import VDCNN
 from VGG16 import VGG16
 from DNA_model_1 import DNA_net_1
 from DNA_model_2 import DNA_net_2
+from optimizers import AdamWeightDecayOptimizer
 import argparse
 import random
 
@@ -52,44 +53,6 @@ print(f'Is eager execution enabled: {tf.executing_eagerly()}')
 
 # enable XLA = XLA (Accelerated Linear Algebra) is a domain-specific compiler for linear algebra that can accelerate
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
-
-# implement early stopping
-best_val_accuracy = np.Inf
-patience = 0
-best_weights = None
-best_loss = np.Inf
-stop_training = False
-found_min = False
-min_epoch = 0
-
-def on_epoch_end(epoch, test_loss, test_accuracy, optimizer, model, init_lr):
-    global patience
-    global best_loss
-    global best_val_accuracy
-    global min_epoch
-    global found_min
-    global stop_training
-    global best_weights
-
-    val_loss = test_loss.result()
-    val_accuracy = test_accuracy.result()
-
-    if patience == 10:
-        if optimizer.learning_rate == init_lr:
-            optimizer.learning_rate = init_lr / 10
-            patience = 0
-        else:
-            stop_training = True
-    else:
-        if val_loss < best_loss:
-            best_loss = val_loss
-            best_val_accuracy = val_accuracy
-            best_weights = model.get_weights()
-            patience = 0 # Reset wait counter
-            min_epoch = epoch
-            found_min = True
-        else:
-            patience += 1
 
 # define the DALI pipeline fo CNN and LSTM
 @pipeline_def
@@ -185,7 +148,7 @@ class DALIPreprocessor(object):
         self.batch_size = batch_size
         self.device_id = device_id
 
-        if args.model_type == "BERT" and args.bert_step in ['finetuning', 'regular']:
+        if args.model_type == "BERT" and args.bert_step == 'finetuning':
 
             self.pipe = finetuning_bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
@@ -215,6 +178,47 @@ class DALIPreprocessor(object):
 
     def get_device_dataset(self):
         return self.dalidataset
+
+
+
+
+best_val_accuracy = np.Inf
+patience = 0
+best_weights = None
+best_loss = np.Inf
+stop_training = False
+found_min = False
+min_epoch = 0
+
+def on_epoch_end(epoch, num_train_batches, test_loss, test_accuracy, optimizer, model):
+    global patience
+    global best_loss
+    global best_val_accuracy
+    global min_epoch
+    global found_min
+    global stop_training
+    global best_weights
+
+    val_loss = test_loss.result()
+    val_accuracy = test_accuracy.result()
+
+    if patience == 10:
+        if optimizer.learning_rate == 0.00002:
+            optimizer.learning_rate = 0.000002
+            patience = 0
+        else:
+            stop_training = True
+    else:
+        if val_loss < best_loss:
+            best_loss = val_loss
+            best_val_accuracy = val_accuracy
+            best_weights = model.get_weights()
+            patience = 0 # Reset wait counter
+            min_epoch = epoch
+            found_min = True
+        else:
+            patience += 1
+
 
 
 def build_dataset(args, filenames, num_classes, is_training, drop_remainder):
@@ -300,7 +304,7 @@ def training_step(model_type, bert_step, data, num_labels, train_accuracy, loss,
                 position_ids = data["position_ids"]
                 labels = data["labels"]
 
-            if bert_step in ['finetuning', 'regular']:
+            if bert_step == "finetuning":
                 outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
                 # logits = model(**data).logits
                 logits = outputs.logits
@@ -397,7 +401,7 @@ def testing_step(model_type, bert_step, data, num_labels, val_accuracy, val_loss
             position_ids = data["position_ids"]
             labels = data["labels"]
 
-    if bert_step in ['finetuning', 'regular']:
+    if bert_step == "finetuning":
         outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         logits = outputs.logits
         # logits = model(**data).logits
@@ -444,7 +448,7 @@ def main():
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--output_dir', type=str, help='path to store model', default=os.getcwd())
     parser.add_argument('--resume', action='store_true', default=False)
-    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning', 'regular'], required=('BERT' in sys.argv))
+    parser.add_argument('--bert_step', choices=['pretraining', 'finetuning'], required=('BERT' in sys.argv))
     parser.add_argument('--epoch_to_resume', type=int, required=('-resume' in sys.argv))
     parser.add_argument('--num_labels', type=int, help='number of labels', default=2)
     parser.add_argument('--ckpt', type=str, help='full path to checkpoint file with prefix and without .data-00000-of-00001', required=('--resume' in sys.argv))
@@ -527,10 +531,10 @@ def main():
         if not os.path.exists(tensorboard_dir):
             os.makedirs(tensorboard_dir)
 
-        if args.model_type == 'BERT':
-            pretrained_dir= os.path.join(args.output_dir, f'pretrained-models-{args.rnd}')
-            if not os.path.isdir(pretrained_dir):
-                os.makedirs(pretrained_dir)
+        # if args.bert_step == "pretraining":
+        pretrained_dir= os.path.join(args.output_dir, f'pretrained-models-{args.rnd}')
+        if not os.path.isdir(pretrained_dir):
+            os.makedirs(pretrained_dir)
 
         writer = tf.summary.create_file_writer(tensorboard_dir)
         td_writer = open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', f'training_data_rnd_{args.rnd}.tsv'), 'w')
@@ -547,12 +551,15 @@ def main():
     #                                               scale_fn=lambda x: 1 / (2. ** (x - 1)),
     #                                               step_size=2 * nstep_per_epoch)
 
-    # define the optimizer
-    if args.optimizer == 'Adam':
+    # set up the optimizer
+    if args.model_type == 'BERT':
         opt = tf.keras.optimizers.Adam(learning_rate=args.init_lr)
-    elif args.optimizer == 'SGD':
-        opt = tf.keras.optimizers.SGD(learning_rate=args.init_lr)
-    
+    else:
+        if args.optimizer == 'Adam':
+            opt = tf.keras.optimizers.Adam(args.init_lr)
+        elif args.optimizer == 'SGD':
+            opt = tf.keras.optimizers.SGD(args.init_lr)
+
     # prevent numeric underflow when using float16
     opt = keras.mixed_precision.LossScaleOptimizer(opt)
 
@@ -564,17 +571,14 @@ def main():
         # create BERT config object + model
         bert_config = BertConfig(vocab_size=args.config_dict["vocab_size"])
         if args.bert_step == "finetuning":
-            # if args.pretrained:
-            model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
-            # freeze all the layers except the pooler layer and the classifier layer
-            # model.layers[0].trainable = False
-        elif args.bert_step == "pretraining":
             if args.pretrained:
-                model = TFBertForMaskedLM.from_pretrained(args.pretrained, config=bert_config)
+                model = TFBertForSequenceClassification.from_pretrained(args.pretrained, config=bert_config)
+                # freeze all the layers except the pooler layer and the classifier layer
+                # model.layers[0].trainable = False
             else:
-                model = TFBertForMaskedLM(config=bert_config)
-        elif args.bert_step == "regular":
-            model = TFBertForSequenceClassification(config=bert_config)
+                model = TFBertForSequenceClassification(config=bert_config)
+        elif args.bert_step == "pretraining":
+            model = TFBertForMaskedLM(config=bert_config)
     else:
         model = models[args.model_type](args, args.vector_size, args.embedding_size, num_labels, vocab_size, args.dropout_rate)
 
@@ -608,7 +612,7 @@ def main():
     else:
         nvidia_dali=False
         if args.model_type == 'BERT':
-            if args.bert_step in ['finetuning', 'regular']:
+            if args.bert_step == 'finetuning':
                 args.datatype = 'finetuning'
             else:
                 args.datatype = 'pretraining'
@@ -735,7 +739,7 @@ def main():
 
                 if args.early_stopping:
                     # assess end of training
-                    on_epoch_end(epoch, val_loss, val_accuracy, opt, model, args.init_lr)
+                    on_epoch_end(epoch, batch, val_loss, val_accuracy, opt, model)
 
                     print(f'best_val_accuracy:{best_val_accuracy.numpy()}')
                     print(f'patience: {patience}')
@@ -748,14 +752,12 @@ def main():
                         if found_min:
                             model.set_weights(best_weights)
                             model.save(os.path.join(models_dir, f'model-rnd-{args.rnd}-best.keras'))
-                            if args.model_type == 'BERT':
-                                model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-best'))
-                            else:
-                                best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
-                                best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
+                            best_checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
+                            best_checkpoint.save(os.path.join(ckpt_dir, f'ckpt-best'))
                             with open(os.path.join(args.output_dir, f'logs-rnd-{args.rnd}', 'best_val_results.tsv'), 'w') as f:
                                 f.write(f'{min_epoch}\t{best_loss.numpy()}\t{best_val_accuracy.numpy()}\n')
-                            
+                            # if args.bert_step == "pretraining":
+                            model.save_pretrained(os.path.join(pretrained_dir, f'pretrained-model-{args.rnd}-best'))
                         break
 
                 # # save model in different formats at the end of each epoch
@@ -816,8 +818,6 @@ def main():
                     f'Training set size\t{train_reads_per_epoch}\nValidation set size\t{val_reads_per_epoch}\n'
                     f'Number of steps per epoch\t{nstep_per_epoch}\nTotal number of training steps: {num_train_steps}\n'
                     f'Number of steps for validation dataset\t{num_val_steps}\n'
-                    f'Training set\t{args.train_tfrecords}\n'
-                    f'Validation set\t{args.val_tfrecords}\n'
                     f'Number of epochs done\t{epoch}\n'
                     f'Initial learning rate\t{args.init_lr}\n')
             if args.model_type in ["LSTM", "AlexNet"]:

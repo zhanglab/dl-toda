@@ -1,6 +1,5 @@
 import datetime
 import tensorflow as tf
-import horovod.tensorflow as hvd
 from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.fn as fn
 import nvidia.dali.tfrecord as tfrec
@@ -21,6 +20,7 @@ import numpy as np
 import math
 import argparse
 import random
+from collections import defaultdict
 
 
 # set seed
@@ -100,9 +100,9 @@ def bert_dali_pipeline(tfrec_filenames, tfrec_idx_filenames, shard_id, initial_f
 class DALIPreprocessor(object):
     def __init__(self, model_type, filenames, idx_filenames, batch_size, vector_size, initial_fill, deterministic=False, training=False):
 
-        device_id = hvd.local_rank()
-        shard_id = hvd.rank()
-        num_gpus = hvd.size()
+        device_id = 0
+        shard_id = 0
+        num_gpus = 1
         
         # self.batch_size = batch_size
         # self.device_id = device_id
@@ -110,7 +110,7 @@ class DALIPreprocessor(object):
         if model_type == "BERT":
             self.pipe = bert_dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+                                      training=training, seed=7 if deterministic else None)
 
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
                 output_shapes=((batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size, vector_size), (batch_size)),
@@ -118,7 +118,7 @@ class DALIPreprocessor(object):
         else:
             self.pipe = dali_pipeline(tfrec_filenames=filenames, tfrec_idx_filenames=idx_filenames, batch_size=batch_size,
                                       device_id=device_id, shard_id=shard_id, initial_fill=initial_fill, num_gpus=num_gpus,
-                                      training=training, seed=7 * (1 + hvd.rank()) if deterministic else None)
+                                      training=training, seed=7 if deterministic else None)
    
             self.dalidataset = dali_tf.DALIDataset(fail_on_device_mismatch=False, pipeline=self.pipe,
                 output_shapes=((batch_size, vector_size), (batch_size)),
@@ -195,7 +195,6 @@ def build_dataset_sim(args, filenames, num_classes, is_training, drop_remainder)
 #     # return pred_labels, pred_probs, label_prob
 
 @tf.function
-# def testing_step(data_type, model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
 def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, test_accuracy=None, target_label=None, nvidia_dali=False):
     training = False
 
@@ -210,7 +209,7 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
             labels = data["labels"]
 
     if bert_step in ['finetuning', 'regular']:
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, output_hidden_states=True)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
         # outputs = model(**data)
@@ -241,7 +240,10 @@ def testing_step(model_type, bert_step, data, model, loss=None, test_loss=None, 
     # if target_label:
     #     label_prob = tf.gather(probs, target_label, axis=1)
 
-    return pred_labels, pred_probs, labels
+    if model_type == 'BERT':
+        return pred_labels, pred_probs, labels, outputs
+    else:
+        return pred_labels, pred_probs, labels
 
 
 def main():
@@ -271,28 +273,36 @@ def main():
     parser.add_argument('--pretrained', type=str, help='path to directory containing hf pretrained model saved using save_pretrained')
     parser.add_argument('--max_read_size', type=int, help='maximum read size in training dataset', default=250)
     parser.add_argument('--initial_fill', type=int, help='size of the buffer for random shuffling', default=10000)
+    parser.add_argument('--sequences_file', type=str, help='path to tsv or fna file', required=True)
     # parser.add_argument('--save_probs', help='save probability distributions', action='store_true')
     args = parser.parse_args()
 
-    # Initialize Horovod
-    hvd.init()
-    # Map one GPU per process
-    # use hvd.local_rank() for gpu pinning instead of hvd.rank()
+    # process one sequence at a time to get embeddings
+    args.batch_size = 1
+
     gpus = tf.config.experimental.list_physical_devices('GPU')
-    print(f'GPU RANK: {hvd.rank()}/{hvd.local_rank()} - LIST GPUs: {gpus}')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     if gpus:
         # tf.config.experimental.set_visible_devices(gpus, 'GPU')
-        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+        tf.config.experimental.set_visible_devices(gpus, 'GPU')
 
     models = {'DNA_1': DNA_net_1, 'DNA_2': DNA_net_2, 'AlexNet': AlexNet, 'VGG16': VGG16, 'VDCNN': VDCNN, 'LSTM': LSTM}
 
-    # get vocabulary size
-    if args.model_type != 'BERT':
-        with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
-            content = f.readlines()
-            vocab_size = len(content)
+    # get vocabulary
+    kmers = []
+    vocab = {}
+    # if args.model_type != 'BERT':
+    with open(f'{args.vocab}/{args.k_value}mers.txt', 'r') as f:
+        for idx, line in enumerate(f,0):
+            vocab[idx] = line.rstrip()
+            if line.rstrip() not in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']:
+                kmers.append(line.rstrip())
+        vocab_size = len(vocab)
+
+    print(kmers)
+    print(vocab)
+    print(len(kmers))
 
     # load class_mapping file mapping label IDs to species
     if args.class_mapping:
@@ -308,10 +318,9 @@ def main():
     print('Compute dtype: %s' % policy.compute_dtype)
     print('Variable dtype: %s' % policy.variable_dtype)
     
-    if hvd.rank() == 0:
-        # create output directories
-        if not os.path.isdir(args.output_dir):
-            os.makedirs(os.path.join(args.output_dir))
+    # create output directory
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(os.path.join(args.output_dir))
 
     if args.model_type == 'BERT':
         with open(args.bert_config_file, "r") as f:
@@ -333,7 +342,9 @@ def main():
             opt = tf.keras.mixed_precision.LossScaleOptimizer(opt)
             checkpoint = tf.train.Checkpoint(optimizer=opt, model=model)
             checkpoint.restore(args.ckpt).expect_partial()
-
+    # print('try to get embeddings') --> does not work with TF
+    # print(model.embeddings.word_embeddings.weight)
+    print(model.bert.embeddings.word_embeddings.weights[0])
     # define metrics
     loss = tf.losses.SparseCategoricalCrossentropy()
     test_loss = tf.keras.metrics.Mean(name='test_loss')
@@ -343,28 +354,17 @@ def main():
     test_files = sorted(glob.glob(os.path.join(args.tfrecords, '*.tfrec')))
     num_reads_files = sorted(glob.glob(os.path.join(args.tfrecords, '*-read_count')))
 
+    # get id and sequence of reads
+    reads_seq = {}
+    with open(args.sequences_file, 'r') as f:
+        content = f.readlines()
+        print(len(content))
+        reads_seq = {i+1: content[i].rstrip().split('\t')[1].split(' ') for i in range(len(content))}
+
     if args.nvidia_dali:
         # get nvidia dali indexes
         test_idx_files = sorted(glob.glob(os.path.join(args.tfrecords, 'idx_files', '*.idx')))
     
-    # split tfrecords between gpus
-    test_files_per_gpu = len(test_files)//hvd.size()
-
-    if hvd.rank() != hvd.size() - 1:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu] if len(read_ids_files) != 0 else None
-
-        if args.nvidia_dali:
-            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:(hvd.rank()+1)*test_files_per_gpu]
-    else:
-        gpu_test_files = test_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        gpu_num_reads_files = num_reads_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-        # gpu_read_ids_files = read_ids_files[hvd.rank()*test_files_per_gpu:len(test_files)] if len(read_ids_files) != 0 else None
-
-        if args.nvidia_dali:
-            gpu_test_idx_files = test_idx_files[hvd.rank()*test_files_per_gpu:len(test_files)]
-
     elapsed_time = []
     num_reads_classified = 0
     for i in range(len(test_files)):
@@ -403,12 +403,44 @@ def main():
         all_prob_sp = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         all_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
         # all_prob_labels = [tf.zeros([args.batch_size], dtype=tf.dtypes.float32, name=None)]
+        embeddings = defaultdict(list) # key = token, value = embeddings
         for batch, data in enumerate(test_input.take(test_steps), 1):
+            print(f'batch: {batch}')
             # batch_predictions, batch_pred_sp, batch_prob_sp = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy)
             # batch_pred_sp, batch_prob_sp, batch_label_prob = testing_step(args.data_type, reads, labels, model, loss, test_loss, test_accuracy, args.target_label)
             # batch_pred_sp, batch_prob_sp, labels = testing_step(args.data_type, args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-            batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
-
+            if args.model_type == 'BERT':
+                batch_pred_sp, batch_prob_sp, labels, outputs = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
+                hidden_states = outputs.hidden_states
+                print(len(hidden_states))
+                print(hidden_states[0].shape)   # shape : (batch_size, sequence_length, hidden_size)
+                token_embeddings = hidden_states[0]
+                print(token_embeddings.shape)
+                print(token_embeddings[0])
+                print(token_embeddings[0].shape)
+                # for j in range(len(token_embeddings[0]))
+                seq_ids = data["input_ids"].numpy()[0]
+                tokens = [vocab[j] for j in seq_ids]
+                assert '[UKN]' not in tokens
+                # reconstruct original sequence
+                dna_seq = tokens[1]
+                for j in range(2, len(tokens), 1):
+                    if tokens[j] not in ['[PAD]', '[SEP]', '[UNK]']:
+                        dna_seq += tokens[j][-1]
+                original_dna_seq = reads_seq[batch][0]
+                for j in range(1, len(reads_seq[batch]), 1):
+                    original_dna_seq += reads_seq[batch][j][-1]
+                assert dna_seq == original_dna_seq, f'{len(dna_seq)}\t{len(tokens)}\t{len(seq_ids)}\n{dna_seq}\n{reads_seq[batch]}\n{tokens}\n{seq_ids}'
+                # get embeddings for each token
+                for j in range(len(tokens)):
+                    if len(embeddings[tokens[j]]) != 0:
+                        for k in range(len(embeddings[tokens[j]])):
+                            assert np.array_equal(embeddings[tokens[j]][k], token_embeddings[0][j]), f'found different embeddings for the token {tokens[j]}'
+                    else:
+                        embeddings[tokens[j]].append(token_embeddings[0][j])
+                break
+            else:
+                batch_pred_sp, batch_prob_sp, labels = testing_step(args.model_type, args.bert_step, data, model, loss, test_loss, test_accuracy, nvidia_dali=nvidia_dali)
             if batch == 1:
                 all_labels = [labels]
                 all_pred_sp = [batch_pred_sp]
@@ -442,6 +474,13 @@ def main():
             print(all_pred_sp[0], all_prob_sp[0], all_labels[0])
             # all_prob_labels = all_prob_labels[:-num_extra_reads]
 
+        # save token embeddings to text file
+        data = []
+        for i in range(len(vocab)):
+            print(i, vocab[i])
+            data.append(embeddings[i])
+        np.savetxt(os.path.join(args.output_dir, 'token_embeddings.csv'), np.array(data), delimiter=',')
+
         # write results to file
         out_filename = os.path.join(args.output_dir, 'testing-results.tsv')
         # out_filename = os.path.join(args.output_dir, f'{test_files[i].split("/")[-1].split(".")[0]}-out.tsv') if len(test_files[i].split("/")[-1].split(".")) == 2 else os.path.join(args.output_dir, f'{".".join(test_files[i].split("/")[-1].split(".")[0:2])}-out.tsv')
@@ -469,8 +508,8 @@ def main():
     hours, seconds = divmod(total_time.seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
 
-    with open(os.path.join(args.output_dir, f'testing-summary-{hvd.rank()}.tsv'), 'w') as outfile:
-        outfile.write(f'{hvd.rank()}\t{args.batch_size}\t{hvd.size()}\t{hvd.rank()}\t{len(test_files)}\t{num_reads_classified}\t')
+    with open(os.path.join(args.output_dir, f'testing-summary.tsv'), 'w') as outfile:
+        outfile.write(f'{args.batch_size}\t{len(test_files)}\t{num_reads_classified}\t')
         outfile.write(f'{test_accuracy.result().numpy()}\t{test_loss.result().numpy()}\t')
         if args.ckpt:
             outfile.write(f'{args.ckpt}')
