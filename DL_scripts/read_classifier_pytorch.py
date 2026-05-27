@@ -388,7 +388,7 @@ if __name__ == "__main__":
     parser.add_argument('--config_file', type=str, help='path to config file containing parameters')
     parser.add_argument('--mode', type=str, help='run script in training or testing mode', choices=['training','testing','interpretability'])
     parser.add_argument('--tokens_file', type=str, help='file with list of tokens')
-    parser.add_argument('--kmer', type=str, help='kmer value')
+    parser.add_argument('--kmer', type=int, help='kmer value')
     parser.add_argument('--model_hug', type=str, help='path to model save with Hugging Face function save_pretrained()')
     parser.add_argument('--model_pth', type=str, help='path to model saved with Pytorch')
     parser.add_argument('--model_type', type=str, help='type of model', choices=['cnn','bert'])
