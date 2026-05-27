@@ -283,6 +283,7 @@ class TaxClassDataset(Dataset):
         self.model_type = model_type
         self.max_position_embedding = 512
         self.mode = mode
+        self.data_type = data_type
 
     def get_tokens_id(self, tokens_file):
         with open(tokens_file, 'r') as f:
@@ -349,9 +350,14 @@ class TaxClassDataset(Dataset):
         label = torch.tensor(self.update_label(self.data.iloc[idx,0]))
         # label = torch.tensor(self.data.iloc[idx,0])
         if self.mode in ['testing','training']:
-            tokens = self.data.iloc[idx,1].split(' ') 
+            sequence = self.data.iloc[idx,1]
         elif self.mode == 'interpretability':
-            tokens = self.data.iloc[idx,2].split(' ')
+            sequence = self.data.iloc[idx,2]
+        if len(sequence.split(' ')) > 1:
+                tokens = sequence.split(' ')
+        else:
+            # tokenize sequence
+            tokens = 
         
         if self.model_type == 'bert':
             input_ids, attention_mask, position_ids, token_type_ids = self.prepare_bert_input(tokens)
@@ -800,7 +806,7 @@ if __name__ == "__main__":
 
     if args.mode == "testing":
         # prepare input data
-        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode)
+        test_data = TaxClassDataset(args.tsv_file, args.tokens_file, args.label, args.mode, args.model_type)
         test_dataloader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
         
         # load parameters for BERT
@@ -826,15 +832,15 @@ if __name__ == "__main__":
             for idx, line in enumerate(f):
                 dict_tokens[idx] = line.rstrip()
         
-        # load DNA sequences
-        test_sequences = []
-        with open(args.tsv_file, 'r') as f:
-            for idx, line in enumerate(f):
-                list_tokens = line.rstrip().split('\t')[1].split(' ')
-                seq = list_tokens[0]
-                for i in range(1, len(list_tokens), 1):
-                    seq += list_tokens[i][-1]
-                test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
+        # # load DNA sequences
+        # test_sequences = []
+        # with open(args.tsv_file, 'r') as f:
+        #     for idx, line in enumerate(f):
+        #         list_tokens = line.rstrip().split('\t')[1].split(' ')
+        #         seq = list_tokens[0]
+        #         for i in range(1, len(list_tokens), 1):
+        #             seq += list_tokens[i][-1]
+        #         test_sequences.append([seq, int(line.rstrip().split('\t')[2]), int(line.rstrip().split('\t')[3]), int(line.rstrip().split('\t')[4])])
 
         epoch_test_loss = 0.0
         epoch_test_acc = 0.0
