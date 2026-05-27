@@ -9,7 +9,7 @@ class AlexNet(nn.Module):
         
         # Embedding layer
         self.embedding = nn.Embedding(
-            num_embeddings=VOCAB_SIZE,
+            num_embeddings=VOCAB_SIZE+1,
             embedding_dim=EMBEDDING_SIZE,
             padding_idx=0 # padding do not contribute to the gradient
         )
