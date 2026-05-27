@@ -505,7 +505,7 @@ if __name__ == "__main__":
                 epoch_val_acc += val_accuracy
             epoch_val_loss = round(epoch_val_loss/(val_batch+1),3)
             epoch_val_acc = round(epoch_val_acc/(val_batch+1),3)
-            val_logs_file.write(f'{epoch+1}\t{val_batch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\t{wait}\n')
+            val_logs_file.write(f'{epoch+1}\t{epoch_val_loss}\t{epoch_val_acc*100}\t{optimizer.param_groups[0]['lr']}\t{wait}\n')
 
             # check validation loss at the end of epoch
             # if patience == args.patience:
@@ -538,7 +538,7 @@ if __name__ == "__main__":
                         print(f"Early stopping at epoch {epoch+1}")
                         stop_training = True
                 # patience += 1
-            print(f'epoch: {epoch+1}\tval batch: {val_batch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
+            print(f'epoch: {epoch+1}\tvalidation loss: {epoch_val_loss}\tvalidation accuracy: {epoch_val_acc*100}\t{wait}')
             
             # save best model obtained so far
             if found_min and stop_training == False:
